@@ -41,7 +41,7 @@ def test_valid_action_with_measurements():
     action = Action("Ran 3 miles")
     action.measurements = {"distance_miles": 3.0, "duration_minutes": 30.0}
 
-    assert action.is_valid() == True
+    assert action.is_valid()
 
 
 def test_invalid_action_with_negative_measurement():
@@ -49,7 +49,7 @@ def test_invalid_action_with_negative_measurement():
     action = Action("Ran")
     action.measurements = {"distance_miles": -5.0}
 
-    assert action.is_valid() == False
+    assert not action.is_valid()
 
 
 def test_invalid_action_with_zero_measurement():
@@ -57,7 +57,7 @@ def test_invalid_action_with_zero_measurement():
     action = Action("Ran")
     action.measurements = {"distance_miles": 0.0}
 
-    assert action.is_valid() == False
+    assert not action.is_valid()
 
 
 def test_invalid_action_starttime_without_duration():
@@ -66,7 +66,7 @@ def test_invalid_action_starttime_without_duration():
     action.starttime = datetime.now()
     # duration_minutes is None
 
-    assert action.is_valid() == False
+    assert not action.is_valid()
 
 
 def test_valid_action_with_starttime_and_duration():
@@ -75,7 +75,7 @@ def test_valid_action_with_starttime_and_duration():
     action.starttime = datetime.now()
     action.duration_minutes = 45.0
 
-    assert action.is_valid() == True
+    assert action.is_valid()
 
 
 # ===== EDGE CASES =====
@@ -97,55 +97,5 @@ def test_action_with_mixed_measurements():
         "sets": 3.0
     }
 
-    assert action.is_valid() == True
+    assert action.is_valid()
     assert len(action.measurements) == 3
-
-
-# ===== HOW TO RUN THESE TESTS =====
-#
-# Option 1: Install pytest
-#   pip install pytest
-#
-# Option 2: Run from command line
-#   pytest tests/test_actions.py
-#   pytest tests/test_actions.py -v  (verbose)
-#   pytest tests/test_actions.py::test_action_creation_with_description  (single test)
-#
-# Option 3: Run all tests
-#   pytest tests/
-#
-# Option 4: Run with this file directly (quick check)
-if __name__ == "__main__":
-    # Simple test runner for quick checks without pytest
-    import traceback
-
-    test_functions = [
-        test_action_creation_with_description,
-        test_action_has_optional_attributes,
-        test_valid_action_with_measurements,
-        test_invalid_action_with_negative_measurement,
-        test_invalid_action_with_zero_measurement,
-        test_invalid_action_starttime_without_duration,
-        test_valid_action_with_starttime_and_duration,
-        test_action_with_empty_description,
-        test_action_with_mixed_measurements,
-    ]
-
-    passed = 0
-    failed = 0
-
-    for test_func in test_functions:
-        try:
-            test_func()
-            print(f"✓ {test_func.__name__}")
-            passed += 1
-        except AssertionError as e:
-            print(f"✗ {test_func.__name__}")
-            traceback.print_exc()
-            failed += 1
-        except Exception as e:
-            print(f"✗ {test_func.__name__} (ERROR)")
-            traceback.print_exc()
-            failed += 1
-
-    print(f"\n{passed} passed, {failed} failed")

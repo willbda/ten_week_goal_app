@@ -41,7 +41,7 @@ class GoalProgress:
         """Derived: has goal been met?"""
         return self.total_progress >= self.target
 
- 
+
 
 def calculate_goal_metrics(goal: Goal, actions: List[Action]) -> GoalProgress:
     """

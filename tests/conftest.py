@@ -58,29 +58,3 @@ def test_db():
 
     # Database persists after test for inspection
     # Run `python -m pytest --verbose` to see test database location
-
-
-@pytest.fixture
-def persistent_test_db():
-    """
-    Provide persistent test database across multiple tests.
-
-    Use this when you want to accumulate test data across tests
-    in the same test run. Database is NOT cleaned between tests.
-
-    Returns:
-        tuple: (Database instance, Path to database file)
-
-    Example:
-        def test_one(persistent_test_db):
-            db, _ = persistent_test_db
-            # Add some data
-
-        def test_two(persistent_test_db):
-            db, _ = persistent_test_db
-            # Data from test_one still exists
-    """
-    # Create if doesn't exist, reuse if it does
-    db = Database(db_path=TEST_DB_PATH, schema_dir=SCHEMA_PATH)
-
-    yield db, TEST_DB_PATH

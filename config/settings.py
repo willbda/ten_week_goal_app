@@ -4,15 +4,7 @@ Simple configuration - loads paths from config.toml
 
 from pathlib import Path
 import sys
-
-# Check Python version for tomllib
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    try:
-        import tomli as tomllib
-    except ImportError:
-        raise ImportError("tomli required for Python < 3.11. Install: pip install tomli")
+import tomllib
 
 # Project root
 PROJECT_ROOT = Path(__file__).parent.parent
