@@ -1,0 +1,12 @@
+# Configuration for Ten Week Goal App
+
+
+[storage]
+# Relative paths from project root
+data_dir = "politica/data_storage"
+db_name = "application_data.db"
+schema_dir = "politica/schemas"
+
+[logging]
+level = "INFO"
+log_dir = "logs"
