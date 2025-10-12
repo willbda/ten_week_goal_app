@@ -7,14 +7,21 @@ Updated by Claude Code on 2025-10-11
 
 from abc import ABC, abstractmethod
 import json
-from typing import List, Optional
+from typing import List, Optional, Union, TypeVar, Generic
 from categoriae.actions import Action
 from categoriae.goals import Goal
+from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas, PriorityLevel
 from politica.database import Database
 
+# Generic type variable for entities
+T = TypeVar('T')
+
+# Type alias for Values hierarchy
+ValuesType = Union[Values, MajorValues, HighestOrderValues, LifeAreas]
 
 
-class StorageService(ABC):
+
+class StorageService(ABC, Generic[T]):
     """
     Base class for entity storage services.
 
@@ -23,7 +30,7 @@ class StorageService(ABC):
     """
     table_name: str = ''
 
-    def __init__(self, database: Optional[Database]=None):
+    def __init__(self, database: Optional[Database] = None):
         """
         Initialize storage service with database connection.
 
@@ -33,7 +40,7 @@ class StorageService(ABC):
         """
         self.db = database or Database()
 
-    def store_many_instances(self, entities: List) -> None:
+    def store_many_instances(self, entities: List[T]) -> None:
         """
         Store multiple entity instances to database.
 
@@ -51,7 +58,7 @@ class StorageService(ABC):
 
         self.db.insert(table=self.table_name, records=formatted_entries)
 
-    def store_single_instance(self, entry) -> None:
+    def store_single_instance(self, entry: T) -> None:
         """
         Store a single entity instance to database.
 
@@ -63,7 +70,7 @@ class StorageService(ABC):
         """
         self.store_many_instances([entry])
 
-    def get_all(self, filters: Optional[dict] = None) -> List:
+    def get_all(self, filters: Optional[dict] = None) -> List[T]:
         """
         Retrieve all entities from database, optionally filtered.
 
@@ -77,17 +84,17 @@ class StorageService(ABC):
         return [self._from_dict(record) for record in records]
 
     @abstractmethod
-    def _to_dict(self, entity) -> dict:
+    def _to_dict(self, entity: T) -> dict:
         """Convert entity to dict for storage"""
-    pass
-    
+        pass
+
     @abstractmethod
-    def _from_dict(self, data: dict) -> Goal | Action:
+    def _from_dict(self, data: dict) -> T:
         """Reconstruct entity from stored dict"""
-    pass
+        pass
 
 
-class GoalStorageService(StorageService):
+class GoalStorageService(StorageService[Goal]):
     """
     Handles translation between Goal/SmartGoal objects and database storage.
 
@@ -154,7 +161,7 @@ class GoalStorageService(StorageService):
         return goal
 
 
-class ActionStorageService(StorageService):
+class ActionStorageService(StorageService[Action]):
     """Handles translation between Action objects and database storage"""
 
     table_name = 'actions'
@@ -209,3 +216,109 @@ class ActionStorageService(StorageService):
             action.duration_minutes = data['duration_minutes']
 
         return action
+
+
+class ValuesStorageService(StorageService):
+    """
+    Handles translation between Values/MajorValues/HighestOrderValues objects and database storage.
+
+    Manages polymorphic values hierarchy by storing value_type and reconstructing
+    the appropriate class on retrieval.
+    """
+
+    table_name = 'personal_values'  # 'values' is SQL reserved keyword
+
+    def _to_dict(self, entity: Union[Values, MajorValues, HighestOrderValues, LifeAreas]) -> dict:
+        """
+        Convert any Values subclass to dict for storage.
+
+        Determines value_type from class:
+        - MajorValues → 'major'
+        - HighestOrderValues → 'highest_order'
+        - LifeAreas → 'life_area'
+        - Values (base) → 'general'
+
+        Handles alignment_guidance flexibly (can be dict, str, or None).
+        """
+        value = entity
+
+        # Determine value_type from class
+        if isinstance(value, MajorValues):
+            value_type = 'major'
+        elif isinstance(value, HighestOrderValues):
+            value_type = 'highest_order'
+        elif isinstance(value, LifeAreas):
+            value_type = 'life_area'
+        else:
+            value_type = 'general'
+
+        # Handle alignment_guidance - only MajorValues has this attribute
+        alignment_guidance = None
+        if isinstance(value, MajorValues) and value.alignment_guidance:
+            if isinstance(value.alignment_guidance, dict):
+                alignment_guidance = json.dumps(value.alignment_guidance)
+            else:
+                alignment_guidance = str(value.alignment_guidance)
+
+        return {
+            'name': value.name,
+            'description': value.description,
+            'value_type': value_type,
+            'priority': int(value.priority),
+            'life_domain': value.life_domain,
+            'alignment_guidance': alignment_guidance
+        }
+
+    def _from_dict(self, data: dict) -> Union[Values, MajorValues, HighestOrderValues, LifeAreas]:
+        """
+        Reconstruct appropriate Values subclass from stored dict.
+
+        Reads value_type to determine which class to instantiate:
+        - 'major' → MajorValues
+        - 'highest_order' → HighestOrderValues
+        - 'life_area' → LifeAreas
+        - 'general' → Values
+
+        Parses alignment_guidance from JSON if it looks like JSON, otherwise keeps as text.
+        """
+        value_type = data.get('value_type', 'general')
+        priority = PriorityLevel(data.get('priority', 50))
+
+        # Parse alignment_guidance - try JSON first, fall back to text
+        alignment_guidance = None
+        if data.get('alignment_guidance'):
+            try:
+                alignment_guidance = json.loads(data['alignment_guidance'])
+            except (json.JSONDecodeError, TypeError):
+                alignment_guidance = data['alignment_guidance']
+
+        # Reconstruct appropriate class based on value_type
+        if value_type == 'major':
+            return MajorValues(
+                name=data['name'],
+                description=data['description'],
+                priority=priority,
+                life_domain=data.get('life_domain', 'General'),
+                alignment_guidance=alignment_guidance
+            )
+        elif value_type == 'highest_order':
+            return HighestOrderValues(
+                name=data['name'],
+                description=data['description'],
+                priority=priority,
+                life_domain=data.get('life_domain', 'General')
+            )
+        elif value_type == 'life_area':
+            return LifeAreas(
+                name=data['name'],
+                description=data['description'],
+                priority=priority,
+                life_domain=data.get('life_domain', 'General')
+            )
+        else:  # 'general'
+            return Values(
+                name=data['name'],
+                description=data['description'],
+                priority=priority,
+                life_domain=data.get('life_domain', 'General')
+            )

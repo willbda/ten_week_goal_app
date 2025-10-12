@@ -13,7 +13,6 @@ from datetime import datetime
 from typing import Optional
 
 
-# ===== PATTERN 1: Parent → Child (inheritance adds attributes) =====
 
 class ThingIWant(ABC):
     """
@@ -27,8 +26,6 @@ class ThingIWant(ABC):
         if not self.description.strip():
             status=False
             return status
-
-# --- SIBLINGS: Different types of things I want ---
 
 class Goal(ThingIWant):
     """
@@ -92,8 +89,6 @@ class Distraction(ThingIWant):
     """
     pass  # Placeholder - note the `raise warning` won't work here
 
-
-# ===== PATTERN 2: Further specialization (Goal → SmartGoal) =====
 
 class SmartGoal(Goal):
     """
