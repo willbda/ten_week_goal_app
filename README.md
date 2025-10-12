@@ -1,13 +1,15 @@
 # Ten Week Goal Tracking Application
 
-A personal development tracking system built with clean architecture principles. Track actions, set SMART goals, and monitor progress over time.
+A personal development tracking system built with clean architecture principles. Track actions, set SMART goals, define personal values, and monitor progress over time with intelligent automatic matching.
 
 ## What This Does
 
 - **Log Actions**: Record daily activities with optional measurements (distance, duration, reps, etc.)
 - **Define Goals**: Create loose aspirations or strict SMART goals with deadlines and targets
-- **Track Progress**: Calculate progress automatically by matching actions to goal metrics
-- **Store History**: Maintain complete audit trail of all actions and goals in SQLite
+- **Track Values**: Define personal values hierarchy (Incentives → Values → Major/Highest Order Values)
+- **Automatic Matching**: Intelligent inference system matches actions to goals by time period, units, and description
+- **Progress Tracking**: Calculate progress automatically with cached projections
+- **Store History**: Maintain complete audit trail of all entities in SQLite with archiving
 
 ## Why This Architecture
 
@@ -15,10 +17,10 @@ This project aspires to **clean separation of concerns**. My background is in ph
 
 
 ```
-categoriae/   → What things ARE (entities: Action, Goal)
-ethica/       → How things SHOULD behave (business rules: calculate progress)
-politica/     → How things ARE DONE (infrastructure: database operations)
-rhetorica/    → Translation between domains (coordination layer)
+categoriae/   → What things ARE (entities: Action, Goal, Value, Relationships, Terms)
+ethica/       → How things SHOULD behave (business rules: calculate progress, match actions to goals)
+politica/     → How things ARE DONE (infrastructure: database operations, schemas)
+rhetorica/    → Translation between domains (coordination layer with polymorphic storage)
 ```
 
 **Key Principles:**
@@ -46,20 +48,28 @@ pytest tests/ -v
 ten_week_goal_app/
 ├── categoriae/              # Domain entities (WHAT things ARE)
 │   ├── actions.py           # Action class with validation
-│   └── goals.py             # Goal and SmartGoal classes
+│   ├── goals.py             # Goal hierarchy (ThingIWant → Goal → SmartGoal)
+│   ├── values.py            # Values hierarchy with life areas and priorities
+│   ├── relationships.py     # Derived relationships (ActionGoalRelationship, GoalValueAlignment)
+│   └── terms.py             # Time period entities (TenWeekTerm, LifeTime)
 │
 ├── ethica/                  # Business logic (HOW things RELATE)
-│   └── progress.py          # Progress calculations and rules
+│   ├── progress.py          # Progress calculations and rules
+│   ├── progress_matching.py # Stateless matching functions (period, unit, description)
+│   └── inference_service.py # Service orchestrator for batch/realtime inference
 │
 ├── politica/                # Infrastructure (HOW it's STORED)
 │   ├── database.py          # Generic SQLite operations
 │   └── schemas/             # Database table definitions
 │       ├── actions.sql
 │       ├── goals.sql
-│       └── archive.sql
+│       ├── values.sql
+│       ├── action_goal_progress.sql  # Cached relationship projections
+│       ├── archive.sql
+│       └── schema.sql
 │
 ├── rhetorica/               # Translation layer (COORDINATION)
-│   └── storage_service.py   # Repository pattern for entities
+│   └── storage_service.py   # Repository pattern with polymorphic type support
 │
 ├── config/                  # Configuration and setup
 │   ├── config.toml          # Application settings
@@ -67,12 +77,14 @@ ten_week_goal_app/
 │   ├── logging_setup.py     # Logging configuration
 │   └── testing.py           # Test-specific config
 │
-├── tests/                   # Test suite
+├── tests/                   # Test suite (30 passing tests)
 │   ├── conftest.py          # Pytest fixtures
 │   ├── test_actions.py      # Domain entity tests
 │   ├── test_action_storage.py   # Storage integration tests
 │   ├── test_goal_storage.py     # Goal persistence tests
-│   └── test_progress.py     # Business logic tests
+│   ├── test_progress.py     # Business logic tests
+│   ├── test_values.py       # Values entity tests
+│   └── test_values_storage.py   # Values storage with polymorphism
 │
 └── .documentation/          # Architecture documentation
     ├── architecture_decision_record.md
@@ -98,6 +110,14 @@ def calculate_goal_metrics(goal: SmartGoal, actions: List[Action]) -> GoalProgre
     # No database, no framework - just domain logic
     matching_actions = [a for a in actions if matches_goal(a, goal)]
     return GoalProgress(...)
+
+# Automatic inference matching
+from ethica.progress_matching import match_by_time_period, match_by_unit, match_by_description
+
+# Batch processing service
+from ethica.inference_service import InferenceService
+service = InferenceService()
+relationships = service.infer_all_relationships()  # Returns ActionGoalRelationship objects
 ```
 
 ### Infrastructure (politica)
@@ -110,13 +130,19 @@ class Database:
 
 ### Translation (rhetorica)
 ```python
-# Coordinates domains, handles serialization
+# Coordinates domains, handles serialization with polymorphism
 class ActionStorageService:
     def _to_dict(self, action: Action) -> dict:
         # Entity → storage format
 
     def _from_dict(self, data: dict) -> Action:
         # Storage → entity
+
+# Polymorphic storage for class hierarchies
+class ValuesStorageService:
+    def store_single_instance(self, value_instance):
+        # Automatically saves type info for correct retrieval
+        # Works with Incentive, Value, MajorValue, HighestOrderValue
 ```
 
 
@@ -138,22 +164,24 @@ Test configuration is separate in `config/testing.py` to keep test data isolated
 
 ## Development Roadmap
 
-### Current (Phase 1) ✅
-- [x] Domain entities (Action, Goal, SmartGoal)
-- [x] Business logic (progress calculation)
-- [x] Generic storage layer
+### Complete
+- [x] Domain entities (Action, Goal, SmartGoal, Values hierarchy, Relationships, Terms)
+- [x] Business logic (progress calculation, automatic action-goal matching)
+- [x] Generic storage layer with polymorphic type support
 - [x] Repository pattern
-- [x] Comprehensive tests
+- [x] Inference service for batch/realtime relationship detection
+- [x] Comprehensive tests (30 passing)
 
-### Next (Phase 2) 🔄
+### Next
 - [ ] Import Actions and Goals in bulk from tabular data
-- [ ] Add Values class
-- [ ] Practice CLI - based interface with simple APIs
-- [ ] Add UI layer (Flask/FastAPI)
+- [ ] Add GoalValueAlignment inference (connect goals to values)
+- [ ] Practice CLI-based interface with simple APIs
 - [ ] Add Milestones(Event?) class for tracking steps towards goal
 - [ ] Dashboard visualization
 
-### Future (Phase 3) 📋
+### Later
+- [ ] Add UI layer (Flask/FastAPI)
+- [ ] Web-based progress dashboard
 - [ ] Create simple users to practice data separation and protected access
 - [ ] Export functionality (CSV, JSON)
 
@@ -169,7 +197,9 @@ Test configuration is separate in `config/testing.py` to keep test data isolated
 - Clean layer separation with zero coupling violations
 - Storage returns simple dicts (no framework coupling)
 - Business logic is pure functions (easily testable)
-- 717 lines of well-separated code with more features
+- Polymorphic storage with automatic type preservation
+- Intelligent inference system for automatic relationship detection
+- ~1,400 lines of well-separated code with advanced features
 
 See [Architectural Lessons](.documentation/architectural_lessons_from_grant_project.md) for detailed comparison.
 
@@ -203,7 +233,7 @@ Personal project - all rights reserved.
 ---
 
 **Project Status**: Active Development
-**Last Updated**: 2025-10-11
-**Test Coverage**: 14/14 tests passing
+**Last Updated**: 2025-10-12
+**Test Coverage**: 30/30 tests passing
 
 *Built with clean architecture principles as a foundation for future personal development tracking systems.*

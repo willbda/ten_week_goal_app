@@ -43,7 +43,9 @@ class Goal(ThingIWant):
                  start_date: Optional[datetime] = None,
                  end_date: Optional[datetime] = None,
                  how_goal_is_relevant: Optional[str] = None,
-                 how_goal_is_actionable: Optional[str] = None
+                 how_goal_is_actionable: Optional[str] = None,
+                 expected_term_length: Optional[int] = None,
+                 created_at: Optional[datetime] = None
                 ):
         super().__init__(description)
         self.measurement_unit = measurement_unit
@@ -52,6 +54,8 @@ class Goal(ThingIWant):
         self.end_date = end_date
         self.how_goal_is_relevant = how_goal_is_relevant
         self.how_goal_is_actionable = how_goal_is_actionable
+        self.expected_term_length = expected_term_length  # e.g., 10 for 10-week term
+        self.created_at = created_at or datetime.now()  # Auto-timestamp like Action
 
     def extend_deadline(self, days: int):
         """Convenience method to extend the goal deadline"""
@@ -84,10 +88,48 @@ class Distraction(ThingIWant):
     Sibling 3: Things that compete for attention
     Example: "I want to scroll social media"
 
-    Question to explore: Should this even be under ThingIWant?
-    Maybe it's a ThingToAvoid? Design tension here.
     """
-    pass  # Placeholder - note the `raise warning` won't work here
+    pass
+
+
+class Milestone(Goal):
+    """
+    A significant checkpoint within a larger goal or term.
+
+    Milestones are concrete, dated targets that mark progress toward bigger goals.
+    Unlike full SmartGoals, they're more like waypoints.
+
+    Examples:
+    - "Reach 50km by week 5" (milestone toward 120km goal)
+    - "Complete chapter 3 by Nov 15" (milestone toward book completion)
+
+    This is a child of Goal: ThingIWant → Goal → Milestone
+    """
+    def __init__(self,
+                 description: str,
+                 target_date: datetime,
+                 measurement_unit: Optional[str] = None,
+                 measurement_target: Optional[float] = None,
+                 created_at: Optional[datetime] = None):
+        """
+        Create a milestone with a specific target date.
+
+        Args:
+            description: What this milestone represents
+            target_date: When this should be achieved
+            measurement_unit: Optional unit for measurement
+            measurement_target: Optional numeric target
+            created_at: When this milestone was created
+        """
+        super().__init__(
+            description=description,
+            measurement_unit=measurement_unit,
+            measurement_target=measurement_target,
+            start_date=None,  # Milestones don't have ranges
+            end_date=target_date,  # Just a target date
+            created_at=created_at
+        )
+        self.target_date = target_date  # Alias for clarity
 
 
 class SmartGoal(Goal):
@@ -117,12 +159,11 @@ class SmartGoal(Goal):
                  start_date: datetime,
                  end_date: datetime,
                  how_goal_is_relevant: str,
-                 how_goal_is_actionable: str):
+                 how_goal_is_actionable: str,
+                 expected_term_length: Optional[int] = None,
+                 created_at: Optional[datetime] = None):
 
-        # Validate BEFORE initializing
-        if not description or not description.strip():
-            raise ValueError("SmartGoal requires a clear description (Specific)")
-
+        # Validate before initializing
         if not measurement_unit or not measurement_unit.strip():
             raise ValueError("SmartGoal requires measurement_unit (Measurable)")
 
@@ -131,10 +172,6 @@ class SmartGoal(Goal):
 
         if start_date >= end_date:
             raise ValueError("SmartGoal start_date must be before end_date (Time-bound)")
-
-        if end_date <= datetime.now():
-            raise ValueError("SmartGoal end_date must be in the future (Time-bound)")
-
         if not how_goal_is_relevant or not how_goal_is_relevant.strip():
             raise ValueError("SmartGoal requires relevance statement (Relevant)")
 
@@ -149,7 +186,9 @@ class SmartGoal(Goal):
             start_date=start_date,
             end_date=end_date,
             how_goal_is_relevant=how_goal_is_relevant,
-            how_goal_is_actionable=how_goal_is_actionable
+            how_goal_is_actionable=how_goal_is_actionable,
+            expected_term_length=expected_term_length,
+            created_at=created_at
         )
 
 

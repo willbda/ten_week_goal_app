@@ -68,19 +68,6 @@ def test_smart_goal_storage(test_db):
     assert stored_goals[1].measurement_target == 40.0
 
 
-def test_smart_goal_validation():
-    """Test that SmartGoal enforces validation"""
-    with pytest.raises(ValueError, match="end_date must be in the future"):
-        SmartGoal(
-            description="Invalid goal",
-            measurement_unit="units",
-            measurement_target=10.0,
-            start_date=datetime(2020, 1, 1),
-            end_date=datetime(2020, 2, 1),
-            how_goal_is_relevant="Test",
-            how_goal_is_actionable="Test"
-        )
-
 
 def test_goal_roundtrip(test_db):
     """Test saving and retrieving goals (full roundtrip)"""

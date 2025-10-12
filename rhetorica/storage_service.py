@@ -111,6 +111,7 @@ class GoalStorageService(StorageService[Goal]):
         - measurement_unit → unit
         - measurement_target → target_value
         - start_date/end_date → ISO strings (YYYY-MM-DD)
+        - created_at → ISO timestamp string
 
         Handles Optional fields gracefully - converts None to NULL in database.
         """
@@ -123,7 +124,9 @@ class GoalStorageService(StorageService[Goal]):
             'start_date': goal.start_date.strftime('%Y-%m-%d') if goal.start_date else None,
             'end_date': goal.end_date.strftime('%Y-%m-%d') if goal.end_date else None,
             'relevance': goal.how_goal_is_relevant,   # Can be None
-            'actionability': goal.how_goal_is_actionable  # Can be None
+            'actionability': goal.how_goal_is_actionable,  # Can be None
+            'expected_term_length': goal.expected_term_length,  # Can be None
+            'created_at': goal.created_at.isoformat() if goal.created_at else None
         }
 
     def _from_dict(self, data: dict) -> Goal:
@@ -135,6 +138,7 @@ class GoalStorageService(StorageService[Goal]):
         - unit → measurement_unit
         - target_value → measurement_target
         - ISO date strings → datetime objects
+        - ISO timestamp string → created_at datetime
         """
         from datetime import datetime
 
@@ -147,6 +151,10 @@ class GoalStorageService(StorageService[Goal]):
         if data.get('end_date'):
             end_date = datetime.strptime(data['end_date'], '%Y-%m-%d')
 
+        created_at = None
+        if data.get('created_at'):
+            created_at = datetime.fromisoformat(data['created_at'])
+
         # Reconstruct Goal with all fields
         goal = Goal(
             description=data['description'],
@@ -155,7 +163,9 @@ class GoalStorageService(StorageService[Goal]):
             start_date=start_date,
             end_date=end_date,
             how_goal_is_relevant=data.get('relevance'),
-            how_goal_is_actionable=data.get('actionability')
+            how_goal_is_actionable=data.get('actionability'),
+            expected_term_length=data.get('expected_term_length'),
+            created_at=created_at
         )
 
         return goal
