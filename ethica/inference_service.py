@@ -9,6 +9,40 @@ This service coordinates between:
 Pattern: This is a COORDINATOR, not a storage service. It uses storage services
 but doesn't inherit from them.
 
+## Why This Belongs in ethica/ (Business Logic Layer)
+
+This is a SERVICE that orchestrates business logic operations. It's the "use case"
+layer that combines lower-level business rules into higher-level workflows.
+
+**Service Pattern Characteristics:**
+1. **Orchestration**: Coordinates multiple operations (fetch → match → filter → organize)
+2. **No Direct Storage**: Uses storage services but doesn't inherit from StorageService
+3. **Business Workflows**: Implements use cases like "infer all matches for a term"
+4. **Stateful Coordination**: Has state (injected services) but logic is pure
+
+**What Makes This ethica (not another layer):**
+- **Uses business logic**: Calls progress_matching functions (also in ethica)
+- **Implements use cases**: "Find matches for period", "Suggest matches for new action"
+- **Domain coordination**: Knows about Actions, Goals, but not about SQL or dicts
+- **Cross-cutting concerns**: Filtering, organization, summary stats
+
+**Why NOT categoriae?**
+- categoriae has entities (Action, Goal) but no operations
+- This performs operations ON those entities
+
+**Why NOT politica?**
+- politica deals with storage primitives (SQL, connections, schemas)
+- This deals with domain workflows (inference, filtering, reporting)
+
+**Why NOT rhetorica?**
+- rhetorica translates formats (entity ↔ storage dict)
+- This orchestrates workflows using translated entities
+
+**Pattern**: Services in ethica coordinate business logic. They may have injected
+dependencies (storage services, other services) but the logic itself is domain-focused
+and testable with mocked dependencies. Think: "This is what the application DOES
+with the data" rather than "This is HOW the data is stored/retrieved."
+
 Written by Claude Code on 2025-10-11
 """
 

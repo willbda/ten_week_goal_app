@@ -208,3 +208,69 @@ def test_values_roundtrip(test_db):
     assert retrieved.alignment_guidance == original.alignment_guidance
     assert retrieved.is_major_value is True
 
+
+def test_values_id_roundtrip(test_db):
+    """Test that value IDs are preserved during storage roundtrip"""
+    db, _ = test_db
+
+    # Create and save a value (no ID initially)
+    value = Values(
+        name="Test Value with ID",
+        description="Testing ID persistence",
+        priority=PriorityLevel(25)
+    )
+    assert value.id is None
+
+    service = ValuesStorageService(database=db)
+    service.store_single_instance(value)
+
+    # Retrieve the value
+    retrieved_values = service.get_all()
+    assert len(retrieved_values) == 1
+
+    retrieved = retrieved_values[0]
+    # Verify ID was assigned
+    assert retrieved.id is not None
+    assert isinstance(retrieved.id, int)
+    assert retrieved.id > 0
+
+
+def test_values_update(test_db):
+    """Test updating an existing value"""
+    db, _ = test_db
+
+    # Create and save a value
+    value = MajorValues(
+        name="Original Value",
+        description="Original description",
+        priority=PriorityLevel(10),
+        life_domain="Testing",
+        alignment_guidance="Original guidance"
+    )
+
+    service = ValuesStorageService(database=db)
+    service.store_single_instance(value)
+
+    # Retrieve the value (will have ID)
+    stored_values = service.get_all()
+    stored_value = stored_values[0]
+    original_id = stored_value.id
+
+    # Modify the value
+    stored_value.description = "Updated description"
+    stored_value.priority = PriorityLevel(5)
+    stored_value.alignment_guidance = "Updated guidance"
+
+    # Update it
+    result = service.update_instance(stored_value)
+    assert result['updated'] is True
+    assert result['id'] == original_id
+
+    # Retrieve again and verify
+    updated_values = service.get_all()
+    updated = updated_values[0]
+    assert updated.id == original_id
+    assert updated.description == "Updated description"
+    assert updated.priority == 5
+    assert updated.alignment_guidance == "Updated guidance"
+

@@ -248,7 +248,7 @@ Logs are written to `logs/` directory (configured in config.toml)
 1. **Check database exists**: Look for `politica/data_storage/application_data.db`
 2. **If missing, initialize**: Call `init_db()` from politica.database
 3. **Make changes**: Follow layer boundaries strictly
-4. **Run tests**: `pytest tests/` before committing (currently 30/30 passing)
+4. **Run tests**: `pytest tests/` before committing (currently 48/48 passing)
 5. **Check git status**: Before creating commits
 
 ## Important Notes for AI Collaboration

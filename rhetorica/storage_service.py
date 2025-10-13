@@ -7,14 +7,18 @@ Updated by Claude Code on 2025-10-11
 
 from abc import ABC, abstractmethod
 import json
-from typing import List, Optional, Union, TypeVar, Generic
+from typing import List, Optional, Union, TypeVar, Generic, Protocol
 from categoriae.actions import Action
 from categoriae.goals import Goal
 from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas, PriorityLevel
 from politica.database import Database
 
-# Generic type variable for entities
-T = TypeVar('T')
+# Protocol for entities that can be persisted (have optional id)
+class Persistable(Protocol):
+    id: Optional[int]
+
+# Generic type variable for entities that can be persisted
+T = TypeVar('T', bound=Persistable)
 
 # Type alias for Values hierarchy
 ValuesType = Union[Values, MajorValues, HighestOrderValues, LifeAreas]
@@ -40,15 +44,16 @@ class StorageService(ABC, Generic[T]):
         """
         self.db = database or Database()
 
-    def store_many_instances(self, entities: List[T]) -> None:
+    def store_many_instances(self, entities: List[T]) -> List[T]:
         """
         Store multiple entity instances to database.
+        Populates entity.id with database-assigned ID after insert.
 
         Args:
             entities: List of domain entities (Action, Goal, etc.)
 
         Returns:
-            None - Use get_all() to retrieve stored entities if needed
+            List[T]: The same entities, now with populated IDs
         """
         formatted_entries = []
 
@@ -56,32 +61,134 @@ class StorageService(ABC, Generic[T]):
             entity_dict = self._to_dict(e)
             formatted_entries.append(entity_dict)
 
-        self.db.insert(table=self.table_name, records=formatted_entries)
+        # Insert and get back list of IDs
+        inserted_ids = self.db.insert(table=self.table_name, records=formatted_entries)
 
-    def store_single_instance(self, entry: T) -> None:
+        # Populate entity IDs
+        for entity, db_id in zip(entities, inserted_ids):
+            entity.id = db_id
+
+        return entities
+
+    def store_single_instance(self, entry: T) -> T:
         """
         Store a single entity instance to database.
+        Populates entry.id with database-assigned ID after insert.
 
         Args:
             entry: Domain entity (Action, Goal, etc.)
 
         Returns:
-            None - Use get_all() to retrieve stored entities if needed
+            T: The same entity, now with populated ID
         """
         self.store_many_instances([entry])
+        return entry
 
     def get_all(self, filters: Optional[dict] = None) -> List[T]:
         """
         Retrieve all entities from database, optionally filtered.
+        Entities will have their IDs populated from database.
 
         Args:
             filters: Optional dict of column:value pairs to filter results
 
         Returns:
-            List of domain entities (Action, Goal, etc.)
+            List of domain entities (Action, Goal, etc.) with IDs
         """
         records = self.db.query(self.table_name, filters=filters)
         return [self._from_dict(record) for record in records]
+
+    def get_by_id(self, entity_id: int) -> Optional[T]:
+        """
+        Retrieve a single entity by its database ID.
+
+        Args:
+            entity_id: Database ID of the entity
+
+        Returns:
+            Domain entity with ID populated, or None if not found
+        """
+        records = self.db.query(self.table_name, filters={'id': entity_id})
+        if not records:
+            return None
+        return self._from_dict(records[0])
+
+    def save(self, entity: T, notes: str = '') -> T:
+        """
+        Intelligently save or update entity based on ID presence.
+
+        If entity has no ID (new entity): Inserts and populates ID
+        If entity has ID (existing entity): Updates with archiving
+
+        This is a convenience method that combines store_single_instance()
+        and update_instance() into a single "save" operation.
+
+        Args:
+            entity: Domain entity to save (Action, Goal, etc.)
+            notes: Optional notes for archive (only used if updating)
+
+        Returns:
+            T: The entity with ID populated
+
+        Example:
+            # Create new
+            action = service.save(Action("Run 5km"))  # Inserts, returns with ID
+
+            # Modify and update
+            action.description = "Run 10km"
+            service.save(action)  # Updates existing record
+        """
+        entity_id = getattr(entity, 'id', None)
+
+        if entity_id is None:
+            # New entity - insert
+            return self.store_single_instance(entity)
+        else:
+            # Existing entity - update
+            self.update_instance(entity, notes=notes)
+            return entity
+
+    def update_instance(self, entity: T, notes: str = '') -> dict:
+        """
+        Update an existing entity in the database.
+
+        The entity must have an ID (i.e., must have been retrieved from storage).
+        Archives the old version before updating.
+
+        Args:
+            entity: Domain entity with ID to update
+            notes: Optional notes for archive entry
+
+        Returns:
+            Result dict from Database.update()
+
+        Raises:
+            ValueError: If entity has no ID (not stored yet)
+
+        Example:
+            # Retrieve, modify, update
+            action = service.get_all(filters={'description': 'Run 5km'})[0]
+            action.description = 'Run 10km'
+            service.update_instance(action)
+        """
+        # Check if entity has an ID
+        entity_id = getattr(entity, 'id', None)
+        if entity_id is None:
+            raise ValueError(
+                f"Cannot update entity without ID. Use store_single_instance() for new entities."
+            )
+
+        # Convert entity to dict (will include ID)
+        entity_dict = self._to_dict(entity)
+        entity_dict.pop('id')  # Remove ID from updates dict
+
+        # Call database update
+        return self.db.update(
+            table=self.table_name,
+            record_id=entity_id,
+            updates=entity_dict,
+            notes=notes
+        )
 
     @abstractmethod
     def _to_dict(self, entity: T) -> dict:
@@ -114,10 +221,11 @@ class GoalStorageService(StorageService[Goal]):
         - created_at → ISO timestamp string
 
         Handles Optional fields gracefully - converts None to NULL in database.
+        Includes ID only if present (for updates).
         """
         goal = entity
 
-        return {
+        result = {
             'description': goal.description,
             'target_value': goal.measurement_target,  # Can be None
             'unit': goal.measurement_unit,            # Can be None
@@ -129,6 +237,12 @@ class GoalStorageService(StorageService[Goal]):
             'created_at': goal.created_at.isoformat() if goal.created_at else None
         }
 
+        # Include ID only if entity has one (stored entities)
+        if goal.id is not None:
+            result['id'] = goal.id
+
+        return result
+
     def _from_dict(self, data: dict) -> Goal:
         """
         Reconstruct Goal object from stored dict.
@@ -139,6 +253,7 @@ class GoalStorageService(StorageService[Goal]):
         - target_value → measurement_target
         - ISO date strings → datetime objects
         - ISO timestamp string → created_at datetime
+        Includes ID from database.
         """
         from datetime import datetime
 
@@ -155,7 +270,7 @@ class GoalStorageService(StorageService[Goal]):
         if data.get('created_at'):
             created_at = datetime.fromisoformat(data['created_at'])
 
-        # Reconstruct Goal with all fields
+        # Reconstruct Goal with all fields including ID
         goal = Goal(
             description=data['description'],
             measurement_unit=data.get('unit'),
@@ -165,7 +280,8 @@ class GoalStorageService(StorageService[Goal]):
             how_goal_is_relevant=data.get('relevance'),
             how_goal_is_actionable=data.get('actionability'),
             expected_term_length=data.get('expected_term_length'),
-            created_at=created_at
+            created_at=created_at,
+            id=data.get('id')  # Extract ID from stored record
         )
 
         return goal
@@ -181,6 +297,7 @@ class ActionStorageService(StorageService[Action]):
         Convert Action object to dict for storage.
 
         Maps Action attributes to database column names.
+        Includes ID only if present (for updates).
         """
         action = entity
 
@@ -191,7 +308,7 @@ class ActionStorageService(StorageService[Action]):
         log_time_str = action.logtime.isoformat() if action.logtime else None
         start_time_str = action.starttime.isoformat() if action.starttime else None
 
-        return {
+        result = {
             'description': action.description,
             'log_time': log_time_str,
             'measurements': measurements_json,
@@ -199,16 +316,26 @@ class ActionStorageService(StorageService[Action]):
             'duration_minutes': action.duration_minutes
         }
 
+        # Include ID only if entity has one (stored entities)
+        if action.id is not None:
+            result['id'] = action.id
+
+        return result
+
     def _from_dict(self, data: dict) -> Action:
         """
         Reconstruct Action object from stored dict.
 
         Reverse of _to_dict(): Converts database columns back to Action attributes.
+        Includes ID from database.
         """
         from datetime import datetime
 
-        # Create action with required description
-        action = Action(description=data['description'])
+        # Create action with required description and ID
+        action = Action(
+            description=data['description'],
+            id=data.get('id')  # Extract ID from stored record
+        )
 
         # Reconstruct optional datetime fields
         if data.get('log_time'):
@@ -249,6 +376,7 @@ class ValuesStorageService(StorageService):
         - Values (base) → 'general'
 
         Handles alignment_guidance flexibly (can be dict, str, or None).
+        Includes ID only if present (for updates).
         """
         value = entity
 
@@ -270,7 +398,7 @@ class ValuesStorageService(StorageService):
             else:
                 alignment_guidance = str(value.alignment_guidance)
 
-        return {
+        result = {
             'name': value.name,
             'description': value.description,
             'value_type': value_type,
@@ -278,6 +406,12 @@ class ValuesStorageService(StorageService):
             'life_domain': value.life_domain,
             'alignment_guidance': alignment_guidance
         }
+
+        # Include ID only if entity has one (stored entities)
+        if value.id is not None:
+            result['id'] = value.id
+
+        return result
 
     def _from_dict(self, data: dict) -> Union[Values, MajorValues, HighestOrderValues, LifeAreas]:
         """
@@ -290,9 +424,11 @@ class ValuesStorageService(StorageService):
         - 'general' → Values
 
         Parses alignment_guidance from JSON if it looks like JSON, otherwise keeps as text.
+        Includes ID from database.
         """
         value_type = data.get('value_type', 'general')
         priority = PriorityLevel(data.get('priority', 50))
+        value_id = data.get('id')  # Extract ID from stored record
 
         # Parse alignment_guidance - try JSON first, fall back to text
         alignment_guidance = None
@@ -309,26 +445,30 @@ class ValuesStorageService(StorageService):
                 description=data['description'],
                 priority=priority,
                 life_domain=data.get('life_domain', 'General'),
-                alignment_guidance=alignment_guidance
+                alignment_guidance=alignment_guidance,
+                id=value_id
             )
         elif value_type == 'highest_order':
             return HighestOrderValues(
                 name=data['name'],
                 description=data['description'],
                 priority=priority,
-                life_domain=data.get('life_domain', 'General')
+                life_domain=data.get('life_domain', 'General'),
+                id=value_id
             )
         elif value_type == 'life_area':
             return LifeAreas(
                 name=data['name'],
                 description=data['description'],
                 priority=priority,
-                life_domain=data.get('life_domain', 'General')
+                life_domain=data.get('life_domain', 'General'),
+                id=value_id
             )
         else:  # 'general'
             return Values(
                 name=data['name'],
                 description=data['description'],
                 priority=priority,
-                life_domain=data.get('life_domain', 'General')
+                life_domain=data.get('life_domain', 'General'),
+                id=value_id
             )

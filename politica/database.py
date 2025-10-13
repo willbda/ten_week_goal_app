@@ -315,17 +315,20 @@ class Database:
             records: List of dictionaries where keys match table columns
 
         Returns:
-            Last inserted record ID
+            List[int]: List of inserted record IDs (one per record)
+                      For single insert, returns list with one ID
 
         Example:
             # Insert single goal
-            db.insert('goals', [{'name': 'Run 100km', 'target_value': 100.0}])
+            ids = db.insert('goals', [{'name': 'Run 100km', 'target_value': 100.0}])
+            # ids = [123]
 
             # Insert multiple actions
-            db.insert('actions', [
+            ids = db.insert('actions', [
                 {'value': 5.2, 'unit': 'km_run', 'log_time': '2025-10-10 08:00'},
                 {'value': 3.1, 'unit': 'km_run', 'log_time': '2025-10-10 18:00'}
             ])
+            # ids = [456, 457]
         """
         if not records:
             logger.warning("Attempted to insert empty list of records")
@@ -340,7 +343,7 @@ class Database:
         logger.info(f"Inserting {len(records)} records into {table}")
         logger.debug(f"SQL: {sql}")
 
-        last_id = None
+        inserted_ids = []
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
@@ -348,11 +351,83 @@ class Database:
                 # Use .get() to handle missing keys gracefully (defaults to None)
                 values = [record.get(col) for col in columns]
                 cursor.execute(sql, values)
-                last_id = cursor.lastrowid
+                inserted_ids.append(cursor.lastrowid)
 
-        logger.info(f"✓ Inserted {len(records)} records into {table}. Last ID: {last_id}")
-        return last_id
+        logger.info(f"✓ Inserted {len(records)} records into {table}. IDs: {inserted_ids[0]}-{inserted_ids[-1]}")
+        return inserted_ids
 
+
+    def update(self, table: str, record_id: int, updates: dict,
+               archive_old: bool = True, notes: str = '') -> dict:
+        """
+        Update a record by ID, optionally archiving the old version.
+
+        Args:
+            table: Table name
+            record_id: The ID of the record to update
+            updates: Dict of column:value pairs to update
+                     Example: {'description': 'Updated text', 'target_value': 150.0}
+            archive_old: If True, archive the old version before updating (default: True)
+            notes: Optional notes for the archive entry
+
+        Returns:
+            {
+                'id': int,              # The updated record ID
+                'archived': bool,       # Whether old version was archived
+                'updated': bool         # Whether update succeeded
+            }
+
+        Raises:
+            ValueError: If updates dict is empty or record_id not found
+
+        Example:
+            # Update a goal's end date
+            result = db.update('goals', record_id=5,
+                             updates={'end_date': '2025-12-31'})
+        """
+        if not updates:
+            logger.error("Cannot update with empty updates dict")
+            raise ValueError("updates dict cannot be empty")
+
+        # Fetch the current record for archiving
+        current_records = self.query(table, filters={'id': record_id})
+
+        if not current_records:
+            logger.error(f"Record with id={record_id} not found in {table}")
+            raise ValueError(f"No record found with id={record_id} in {table}")
+
+        current_record = current_records[0]
+
+        # Build UPDATE SQL
+        set_sql, values = self._build_set_clause(updates)
+        sql = f"UPDATE {table} SET {set_sql} WHERE id = ?"
+        values.append(record_id)
+
+        logger.info(f"Updating record id={record_id} in {table}")
+        logger.debug(f"SQL: {sql}")
+        logger.debug(f"Values: {values}")
+
+        with self._get_connection() as conn:
+            # Archive old version first if requested
+            if archive_old:
+                _archive_records(conn, table, [current_record],
+                               reason='update', notes=notes)
+
+            # Execute update
+            cursor = conn.cursor()
+            cursor.execute(sql, values)
+            rows_updated = cursor.rowcount
+
+            if rows_updated == 0:
+                logger.warning(f"Update affected 0 rows for id={record_id}")
+
+        logger.info(f"✓ Updated record id={record_id} in {table}")
+
+        return {
+            'id': record_id,
+            'archived': archive_old,
+            'updated': rows_updated > 0
+        }
 
     def archive_and_delete(self, table: str, filters: dict,
                           reason: str = 'delete',

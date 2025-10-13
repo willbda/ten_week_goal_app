@@ -45,9 +45,11 @@ class Goal(ThingIWant):
                  how_goal_is_relevant: Optional[str] = None,
                  how_goal_is_actionable: Optional[str] = None,
                  expected_term_length: Optional[int] = None,
-                 created_at: Optional[datetime] = None
+                 created_at: Optional[datetime] = None,
+                 id: Optional[int] = None
                 ):
         super().__init__(description)
+        self.id = id  # None for new goals, int for stored goals
         self.measurement_unit = measurement_unit
         self.measurement_target = measurement_target
         self.start_date = start_date
@@ -110,7 +112,8 @@ class Milestone(Goal):
                  target_date: datetime,
                  measurement_unit: Optional[str] = None,
                  measurement_target: Optional[float] = None,
-                 created_at: Optional[datetime] = None):
+                 created_at: Optional[datetime] = None,
+                 id: Optional[int] = None):
         """
         Create a milestone with a specific target date.
 
@@ -120,6 +123,7 @@ class Milestone(Goal):
             measurement_unit: Optional unit for measurement
             measurement_target: Optional numeric target
             created_at: When this milestone was created
+            id: Database identifier (None for new milestones)
         """
         super().__init__(
             description=description,
@@ -127,7 +131,8 @@ class Milestone(Goal):
             measurement_target=measurement_target,
             start_date=None,  # Milestones don't have ranges
             end_date=target_date,  # Just a target date
-            created_at=created_at
+            created_at=created_at,
+            id=id
         )
         self.target_date = target_date  # Alias for clarity
 
@@ -161,7 +166,8 @@ class SmartGoal(Goal):
                  how_goal_is_relevant: str,
                  how_goal_is_actionable: str,
                  expected_term_length: Optional[int] = None,
-                 created_at: Optional[datetime] = None):
+                 created_at: Optional[datetime] = None,
+                 id: Optional[int] = None):
 
         # Validate before initializing
         if not measurement_unit or not measurement_unit.strip():
@@ -188,7 +194,8 @@ class SmartGoal(Goal):
             how_goal_is_relevant=how_goal_is_relevant,
             how_goal_is_actionable=how_goal_is_actionable,
             expected_term_length=expected_term_length,
-            created_at=created_at
+            created_at=created_at,
+            id=id
         )
 
 

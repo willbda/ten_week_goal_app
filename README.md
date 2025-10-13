@@ -166,14 +166,15 @@ Test configuration is separate in `config/testing.py` to keep test data isolated
 
 ### Complete
 - [x] Domain entities (Action, Goal, SmartGoal, Values hierarchy, Relationships, Terms)
-- [x] Business logic (progress calculation, automatic action-goal matching)
+- [x] Business logic (progress calculation, automatic action-goal matching with actionability)
 - [x] Generic storage layer with polymorphic type support
-- [x] Repository pattern
+- [x] Repository pattern with save/update/get_by_id conveniences
 - [x] Inference service for batch/realtime relationship detection
-- [x] Comprehensive tests (30 passing)
+- [x] Comprehensive tests (48 passing)
 
 ### Next
-- [ ] Import Actions and Goals in bulk from tabular data
+- [ ] Import Actions and Goals in bulk from tabular data (CSV/JSON)
+- [ ] Add tests for Terms module (calculation methods)
 - [ ] Add GoalValueAlignment inference (connect goals to values)
 - [ ] Practice CLI-based interface with simple APIs
 - [ ] Add Milestones(Event?) class for tracking steps towards goal
@@ -234,6 +235,6 @@ Personal project - all rights reserved.
 
 **Project Status**: Active Development
 **Last Updated**: 2025-10-12
-**Test Coverage**: 30/30 tests passing
+**Test Coverage**: 48/48 tests passing
 
 *Built with clean architecture principles as a foundation for future personal development tracking systems.*

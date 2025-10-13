@@ -62,3 +62,80 @@ def test_action_roundtrip(test_db):
     assert retrieved.description == original_action.description
     assert retrieved.measurements == original_action.measurements
     assert retrieved.duration_minutes == original_action.duration_minutes
+
+
+def test_action_id_roundtrip(test_db):
+    """Test that IDs are preserved during storage roundtrip"""
+    db, db_path = test_db
+
+    # Create and save an action (no ID initially)
+    action = Action('Action with ID')
+    assert action.id is None  # New action has no ID
+
+    service = ActionStorageService(database=db)
+    service.store_single_instance(action)
+
+    # Retrieve the action
+    retrieved_actions = service.get_all()
+    assert len(retrieved_actions) == 1
+
+    retrieved = retrieved_actions[0]
+    # Verify ID was assigned by database
+    assert retrieved.id is not None
+    assert isinstance(retrieved.id, int)
+    assert retrieved.id > 0
+
+
+def test_action_update(test_db):
+    """Test updating an existing action"""
+    db, db_path = test_db
+
+    # Create and save an action
+    action = Action('Original description')
+    action.measurements = {'distance_km': 5.0}
+
+    service = ActionStorageService(database=db)
+    service.store_single_instance(action)
+
+    # Retrieve the action (will have ID)
+    stored_actions = service.get_all()
+    assert len(stored_actions) == 1
+
+    stored_action = stored_actions[0]
+    original_id = stored_action.id
+    assert original_id is not None
+
+    # Modify the action
+    stored_action.description = 'Updated description'
+    stored_action.measurements = {'distance_km': 10.0}
+
+    # Update it
+    result = service.update_instance(stored_action)
+    assert result['updated'] is True
+    assert result['id'] == original_id
+
+    # Retrieve again and verify changes persisted
+    updated_actions = service.get_all()
+    assert len(updated_actions) == 1
+
+    updated = updated_actions[0]
+    assert updated.id == original_id  # Same ID
+    assert updated.description == 'Updated description'  # Updated field
+    assert updated.measurements == {'distance_km': 10.0}  # Updated field
+
+
+def test_action_update_without_id_raises_error(test_db):
+    """Test that updating an action without ID raises ValueError"""
+    db, db_path = test_db
+
+    # Create a new action (no ID)
+    action = Action('New action without ID')
+
+    service = ActionStorageService(database=db)
+
+    # Attempt to update should raise error
+    try:
+        service.update_instance(action)
+        assert False, "Should have raised ValueError"
+    except ValueError as e:
+        assert "without ID" in str(e)

@@ -99,3 +99,61 @@ def test_goal_roundtrip(test_db):
     assert retrieved.measurement_unit == original_goal.measurement_unit
     assert retrieved.measurement_target == original_goal.measurement_target
     assert retrieved.how_goal_is_relevant == original_goal.how_goal_is_relevant
+
+
+def test_goal_id_roundtrip(test_db):
+    """Test that goal IDs are preserved during storage roundtrip"""
+    db, _ = test_db
+
+    # Create and save a goal (no ID initially)
+    goal = Goal('Goal with ID', measurement_unit='km', measurement_target=100.0)
+    assert goal.id is None
+
+    service = GoalStorageService(database=db)
+    service.store_single_instance(goal)
+
+    # Retrieve the goal
+    retrieved_goals = service.get_all()
+    assert len(retrieved_goals) == 1
+
+    retrieved = retrieved_goals[0]
+    # Verify ID was assigned
+    assert retrieved.id is not None
+    assert isinstance(retrieved.id, int)
+    assert retrieved.id > 0
+
+
+def test_goal_update(test_db):
+    """Test updating an existing goal"""
+    db, _ = test_db
+
+    # Create and save a goal
+    goal = Goal(
+        description='Original goal',
+        measurement_unit='km',
+        measurement_target=100.0
+    )
+
+    service = GoalStorageService(database=db)
+    service.store_single_instance(goal)
+
+    # Retrieve the goal (will have ID)
+    stored_goals = service.get_all()
+    stored_goal = stored_goals[0]
+    original_id = stored_goal.id
+
+    # Modify the goal
+    stored_goal.description = 'Updated goal'
+    stored_goal.measurement_target = 150.0
+
+    # Update it
+    result = service.update_instance(stored_goal)
+    assert result['updated'] is True
+    assert result['id'] == original_id
+
+    # Retrieve again and verify
+    updated_goals = service.get_all()
+    updated = updated_goals[0]
+    assert updated.id == original_id
+    assert updated.description == 'Updated goal'
+    assert updated.measurement_target == 150.0

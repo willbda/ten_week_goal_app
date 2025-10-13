@@ -23,7 +23,8 @@ class Incentives:
     Base class for Values, LifeAreas, and HighestOrderValues.
     Opportunity to practice inheritance and polymorphism.
     """
-    def __init__(self, description: str, priority: PriorityLevel = PriorityLevel(50), life_domain: str = "General"):
+    def __init__(self, description: str, priority: PriorityLevel = PriorityLevel(50), life_domain: str = "General", id: Optional[int] = None):
+        self.id = id  # None for new incentives, int for stored incentives
         self.description = description
         self.priority = priority  # 1 = highest priority
         self.life_domain = life_domain  # e.g., Health, Career, Relationships
@@ -36,10 +37,11 @@ class Values(Incentives):
     def __init__(self,
                 name: str,
                 description: str,
-                priority: PriorityLevel = PriorityLevel(40), 
-                life_domain: str = "General"
+                priority: PriorityLevel = PriorityLevel(40),
+                life_domain: str = "General",
+                id: Optional[int] = None
                 ):
-        super().__init__(description, priority, life_domain)
+        super().__init__(description, priority, life_domain, id)
         self.name = name
         self.is_value = True
         self.is_major_value = False
@@ -52,8 +54,8 @@ class LifeAreas(Incentives):
 
     Importantly, LifeAreas are not values
     """
-    def __init__(self, name: str, description: str, priority: PriorityLevel = PriorityLevel(40), life_domain: str = "General"):
-        super().__init__(description, priority, life_domain)
+    def __init__(self, name: str, description: str, priority: PriorityLevel = PriorityLevel(40), life_domain: str = "General", id: Optional[int] = None):
+        super().__init__(description, priority, life_domain, id)
         self.name = name
         self.is_life_area = True 
         
@@ -72,9 +74,10 @@ class MajorValues(Values):
         description: str,
         priority: PriorityLevel = PriorityLevel(1),
         life_domain: str = "General",
-        alignment_guidance: Optional[Union[dict, str]] = None
+        alignment_guidance: Optional[Union[dict, str]] = None,
+        id: Optional[int] = None
     ):
-        super().__init__(name, description, priority, life_domain)
+        super().__init__(name, description, priority, life_domain, id)
         self.is_major_value = True
         self.alignment_guidance = alignment_guidance  # Flexible for now
 
@@ -83,7 +86,7 @@ class HighestOrderValues(Values):
     I mean for this to be a high-level, abstract concept. I might not use the class, but in my thinking about how to set goals, it was helpful to start with a sense of my highest-order values. These largely aren't actionable in a daily or even monthly sense. They might show up if I develop dashboard features as a cute or gentle way of personalizing the application. They might be helpful if I develop features for setting more goals or identifying values. For now, it's here to flesh out the inheritance structure and cue me to think about how good design allows for extension.
     """
 
-    def __init__(self, name: str, description: str, priority: PriorityLevel = PriorityLevel(1), life_domain: str = "General"):
-        super().__init__(name, description, priority, life_domain)
+    def __init__(self, name: str, description: str, priority: PriorityLevel = PriorityLevel(1), life_domain: str = "General", id: Optional[int] = None):
+        super().__init__(name, description, priority, life_domain, id)
         self.is_highest_order_value = True  
 

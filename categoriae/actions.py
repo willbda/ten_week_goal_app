@@ -20,7 +20,8 @@ class Action:
 
     """
 
-    def __init__(self, description: str):
+    def __init__(self, description: str, id: Optional[int] = None):
+        self.id = id  # None for new actions, int for stored actions
         self.description = description
         self.logtime = datetime.now()
         self.measurements: Optional[Dict[str, float]] = None

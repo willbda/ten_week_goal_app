@@ -4,18 +4,59 @@ Progress matching logic - determines which actions contribute to which goals.
 This is INTERPRETATION, not storage. Actions and Goals remain independent entities.
 The relationships are derived based on matching criteria.
 
+## Why This Belongs in ethica/ (Business Logic Layer)
+
+This module implements THE CORE BUSINESS RULES for determining whether an action
+contributes to a goal. These are domain-specific judgments, not just data operations.
+
+**Key Characteristics of Business Logic (ethica):**
+1. **Stateless Functions**: Takes entities in, returns derived relationships
+2. **Domain Rules**: "Does this action count toward that goal?"
+3. **Algorithmic Logic**: Matching strategies, confidence scoring, filtering
+4. **No Side Effects**: Doesn't modify entities or persist anything
+
+**What Makes This "Business Logic":**
+- Period matching: "Is action within goal timeframe?"
+- Unit matching: "Does measurement align with goal target?"
+- Actionability matching: "Do keywords indicate relevance?"
+- Confidence scoring: "How certain are we about this match?"
+- Ambiguity filtering: "Which matches need human review?"
+
+These are JUDGMENT CALLS based on domain knowledge, not mechanical operations.
+
+**Why NOT categoriae?**
+- categoriae defines entities (Action, Goal, ActionGoalRelationship)
+- This calculates which relationships SHOULD EXIST based on rules
+
+**Why NOT politica?**
+- politica would STORE the relationships once determined
+- This DETERMINES which relationships exist (no database involved)
+
+**Why NOT rhetorica?**
+- rhetorica translates data formats (entity ↔ dict for storage)
+- This applies domain intelligence to create new information
+
+**Pattern**: Business logic (ethica) operates ON entities FROM categoriae,
+uses pure functions with no side effects, and can be fully tested without
+touching a database. If you can test it with in-memory objects, it's business logic.
+
 Written by Claude Code on 2025-10-11
 Updated by Claude Code on 2025-10-11 - Refactored to use categoriae/relationships
+Updated by Claude Code on 2025-10-12 - Added actionability-based matching
 """
 
+import json
 from datetime import datetime
 from typing import List, Optional, Tuple
 from categoriae.actions import Action
 from categoriae.goals import Goal, SmartGoal
 from categoriae.relationships import ActionGoalRelationship
+from config.logging_setup import get_logger
 
 # Alias for backwards compatibility and clearer naming in this module
 ActionGoalMatch = ActionGoalRelationship
+
+logger = get_logger(__name__)
 
 
 def matches_on_period(action: Action, goal: Goal) -> bool:
@@ -70,73 +111,115 @@ def matches_on_unit(action: Action, goal: Goal) -> Tuple[bool, Optional[str], Op
     return (False, None, None)
 
 
-def matches_on_description(action: Action, goal: Goal) -> float:
+def matches_with_actionability(action: Action, goal: Goal) -> Tuple[bool, Optional[float]]:
     """
-    Check if action description suggests it's related to goal.
+    Check if action matches goal using structured actionability hints.
 
-    Uses simple keyword matching on actionability hints or description.
-    Returns confidence score 0.0-1.0.
+    Parses goal's how_goal_is_actionable JSON (format: {"units": [...], "keywords": [...]})
+    and checks BOTH:
+    1. Action has measurement matching allowed units
+    2. Action description contains required keywords
+
+    This prevents false positives like:
+    - Yoga actions matching writing goals (both use minutes)
+    - Walking actions matching running goals (both use km)
 
     Args:
-        action: Action with description
-        goal: Goal with description and optional how_goal_is_actionable
+        action: Action with measurements and description
+        goal: Goal with how_goal_is_actionable JSON field
 
     Returns:
-        Confidence score (0.0 = no match, 1.0 = strong match)
+        Tuple of (matched, contribution):
+        - matched: True if both unit and keyword match
+        - contribution: Measurement value if matched, None otherwise
+
+    Examples:
+        Goal actionability: {"units": ["minutes"], "keywords": ["yoga", "pilates"]}
+        Action: "Yoga class" with {"minutes": 30}
+        → (True, 30.0)
+
+        Goal actionability: {"units": ["minutes"], "keywords": ["write", "revise"]}
+        Action: "Yoga class" with {"minutes": 30}
+        → (False, None)  # Wrong keywords
     """
-    if not action.description or not goal.description:
-        return 0.0
+    # If no actionability hints, fall back to simple unit matching
+    if not hasattr(goal, 'how_goal_is_actionable') or not goal.how_goal_is_actionable:
+        unit_match, _, contribution = matches_on_unit(action, goal)
+        return (unit_match, contribution)
 
-    action_desc = action.description.lower()
-    goal_desc = goal.description.lower()
+    # Parse JSON actionability
+    try:
+        data = json.loads(goal.how_goal_is_actionable)
+        # Normalize to lowercase and strip wildcards
+        allowed_units = [u.lower().strip() for u in data.get('units', [])]
+        required_keywords = [k.lower().strip().replace('*', '').strip()
+                           for k in data.get('keywords', []) if k.strip()]
+    except (json.JSONDecodeError, AttributeError, TypeError) as e:
+        # Malformed JSON - log warning and fall back to unit matching
+        logger.warning(
+            f"Malformed actionability JSON for goal '{goal.description[:50]}...': {e}. "
+            f"Value was: {goal.how_goal_is_actionable!r}. Falling back to simple unit matching."
+        )
+        unit_match, _, contribution = matches_on_unit(action, goal)
+        return (unit_match, contribution)
 
-    # Check if key terms from goal appear in action
-    # Simple heuristic for now - can be refined
-    goal_keywords = set(goal_desc.split())
+    if not allowed_units or not required_keywords:
+        # Empty actionability hints - log and fall back to unit matching
+        logger.debug(
+            f"Empty actionability hints for goal '{goal.description[:50]}...'. "
+            f"Units: {allowed_units}, Keywords: {required_keywords}. "
+            f"Falling back to simple unit matching."
+        )
+        unit_match, _, contribution = matches_on_unit(action, goal)
+        return (unit_match, contribution)
 
-    # Add actionability keywords if available
-    if hasattr(goal, 'how_goal_is_actionable') and goal.how_goal_is_actionable:
-        actionability_keywords = set(goal.how_goal_is_actionable.lower().split())
-        goal_keywords.update(actionability_keywords)
+    # Check 1: Does action have measurement matching allowed units?
+    if not action.measurements:
+        return (False, None)
 
-    # Remove common words
-    stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for'}
-    goal_keywords = {w for w in goal_keywords if w not in stopwords and len(w) > 2}
+    # Check for exact unit match (case-insensitive)
+    contribution = None
+    for key, value in action.measurements.items():
+        if key.lower() in allowed_units:
+            contribution = value
+            break
 
-    if not goal_keywords:
-        return 0.0
+    if contribution is None:
+        return (False, None)
 
-    # Count keyword overlap
-    action_words = set(action_desc.split())
-    overlap = len(goal_keywords & action_words)
+    # Check 2: Does action description contain required keywords?
+    if not action.description:
+        return (False, None)
 
-    if overlap == 0:
-        return 0.0
+    # Check if any keyword appears in description (substring, case-insensitive)
+    action_lower = action.description.lower()
+    keyword_matched = any(kw in action_lower for kw in required_keywords)
 
-    # Confidence based on proportion of keywords found
-    confidence = min(overlap / len(goal_keywords), 1.0)
-    return confidence
+    if not keyword_matched:
+        return (False, None)
+
+    # Both checks passed!
+    return (True, contribution)
 
 
 def infer_matches(
     actions: List[Action],
     goals: List[Goal],
-    require_period_match: bool = True,
-    min_confidence: float = 0.5
+    require_period_match: bool = True
 ) -> List[ActionGoalMatch]:
     """
     Automatically infer which actions contribute to which goals.
 
     Matching strategy (all criteria must pass):
     1. Period: Action during goal timeframe (if goal has dates)
-    2. Unit: Action has measurement matching goal's unit
-    3. Description: Optional confidence boost
+    2. Actionability: Action has correct unit AND description contains required keywords
+
+    Uses structured actionability JSON to prevent false positives.
 
     Args:
         actions: List of actions to match
         goals: List of active goals
         require_period_match: If True, only match actions within goal period
-        min_confidence: Minimum confidence threshold for description matching
 
     Returns:
         List of ActionGoalMatch objects with auto-inferred relationships
@@ -150,20 +233,14 @@ def infer_matches(
             if require_period_match and not period_match:
                 continue
 
-            # Criterion 2: Unit match (required)
-            unit_match, matched_key, contribution = matches_on_unit(action, goal)
-            if not unit_match:
+            # Criterion 2: Actionability match (unit + keywords)
+            actionability_match, contribution = matches_with_actionability(action, goal)
+            if not actionability_match:
                 continue
 
-            # Criterion 3: Description confidence (optional boost)
-            description_confidence = matches_on_description(action, goal)
-
-            # Base confidence from unit match
-            confidence = 0.8  # High confidence for period + unit match
-
-            # Boost confidence if description also matches
-            if description_confidence > min_confidence:
-                confidence = min(confidence + (description_confidence * 0.2), 1.0)
+            # High confidence for period + actionability match
+            # Actionability already validates both unit and keyword requirements
+            confidence = 0.9
 
             matches.append(ActionGoalMatch(
                 action=action,
