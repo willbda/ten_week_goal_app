@@ -22,10 +22,10 @@ class ThingIWant(ABC):
     def __init__(self, description: str):
         self.description = description
         
-    def is_valid(self, status: bool = True):
-        if not self.description.strip():
-            status=False
-            return status
+    def is_valid(self) -> bool:
+        """Validate that description exists and is non-empty."""
+        return bool(self.description and self.description.strip())
+
 
 class Goal(ThingIWant):
     """
@@ -73,25 +73,6 @@ class Goal(ThingIWant):
     def is_measurable(self) -> bool:
         """Check if this goal has a measurement unit and target"""
         return self.measurement_unit is not None and self.measurement_target is not None
-
-
-
-class Aspiration(ThingIWant):
-    """
-    Sibling 2: Vague, ongoing wants
-    Example: "I want to be healthy" (no deadline, no metric)
-    Different from Goal because it's NOT specific or time-bound
-    """
-    pass  # Just inherits description, stays vague
-
-
-class Distraction(ThingIWant):
-    """
-    Sibling 3: Things that compete for attention
-    Example: "I want to scroll social media"
-
-    """
-    pass
 
 
 class Milestone(Goal):
