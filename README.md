@@ -214,21 +214,21 @@ Test configuration is separate in `config/testing.py` to keep test data isolated
 - [x] Repository pattern with save/update/get_by_id conveniences
 - [x] Inference service for batch/realtime relationship detection
 - [x] Import historical Actions and Goals from tabular data
-- [x] **CLI interface with formatted progress display** (NEW)
-- [x] **Web dashboard with Flask** (NEW)
-- [x] **JSON API endpoints** (NEW)
-- [x] **Progress aggregation business logic** (NEW)
-- [x] **Presentation layer separation** (NEW)
+- [x] CLI interface with formatted progress display (NEW)
+- [x] Web dashboard with Flask (NEW)
+- [x] JSON API endpoints (NEW)
+- [x] Progress aggregation business logic (NEW)
+- [x] Presentation layer separation (NEW)
 - [x] Comprehensive tests (82 passing, +34 new tests)
 
-### Next 🚧
+### Next
 - [ ] Add tests for Terms module (calculation methods)
 - [ ] Add GoalValueAlignment inference (connect goals to values)
 - [ ] Add Milestones(Event?) class for tracking steps towards goal
 - [ ] Add authentication to web UI
 - [ ] Add goal creation/editing through web interface
 
-### Later 📋
+### Later
 - [ ] Create simple users to practice data separation and protected access
 - [ ] Export functionality (CSV, JSON)
 - [ ] Charts and visualizations for progress over time
@@ -248,9 +248,7 @@ Test configuration is separate in `config/testing.py` to keep test data isolated
 - Business logic is pure functions (easily testable)
 - Polymorphic storage with automatic type preservation
 - Intelligent inference system for automatic relationship detection
-- ~1,400 lines of well-separated code with advanced features
 
-See [Architectural Lessons](.documentation/architectural_lessons_from_grant_project.md) for detailed comparison.
 
 ## Design Decisions
 
@@ -283,7 +281,6 @@ Personal project - all rights reserved.
 
 **Project Status**: Active Development
 **Last Updated**: 2025-10-13
-**Test Coverage**: 82/82 tests passing
 **New This Week**: CLI interface, Web dashboard, API endpoints, separation of presentation layer
 
 *Built with clean architecture principles as a foundation for future personal development tracking systems.*
