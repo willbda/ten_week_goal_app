@@ -1,16 +1,13 @@
 """
-Interfaces layer - User-facing ways to interact with the application.
+interfaces - Presentation and Interface Layer
 
-This layer sits above all others and provides various interfaces:
-- CLI (command-line interface)
-- Future: Web API, GUI, etc.
+This package contains user-facing interfaces for the Ten Week Goal App:
+- CLI (Command-Line Interface)
+- Web UI (Flask application)
+- API endpoints
 
-Interfaces know about:
-- rhetorica (storage services)
-- ethica (business logic)
-- categoriae (domain entities)
+All interfaces orchestrate the same business logic from ethica/ and storage
+from rhetorica/, ensuring consistency across different presentation modes.
 
-Interfaces do NOT contain business logic - they orchestrate and present.
-
-Written by Claude Code on 2025-10-12
+Written by Claude Code on 2025-10-13
 """

@@ -46,6 +46,7 @@ categoriae/    - Domain Entities ("What things ARE")
 ethica/        - Business Logic ("What SHOULD happen")
 rhetorica/     - Translation Layer ("How to communicate between layers")
 politica/      - Infrastructure ("How things are DONE")
+interfaces/    - Presentation Layer ("How users INTERACT")
 config/        - Configuration and logging
 tests/         - Test suite
 ```
@@ -58,6 +59,7 @@ tests/         - Test suite
 | **ethica/** | Business rules, calculations, validation, inference | categoriae entities | Storage implementation, how data is fetched |
 | **rhetorica/** | Translation between layers, polymorphic storage | categoriae + politica | SQL details, connection management |
 | **politica/** | Infrastructure: DB ops, connections, schemas | Generic dicts/SQL only | Domain entities (Action, Goal, Value) |
+| **interfaces/** | Presentation: CLI, Web, API | ethica + rhetorica | Business logic implementation, SQL |
 | **config/** | Paths, logging, settings | TOML config file | Application logic |
 
 ### Critical Architecture Rules
@@ -94,8 +96,12 @@ tests/         - Test suite
 - `terms.py`: Time period entities (TenWeekTerm, LifeTime)
 
 ### Business Logic (ethica/)
-- `progress.py`: calculate_goal_metrics() - aggregates actions against goals
-  - Returns GoalProgress dataclass with derived properties
+- `progress.py`: Legacy progress calculations (deprecated, use progress_aggregation.py)
+- `progress_aggregation.py`: **AUTHORITATIVE** progress calculations
+  - aggregate_goal_progress(): Calculate metrics for single goal
+  - aggregate_all_goals(): Batch processing for multiple goals
+  - get_progress_summary(): Summary statistics
+  - Returns GoalProgress dataclass with derived properties (@property methods)
 - `progress_matching.py`: Stateless matching functions
   - match_by_time_period(): Checks if action falls within goal timeframe
   - match_by_unit(): Verifies unit compatibility between action and goal
@@ -121,6 +127,29 @@ tests/         - Test suite
   - get_db_connection(): context manager for transactions
   - build_where_clause(), build_set_clause(): SQL builders
   - init_db(): loads all schemas from politica/schemas/
+
+### Presentation Layer (interfaces/)
+- `cli.py`: Command-line interface (orchestrator only)
+  - show_progress(): Main command for displaying goal progress
+  - Pure orchestration: fetch → calculate → display
+  - No business logic, no formatting logic
+- `cli_formatters.py`: Presentation formatting functions
+  - render_progress_bar(): Unicode progress bars
+  - render_progress_metrics(): Format metrics with completion status
+  - render_action_list(): Format action details for verbose mode
+  - render_timeline(): Format date ranges
+  - Pure presentation - no calculations
+- `cli_config.py`: CLI configuration constants
+  - DisplayConfig: Bar widths, truncation limits, symbols
+  - FilterConfig: Default filter settings
+  - ColorConfig: Color scheme (stub for future)
+- `web_app.py`: Flask web application
+  - Routes: /, /goal/<id>, /api/progress
+  - Uses SAME business logic as CLI (ethica/progress_aggregation.py)
+  - Template filters for Jinja2 formatting
+- `templates/`: Jinja2 HTML templates
+  - base.html, progress.html, goal_detail.html, error.html
+- `static/css/style.css`: Web UI styling
 
 ### Configuration
 - `config/config.toml`: Paths for storage, schemas, logs
@@ -149,6 +178,30 @@ Follow Test-Driven Development (TDD):
 - Tests go through correct layer (use StorageService, not raw politica)
 - Use pytest fixtures for test isolation
 - Test edge cases, validation logic, calculations
+
+## CLI and Web Usage
+
+### CLI Commands
+```bash
+# Show progress for all goals
+python interfaces/cli.py show-progress
+
+# Show progress with detailed action listings
+python interfaces/cli.py show-progress -v
+```
+
+### Web Interface
+```bash
+# Install web dependencies
+pip install -r requirements_web.txt
+
+# Start Flask development server
+python interfaces/web_app.py
+
+# Visit http://localhost:5000
+```
+
+See [interfaces/WEB_README.md](interfaces/WEB_README.md) for detailed web documentation.
 
 ## Common Patterns
 
@@ -210,22 +263,37 @@ results = query('actions', filters={'description': 'Ran 5km'})
 # Returns: List[dict]
 ```
 
-### Running Inference
+### Running Inference and Progress Calculation
 
 ```python
 # Automatic action-goal matching
 from ethica.inference_service import InferenceService
+from ethica.progress_aggregation import aggregate_all_goals, get_progress_summary
 
+# Get all goals and actions
+from rhetorica.storage_service import GoalStorageService, ActionStorageService
+goals = GoalStorageService().get_all()
+actions = ActionStorageService().get_all()
+
+# Infer relationships
 service = InferenceService()
-
-# Batch process all relationships
-relationships = service.infer_all_relationships()
+all_matches = service.infer_all_relationships()
 # Returns: List[ActionGoalRelationship]
 
-# Realtime matching for new action
-action = Action("Wrote 500 words")
-matching_goals = service.infer_for_action(action)
-# Returns: List[ActionGoalRelationship] with match scores
+# Calculate progress (AUTHORITATIVE method)
+all_progress = aggregate_all_goals(goals, all_matches)
+# Returns: List[GoalProgress] with derived properties
+
+# Get summary statistics
+summary = get_progress_summary(all_progress)
+# Returns: dict with total_goals, complete_goals, avg_completion_percent, etc.
+
+# Access derived properties
+for progress in all_progress:
+    print(f"{progress.goal.description}: {progress.percent:.1f}%")
+    if progress.is_complete:
+        print("  ✓ Complete!")
+    print(f"  Remaining: {progress.remaining} {progress.unit}")
 ```
 
 ### Error Handling & Logging
@@ -248,7 +316,7 @@ Logs are written to `logs/` directory (configured in config.toml)
 1. **Check database exists**: Look for `politica/data_storage/application_data.db`
 2. **If missing, initialize**: Call `init_db()` from politica.database
 3. **Make changes**: Follow layer boundaries strictly
-4. **Run tests**: `pytest tests/` before committing (currently 48/48 passing)
+4. **Run tests**: `pytest tests/` before committing (currently 82/82 passing)
 5. **Check git status**: Before creating commits
 
 ## Important Notes for AI Collaboration
@@ -259,14 +327,23 @@ Logs are written to `logs/` directory (configured in config.toml)
 - **Jupyter notebooks**: Check cell order when working with .ipynb files
 - **Layer violations**: If you catch yourself importing from categoriae in politica, STOP and refactor
 
+## Recent Additions (2025-10-13)
+
+- ✅ CLI interface with formatted progress display
+- ✅ Web dashboard (Flask) with dashboard and detail views
+- ✅ JSON API endpoints for integrations
+- ✅ Progress aggregation business logic (ethica/progress_aggregation.py)
+- ✅ Presentation layer separation (interfaces/ directory)
+- ✅ 34 new tests (formatters + aggregation)
+
 ## Future Extensions (Not Yet Implemented)
 
 - GoalValueAlignment inference (connecting goals to values)
-- CLI interface for goal tracking
-- Web UI/API layer (would go in interfaces/)
+- Authentication for web UI
+- Goal creation/editing through web interface
 - Bulk import from CSV/JSON
-- Export functionality
-- Dashboard visualization
+- Export functionality (PDF, CSV)
+- Charts and visualizations for progress over time
 
 ## References
 

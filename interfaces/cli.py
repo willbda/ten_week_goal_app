@@ -1,24 +1,29 @@
-#!/usr/bin/env python3
 """
-Command-line interface for Ten Week Goal App.
+REFACTORED Command-line interface for Ten Week Goal App.
 
-This interface layer orchestrates rhetorica (storage) and ethica (business logic)
-to provide a user-facing CLI for goal tracking.
+This is a STUB showing proper separation of concerns.
 
 Written by Claude Code on 2025-10-12
-Updated by Claude Code on 2025-10-12 - Fixed to use inference system
 """
 
 import argparse
 import sys
 from pathlib import Path
-from collections import defaultdict
 
-# Standard path setup for project modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from rhetorica.storage_service import GoalStorageService, ActionStorageService
 from ethica.progress_matching import infer_matches
+from ethica.progress_aggregation import aggregate_all_goals
+from interfaces.cli_formatters import (
+    render_section_header,
+    render_goal_header,
+    render_progress_metrics,
+    render_timeline,
+    render_action_list,
+    render_summary_stats
+)
+from interfaces.cli_config import DEFAULT_DISPLAY, DEFAULT_FILTERS
 from config.logging_setup import get_logger
 
 logger = get_logger(__name__)
@@ -28,108 +33,129 @@ def show_progress(verbose: bool = False):
     """
     Display progress for all goals with matching actions.
 
-    This command orchestrates:
-    - rhetorica: Retrieves goals and actions from storage
-    - ethica: Uses inference system to match actions to goals (with actionability filtering)
-    - Presentation: Formats and displays results
+    This command ORCHESTRATES - it doesn't implement:
+    - rhetorica: Retrieves data (storage services)
+    - ethica: Calculates metrics (aggregate_all_goals)
+    - interfaces: Formats output (formatters module)
+
+    Compare this to cli.py lines 27-131 (100+ lines of mixed concerns).
+    This version: ~40 lines of pure orchestration.
 
     Args:
         verbose: If True, show detailed action listings
     """
+    # Step 1: Fetch data (orchestrates rhetorica)
     try:
-        # Initialize storage services
-        goal_service = GoalStorageService()
-        action_service = ActionStorageService()
-
-        # Retrieve all goals and actions from storage
-        goals = goal_service.get_all()
-        actions = action_service.get_all()
-
+        goals, actions = _fetch_goals_and_actions()
     except Exception as e:
-        print(f"Error accessing database: {e}")
-        print("Make sure database is initialized. Run: from politica.database import init_db; init_db()")
-        sys.exit(1)
+        _handle_database_error(e)
+        return
 
     if not goals:
         print("No goals found. Add some goals first!")
         return
 
-    # Use inference system to match actions to goals
-    # This respects actionability hints and prevents false positives
-    all_matches = infer_matches(actions, goals, require_period_match=False)
+    # Step 2: Calculate relationships (orchestrates ethica)
+    all_matches = infer_matches(
+        actions,
+        goals,
+        require_period_match=DEFAULT_FILTERS.require_period_match
+    )
 
-    # Group matches by goal
-    matches_by_goal = defaultdict(list)
-    for match in all_matches:
-        matches_by_goal[match.goal].append(match)
+    # Step 3: Calculate progress metrics (orchestrates ethica)
+    all_progress = aggregate_all_goals(goals, all_matches)
 
+    # Step 4: Display results (orchestrates formatters)
+    _display_progress_report(all_progress, len(actions), len(all_matches), verbose)
+
+
+def _fetch_goals_and_actions():
+    """
+    Fetch goals and actions from storage.
+
+    Extracted helper for clarity and error handling.
+    Returns tuple of (goals, actions).
+    """
+    goal_service = GoalStorageService()
+    action_service = ActionStorageService()
+
+    goals = goal_service.get_all()
+    actions = action_service.get_all()
+
+    return goals, actions
+
+
+def _handle_database_error(error: Exception):
+    """
+    Handle database access errors gracefully.
+
+    Extracted for testability and reuse.
+    """
+    print(f"Error accessing database: {error}")
+    print("Make sure database is initialized. Run: from politica.database import init_db; init_db()")
+    sys.exit(1)
+
+
+def _display_progress_report(all_progress, total_actions, total_matches, verbose=False):
+    """
+    Display formatted progress report.
+
+    Pure orchestration of formatter functions.
+    No business logic, no formatting logic.
+
+    Args:
+        all_progress: List of GoalProgress objects
+        total_actions: Total number of actions in database
+        total_matches: Total number of action-goal matches
+        verbose: Whether to show action details
+    """
     # Header
-    print(f"\n{'='*70}")
-    print(f"GOAL PROGRESS REPORT")
-    print(f"{'='*70}\n")
-    print(f"Total Goals: {len(goals)}")
-    print(f"Total Actions: {len(actions)}")
-    print(f"Total Matches: {len(all_matches)}\n")
+    print(render_section_header("GOAL PROGRESS REPORT"))
+    print(render_summary_stats(len(all_progress), total_actions, total_matches))
 
-    # Display progress for each goal
-    for i, goal in enumerate(goals, 1):
-        print(f"{i}. {goal.description}")
-        print(f"   {'─'*66}")
+    # Display each goal
+    for i, progress in enumerate(all_progress, 1):
+        _display_single_goal(i, progress, verbose)
 
-        # Get matches for this goal
-        goal_matches = matches_by_goal.get(goal, [])
+    # Footer
+    print("=" * DEFAULT_DISPLAY.separator_width)
+    print()
 
-        # Calculate total progress from matched contributions
-        total_progress = sum(m.contribution for m in goal_matches if m.contribution)
-        matching_actions = [m.action for m in goal_matches]
 
-        # Display target and progress if measurable
-        if goal.measurement_target is not None:
-            target = goal.measurement_target
-            progress_percent = (total_progress / target * 100) if target > 0 else 0
-            remaining = target - total_progress
-            is_complete = total_progress >= target
+def _display_single_goal(goal_number, progress, verbose=False):
+    """
+    Display progress for a single goal.
 
-            print(f"   Target: {target} {goal.measurement_unit or 'units'}")
-            print(f"   Progress: {total_progress:.1f} / {target:.1f} ({progress_percent:.1f}%)")
-            print(f"   Remaining: {remaining:.1f} {goal.measurement_unit or 'units'}")
+    Pure orchestration of formatter functions.
 
-            # Visual progress bar
-            bar_width = 40
-            filled = int(bar_width * min(progress_percent / 100, 1.0))
-            bar = '█' * filled + '░' * (bar_width - filled)
-            print(f"   [{bar}]")
+    Args:
+        goal_number: Sequential number (1, 2, 3...)
+        progress: GoalProgress object with metrics
+        verbose: Whether to show action details
+    """
+    # Header
+    print(render_goal_header(goal_number, progress.goal))
 
-            if is_complete:
-                print(f"   ✓ COMPLETE!")
-        else:
-            print(f"   Target: Not specified")
-            print(f"   Matching actions: {len(matching_actions)}")
+    # Metrics (target, progress, bar, completion status)
+    for line in render_progress_metrics(progress):
+        print(line)
 
-        # Show date range if exists
-        if goal.start_date or goal.end_date:
-            date_range = []
-            if goal.start_date:
-                date_range.append(f"from {goal.start_date.strftime('%Y-%m-%d')}")
-            if goal.end_date:
-                date_range.append(f"to {goal.end_date.strftime('%Y-%m-%d')}")
-            print(f"   Timeline: {' '.join(date_range)}")
+    # Timeline (if dates exist)
+    timeline = render_timeline(progress.goal)
+    if timeline:
+        print(timeline)
 
-        # Verbose mode: show matching actions with their contributions
-        if verbose and goal_matches:
-            print(f"\n   Matching Actions ({len(goal_matches)}):")
-            for match in goal_matches[:5]:  # Show first 5
-                contribution = match.contribution if match.contribution else 0
-                log_date = match.action.logtime.strftime('%Y-%m-%d') if match.action.logtime else 'N/A'
-                confidence = f"{match.confidence:.0%}" if match.confidence else "N/A"
-                print(f"     • {match.action.description[:50]}: {contribution} {goal.measurement_unit or 'units'} ({log_date}, conf: {confidence})")
+    # Action details (if verbose mode)
+    if verbose:
+        action_lines = render_action_list(
+            progress.matches,
+            progress.unit,
+            max_preview=DEFAULT_DISPLAY.preview_action_count
+        )
+        for line in action_lines:
+            print(line)
 
-            if len(goal_matches) > 5:
-                print(f"     ... and {len(goal_matches) - 5} more")
-
-        print()  # Blank line between goals
-
-    print(f"{'='*70}\n")
+    print()  # Blank line between goals
 
 
 def main():
@@ -173,3 +199,49 @@ Examples:
 
 if __name__ == '__main__':
     main()
+
+
+# ===== ARCHITECTURAL COMPARISON =====
+#
+# OLD cli.py (100+ lines in show_progress):
+# - Lines 82-91: Business logic (calculate totals, percentages)
+# - Lines 93-101: Formatting (progress bar rendering)
+# - Lines 103-116: More formatting (date ranges, completion status)
+# - Lines 119-128: Yet more formatting (action lists)
+# - Mixed concerns, hard to test, duplicates business rules
+#
+# NEW cli_refactored.py (40 lines in show_progress):
+# - Pure orchestration: fetch → calculate → display
+# - Business logic: ethica/progress_aggregation.py
+# - Formatting: interfaces/formatters.py
+# - Config: interfaces/cli_config.py
+# - Each concern testable in isolation
+# - Reusable across interfaces (CLI, web, API)
+#
+# ===== BENEFITS =====
+#
+# 1. **Testability**: Each layer tests independently
+#    - test_progress_aggregation.py: Tests calculations
+#    - test_cli_formatters.py: Tests formatting
+#    - test_cli.py: Tests orchestration (future)
+#
+# 2. **Reusability**: Web UI can use same business logic
+#    ```python
+#    # In web controller:
+#    from ethica.progress_aggregation import aggregate_all_goals
+#    progress_data = aggregate_all_goals(goals, matches)
+#    return render_template('progress.html', progress=progress_data)
+#    ```
+#
+# 3. **Maintainability**: Change bar width in one place
+#    - Edit interfaces/cli_config.py: progress_bar_width = 60
+#    - All progress bars update automatically
+#
+# 4. **Consistency**: "Progress percentage" defined once
+#    - ethica/progress_aggregation.py defines (total/target)*100
+#    - CLI, web UI, API all use same definition
+#    - No drift between interfaces
+#
+# 5. **Professional**: Follows Clean Architecture principles
+#    - Entities → Use Cases → Interface Adapters → Frameworks
+#    - categoriae → ethica → rhetorica/interfaces → argparse/Flask

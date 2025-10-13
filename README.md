@@ -10,6 +10,9 @@ A personal development tracking system built with clean architecture principles.
 - **Automatic Matching**: Intelligent inference system matches actions to goals by time period, units, and description
 - **Progress Tracking**: Calculate progress automatically with cached projections
 - **Store History**: Maintain complete audit trail of all entities in SQLite with archiving
+- **CLI Interface**: Command-line tool for viewing goal progress with formatted output
+- **Web Dashboard**: Flask-based web UI showing progress, charts, and detailed views
+- **JSON API**: RESTful endpoints for integrations and external tools
 
 ## Why This Architecture
 
@@ -42,6 +45,30 @@ cd ten_week_goal_app
 pytest tests/ -v
 ```
 
+### Usage
+
+**CLI Interface:**
+```bash
+# Show progress for all goals
+python interfaces/cli.py show-progress
+
+# Show progress with detailed action listings
+python interfaces/cli.py show-progress -v
+```
+
+**Web Interface:**
+```bash
+# Install web dependencies
+pip install -r requirements_web.txt
+
+# Start web server
+python interfaces/web_app.py
+
+# Visit http://localhost:5000
+```
+
+See [interfaces/WEB_README.md](interfaces/WEB_README.md) for detailed web UI documentation.
+
 ## Project Structure
 
 ```
@@ -54,7 +81,8 @@ ten_week_goal_app/
 │   └── terms.py             # Time period entities (TenWeekTerm, LifeTime)
 │
 ├── ethica/                  # Business logic (HOW things RELATE)
-│   ├── progress.py          # Progress calculations and rules
+│   ├── progress.py          # Legacy progress calculations (deprecated)
+│   ├── progress_aggregation.py  # Progress metrics and aggregation (authoritative)
 │   ├── progress_matching.py # Stateless matching functions (period, unit, description)
 │   └── inference_service.py # Service orchestrator for batch/realtime inference
 │
@@ -71,18 +99,33 @@ ten_week_goal_app/
 ├── rhetorica/               # Translation layer (COORDINATION)
 │   └── storage_service.py   # Repository pattern with polymorphic type support
 │
+├── interfaces/              # Presentation layer (USER INTERACTION)
+│   ├── cli.py               # Command-line interface with formatted output
+│   ├── cli_formatters.py    # Presentation formatting functions
+│   ├── cli_config.py        # CLI configuration constants
+│   ├── web_app.py           # Flask web application
+│   ├── templates/           # Jinja2 HTML templates
+│   │   ├── base.html        # Base layout
+│   │   ├── progress.html    # Dashboard view
+│   │   ├── goal_detail.html # Goal detail page
+│   │   └── error.html       # Error page
+│   ├── static/              # CSS and static assets
+│   │   └── css/style.css
+│   └── WEB_README.md        # Web UI documentation
+│
 ├── config/                  # Configuration and setup
 │   ├── config.toml          # Application settings
 │   ├── settings.py          # Config loader
 │   ├── logging_setup.py     # Logging configuration
 │   └── testing.py           # Test-specific config
 │
-├── tests/                   # Test suite (30 passing tests)
+├── tests/                   # Test suite (82 passing tests)
 │   ├── conftest.py          # Pytest fixtures
 │   ├── test_actions.py      # Domain entity tests
 │   ├── test_action_storage.py   # Storage integration tests
 │   ├── test_goal_storage.py     # Goal persistence tests
-│   ├── test_progress.py     # Business logic tests
+│   ├── test_progress_aggregation.py  # Business logic tests (new)
+│   ├── test_cli_formatters.py  # Presentation formatting tests (new)
 │   ├── test_values.py       # Values entity tests
 │   └── test_values_storage.py   # Values storage with polymorphism
 │
@@ -164,27 +207,32 @@ Test configuration is separate in `config/testing.py` to keep test data isolated
 
 ## Development Roadmap
 
-### Complete
+### Complete ✅
 - [x] Domain entities (Action, Goal, SmartGoal, Values hierarchy, Relationships, Terms)
 - [x] Business logic (progress calculation, automatic action-goal matching with actionability)
 - [x] Generic storage layer with polymorphic type support
 - [x] Repository pattern with save/update/get_by_id conveniences
 - [x] Inference service for batch/realtime relationship detection
-- [x] Comprehensive tests (48 passing)
-
-### Next
 - [x] Import historical Actions and Goals from tabular data
+- [x] **CLI interface with formatted progress display** (NEW)
+- [x] **Web dashboard with Flask** (NEW)
+- [x] **JSON API endpoints** (NEW)
+- [x] **Progress aggregation business logic** (NEW)
+- [x] **Presentation layer separation** (NEW)
+- [x] Comprehensive tests (82 passing, +34 new tests)
+
+### Next 🚧
 - [ ] Add tests for Terms module (calculation methods)
 - [ ] Add GoalValueAlignment inference (connect goals to values)
-- [ ] Practice CLI-based interface with simple APIs
 - [ ] Add Milestones(Event?) class for tracking steps towards goal
-- [ ] Dashboard visualization
+- [ ] Add authentication to web UI
+- [ ] Add goal creation/editing through web interface
 
-### Later
-- [ ] Add UI layer (Flask/FastAPI)
-- [ ] Web-based progress dashboard
+### Later 📋
 - [ ] Create simple users to practice data separation and protected access
 - [ ] Export functionality (CSV, JSON)
+- [ ] Charts and visualizations for progress over time
+- [ ] Mobile-responsive web design improvements
 
 ## Key Differences from Previous Projects
 
@@ -234,7 +282,8 @@ Personal project - all rights reserved.
 ---
 
 **Project Status**: Active Development
-**Last Updated**: 2025-10-12
-**Test Coverage**: 48/48 tests passing
+**Last Updated**: 2025-10-13
+**Test Coverage**: 82/82 tests passing
+**New This Week**: CLI interface, Web dashboard, API endpoints, separation of presentation layer
 
 *Built with clean architecture principles as a foundation for future personal development tracking systems.*
