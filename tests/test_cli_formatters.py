@@ -13,7 +13,7 @@ from categoriae.actions import Action
 from categoriae.goals import Goal
 from categoriae.relationships import ActionGoalRelationship
 from ethica.progress_aggregation import GoalProgress
-from interfaces.cli_formatters import (
+from interfaces.cli.cli_formatters import (
     render_progress_bar,
     render_compact_progress_bar,
     render_goal_header,

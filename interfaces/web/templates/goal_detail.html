@@ -58,13 +58,13 @@
                     </span>
                 </div>
                 <div class="action-meta">
-                    <span class="action-date">{{ match.action.logtime | date_short }}</span>
+                    <span class="action-date">{{ match.action.logtime}}</span>
                     {% if match.confidence %}
                     <span class="action-confidence">Confidence: {{ (match.confidence * 100)|round }}%</span>
                     {% endif %}
                     <span class="action-method">{{ match.assignment_method }}</span>
                 </div>
-            </div>
+            </div><br>
             {% endfor %}
         </div>
     </section>

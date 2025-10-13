@@ -10,12 +10,12 @@ import argparse
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from rhetorica.storage_service import GoalStorageService, ActionStorageService
 from ethica.progress_matching import infer_matches
 from ethica.progress_aggregation import aggregate_all_goals
-from interfaces.cli_formatters import (
+from interfaces.cli.cli_formatters import (
     render_section_header,
     render_goal_header,
     render_progress_metrics,
@@ -23,7 +23,7 @@ from interfaces.cli_formatters import (
     render_action_list,
     render_summary_stats
 )
-from interfaces.cli_config import DEFAULT_DISPLAY, DEFAULT_FILTERS
+from interfaces.cli.cli_config import DEFAULT_DISPLAY, DEFAULT_FILTERS
 from config.logging_setup import get_logger
 
 logger = get_logger(__name__)
