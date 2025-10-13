@@ -173,7 +173,7 @@ Test configuration is separate in `config/testing.py` to keep test data isolated
 - [x] Comprehensive tests (48 passing)
 
 ### Next
-- [ ] Import Actions and Goals in bulk from tabular data (CSV/JSON)
+- [x] Import historical Actions and Goals from tabular data
 - [ ] Add tests for Terms module (calculation methods)
 - [ ] Add GoalValueAlignment inference (connect goals to values)
 - [ ] Practice CLI-based interface with simple APIs
