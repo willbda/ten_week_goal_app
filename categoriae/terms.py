@@ -16,7 +16,6 @@ from datetime import datetime, date, timedelta
 from typing import Optional, List
 
 # Time horizon constants
-TEN_WEEKS_IN_DAYS = 70  # 10 weeks × 7 days/week
 MN_LIFE_EXPECTANCY_YEARS = 79  # CDC Minnesota life expectancy
 DAYS_PER_YEAR = 365.25  # Accounting for leap years
 
@@ -31,16 +30,11 @@ class TimeFrame(ABC):
     pass
 
 
-class TenWeekTerm(TimeFrame):
+class GoalTerm(TimeFrame):
     """
-    A 10-week term - the fundamental unit of structured planning.
-
-    Why 10 weeks?
-    - Long enough to make meaningful progress
-    - Short enough to maintain focus and urgency
-    - Roughly a quarter/season (academic, business)
-    - 5 terms per year = 100 days of focused effort each
-
+    Goal term -- a fundamental unit of structured planning. The idea of a "term" is inspired by academic terms but adapted for personal productivity. It should be long enough to make meaningful progress on goals, but short enough to maintain focus and urgency.
+    
+    A typical term is 10 weeks (70 days), but this can be adjusted based on personal preference or context. The key is to have a clear start and end date, along with defined goals and a theme or focus area if desired.
     Attributes:
         term_number: Sequential identifier (e.g., Term 1, Term 2)
         start_date: First day of term
@@ -49,22 +43,25 @@ class TenWeekTerm(TimeFrame):
         goals: List of goal IDs associated with this term
         reflection: Post-term reflection notes
     """
+    TEN_WEEKS_IN_DAYS = 70  # 10 weeks × 7 days/week
 
     def __init__(
         self,
         term_number: int,
-        start_date: date,
-        end_date: Optional[date] = None,
+        start_date: datetime,
+        end_date: Optional[datetime] = None,
         theme: Optional[str] = None,
         goals: Optional[List[int]] = None,
-        reflection: Optional[str] = None
+        reflection: Optional[str] = None,
+        id: Optional[int] = None
     ):
+        self.id = id  # Database-assigned ID (None for new instances)
         self.term_number = term_number
         self.start_date = start_date
 
         # Calculate end_date if not provided
         if end_date is None:
-            self.end_date = start_date + timedelta(days=TEN_WEEKS_IN_DAYS)
+            self.end_date = start_date + timedelta(days=GoalTerm.TEN_WEEKS_IN_DAYS)
         else:
             self.end_date = end_date
 
@@ -72,21 +69,21 @@ class TenWeekTerm(TimeFrame):
         self.goals = goals or []
         self.reflection = reflection
 
-    def is_active(self, check_date: Optional[date] = None) -> bool:
+    def is_active(self, check_date: Optional[datetime] = None) -> bool:
         """Check if term is currently active."""
-        check = check_date or date.today()
+        check = check_date or datetime.now()
         return self.start_date <= check <= self.end_date
 
-    def days_remaining(self, from_date: Optional[date] = None) -> int:
+    def days_remaining(self, from_date: Optional[datetime] = None) -> int:
         """Calculate days remaining in term."""
-        check = from_date or date.today()
+        check = from_date or datetime.now()
         if check > self.end_date:
             return 0
         return (self.end_date - check).days
 
-    def progress_percentage(self, from_date: Optional[date] = None) -> float:
+    def progress_percentage(self, from_date: Optional[datetime] = None) -> float:
         """Calculate percentage of term completed (0.0 to 1.0)."""
-        check = from_date or date.today()
+        check = from_date or datetime.now()
         total_days = (self.end_date - self.start_date).days
         elapsed_days = (check - self.start_date).days
 
@@ -115,7 +112,7 @@ class YearlyPlan(TimeFrame):
     def __init__(
         self,
         year: int,
-        terms: Optional[List[TenWeekTerm]] = None,
+        terms: Optional[List[GoalTerm]] = None,
         annual_theme: Optional[str] = None,
         annual_reflection: Optional[str] = None
     ):
@@ -124,7 +121,7 @@ class YearlyPlan(TimeFrame):
         self.annual_theme = annual_theme
         self.annual_reflection = annual_reflection
 
-    def get_current_term(self, check_date: Optional[date] = None) -> Optional[TenWeekTerm]:
+    def get_current_term(self, check_date: Optional[datetime] = None) -> Optional[GoalTerm]:
         """Return the active term, if any."""
         for term in self.terms:
             if term.is_active(check_date):

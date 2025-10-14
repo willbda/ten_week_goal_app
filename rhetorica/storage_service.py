@@ -7,10 +7,10 @@ Updated by Claude Code on 2025-10-11
 
 from abc import ABC, abstractmethod
 import json
-from typing import List, Optional, Union, TypeVar, Generic, Protocol
+from typing import List, Optional, TypeVar, Generic, Protocol
 from categoriae.actions import Action
 from categoriae.goals import Goal
-from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas, PriorityLevel
+from categoriae.terms import GoalTerm
 from politica.database import Database
 
 # Protocol for entities that can be persisted (have optional id)
@@ -19,9 +19,6 @@ class Persistable(Protocol):
 
 # Generic type variable for entities that can be persisted
 T = TypeVar('T', bound=Persistable)
-
-# Type alias for Values hierarchy
-ValuesType = Union[Values, MajorValues, HighestOrderValues, LifeAreas]
 
 
 
@@ -190,6 +187,43 @@ class StorageService(ABC, Generic[T]):
             notes=notes
         )
 
+    def delete(self, entity_id: int, notes: str = '') -> dict:
+        """
+        Delete an entity by ID with archiving.
+
+        Archives the record before deletion for audit trail.
+
+        Args:
+            entity_id: Database ID of entity to delete
+            notes: Optional notes for archive
+
+        Returns:
+            Result dict from Database.archive_and_delete()
+
+        Raises:
+            ValueError: If entity_id not found
+
+        Example:
+            service = ActionStorageService()
+            result = service.delete(5, notes='User requested deletion')
+        """
+        # Verify entity exists first
+        entity = self.get_by_id(entity_id)
+        if not entity:
+            raise ValueError(
+                f"Cannot delete: {self.table_name} with ID {entity_id} not found"
+            )
+
+        # Archive and delete through database layer
+        result = self.db.archive_and_delete(
+            table=self.table_name,
+            filters={'id': entity_id},
+            confirm=True,  # Bypass preview mode - entity already verified
+            notes=notes or f'Deleted {self.table_name} ID {entity_id}'
+        )
+
+        return result
+
     @abstractmethod
     def _to_dict(self, entity: T) -> dict:
         """Convert entity to dict for storage"""
@@ -355,120 +389,88 @@ class ActionStorageService(StorageService[Action]):
         return action
 
 
-class ValuesStorageService(StorageService):
+class TermStorageService(StorageService[GoalTerm]):
     """
-    Handles translation between Values/MajorValues/HighestOrderValues objects and database storage.
+    Handles translation between GoalTerm objects and database storage.
 
-    Manages polymorphic values hierarchy by storing value_type and reconstructing
-    the appropriate class on retrieval.
+    Terms are commitment containers that organize goals into temporal planning periods.
+    This service manages the translation of:
+    - Date fields (start_date, end_date)
+    - Goal ID lists (stored as JSON array)
+    - Optional theme and reflection text
+
+    Written by Claude Code on 2025-10-13
     """
 
-    table_name = 'personal_values'  # 'values' is SQL reserved keyword
+    table_name = 'terms'
 
-    def _to_dict(self, entity: Union[Values, MajorValues, HighestOrderValues, LifeAreas]) -> dict:
+    def _to_dict(self, entity: GoalTerm) -> dict:
         """
-        Convert any Values subclass to dict for storage.
+        Convert GoalTerm object to dict for storage.
 
-        Determines value_type from class:
-        - MajorValues → 'major'
-        - HighestOrderValues → 'highest_order'
-        - LifeAreas → 'life_area'
-        - Values (base) → 'general'
+        Maps GoalTerm attributes to database columns:
+        - start_date/end_date → ISO strings (YYYY-MM-DD)
+        - goals (List[int]) → JSON array string
+        - theme, reflection → text or NULL
 
-        Handles alignment_guidance flexibly (can be dict, str, or None).
-        Includes ID only if present (for updates).
+        Args:
+            entity: GoalTerm to convert
+
+        Returns:
+            Dict ready for database insertion
         """
-        value = entity
-
-        # Determine value_type from class
-        if isinstance(value, MajorValues):
-            value_type = 'major'
-        elif isinstance(value, HighestOrderValues):
-            value_type = 'highest_order'
-        elif isinstance(value, LifeAreas):
-            value_type = 'life_area'
-        else:
-            value_type = 'general'
-
-        # Handle alignment_guidance - only MajorValues has this attribute
-        alignment_guidance = None
-        if isinstance(value, MajorValues) and value.alignment_guidance:
-            if isinstance(value.alignment_guidance, dict):
-                alignment_guidance = json.dumps(value.alignment_guidance)
-            else:
-                alignment_guidance = str(value.alignment_guidance)
+        term = entity
 
         result = {
-            'name': value.name,
-            'description': value.description,
-            'value_type': value_type,
-            'priority': int(value.priority),
-            'life_domain': value.life_domain,
-            'alignment_guidance': alignment_guidance
+            'term_number': term.term_number,
+            'start_date': term.start_date.strftime('%Y-%m-%d'),
+            'end_date': term.end_date.strftime('%Y-%m-%d'),
+            'theme': term.theme,  # Can be None
+            'goal_ids': json.dumps(term.goals),  # List[int] → JSON array
+            'reflection': term.reflection  # Can be None
         }
 
         # Include ID only if entity has one (stored entities)
-        if value.id is not None:
-            result['id'] = value.id
+        if hasattr(term, 'id') and term.id is not None:
+            result['id'] = term.id
 
         return result
 
-    def _from_dict(self, data: dict) -> Union[Values, MajorValues, HighestOrderValues, LifeAreas]:
+    def _from_dict(self, data: dict) -> GoalTerm:
         """
-        Reconstruct appropriate Values subclass from stored dict.
+        Reconstruct GoalTerm object from stored dict.
 
-        Reads value_type to determine which class to instantiate:
-        - 'major' → MajorValues
-        - 'highest_order' → HighestOrderValues
-        - 'life_area' → LifeAreas
-        - 'general' → Values
+        Reverse of _to_dict(): Converts database columns back to GoalTerm attributes.
+        Parses JSON goal_ids array back to List[int].
 
-        Parses alignment_guidance from JSON if it looks like JSON, otherwise keeps as text.
-        Includes ID from database.
+        Args:
+            data: Dict from database query
+
+        Returns:
+            GoalTerm entity with ID populated
         """
-        value_type = data.get('value_type', 'general')
-        priority = PriorityLevel(data.get('priority', 50))
-        value_id = data.get('id')  # Extract ID from stored record
+        from datetime import datetime
 
-        # Parse alignment_guidance - try JSON first, fall back to text
-        alignment_guidance = None
-        if data.get('alignment_guidance'):
-            try:
-                alignment_guidance = json.loads(data['alignment_guidance'])
-            except (json.JSONDecodeError, TypeError):
-                alignment_guidance = data['alignment_guidance']
+        # Parse date fields - store as datetime for consistency with Goals
+        start_date = datetime.strptime(data['start_date'], '%Y-%m-%d')
+        end_date = datetime.strptime(data['end_date'], '%Y-%m-%d')
 
-        # Reconstruct appropriate class based on value_type
-        if value_type == 'major':
-            return MajorValues(
-                name=data['name'],
-                description=data['description'],
-                priority=priority,
-                life_domain=data.get('life_domain', 'General'),
-                alignment_guidance=alignment_guidance,
-                id=value_id
-            )
-        elif value_type == 'highest_order':
-            return HighestOrderValues(
-                name=data['name'],
-                description=data['description'],
-                priority=priority,
-                life_domain=data.get('life_domain', 'General'),
-                id=value_id
-            )
-        elif value_type == 'life_area':
-            return LifeAreas(
-                name=data['name'],
-                description=data['description'],
-                priority=priority,
-                life_domain=data.get('life_domain', 'General'),
-                id=value_id
-            )
-        else:  # 'general'
-            return Values(
-                name=data['name'],
-                description=data['description'],
-                priority=priority,
-                life_domain=data.get('life_domain', 'General'),
-                id=value_id
-            )
+        # Parse goal IDs from JSON array
+        goal_ids = json.loads(data['goal_ids']) if data.get('goal_ids') else []
+
+        # Create term with all fields
+        term = GoalTerm(
+            term_number=data['term_number'],
+            start_date=start_date,
+            end_date=end_date,
+            theme=data.get('theme'),
+            goals=goal_ids,
+            reflection=data.get('reflection')
+        )
+
+        # Add ID from database
+        term.id = data.get('id')
+
+        return term
+
+

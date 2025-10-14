@@ -2,19 +2,4 @@
 # Install with: pip install -r requirements_web.txt
 
 # Core web framework
-Flask==3.0.0
-
-# Template engine (included with Flask but listed for clarity)
-Jinja2==3.1.2
-
-# WSGI utilities (included with Flask)
-Werkzeug==3.0.1
-
-# Optional: Production WSGI server
-# Uncomment for production deployment
-# gunicorn==21.2.0
-
-# Note: Core dependencies (database, business logic) are in main requirements.txt
-# For full functionality, install both:
-#   pip install -r requirements.txt
-#   pip install -r requirements_web.txt
+Flask==3.1.2

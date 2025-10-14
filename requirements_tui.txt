@@ -1,13 +1,4 @@
 # TUI (Text User Interface) Dependencies for Ten Week Goal App
 # Install with: pip install -r requirements_tui.txt
 
-# Modern TUI framework
-textual==0.47.1
-
-# Rich text formatting (dependency of textual, listed for clarity)
-rich==13.7.0
-
-# Note: Core dependencies (database, business logic) are in main requirements.txt
-# For full functionality, install both:
-#   pip install -r requirements.txt
-#   pip install -r requirements_tui.txt
+textual==6.3.0
