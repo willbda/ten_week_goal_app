@@ -115,9 +115,18 @@ tests/         - Test suite
 - `storage_service.py`: StorageService base class with polymorphic support
   - ActionStorageService: translates Action ↔ dict
   - GoalStorageService: translates Goal ↔ dict
-  - ValuesStorageService: polymorphic storage with type preservation
-  - Pattern: store_single_instance(), store_many_instances()
+  - Pattern: store_single_instance(), store_many_instances(), save(), update_instance(), get_by_id()
   - Polymorphism: Automatically saves/retrieves correct subclass types
+- `values_storage_service.py`: Values-specific storage (Phase 1)
+  - ValuesStorageService: Handles Values hierarchy polymorphism
+  - Type-specific factory methods: create_major_value(), create_highest_order_value(), etc.
+  - Constructor registry pattern eliminates if-elif chains
+  - Filtering: get_all(type_filter='major', domain_filter='Health')
+- `values_orchestration_service.py`: Business operations coordinator (Phase 1)
+  - Wraps storage with result objects pattern
+  - Returns ValueOperationResult instead of raising exceptions
+  - Allows interfaces to handle errors appropriately
+  - Domain validation happens inline (PriorityLevel constructor)
 
 ### Infrastructure (politica/)
 - `database.py`: Generic database operations
@@ -130,7 +139,16 @@ tests/         - Test suite
 
 ### Presentation Layer (interfaces/)
 - `cli.py`: Command-line interface (orchestrator only)
-  - show_progress(): Main command for displaying goal progress
+  - show_progress(): Display goal progress dashboard
+  - **values commands (Phase 1)**: Type-specific value management
+    - values create-major: Create actionable major value with alignment guidance
+    - values create-highest-order: Create philosophical highest order value
+    - life-areas create: Create organizational life area (not a value)
+    - values create-general: Create aspirational general value
+    - values list [--type] [--domain]: List/filter values
+    - values show <id>: Display value details
+    - values edit <id>: Update value properties
+    - values delete <id>: Remove value
   - Pure orchestration: fetch → calculate → display
   - No business logic, no formatting logic
 - `cli_formatters.py`: Presentation formatting functions
@@ -138,6 +156,8 @@ tests/         - Test suite
   - render_progress_metrics(): Format metrics with completion status
   - render_action_list(): Format action details for verbose mode
   - render_timeline(): Format date ranges
+  - render_value_list(): Table format for values display
+  - render_value_detail(): Full value with alignment guidance
   - Pure presentation - no calculations
 - `cli_config.py`: CLI configuration constants
   - DisplayConfig: Bar widths, truncation limits, symbols
@@ -145,6 +165,11 @@ tests/         - Test suite
   - ColorConfig: Color scheme (stub for future)
 - `web_app.py`: Flask web application
   - Routes: /, /goal/<id>, /api/progress
+- **docs/VALUES_QUICKSTART.md**: Values CLI usage guide (Phase 1)
+  - Comprehensive examples for each value type
+  - Copy-paste commands ready to use
+  - Explains Values vs Life Areas distinction
+  - Priority guidance (1-100 scale)
   - Uses SAME business logic as CLI (ethica/progress_aggregation.py)
   - Template filters for Jinja2 formatting
 - `templates/`: Jinja2 HTML templates
@@ -316,7 +341,7 @@ Logs are written to `logs/` directory (configured in config.toml)
 1. **Check database exists**: Look for `politica/data_storage/application_data.db`
 2. **If missing, initialize**: Call `init_db()` from politica.database
 3. **Make changes**: Follow layer boundaries strictly
-4. **Run tests**: `pytest tests/` before committing (currently 82/82 passing)
+4. **Run tests**: `pytest tests/` before committing (currently 65/65 passing: 48 core + 17 values)
 5. **Check git status**: Before creating commits
 
 ## Important Notes for AI Collaboration
