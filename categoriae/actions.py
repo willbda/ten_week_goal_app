@@ -30,6 +30,9 @@ class Action:
         'start_time': datetime
     }
 
+    # These fields are set as attributes after construction, not passed to __init__
+    __constructed_without__ = ['log_time', 'measurements', 'duration_minutes', 'start_time']
+
     def __init__(self, description: str, id: Optional[int] = None):
         self.id = id  # None for new actions, int for stored actions
         self.description = description

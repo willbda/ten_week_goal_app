@@ -36,6 +36,21 @@ class Goal(ThingIWant):
 
     Optional attributes allow for varying levels of specificity.
     """
+
+    # Declare serializable fields with types for translation layer (rhetorica)
+    __serialize__ = {
+        'id': int,
+        'description': str,
+        'measurement_unit': str,
+        'measurement_target': float,
+        'start_date': datetime,
+        'end_date': datetime,
+        'how_goal_is_relevant': str,
+        'how_goal_is_actionable': str,
+        'expected_term_length': int,
+        'created_at': datetime
+    }
+
     def __init__(self,
                  description: str,
                  measurement_unit: Optional[str] = None,
@@ -163,7 +178,7 @@ class SmartGoal(Goal):
             raise ValueError("SmartGoal requires relevance statement (Relevant)")
 
         if not how_goal_is_actionable or not how_goal_is_actionable.strip():
-            raise ValueError("SmartGoal requires actionability statement (Achievable)")
+            raise ValueError("SmartGoal requires how_goal_is_actionable statement (Achievable)")
 
         # All validation passed - call parent with all required fields
         super().__init__(

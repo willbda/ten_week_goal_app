@@ -61,6 +61,14 @@ class ActionGoalRelationship(DerivedRelationship):
     assignment_method: str  # 'auto_inferred', 'user_confirmed', 'manual'
     confidence: float = 1.0
 
+    # Note: For relationships, action and goal will be serialized by their own __serialize__
+    # This is just the direct fields of the relationship itself
+    __serialize__ = {
+        'contribution': float,
+        'assignment_method': str,
+        'confidence': float
+    }
+
 
 @dataclass
 class GoalValueAlignment(DerivedRelationship):
@@ -93,3 +101,10 @@ class GoalValueAlignment(DerivedRelationship):
     alignment_strength: float  # 0.0-1.0, distinct from confidence
     assignment_method: str  # 'auto_inferred', 'user_confirmed', 'manual'
     confidence: float = 1.0
+
+    # Note: goal and value will be serialized by their own __serialize__
+    __serialize__ = {
+        'alignment_strength': float,
+        'assignment_method': str,
+        'confidence': float
+    }

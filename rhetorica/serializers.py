@@ -144,29 +144,21 @@ def deserialize(data: dict, entity_class: type) -> Any:
             # Primitive types - keep as-is
             parsed[attr] = value
 
-    # Construct entity - try passing all fields first
-    try:
-        return entity_class(**parsed)
-    except TypeError:
-        # Some classes don't take all fields as constructor args
-        # Try minimal construction then set attributes
-        import inspect
-        sig = inspect.signature(entity_class.__init__)
-        # Get required + optional constructor parameters (excluding 'self')
-        constructor_params = {k for k in sig.parameters.keys() if k != 'self'}
+    # Determine which fields go to constructor vs. set as attributes
+    # Some entities (like Action) use minimal constructors and set fields afterward
+    constructed_without = getattr(entity_class, '__constructed_without__', [])
 
-        # Split parsed data into constructor args vs. attributes to set later
-        constructor_data = {k: v for k, v in parsed.items() if k in constructor_params}
-        remaining_data = {k: v for k, v in parsed.items() if k not in constructor_params}
+    constructor_data = {k: v for k, v in parsed.items() if k not in constructed_without}
+    attribute_data = {k: v for k, v in parsed.items() if k in constructed_without}
 
-        # Create instance with constructor args
-        entity = entity_class(**constructor_data)
+    # Create instance with constructor fields
+    entity = entity_class(**constructor_data)
 
-        # Set remaining attributes
-        for attr, value in remaining_data.items():
-            setattr(entity, attr, value)
+    # Set remaining attributes
+    for attr, value in attribute_data.items():
+        setattr(entity, attr, value)
 
-        return entity
+    return entity
 
 
 def serialize_many(entities: list, include_type: bool = True) -> list[dict]:
