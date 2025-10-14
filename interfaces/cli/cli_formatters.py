@@ -20,11 +20,13 @@ Written by Claude Code on 2025-10-12
 TODO: complete the stubs below
 """
 
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime
 from categoriae.goals import Goal
 from categoriae.relationships import ActionGoalRelationship
+from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas
 from ethica.progress_aggregation import GoalProgress
+from rhetorica.values_storage_service import ValuesStorageService
 
 
 # ===== CONFIGURATION =====
@@ -398,3 +400,115 @@ def format_date_relative(dt: datetime) -> str:
     """
     # Stub: would implement relative date logic
     return format_date(dt)
+
+
+# ===== VALUES LIST FORMATTING =====
+
+def render_value_list(values: List) -> str:
+    """
+    Format list of values as plain text table.
+
+    Args:
+        values: List of Values/MajorValues/HighestOrderValues/LifeAreas entities
+
+    Returns:
+        Formatted multi-line string with fixed-width columns
+
+    Example:
+        >>> print(render_value_list(values))
+        VALUES
+        ======
+
+        ID  Name                    Type            Domain          Priority
+        1   Health & Vitality       major           Health          5
+        2   Continuous Learning     general         Personal        30
+        3   Environmental Care      life_area       General         20
+
+        Total: 3 values
+    """
+    if not values:
+        return "No values found."
+
+    lines = []
+    lines.append("\nVALUES")
+    lines.append("=" * 6)
+    lines.append("")
+
+    # Header row
+    header = f"{'ID':<4}{'Name':<24}{'Type':<16}{'Domain':<16}{'Priority':<8}"
+    lines.append(header)
+
+    # Data rows
+    for value in values:
+        # Get type string from rhetorica (eliminates hasattr logic)
+        type_str = value.incentive_type
+
+        # Truncate name if too long
+        name = value.name[:21] + "..." if len(value.name) > 24 else value.name
+
+        # Format row
+        value_id = value.id if value.id else "N/A"
+        row = f"{str(value_id):<4}{name:<24}{type_str:<16}{value.life_domain:<16}{int(value.priority):<8}"
+        lines.append(row)
+
+    # Footer
+    lines.append("")
+    lines.append(f"Total: {len(values)} values")
+
+    return '\n'.join(lines)
+
+
+# ===== VALUE DETAIL FORMATTING =====
+
+def render_value_detail(value: Union[Values, MajorValues, HighestOrderValues, LifeAreas]) -> str:
+    """
+    Format detailed information for a single value.
+
+    Args:
+        value: Values entity (any subclass)
+
+    Returns:
+        Formatted multi-line string with all value attributes
+
+    Example:
+        >>> print(render_value_detail(value))
+        VALUE DETAILS
+        =============
+
+        ID:          5
+        Name:        Health & Vitality
+        Type:        major
+        Description: Physical and mental wellness
+        Domain:      Health
+        Priority:    5
+        Alignment:   Daily exercise, nutrition tracking, sleep hygiene
+    """
+    lines = []
+    lines.append("\nVALUE DETAILS")
+    lines.append("=" * 13)
+    lines.append("")
+
+    # Get type string from rhetorica
+    value_type = value.incentive_type
+
+    # Format fields
+    value_id = value.id if value.id else "N/A"
+    lines.append(f"ID:          {value_id}")
+    lines.append(f"Name:        {value.name}")
+    lines.append(f"Type:        {value_type}")
+    lines.append(f"Description: {value.description}")
+    lines.append(f"Domain:      {value.life_domain}")
+    lines.append(f"Priority:    {int(value.priority)}")
+
+    # Show alignment guidance for major values
+    if value.incentive_type == 'major' and value.alignment_guidance:
+        if isinstance(value.alignment_guidance, dict):
+            # Format dict nicely
+            import json
+            guidance_str = json.dumps(value.alignment_guidance, indent=2)
+        else:
+            guidance_str = str(value.alignment_guidance)
+        lines.append(f"Alignment:   {guidance_str}")
+
+    lines.append("")
+    return '\n'.join(lines)

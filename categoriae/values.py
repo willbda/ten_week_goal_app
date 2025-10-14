@@ -22,18 +22,23 @@ class Incentives:
     """
     Base class for Values, LifeAreas, and HighestOrderValues.
     Opportunity to practice inheritance and polymorphism.
+
+    Each subclass declares its type as a class attribute for self-identification.
     """
+    incentive_type = 'incentive'  # Class attribute: What kind of thing am I?
+
     def __init__(self, description: str, priority: PriorityLevel = PriorityLevel(50), life_domain: str = "General", id: Optional[int] = None):
         self.id = id  # None for new incentives, int for stored incentives
         self.description = description
         self.priority = priority  # 1 = highest priority
         self.life_domain = life_domain  # e.g., Health, Career, Relationships
-        self.is_life_area = False
 
 class Values(Incentives):
     """
     Personal incentives that align with beliefs about what is worthwhile.
     """
+    incentive_type = 'general'  # General values (aspirational but not primary focus)
+
     def __init__(self,
                 name: str,
                 description: str,
@@ -43,9 +48,6 @@ class Values(Incentives):
                 ):
         super().__init__(description, priority, life_domain, id)
         self.name = name
-        self.is_value = True
-        self.is_major_value = False
-        self.is_highest_order_value = False
 
 class LifeAreas(Incentives):
     """
@@ -54,10 +56,11 @@ class LifeAreas(Incentives):
 
     Importantly, LifeAreas are not values
     """
+    incentive_type = 'life_area'  # Organizational domains (not values)
+
     def __init__(self, name: str, description: str, priority: PriorityLevel = PriorityLevel(40), life_domain: str = "General", id: Optional[int] = None):
         super().__init__(description, priority, life_domain, id)
-        self.name = name
-        self.is_life_area = True 
+        self.name = name 
         
 class MajorValues(Values):
     """
@@ -67,6 +70,7 @@ class MajorValues(Values):
         alignment_guidance: Optional dict or text describing how this value shows up in actions/goals.
                            Structure TBD based on future ethica layer needs.
     """
+    incentive_type = 'major'  # Actionable values requiring regular tracking
 
     def __init__(
         self,
@@ -78,15 +82,14 @@ class MajorValues(Values):
         id: Optional[int] = None
     ):
         super().__init__(name, description, priority, life_domain, id)
-        self.is_major_value = True
         self.alignment_guidance = alignment_guidance  # Flexible for now
 
 class HighestOrderValues(Values):
     """
     I mean for this to be a high-level, abstract concept. I might not use the class, but in my thinking about how to set goals, it was helpful to start with a sense of my highest-order values. These largely aren't actionable in a daily or even monthly sense. They might show up if I develop dashboard features as a cute or gentle way of personalizing the application. They might be helpful if I develop features for setting more goals or identifying values. For now, it's here to flesh out the inheritance structure and cue me to think about how good design allows for extension.
     """
+    incentive_type = 'highest_order'  # Abstract philosophical values
 
     def __init__(self, name: str, description: str, priority: PriorityLevel = PriorityLevel(1), life_domain: str = "General", id: Optional[int] = None):
         super().__init__(name, description, priority, life_domain, id)
-        self.is_highest_order_value = True  
 

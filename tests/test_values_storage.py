@@ -9,7 +9,7 @@ Written by Claude Code on 2025-10-11
 
 import pytest
 from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas, PriorityLevel
-from rhetorica.storage_service import ValuesStorageService
+from rhetorica.values_storage_service import ValuesStorageService
 
 
 def test_general_values_storage(test_db):
@@ -110,7 +110,7 @@ def test_highest_order_values_storage(test_db):
     stored = service.get_all()
     assert len(stored) == 1
     assert isinstance(stored[0], HighestOrderValues)
-    assert stored[0].is_highest_order_value is True
+    assert stored[0].incentive_type == 'highest_order'
     assert stored[0].name == "Live Well, Die in Peace"
 
 
@@ -132,7 +132,7 @@ def test_life_areas_storage(test_db):
     stored = service.get_all()
     assert len(stored) == 1
     assert isinstance(stored[0], LifeAreas)
-    assert stored[0].is_life_area is True
+    assert stored[0].incentive_type == 'life_area'
     assert stored[0].description == "Career and professional development"
 
 
@@ -206,7 +206,7 @@ def test_values_roundtrip(test_db):
     assert retrieved.priority == original.priority
     assert retrieved.life_domain == original.life_domain
     assert retrieved.alignment_guidance == original.alignment_guidance
-    assert retrieved.is_major_value is True
+    assert retrieved.incentive_type == 'major'
 
 
 def test_values_id_roundtrip(test_db):

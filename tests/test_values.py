@@ -40,45 +40,42 @@ def test_priority_level_validates_range():
 # ===== INCENTIVES - Base class with defaults =====
 
 def test_incentives_has_sensible_defaults():
-    """Incentives provides description, priority, life_domain, and is_life_area flag"""
+    """Incentives provides description, priority, life_domain, and incentive_type"""
     incentive = Incentives("Be a good person")
 
     assert incentive.description == "Be a good person"
     assert incentive.priority == 50  # Default middle priority
     assert incentive.life_domain == "General"
-    assert incentive.is_life_area is False
+    assert incentive.incentive_type == 'incentive'  # Base type
 
 
 # ===== VALUES - Adds name and value flags =====
 
-def test_values_adds_name_and_flags():
-    """Values adds name attribute and sets is_value flags correctly"""
+def test_values_adds_name_and_type():
+    """Values adds name attribute and has incentive_type 'general'"""
     value = Values("Compassion", "Showing kindness to others")
 
     assert value.name == "Compassion"
     assert value.description == "Showing kindness to others"
     assert value.priority == 40  # Values default to 40
-    assert value.is_value is True
-    assert value.is_major_value is False
-    assert value.is_highest_order_value is False
+    assert value.incentive_type == 'general'  # General value type
 
 
 # ===== LIFE AREAS - Distinct from Values despite sharing base =====
 
 def test_life_areas_not_a_value():
-    """LifeAreas inherit from Incentives but are NOT Values (no is_value attribute)"""
+    """LifeAreas inherit from Incentives but are NOT Values"""
     life_area = LifeAreas("Career", "Career success and growth")
 
-    assert life_area.is_life_area is True
+    assert life_area.incentive_type == 'life_area'  # Life area type
     assert isinstance(life_area, Incentives)
-    assert not isinstance(life_area, Values)
-    # LifeAreas don't have is_value attribute at all
+    assert not isinstance(life_area, Values)  # LifeAreas are NOT Values
 
 
 # ===== MAJOR VALUES - What makes them distinct =====
 
 def test_major_values_distinctive_features():
-    """MajorValues: priority 1, is_major_value=True, has alignment_guidance"""
+    """MajorValues: priority 1, incentive_type='major', has alignment_guidance"""
     major = MajorValues(
         "Integrity",
         "Acting consistently with principles",
@@ -86,8 +83,8 @@ def test_major_values_distinctive_features():
     )
 
     assert major.priority == 1  # Defaults to highest priority
-    assert major.is_major_value is True
-    assert major.is_value is True  # Still a Value
+    assert major.incentive_type == 'major'  # Major value type
+    assert isinstance(major, Values)  # Still a Value
     assert major.alignment_guidance is not None
 
 
@@ -101,13 +98,13 @@ def test_major_values_alignment_guidance_optional():
 # ===== HIGHEST ORDER VALUES - Abstract, priority 1 =====
 
 def test_highest_order_values_distinctive_features():
-    """HighestOrderValues: priority 1, is_highest_order_value=True"""
+    """HighestOrderValues: priority 1, incentive_type='highest_order'"""
     highest = HighestOrderValues("Truth", "Commitment to reality")
 
     assert highest.priority == 1
-    assert highest.is_highest_order_value is True
-    assert highest.is_value is True
-    assert highest.is_major_value is False  # Not a MajorValues subclass
+    assert highest.incentive_type == 'highest_order'  # Highest order type
+    assert isinstance(highest, Values)  # Is a Value
+    assert not isinstance(highest, MajorValues)  # Not a MajorValues subclass
 
 
 # ===== INHERITANCE - Verify the hierarchy works =====
