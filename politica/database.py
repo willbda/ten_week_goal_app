@@ -234,11 +234,11 @@ class Database:
 
         Args:
             updates: Dict of column:value pairs
-                     Example: {'end_date': '2025-12-25', 'target_value': 150.0}
+                     Example: {'end_date': '2025-12-25', 'measurement_target': 150.0}
 
         Returns:
             Tuple of (sql_string, values_list)
-            Example: ("end_date = ?, target_value = ?", ['2025-12-25', 150.0])
+            Example: ("end_date = ?, measurement_target = ?", ['2025-12-25', 150.0])
         """
         if not updates:
             return "", []
@@ -320,7 +320,7 @@ class Database:
 
         Example:
             # Insert single goal
-            ids = db.insert('goals', [{'name': 'Run 100km', 'target_value': 100.0}])
+            ids = db.insert('goals', [{'name': 'Run 100km', 'measurement_target': 100.0}])
             # ids = [123]
 
             # Insert multiple actions
@@ -366,7 +366,7 @@ class Database:
             table: Table name
             record_id: The ID of the record to update
             updates: Dict of column:value pairs to update
-                     Example: {'description': 'Updated text', 'target_value': 150.0}
+                     Example: {'description': 'Updated text', 'measurement_target': 150.0}
             archive_old: If True, archive the old version before updating (default: True)
             notes: Optional notes for the archive entry
 

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS terms (
   start_date TEXT NOT NULL,                       -- First day of term (ISO format: '2025-10-13')
   end_date TEXT NOT NULL,                         -- Last day of term (ISO format: '2025-12-22')
   theme TEXT,                                     -- Optional focus area (e.g., "Health & Learning")
-  goal_ids TEXT,                                  -- JSON array of goal IDs: "[1, 3, 5]"
+  term_goal_ids TEXT,                             -- JSON array of goal IDs: "[1, 3, 5]"
   reflection TEXT,                                -- Post-term reflection notes
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP,

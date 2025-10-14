@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS personal_values (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,                         -- Short name (e.g., "Companionship with Solène")
+  value_name TEXT NOT NULL,                         -- Short name (e.g., "Companionship with Solène")
   description TEXT NOT NULL,                  -- Extended explanation of the value
   value_type TEXT NOT NULL,                   -- 'major', 'highest_order', 'general', 'life_area'
   priority INTEGER NOT NULL DEFAULT 50,       -- 1 = highest priority, 100 = lowest

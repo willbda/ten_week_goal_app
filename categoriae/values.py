@@ -27,6 +27,14 @@ class Incentives:
     """
     incentive_type = 'incentive'  # Class attribute: What kind of thing am I?
 
+    # Base serializable fields with types (subclasses will extend)
+    __serialize__ = {
+        'id': int,
+        'description': str,
+        'priority': int,  # PriorityLevel is int subclass
+        'life_domain': str
+    }
+
     def __init__(self, description: str, priority: PriorityLevel = PriorityLevel(50), life_domain: str = "General", id: Optional[int] = None):
         self.id = id  # None for new incentives, int for stored incentives
         self.description = description
@@ -39,15 +47,18 @@ class Values(Incentives):
     """
     incentive_type = 'general'  # General values (aspirational but not primary focus)
 
+    # Extend parent serialization with value_name
+    __serialize__ = {**Incentives.__serialize__, 'value_name': str}
+
     def __init__(self,
-                name: str,
+                value_name: str,
                 description: str,
                 priority: PriorityLevel = PriorityLevel(40),
                 life_domain: str = "General",
                 id: Optional[int] = None
                 ):
         super().__init__(description, priority, life_domain, id)
-        self.name = name
+        self.value_name = value_name
 
 class LifeAreas(Incentives):
     """
@@ -58,9 +69,12 @@ class LifeAreas(Incentives):
     """
     incentive_type = 'life_area'  # Organizational domains (not values)
 
-    def __init__(self, name: str, description: str, priority: PriorityLevel = PriorityLevel(40), life_domain: str = "General", id: Optional[int] = None):
+    # Extend parent serialization with value_name
+    __serialize__ = {**Incentives.__serialize__, 'value_name': str}
+
+    def __init__(self, value_name: str, description: str, priority: PriorityLevel = PriorityLevel(40), life_domain: str = "General", id: Optional[int] = None):
         super().__init__(description, priority, life_domain, id)
-        self.name = name 
+        self.value_name = value_name 
         
 class MajorValues(Values):
     """
@@ -72,16 +86,19 @@ class MajorValues(Values):
     """
     incentive_type = 'major'  # Actionable values requiring regular tracking
 
+    # Extend Values serialization with alignment_guidance
+    __serialize__ = {**Values.__serialize__, 'alignment_guidance': str}
+
     def __init__(
         self,
-        name: str,
+        value_name: str,
         description: str,
         priority: PriorityLevel = PriorityLevel(1),
         life_domain: str = "General",
         alignment_guidance: Optional[Union[dict, str]] = None,
         id: Optional[int] = None
     ):
-        super().__init__(name, description, priority, life_domain, id)
+        super().__init__(value_name, description, priority, life_domain, id)
         self.alignment_guidance = alignment_guidance  # Flexible for now
 
 class HighestOrderValues(Values):
@@ -90,6 +107,6 @@ class HighestOrderValues(Values):
     """
     incentive_type = 'highest_order'  # Abstract philosophical values
 
-    def __init__(self, name: str, description: str, priority: PriorityLevel = PriorityLevel(1), life_domain: str = "General", id: Optional[int] = None):
-        super().__init__(name, description, priority, life_domain, id)
+    def __init__(self, value_name: str, description: str, priority: PriorityLevel = PriorityLevel(1), life_domain: str = "General", id: Optional[int] = None):
+        super().__init__(value_name, description, priority, life_domain, id)
 

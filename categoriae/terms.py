@@ -33,7 +33,7 @@ class TimeFrame(ABC):
 class GoalTerm(TimeFrame):
     """
     Goal term -- a fundamental unit of structured planning. The idea of a "term" is inspired by academic terms but adapted for personal productivity. It should be long enough to make meaningful progress on goals, but short enough to maintain focus and urgency.
-    
+
     A typical term is 10 weeks (70 days), but this can be adjusted based on personal preference or context. The key is to have a clear start and end date, along with defined goals and a theme or focus area if desired.
     Attributes:
         term_number: Sequential identifier (e.g., Term 1, Term 2)
@@ -45,13 +45,24 @@ class GoalTerm(TimeFrame):
     """
     TEN_WEEKS_IN_DAYS = 70  # 10 weeks × 7 days/week
 
+    # Declare serializable fields with types
+    __serialize__ = {
+        'id': int,
+        'term_number': int,
+        'start_date': datetime,
+        'end_date': datetime,
+        'theme': str,
+        'term_goal_ids': list,  # Will be JSON string in DB
+        'reflection': str
+    }
+
     def __init__(
         self,
         term_number: int,
         start_date: datetime,
         end_date: Optional[datetime] = None,
         theme: Optional[str] = None,
-        goals: Optional[List[int]] = None,
+        term_goal_ids: Optional[List[int]] = None,
         reflection: Optional[str] = None,
         id: Optional[int] = None
     ):
@@ -66,7 +77,7 @@ class GoalTerm(TimeFrame):
             self.end_date = end_date
 
         self.theme = theme
-        self.goals = goals or []
+        self.term_goal_ids = term_goal_ids or []
         self.reflection = reflection
 
     def is_active(self, check_date: Optional[datetime] = None) -> bool:

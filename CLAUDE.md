@@ -185,8 +185,9 @@ tests/         - Test suite
 
 Tables are defined in `politica/schemas/`:
 - `actions.sql`: description, log_time, measurements (JSON), start_time, duration_minutes
-- `goals.sql`: description, target_value, unit, start_date, end_date, relevance, actionability
-- `values.sql`: Polymorphic storage with type_name for class hierarchy, life_area, priority, alignment_guidance
+- `goals.sql`: description, measurement_target, measurement_unit, start_date, end_date, how_goal_is_relevant, how_goal_is_actionable, expected_term_length, created_at
+- `values.sql`: Polymorphic storage with value_name, value_type for class hierarchy, life_domain, priority, alignment_guidance
+- `terms.sql`: term_number, start_date, end_date, theme, term_goal_ids (JSON array), reflection, created_at, updated_at
 - `action_goal_progress.sql`: Cached relationship projections (action_id, goal_id, match_strength, match_reasons JSON)
 - `archive.sql`: Stores deleted/updated records for audit trail
 - `schema.sql`: Main schema file

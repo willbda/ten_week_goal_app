@@ -28,7 +28,7 @@ class ValuesStorageService(StorageService):
     # Eliminates if-elif chain in _from_dict()
     _CONSTRUCTORS = {
         'major': lambda data, priority, alignment_guidance, value_id: MajorValues(
-            name=data['name'],
+            value_name=data['value_name'],
             description=data['description'],
             priority=priority,
             life_domain=data.get('life_domain', 'General'),
@@ -36,21 +36,21 @@ class ValuesStorageService(StorageService):
             id=value_id
         ),
         'highest_order': lambda data, priority, alignment_guidance, value_id: HighestOrderValues(
-            name=data['name'],
+            value_name=data['value_name'],
             description=data['description'],
             priority=priority,
             life_domain=data.get('life_domain', 'General'),
             id=value_id
         ),
         'life_area': lambda data, priority, alignment_guidance, value_id: LifeAreas(
-            name=data['name'],
+            value_name=data['value_name'],
             description=data['description'],
             priority=priority,
             life_domain=data.get('life_domain', 'General'),
             id=value_id
         ),
         'general': lambda data, priority, alignment_guidance, value_id: Values(
-            name=data['name'],
+            value_name=data['value_name'],
             description=data['description'],
             priority=priority,
             life_domain=data.get('life_domain', 'General'),
@@ -77,7 +77,7 @@ class ValuesStorageService(StorageService):
                 alignment_guidance = str(value.alignment_guidance)
 
         result = {
-            'name': value.name,
+            'value_name': value.value_name,
             'description': value.description,
             'value_type': value.incentive_type,  # Entity knows its own type!
             'priority': int(value.priority),
@@ -144,7 +144,7 @@ class ValuesStorageService(StorageService):
 
     @staticmethod
     def create_major_value(
-        name: str,
+        value_name: str,
         description: str,
         priority: PriorityLevel,
         life_domain: str = 'General',
@@ -157,7 +157,7 @@ class ValuesStorageService(StorageService):
         It should be a concern if MajorValues are not reflected in tracked activities.
 
         Args:
-            name: Value name (e.g., "Health", "Family")
+            value_name: Value name (e.g., "Health", "Family")
             description: What this value means
             priority: Priority level (1 = highest, 100 = lowest)
             life_domain: Life domain categorization (default: 'General')
@@ -168,7 +168,7 @@ class ValuesStorageService(StorageService):
 
         Example:
             >>> value = ValuesStorageService.create_major_value(
-            ...     name='Health',
+            ...     value_name='Health',
             ...     description='Physical and mental wellbeing',
             ...     priority=PriorityLevel(5),
             ...     life_domain='Personal',
@@ -180,7 +180,7 @@ class ValuesStorageService(StorageService):
         Written by Claude Code on 2025-10-13.
         """
         return MajorValues(
-            name=name,
+            value_name=value_name,
             description=description,
             priority=priority,
             life_domain=life_domain,
@@ -189,7 +189,7 @@ class ValuesStorageService(StorageService):
 
     @staticmethod
     def create_highest_order_value(
-        name: str,
+        value_name: str,
         description: str,
         priority: PriorityLevel = PriorityLevel(1),
         life_domain: str = 'General'
@@ -201,7 +201,7 @@ class ValuesStorageService(StorageService):
         monthly sense. They provide meaning and context but aren't tracked directly.
 
         Args:
-            name: Value name (e.g., "Flourishing", "Excellence")
+            value_name: Value name (e.g., "Flourishing", "Excellence")
             description: What this value means
             priority: Priority level (default: 1 = highest)
             life_domain: Life domain categorization (default: 'General')
@@ -211,7 +211,7 @@ class ValuesStorageService(StorageService):
 
         Example:
             >>> value = ValuesStorageService.create_highest_order_value(
-            ...     name='Flourishing',
+            ...     value_name='Flourishing',
             ...     description='Living a meaningful, excellent life',
             ...     priority=PriorityLevel(1)
             ... )
@@ -221,7 +221,7 @@ class ValuesStorageService(StorageService):
         Written by Claude Code on 2025-10-13.
         """
         return HighestOrderValues(
-            name=name,
+            value_name=value_name,
             description=description,
             priority=priority,
             life_domain=life_domain
@@ -229,7 +229,7 @@ class ValuesStorageService(StorageService):
 
     @staticmethod
     def create_life_area(
-        name: str,
+        value_name: str,
         description: str,
         priority: PriorityLevel = PriorityLevel(40),
         life_domain: str = 'General'
@@ -242,7 +242,7 @@ class ValuesStorageService(StorageService):
         activities without evaluative judgment.
 
         Args:
-            name: Area name (e.g., "Career", "Family", "Hobbies")
+            value_name: Area name (e.g., "Career", "Family", "Hobbies")
             description: What this area encompasses
             priority: Priority level (default: 40 = mid-range)
             life_domain: Life domain categorization (default: 'General')
@@ -252,7 +252,7 @@ class ValuesStorageService(StorageService):
 
         Example:
             >>> area = ValuesStorageService.create_life_area(
-            ...     name='Career',
+            ...     value_name='Career',
             ...     description='Professional development and work',
             ...     priority=PriorityLevel(20)
             ... )
@@ -262,7 +262,7 @@ class ValuesStorageService(StorageService):
         Written by Claude Code on 2025-10-13.
         """
         return LifeAreas(
-            name=name,
+            value_name=value_name,
             description=description,
             priority=priority,
             life_domain=life_domain
@@ -270,7 +270,7 @@ class ValuesStorageService(StorageService):
 
     @staticmethod
     def create_value(
-        name: str,
+        value_name: str,
         description: str,
         priority: PriorityLevel = PriorityLevel(50),
         life_domain: str = 'General'
@@ -282,7 +282,7 @@ class ValuesStorageService(StorageService):
         tracked regularly in actions and goals. More diffuse than MajorValues.
 
         Args:
-            name: Value name
+            value_name: Value name
             description: What this value means
             priority: Priority level (default: 50 = mid-range)
             life_domain: Life domain categorization (default: 'General')
@@ -292,7 +292,7 @@ class ValuesStorageService(StorageService):
 
         Example:
             >>> value = ValuesStorageService.create_value(
-            ...     name='Kindness',
+            ...     value_name='Kindness',
             ...     description='Being kind to others',
             ...     priority=PriorityLevel(30)
             ... )
@@ -302,7 +302,7 @@ class ValuesStorageService(StorageService):
         Written by Claude Code on 2025-10-13.
         """
         return Values(
-            name=name,
+            value_name=value_name,
             description=description,
             priority=priority,
             life_domain=life_domain
