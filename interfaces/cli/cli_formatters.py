@@ -246,8 +246,8 @@ def render_action_summary(
 
     # Format log date
     log_date = "N/A"
-    if match.action.logtime:
-        log_date = match.action.logtime.strftime('%Y-%m-%d')
+    if match.action.log_time:
+        log_date = match.action.log_time.strftime('%Y-%m-%d')
 
     # Format confidence
     confidence_str = "N/A"
@@ -444,7 +444,7 @@ def render_value_list(values: List) -> str:
         type_str = value.incentive_type
 
         # Truncate name if too long
-        name = value.name[:21] + "..." if len(value.name) > 24 else value.name
+        name = value.value_name[:21] + "..." if len(value.value_name) > 24 else value.value_name
 
         # Format row
         value_id = value.id if value.id else "N/A"
@@ -494,7 +494,7 @@ def render_value_detail(value: Union[Values, MajorValues, HighestOrderValues, Li
     # Format fields
     value_id = value.id if value.id else "N/A"
     lines.append(f"ID:          {value_id}")
-    lines.append(f"Name:        {value.name}")
+    lines.append(f"Name:        {value.value_name}")
     lines.append(f"Type:        {value_type}")
     lines.append(f"Description: {value.description}")
     lines.append(f"Domain:      {value.life_domain}")

@@ -21,8 +21,8 @@ def test_action_creation_with_description():
     action = Action("Did pushups")
 
     assert action.description == "Did pushups"
-    assert action.logtime is not None
-    assert isinstance(action.logtime, datetime)
+    assert action.log_time is not None
+    assert isinstance(action.log_time, datetime)
 
 
 def test_action_has_optional_attributes():
@@ -31,7 +31,7 @@ def test_action_has_optional_attributes():
 
     assert action.measurements is None
     assert action.duration_minutes is None
-    assert action.starttime is None
+    assert action.start_time is None
 
 
 # ===== VALIDATION TESTS =====
@@ -60,19 +60,19 @@ def test_invalid_action_with_zero_measurement():
     assert not action.is_valid()
 
 
-def test_invalid_action_starttime_without_duration():
-    """If starttime exists, duration should too"""
+def test_invalid_action_start_time_without_duration():
+    """If start_time exists, duration should too"""
     action = Action("Workout")
-    action.starttime = datetime.now()
+    action.start_time = datetime.now()
     # duration_minutes is None
 
     assert not action.is_valid()
 
 
-def test_valid_action_with_starttime_and_duration():
-    """Action with both starttime and duration should be valid"""
+def test_valid_action_with_start_time_and_duration():
+    """Action with both start_time and duration should be valid"""
     action = Action("Workout")
-    action.starttime = datetime.now()
+    action.start_time = datetime.now()
     action.duration_minutes = 45.0
 
     assert action.is_valid()

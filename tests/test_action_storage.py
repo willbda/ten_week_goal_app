@@ -22,7 +22,7 @@ def test_action_save(test_db):
 
     action_one.measurements = {'units': 12}
     action_two.duration_minutes = 15.0
-    action_three.starttime = datetime.now()
+    action_three.start_time = datetime.now()
     action_three.duration_minutes = 15.0
 
     test_actions = [action_one, action_two, action_three]

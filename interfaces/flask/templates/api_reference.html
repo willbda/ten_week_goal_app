@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ten Week Goal App - API Reference</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .base-url {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 15px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        nav {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        nav h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        nav a:hover {
+            background: #f0f0f0;
+        }
+
+        .resource-section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .resource-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .endpoint {
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+        }
+
+        .endpoint-header {
+            margin-bottom: 15px;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-right: 10px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .method.get { background: #61affe; color: white; }
+        .method.post { background: #49cc90; color: white; }
+        .method.put { background: #fca130; color: white; }
+        .method.delete { background: #f93e3e; color: white; }
+
+        .endpoint-path {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .endpoint-description {
+            color: #666;
+            margin: 10px 0;
+        }
+
+        .params, .request-body, .response {
+            margin: 15px 0;
+        }
+
+        .params h4, .request-body h4, .response h4 {
+            color: #667eea;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .param-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .param-item {
+            margin-bottom: 8px;
+        }
+
+        .param-name {
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: #e83e8c;
+            font-weight: bold;
+        }
+
+        .param-type {
+            color: #667eea;
+            font-style: italic;
+        }
+
+        code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        .example-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .tab-button {
+            background: #e0e0e0;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            font-size: 0.9rem;
+        }
+
+        .tab-button.active {
+            background: #2d2d2d;
+            color: white;
+        }
+
+        .try-it {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        .try-it:hover {
+            background: #5568d3;
+        }
+
+        .response-code {
+            display: inline-block;
+            background: #49cc90;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            margin-right: 8px;
+        }
+
+        .response-code.error {
+            background: #f93e3e;
+        }
+
+        .schemas {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .schemas h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .schema-item {
+            margin-bottom: 20px;
+        }
+
+        .schema-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Ten Week Goal App API</h1>
+            <p>RESTful JSON API for goal tracking, action logging, and values management</p>
+            <div class="base-url">Base URL: http://localhost:5001/api</div>
+        </header>
+
+        <nav>
+            <h3>Quick Navigation</h3>
+            <ul>
+                <li><a href="#goals">Goals</a></li>
+                <li><a href="#actions">Actions</a></li>
+                <li><a href="#values">Values</a></li>
+                <li><a href="#terms">Terms</a></li>
+                <li><a href="#schemas">Data Schemas</a></li>
+                <li><a href="#errors">Error Handling</a></li>
+            </ul>
+        </nav>
+
+        <!-- GOALS RESOURCE -->
+        <div class="resource-section" id="goals">
+            <h2>📋 Goals Resource</h2>
+            <p>Manage goals with SMART criteria (Specific, Measurable, Achievable, Relevant, Time-bound)</p>
+
+            <!-- List Goals -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/goals</span>
+                </div>
+                <p class="endpoint-description">Retrieve all goals with optional filtering</p>
+
+                <div class="params">
+                    <h4>Query Parameters</h4>
+                    <div class="param-list">
+                        <div class="param-item">
+                            <span class="param-name">has_dates</span>
+                            <span class="param-type">(boolean)</span> - Filter for time-bound goals
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">has_target</span>
+                            <span class="param-type">(boolean)</span> - Filter for measurable goals
+                        </div>
+                    </div>
+                </div>
+
+                <div class="response">
+                    <h4>Example Response <span class="response-code">200</span></h4>
+                    <pre><code>{
+  "goals": [
+    {
+      "id": 1,
+      "description": "Run 120km",
+      "measurement_unit": "km",
+      "measurement_target": 120.0,
+      "start_date": "2025-10-10T00:00:00",
+      "end_date": "2025-12-19T00:00:00",
+      "type": "Goal"
+    }
+  ],
+  "count": 1
+}</code></pre>
+                </div>
+
+                <pre><code>curl "http://localhost:5001/api/goals?has_dates=true"</code></pre>
+            </div>
+
+            <!-- Get Goal -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/goals/{id}</span>
+                </div>
+                <p class="endpoint-description">Retrieve a single goal by ID</p>
+
+                <div class="response">
+                    <h4>Responses</h4>
+                    <p><span class="response-code">200</span> Goal object</p>
+                    <p><span class="response-code error">404</span> Goal not found</p>
+                </div>
+
+                <pre><code>curl http://localhost:5001/api/goals/1</code></pre>
+            </div>
+
+            <!-- Create Goal -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/goals</span>
+                </div>
+                <p class="endpoint-description">Create a new goal</p>
+
+                <div class="request-body">
+                    <h4>Request Body</h4>
+                    <div class="param-list">
+                        <div class="param-item">
+                            <span class="param-name">description</span>
+                            <span class="param-type">(string, required)</span> - Goal description
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">measurement_unit</span>
+                            <span class="param-type">(string)</span> - Unit of measurement
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">measurement_target</span>
+                            <span class="param-type">(float)</span> - Target value
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">start_date</span>
+                            <span class="param-type">(datetime)</span> - ISO format
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">end_date</span>
+                            <span class="param-type">(datetime)</span> - ISO format
+                        </div>
+                    </div>
+                </div>
+
+                <pre><code>curl -X POST http://localhost:5001/api/goals \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "description": "Run 120km",
+    "measurement_unit": "km",
+    "measurement_target": 120.0,
+    "start_date": "2025-10-10T00:00:00",
+    "end_date": "2025-12-19T00:00:00"
+  }'</code></pre>
+            </div>
+
+            <!-- Update Goal -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/goals/{id}</span>
+                </div>
+                <p class="endpoint-description">Update an existing goal (partial updates supported)</p>
+
+                <pre><code>curl -X PUT http://localhost:5001/api/goals/1 \
+  -H 'Content-Type: application/json' \
+  -d '{"measurement_target": 150.0}'</code></pre>
+            </div>
+
+            <!-- Delete Goal -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/goals/{id}</span>
+                </div>
+                <p class="endpoint-description">Delete a goal (with automatic archiving)</p>
+
+                <pre><code>curl -X DELETE http://localhost:5001/api/goals/1</code></pre>
+            </div>
+
+            <!-- Goal Progress -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/goals/{id}/progress</span>
+                </div>
+                <p class="endpoint-description">Get goal with detailed progress metrics and matching actions</p>
+
+                <div class="response">
+                    <h4>Example Response <span class="response-code">200</span></h4>
+                    <pre><code>{
+  "goal": { ... },
+  "progress": {
+    "total_progress": 102.5,
+    "target": 120.0,
+    "percent": 85.4,
+    "remaining": 17.5,
+    "is_complete": false,
+    "is_overachieved": false,
+    "matching_actions_count": 23,
+    "unit": "km"
+  },
+  "matches": [
+    {
+      "action_id": 5,
+      "action_description": "Morning run",
+      "contribution": 5.2,
+      "assignment_method": "unit_match",
+      "confidence": 0.95
+    }
+  ]
+}</code></pre>
+                </div>
+
+                <pre><code>curl http://localhost:5001/api/goals/1/progress</code></pre>
+            </div>
+        </div>
+
+        <!-- ACTIONS RESOURCE -->
+        <div class="resource-section" id="actions">
+            <h2>⚡ Actions Resource</h2>
+            <p>Log and track actions with measurements, duration, and automatic goal matching</p>
+
+            <!-- List Actions -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/actions</span>
+                </div>
+                <p class="endpoint-description">Retrieve all actions with optional filtering</p>
+
+                <div class="params">
+                    <h4>Query Parameters</h4>
+                    <div class="param-list">
+                        <div class="param-item">
+                            <span class="param-name">has_measurements</span>
+                            <span class="param-type">(boolean)</span> - Filter for actions with measurements
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">has_duration</span>
+                            <span class="param-type">(boolean)</span> - Filter for actions with duration tracking
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">start_date</span>
+                            <span class="param-type">(date)</span> - Filter actions after this date (ISO format)
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">end_date</span>
+                            <span class="param-type">(date)</span> - Filter actions before this date (ISO format)
+                        </div>
+                    </div>
+                </div>
+
+                <pre><code>curl "http://localhost:5001/api/actions?has_measurements=true&start_date=2025-10-01"</code></pre>
+            </div>
+
+            <!-- Get Action -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/actions/{id}</span>
+                </div>
+                <p class="endpoint-description">Retrieve a single action by ID</p>
+
+                <pre><code>curl http://localhost:5001/api/actions/1</code></pre>
+            </div>
+
+            <!-- Create Action -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/actions</span>
+                </div>
+                <p class="endpoint-description">Create a new action</p>
+
+                <div class="request-body">
+                    <h4>Request Body</h4>
+                    <div class="param-list">
+                        <div class="param-item">
+                            <span class="param-name">description</span>
+                            <span class="param-type">(string, required)</span> - Action description
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">measurements</span>
+                            <span class="param-type">(object)</span> - Measurements dict (e.g., {"distance_km": 5.0})
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">duration_minutes</span>
+                            <span class="param-type">(float)</span> - Duration in minutes
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">start_time</span>
+                            <span class="param-type">(datetime)</span> - ISO format
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">log_time</span>
+                            <span class="param-type">(datetime)</span> - Defaults to now
+                        </div>
+                    </div>
+                </div>
+
+                <pre><code>curl -X POST http://localhost:5001/api/actions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "description": "Morning run in the park",
+    "measurements": {"distance_km": 5.2},
+    "duration_minutes": 32.5,
+    "start_time": "2025-10-14T07:00:00"
+  }'</code></pre>
+            </div>
+
+            <!-- Update Action -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/actions/{id}</span>
+                </div>
+                <p class="endpoint-description">Update an existing action</p>
+
+                <pre><code>curl -X PUT http://localhost:5001/api/actions/1 \
+  -H 'Content-Type: application/json' \
+  -d '{"measurements": {"distance_km": 6.0}}'</code></pre>
+            </div>
+
+            <!-- Delete Action -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/actions/{id}</span>
+                </div>
+                <p class="endpoint-description">Delete an action (with automatic archiving)</p>
+
+                <pre><code>curl -X DELETE http://localhost:5001/api/actions/1</code></pre>
+            </div>
+
+            <!-- Action Goals -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/actions/{id}/goals</span>
+                </div>
+                <p class="endpoint-description">Get goals matched to this action using inference logic</p>
+
+                <div class="response">
+                    <h4>Example Response <span class="response-code">200</span></h4>
+                    <pre><code>{
+  "action": { ... },
+  "matched_goals": [
+    {
+      "goal_id": 1,
+      "goal_description": "Run 120km",
+      "contribution": 5.2,
+      "assignment_method": "unit_match",
+      "confidence": 0.95
+    }
+  ],
+  "match_count": 1
+}</code></pre>
+                </div>
+
+                <pre><code>curl http://localhost:5001/api/actions/5/goals</code></pre>
+            </div>
+        </div>
+
+        <!-- VALUES RESOURCE -->
+        <div class="resource-section" id="values">
+            <h2>💎 Values Resource</h2>
+            <p>Define and manage personal values with priority levels and life domain organization</p>
+
+            <!-- List Values -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/values</span>
+                </div>
+                <p class="endpoint-description">Retrieve all values with optional filtering</p>
+
+                <div class="params">
+                    <h4>Query Parameters</h4>
+                    <div class="param-list">
+                        <div class="param-item">
+                            <span class="param-name">type</span>
+                            <span class="param-type">(string)</span> - Filter by type: 'major', 'highest_order', 'life_area', 'general'
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">domain</span>
+                            <span class="param-type">(string)</span> - Filter by life domain
+                        </div>
+                    </div>
+                </div>
+
+                <pre><code>curl "http://localhost:5001/api/values?type=major&domain=Health"</code></pre>
+            </div>
+
+            <!-- Get Value -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/values/{id}</span>
+                </div>
+                <p class="endpoint-description">Retrieve a single value by ID</p>
+
+                <pre><code>curl http://localhost:5001/api/values/1</code></pre>
+            </div>
+
+            <!-- Create Value -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/values</span>
+                </div>
+                <p class="endpoint-description">Create a new value</p>
+
+                <pre><code>curl -X POST http://localhost:5001/api/values \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "value_name": "Health and vitality",
+    "value_type": "major",
+    "life_domain": "Health",
+    "priority": 85
+  }'</code></pre>
+            </div>
+
+            <!-- Update Value -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/values/{id}</span>
+                </div>
+                <p class="endpoint-description">Update an existing value</p>
+
+                <pre><code>curl -X PUT http://localhost:5001/api/values/1 \
+  -H 'Content-Type: application/json' \
+  -d '{"priority": 90}'</code></pre>
+            </div>
+
+            <!-- Delete Value -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/values/{id}</span>
+                </div>
+                <p class="endpoint-description">Delete a value (with automatic archiving)</p>
+
+                <pre><code>curl -X DELETE http://localhost:5001/api/values/1</code></pre>
+            </div>
+        </div>
+
+        <!-- TERMS RESOURCE -->
+        <div class="resource-section" id="terms">
+            <h2>📅 Terms Resource</h2>
+            <p>Manage time-bounded planning periods (10-week terms) with goal organization and progress tracking</p>
+
+            <!-- List Terms -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/terms</span>
+                </div>
+                <p class="endpoint-description">Retrieve all terms with status and metrics</p>
+
+                <div class="params">
+                    <h4>Query Parameters</h4>
+                    <div class="param-list">
+                        <div class="param-item">
+                            <span class="param-name">status</span>
+                            <span class="param-type">(string)</span> - Filter by status: 'active', 'upcoming', 'complete'
+                        </div>
+                    </div>
+                </div>
+
+                <pre><code>curl "http://localhost:5001/api/terms?status=active"</code></pre>
+            </div>
+
+            <!-- Get Term -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/terms/{id}</span>
+                </div>
+                <p class="endpoint-description">Retrieve a single term with metrics</p>
+
+                <pre><code>curl http://localhost:5001/api/terms/1</code></pre>
+            </div>
+
+            <!-- Get Active Term -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/terms/active</span>
+                </div>
+                <p class="endpoint-description">Get the currently active term with metrics</p>
+
+                <div class="response">
+                    <h4>Example Response <span class="response-code">200</span></h4>
+                    <pre><code>{
+  "term": {
+    "id": 3,
+    "term_number": 3,
+    "start_date": "2025-10-10T00:00:00",
+    "end_date": "2025-12-19T00:00:00",
+    "theme": "Health & Learning",
+    "term_goal_ids": [1, 2, 3]
+  },
+  "status": "active",
+  "days_elapsed": 4,
+  "days_remaining": 66,
+  "progress_percent": 5.7,
+  "committed_goal_count": 3,
+  "overlapping_goal_count": 2
+}</code></pre>
+                </div>
+
+                <pre><code>curl http://localhost:5001/api/terms/active</code></pre>
+            </div>
+
+            <!-- Create Term -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/terms</span>
+                </div>
+                <p class="endpoint-description">Create a new term</p>
+
+                <div class="request-body">
+                    <h4>Request Body</h4>
+                    <div class="param-list">
+                        <div class="param-item">
+                            <span class="param-name">term_number</span>
+                            <span class="param-type">(int, required)</span> - Sequential term identifier
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">start_date</span>
+                            <span class="param-type">(datetime, required)</span> - ISO format
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">end_date</span>
+                            <span class="param-type">(datetime)</span> - Defaults to start_date + 70 days
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">theme</span>
+                            <span class="param-type">(string)</span> - Focus area for this term
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">term_goal_ids</span>
+                            <span class="param-type">(list)</span> - Goal IDs assigned to this term
+                        </div>
+                        <div class="param-item">
+                            <span class="param-name">reflection</span>
+                            <span class="param-type">(string)</span> - Post-term reflection notes
+                        </div>
+                    </div>
+                </div>
+
+                <pre><code>curl -X POST http://localhost:5001/api/terms \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "term_number": 4,
+    "start_date": "2025-12-23T00:00:00",
+    "theme": "New Year Focus",
+    "term_goal_ids": [1, 3, 5]
+  }'</code></pre>
+            </div>
+
+            <!-- Update Term -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/terms/{id}</span>
+                </div>
+                <p class="endpoint-description">Update an existing term</p>
+
+                <pre><code>curl -X PUT http://localhost:5001/api/terms/1 \
+  -H 'Content-Type: application/json' \
+  -d '{"theme": "Updated Theme", "reflection": "Great progress made"}'</code></pre>
+            </div>
+
+            <!-- Delete Term -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/terms/{id}</span>
+                </div>
+                <p class="endpoint-description">Delete a term (with automatic archiving)</p>
+
+                <pre><code>curl -X DELETE http://localhost:5001/api/terms/1</code></pre>
+            </div>
+
+            <!-- Add Goal to Term -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/terms/{id}/goals</span>
+                </div>
+                <p class="endpoint-description">Add a goal to this term's commitment list</p>
+
+                <div class="request-body">
+                    <h4>Request Body</h4>
+                    <div class="param-list">
+                        <div class="param-item">
+                            <span class="param-name">goal_id</span>
+                            <span class="param-type">(int, required)</span> - Goal ID to add to term
+                        </div>
+                    </div>
+                </div>
+
+                <pre><code>curl -X POST http://localhost:5001/api/terms/3/goals \
+  -H 'Content-Type: application/json' \
+  -d '{"goal_id": 7}'</code></pre>
+            </div>
+
+            <!-- Remove Goal from Term -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/terms/{id}/goals/{goal_id}</span>
+                </div>
+                <p class="endpoint-description">Remove a goal from this term</p>
+
+                <pre><code>curl -X DELETE http://localhost:5001/api/terms/3/goals/7</code></pre>
+            </div>
+
+            <!-- Term Progress -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/terms/{id}/progress</span>
+                </div>
+                <p class="endpoint-description">Get detailed term progress with committed goals, actions, and metrics</p>
+
+                <div class="response">
+                    <h4>Example Response <span class="response-code">200</span></h4>
+                    <pre><code>{
+  "term": {...},
+  "status": "active",
+  "time_progress": {
+    "days_elapsed": 4,
+    "days_remaining": 66,
+    "percent_complete": 5.7
+  },
+  "committed_goals": [...],
+  "overlapping_goals": [...],
+  "actions_in_term": [...],
+  "counts": {
+    "committed_goals": 3,
+    "overlapping_goals": 2,
+    "actions": 15
+  }
+}</code></pre>
+                </div>
+
+                <pre><code>curl http://localhost:5001/api/terms/3/progress</code></pre>
+            </div>
+        </div>
+
+        <!-- DATA SCHEMAS -->
+        <div class="schemas" id="schemas">
+            <h2>📦 Data Schemas</h2>
+
+            <div class="schema-item">
+                <h3>Goal Object</h3>
+                <pre><code>{
+  "id": 1,
+  "description": "Run 120km in 10 weeks",
+  "measurement_unit": "km",
+  "measurement_target": 120.0,
+  "start_date": "2025-10-10T00:00:00",
+  "end_date": "2025-12-19T00:00:00",
+  "how_goal_is_relevant": "Improves cardiovascular health",
+  "how_goal_is_actionable": "Track runs with measurements",
+  "expected_term_length": 10,
+  "created_at": "2025-10-10T00:00:00",
+  "type": "Goal"
+}</code></pre>
+            </div>
+
+            <div class="schema-item">
+                <h3>Action Object</h3>
+                <pre><code>{
+  "id": 1,
+  "description": "Morning run in the park",
+  "measurements": {"distance_km": 5.2, "pace_min_per_km": 6.25},
+  "duration_minutes": 32.5,
+  "start_time": "2025-10-14T07:00:00",
+  "log_time": "2025-10-14T07:35:00",
+  "type": "Action"
+}</code></pre>
+            </div>
+
+            <div class="schema-item">
+                <h3>Value Object</h3>
+                <pre><code>{
+  "id": 1,
+  "value_name": "Health and vitality",
+  "value_type": "major",
+  "life_domain": "Health",
+  "priority": 85,
+  "alignment_guidance": "Focus on activities that improve physical and mental well-being",
+  "type": "MajorValue"
+}</code></pre>
+            </div>
+
+            <div class="schema-item">
+                <h3>Term Object</h3>
+                <pre><code>{
+  "id": 3,
+  "term_number": 3,
+  "start_date": "2025-10-10T00:00:00",
+  "end_date": "2025-12-19T00:00:00",
+  "theme": "Health & Learning",
+  "term_goal_ids": [1, 2, 3],
+  "reflection": "Made great progress on running and reading goals"
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- ERROR HANDLING -->
+        <div class="resource-section" id="errors">
+            <h2>⚠️ Error Handling</h2>
+
+            <div class="endpoint">
+                <h4>HTTP Status Codes</h4>
+                <div class="param-list">
+                    <div class="param-item">
+                        <span class="response-code">200</span> Success - Request completed successfully
+                    </div>
+                    <div class="param-item">
+                        <span class="response-code">201</span> Created - Resource created successfully
+                    </div>
+                    <div class="param-item">
+                        <span class="response-code error">400</span> Bad Request - Validation error or invalid parameters
+                    </div>
+                    <div class="param-item">
+                        <span class="response-code error">404</span> Not Found - Resource doesn't exist
+                    </div>
+                    <div class="param-item">
+                        <span class="response-code error">500</span> Server Error - Internal server error
+                    </div>
+                </div>
+
+                <h4 style="margin-top: 20px;">Error Response Format</h4>
+                <pre><code>{
+  "error": "Description of what went wrong"
+}</code></pre>
+
+                <h4 style="margin-top: 20px;">Example Error</h4>
+                <pre><code>{
+  "error": "Field 'description' is required"
+}</code></pre>
+            </div>
+        </div>
+
+        <footer>
+            <p>Ten Week Goal App API Reference</p>
+            <p>Built with Flask • Layered Architecture (Aristotelian Layers)</p>
+            <p>Written by Claude Code on 2025-10-14</p>
+        </footer>
+    </div>
+</body>
+</html>

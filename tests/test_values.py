@@ -55,7 +55,7 @@ def test_values_adds_name_and_type():
     """Values adds name attribute and has incentive_type 'general'"""
     value = Values("Compassion", "Showing kindness to others")
 
-    assert value.name == "Compassion"
+    assert value.value_name == "Compassion"
     assert value.description == "Showing kindness to others"
     assert value.priority == 40  # Values default to 40
     assert value.incentive_type == 'general'  # General value type

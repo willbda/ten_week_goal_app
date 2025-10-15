@@ -42,7 +42,7 @@ touching a database. If you can test it with in-memory objects, it's business lo
 
 Written by Claude Code on 2025-10-11
 Updated by Claude Code on 2025-10-11 - Refactored to use categoriae/relationships
-Updated by Claude Code on 2025-10-12 - Added actionability-based matching
+Updated by Claude Code on 2025-10-12 - Added how_goal_is_actionable-based matching
 """
 
 import json
@@ -64,13 +64,13 @@ def matches_on_period(action: Action, goal: Goal) -> bool:
     Check if action occurred during goal's active period.
 
     Args:
-        action: Action with logtime
+        action: Action with log_time
         goal: Goal with start_date/end_date (SmartGoal) or no dates (loose Goal)
 
     Returns:
         True if action is within goal period, or goal has no period constraint
     """
-    if not action.logtime:
+    if not action.log_time:
         return False  # Can't match without timestamp
 
     # Loose goals have no period - accept all actions
@@ -79,7 +79,7 @@ def matches_on_period(action: Action, goal: Goal) -> bool:
 
     # SmartGoal with dates
     if isinstance(goal, SmartGoal):
-        return goal.start_date <= action.logtime <= goal.end_date
+        return goal.start_date <= action.log_time <= goal.end_date
 
     return True
 
@@ -111,9 +111,9 @@ def matches_on_unit(action: Action, goal: Goal) -> Tuple[bool, Optional[str], Op
     return (False, None, None)
 
 
-def matches_with_actionability(action: Action, goal: Goal) -> Tuple[bool, Optional[float]]:
+def matches_with_how_goal_is_actionable(action: Action, goal: Goal) -> Tuple[bool, Optional[float]]:
     """
-    Check if action matches goal using structured actionability hints.
+    Check if action matches goal using structured how_goal_is_actionable hints.
 
     Parses goal's how_goal_is_actionable JSON (format: {"units": [...], "keywords": [...]})
     and checks BOTH:
@@ -134,20 +134,20 @@ def matches_with_actionability(action: Action, goal: Goal) -> Tuple[bool, Option
         - contribution: Measurement value if matched, None otherwise
 
     Examples:
-        Goal actionability: {"units": ["minutes"], "keywords": ["yoga", "pilates"]}
+        Goal how_goal_is_actionable: {"units": ["minutes"], "keywords": ["yoga", "pilates"]}
         Action: "Yoga class" with {"minutes": 30}
         → (True, 30.0)
 
-        Goal actionability: {"units": ["minutes"], "keywords": ["write", "revise"]}
+        Goal how_goal_is_actionable: {"units": ["minutes"], "keywords": ["write", "revise"]}
         Action: "Yoga class" with {"minutes": 30}
         → (False, None)  # Wrong keywords
     """
-    # If no actionability hints, fall back to simple unit matching
+    # If no how_goal_is_actionable hints, fall back to simple unit matching
     if not hasattr(goal, 'how_goal_is_actionable') or not goal.how_goal_is_actionable:
         unit_match, _, contribution = matches_on_unit(action, goal)
         return (unit_match, contribution)
 
-    # Parse JSON actionability
+    # Parse JSON how_goal_is_actionable
     try:
         data = json.loads(goal.how_goal_is_actionable)
         # Normalize to lowercase and strip wildcards
@@ -157,16 +157,16 @@ def matches_with_actionability(action: Action, goal: Goal) -> Tuple[bool, Option
     except (json.JSONDecodeError, AttributeError, TypeError) as e:
         # Malformed JSON - log warning and fall back to unit matching
         logger.warning(
-            f"Malformed actionability JSON for goal '{goal.description[:50]}...': {e}. "
+            f"Malformed how_goal_is_actionable JSON for goal '{goal.description[:50]}...': {e}. "
             f"Value was: {goal.how_goal_is_actionable!r}. Falling back to simple unit matching."
         )
         unit_match, _, contribution = matches_on_unit(action, goal)
         return (unit_match, contribution)
 
     if not allowed_units or not required_keywords:
-        # Empty actionability hints - log and fall back to unit matching
+        # Empty how_goal_is_actionable hints - log and fall back to unit matching
         logger.debug(
-            f"Empty actionability hints for goal '{goal.description[:50]}...'. "
+            f"Empty how_goal_is_actionable hints for goal '{goal.description[:50]}...'. "
             f"Units: {allowed_units}, Keywords: {required_keywords}. "
             f"Falling back to simple unit matching."
         )
@@ -214,7 +214,7 @@ def infer_matches(
     1. Period: Action during goal timeframe (if goal has dates)
     2. Actionability: Action has correct unit AND description contains required keywords
 
-    Uses structured actionability JSON to prevent false positives.
+    Uses structured how_goal_is_actionable JSON to prevent false positives.
 
     Args:
         actions: List of actions to match
@@ -234,11 +234,11 @@ def infer_matches(
                 continue
 
             # Criterion 2: Actionability match (unit + keywords)
-            actionability_match, contribution = matches_with_actionability(action, goal)
-            if not actionability_match:
+            how_goal_is_actionable_match, contribution = matches_with_how_goal_is_actionable(action, goal)
+            if not how_goal_is_actionable_match:
                 continue
 
-            # High confidence for period + actionability match
+            # High confidence for period + how_goal_is_actionable match
             # Actionability already validates both unit and keyword requirements
             confidence = 0.9
 

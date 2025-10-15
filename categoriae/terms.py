@@ -12,7 +12,7 @@ Written by Claude Code on 2025-10-12
 """
 
 from abc import ABC
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
 from typing import Optional, List
 
 # Time horizon constants
@@ -163,8 +163,8 @@ class LifeTime(TimeFrame):
 
     def __init__(
         self,
-        birth_date: date,
-        estimated_death_date: Optional[date] = None,
+        birth_date: datetime,
+        estimated_death_date: Optional[datetime] = None,
         life_areas_allocation: Optional[dict] = None,
         life_reflection: Optional[str] = None
     ):
@@ -183,21 +183,21 @@ class LifeTime(TimeFrame):
 
         self.life_reflection = life_reflection
 
-    def weeks_lived(self, from_date: Optional[date] = None) -> int:
+    def weeks_lived(self, from_date: Optional[datetime] = None) -> int:
         """Calculate approximate weeks lived so far."""
-        check = from_date or date.today()
+        check = from_date or datetime.now()
         days = (check - self.birth_date).days
         return days // 7
 
-    def weeks_remaining(self, from_date: Optional[date] = None) -> int:
+    def weeks_remaining(self, from_date: Optional[datetime] = None) -> int:
         """Calculate approximate weeks remaining."""
-        check = from_date or date.today()
+        check = from_date or datetime.now()
         days = (self.estimated_death_date - check).days
         return max(0, days // 7)
 
-    def percentage_lived(self, from_date: Optional[date] = None) -> float:
+    def percentage_lived(self, from_date: Optional[datetime] = None) -> float:
         """What fraction of your expected life have you lived? (0.0 to 1.0)"""
-        check = from_date or date.today()
+        check = from_date or datetime.now()
         total_days = (self.estimated_death_date - self.birth_date).days
         lived_days = (check - self.birth_date).days
         return min(1.0, lived_days / total_days)

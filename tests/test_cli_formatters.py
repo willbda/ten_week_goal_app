@@ -204,7 +204,7 @@ def test_render_timeline_no_dates():
 def test_render_action_summary():
     """Test formatting of single action."""
     action = Action("Run 5km")
-    action.logtime = datetime(2025, 4, 15)
+    action.log_time = datetime(2025, 4, 15)
     action.measurements = {"km": 5.0}
 
     goal = Goal(description="Run 120km", measurement_unit="km")
@@ -228,7 +228,7 @@ def test_render_action_summary():
 def test_render_action_summary_truncates_long_description():
     """Test that long descriptions are truncated."""
     action = Action("A" * 100)  # Very long description
-    action.logtime = datetime(2025, 4, 15)
+    action.log_time = datetime(2025, 4, 15)
 
     goal = Goal(description="Goal", measurement_unit="units")
 
@@ -251,7 +251,7 @@ def test_render_action_list():
     actions = [Action(f"Action {i}") for i in range(10)]
     for action in actions:
         action.measurements = {"units": 1.0}
-        action.logtime = datetime(2025, 4, 15)
+        action.log_time = datetime(2025, 4, 15)
 
     goal = Goal(description="Goal", measurement_unit="units")
 
@@ -334,7 +334,7 @@ def test_complete_goal_rendering_workflow():
 
     action = Action("Run 5km")
     action.measurements = {"km": 5.0}
-    action.logtime = datetime(2025, 4, 15)
+    action.log_time = datetime(2025, 4, 15)
 
     match = ActionGoalRelationship(
         action=action,

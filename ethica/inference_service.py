@@ -129,7 +129,7 @@ class ActionGoalInferenceService:
         all_actions = self.action_service.get_all()
         period_actions = [
             a for a in all_actions
-            if a.logtime and start_date <= a.logtime <= end_date
+            if a.log_time and start_date <= a.log_time <= end_date
         ]
 
         # Fetch all goals that overlap with period
@@ -233,7 +233,7 @@ class ActionGoalInferenceService:
         if start_date and end_date:
             relevant_actions = [
                 a for a in all_actions
-                if a.logtime and start_date <= a.logtime <= end_date
+                if a.log_time and start_date <= a.log_time <= end_date
             ]
         else:
             relevant_actions = all_actions

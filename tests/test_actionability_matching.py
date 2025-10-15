@@ -1,7 +1,7 @@
 """
-Tests for actionability-based matching logic.
+Tests for how_goal_is_actionable-based matching logic.
 
-Tests the matching functions that use structured actionability hints
+Tests the matching functions that use structured how_goal_is_actionable hints
 to prevent false positives in action-goal matching.
 
 Written by Claude Code on 2025-10-12
@@ -14,7 +14,7 @@ from datetime import datetime
 from categoriae.actions import Action
 from categoriae.goals import SmartGoal
 from ethica.progress_matching import (
-    matches_with_actionability,
+    matches_with_how_goal_is_actionable,
     infer_matches
 )
 
@@ -22,8 +22,8 @@ from ethica.progress_matching import (
 # ===== Integration Tests =====
 # These tests validate the complete matching behavior with real Action/Goal objects
 
-def test_matches_with_actionability_success():
-    """Test successful match with actionability (unit + keyword)"""
+def test_matches_with_how_goal_is_actionable_success():
+    """Test successful match with how_goal_is_actionable (unit + keyword)"""
     action = Action("Yoga with Jessica")
     action.measurements = {"minutes": 30.0}
 
@@ -38,12 +38,12 @@ def test_matches_with_actionability_success():
         expected_term_length=11
     )
 
-    matched, contribution = matches_with_actionability(action, goal)
+    matched, contribution = matches_with_how_goal_is_actionable(action, goal)
     assert matched is True
     assert contribution == 30.0
 
 
-def test_matches_with_actionability_wrong_keyword():
+def test_matches_with_how_goal_is_actionable_wrong_keyword():
     """Test failed match due to wrong keyword (unit matches but keyword doesn't)"""
     # Yoga action trying to match writing goal
     action = Action("Yoga with Jessica")
@@ -60,12 +60,12 @@ def test_matches_with_actionability_wrong_keyword():
         expected_term_length=11
     )
 
-    matched, contribution = matches_with_actionability(action, goal)
+    matched, contribution = matches_with_how_goal_is_actionable(action, goal)
     assert matched is False
     assert contribution is None
 
 
-def test_matches_with_actionability_wrong_unit():
+def test_matches_with_how_goal_is_actionable_wrong_unit():
     """Test failed match due to wrong unit"""
     action = Action("Movement: 5km run")
     action.measurements = {"km": 5.0}
@@ -81,12 +81,12 @@ def test_matches_with_actionability_wrong_unit():
         expected_term_length=11
     )
 
-    matched, contribution = matches_with_actionability(action, goal)
+    matched, contribution = matches_with_how_goal_is_actionable(action, goal)
     assert matched is False
     assert contribution is None
 
 
-def test_matches_with_actionability_multiple_units():
+def test_matches_with_how_goal_is_actionable_multiple_units():
     """Test matching with multiple allowed units"""
     action = Action("Movement: 3.1 miles run")
     action.measurements = {"miles": 3.1}
@@ -102,7 +102,7 @@ def test_matches_with_actionability_multiple_units():
         expected_term_length=10
     )
 
-    matched, contribution = matches_with_actionability(action, goal)
+    matched, contribution = matches_with_how_goal_is_actionable(action, goal)
     assert matched is True
     assert contribution == 3.1
 
@@ -112,17 +112,17 @@ def test_infer_matches_prevents_false_positives():
     Integration test: Ensure yoga doesn't match writing goal.
 
     This is the core use case - two goals with same unit (minutes)
-    should not cross-match based on actionability keywords.
+    should not cross-match based on how_goal_is_actionable keywords.
     """
     # Create actions
     yoga_action = Action("Yoga with Jessica")
     yoga_action.measurements = {"minutes": 30.0}
-    yoga_action.logtime = datetime(2025, 7, 15)
+    yoga_action.log_time = datetime(2025, 7, 15)
 
     # Use "write" explicitly to match the keyword
     writing_action = Action("write about my goals and revise earlier drafts")
     writing_action.measurements = {"minutes": 30.0}
-    writing_action.logtime = datetime(2025, 7, 16)
+    writing_action.log_time = datetime(2025, 7, 16)
 
     # Create goals
     movement_goal = SmartGoal(
@@ -173,11 +173,11 @@ def test_running_vs_walking_distinction():
     """
     running_action = Action("Movement: 5km run")
     running_action.measurements = {"km": 5.0}
-    running_action.logtime = datetime(2025, 4, 15)
+    running_action.log_time = datetime(2025, 4, 15)
 
     walking_action = Action("Walked 3km to the store")
     walking_action.measurements = {"km": 3.0}
-    walking_action.logtime = datetime(2025, 4, 16)
+    walking_action.log_time = datetime(2025, 4, 16)
 
     running_goal = SmartGoal(
         description="Run 120km in 10 weeks",
@@ -198,15 +198,15 @@ def test_running_vs_walking_distinction():
     assert matches[0].contribution == 5.0
 
 
-def test_fallback_to_unit_matching_without_actionability():
-    """Test that matching falls back to simple unit matching if no actionability"""
+def test_fallback_to_unit_matching_without_how_goal_is_actionable():
+    """Test that matching falls back to simple unit matching if no how_goal_is_actionable"""
     from categoriae.goals import Goal
 
     action = Action("Some activity")
     action.measurements = {"hours": 2.0}
-    action.logtime = datetime(2025, 7, 15)
+    action.log_time = datetime(2025, 7, 15)
 
-    # Use base Goal class which allows empty actionability
+    # Use base Goal class which allows empty how_goal_is_actionable
     goal = Goal(
         description="Generic goal",
         measurement_unit="hours",
@@ -214,10 +214,10 @@ def test_fallback_to_unit_matching_without_actionability():
         start_date=datetime(2025, 7, 13),
         end_date=datetime(2025, 9, 28),
         how_goal_is_relevant="Test",
-        how_goal_is_actionable=None  # No actionability
+        how_goal_is_actionable=None  # No how_goal_is_actionable
     )
 
-    matched, contribution = matches_with_actionability(action, goal)
+    matched, contribution = matches_with_how_goal_is_actionable(action, goal)
     # Should fall back to unit matching
     assert matched is True
     assert contribution == 2.0

@@ -125,7 +125,7 @@ class ActionGoalProgressStorageService:
         Get database ID for an action.
 
         If action.id is set, returns it.
-        Otherwise, queries database by description + logtime.
+        Otherwise, queries database by description + log_time.
 
         Args:
             action: Action entity
@@ -138,8 +138,8 @@ class ActionGoalProgressStorageService:
 
         # Lookup by unique attributes
         filters = {'description': action.description}
-        if action.logtime:
-            filters['log_time'] = action.logtime.isoformat()
+        if action.log_time:
+            filters['log_time'] = action.log_time.isoformat()
 
         results = self.db.query('actions', filters=filters)
         return results[0]['id'] if results else None
@@ -361,7 +361,7 @@ class ActionGoalProgressStorageService:
         Call this when:
         - Actions/goals change
         - Matching algorithm improves
-        - Goal actionability keywords updated
+        - Goal how_goal_is_actionable keywords updated
 
         Manual and user_confirmed relationships are NOT affected.
 

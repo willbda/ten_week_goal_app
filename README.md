@@ -142,7 +142,7 @@ ten_week_goal_app/
 class Action:
     def __init__(self, description: str):
         self.description = description
-        self.logtime = datetime.now()
+        self.log_time = datetime.now()
         self.measurements: Optional[Dict[str, float]] = None
 ```
 
@@ -209,7 +209,7 @@ Test configuration is separate in `config/testing.py` to keep test data isolated
 
 ### Complete ✅
 - [x] Domain entities (Action, Goal, SmartGoal, Values hierarchy, Relationships, Terms)
-- [x] Business logic (progress calculation, automatic action-goal matching with actionability)
+- [x] Business logic (progress calculation, automatic action-goal matching with how_goal_is_actionable)
 - [x] Generic storage layer with polymorphic type support
 - [x] Repository pattern with save/update/get_by_id conveniences
 - [x] Inference service for batch/realtime relationship detection

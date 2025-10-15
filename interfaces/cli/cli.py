@@ -175,7 +175,7 @@ def values_create_major(name: str, description: str, domain: str, priority: int,
     )
 
     if result.success and result.value:
-        print(f"✓ Created major value: {result.value.name} (ID: {result.value.id})")
+        print(f"✓ Created major value: {result.value.value_name} (ID: {result.value.id})")
     else:
         print(f"Error: {result.error or 'Unknown error'}")
         sys.exit(1)
@@ -192,7 +192,7 @@ def values_create_highest_order(name: str, description: str, domain: str = 'Gene
     )
 
     if result.success and result.value:
-        print(f"✓ Created highest order value: {result.value.name} (ID: {result.value.id})")
+        print(f"✓ Created highest order value: {result.value.value_name} (ID: {result.value.id})")
     else:
         print(f"Error: {result.error or 'Unknown error'}")
         sys.exit(1)
@@ -209,7 +209,7 @@ def life_areas_create(name: str, description: str, domain: str = 'General', prio
     )
 
     if result.success and result.value:
-        print(f"✓ Created life area: {result.value.name} (ID: {result.value.id})")
+        print(f"✓ Created life area: {result.value.value_name} (ID: {result.value.id})")
     else:
         print(f"Error: {result.error or 'Unknown error'}")
         sys.exit(1)
@@ -226,7 +226,7 @@ def values_create_general(name: str, description: str, domain: str = 'General', 
     )
 
     if result.success and result.value:
-        print(f"✓ Created general value: {result.value.name} (ID: {result.value.id})")
+        print(f"✓ Created general value: {result.value.value_name} (ID: {result.value.id})")
     else:
         print(f"Error: {result.error or 'Unknown error'}")
         sys.exit(1)
@@ -320,7 +320,7 @@ def values_edit(value_id: int, name: Optional[str] = None, description: Optional
     )
 
     if result.success and result.value:
-        print(f"✓ Updated value: {result.value.name} (ID: {value_id})")
+        print(f"✓ Updated value: {result.value.value_name} (ID: {value_id})")
     else:
         print(f"Error: {result.error or 'Unknown error'}")
         sys.exit(1)
@@ -348,7 +348,7 @@ def values_delete(value_id: int, force: bool = False):
 
     # Confirmation prompt (unless --force)
     if not force:
-        response = input(f"Delete '{value.name}'? [y/N]: ")
+        response = input(f"Delete '{value.value_name}'? [y/N]: ")
         if response.lower() not in ['y', 'yes']:
             print("Delete cancelled")
             return
@@ -356,11 +356,11 @@ def values_delete(value_id: int, force: bool = False):
     # Delete using orchestration service
     result = orchestrator.delete_value(
         value_id=value_id,
-        notes=f'CLI delete: {value.name}'
+        notes=f'CLI delete: {value.value_name}'
     )
 
     if result.success:
-        print(f"✓ Deleted value: {value.name} (ID: {value_id})")
+        print(f"✓ Deleted value: {value.value_name} (ID: {value_id})")
     else:
         print(f"Error: {result.error or 'Unknown error'}")
         sys.exit(1)
@@ -532,7 +532,7 @@ Examples:
     elif args.command == 'values':
         if args.values_command == 'create-major':
             values_create_major(
-                name=args.name,
+                name=args.value_name,
                 description=args.description,
                 domain=args.domain,
                 priority=args.priority,
@@ -540,14 +540,14 @@ Examples:
             )
         elif args.values_command == 'create-highest-order':
             values_create_highest_order(
-                name=args.name,
+                name=args.value_name,
                 description=args.description,
                 domain=args.domain,
                 priority=args.priority
             )
         elif args.values_command == 'create-general':
             values_create_general(
-                name=args.name,
+                name=args.value_name,
                 description=args.description,
                 domain=args.domain,
                 priority=args.priority
@@ -562,7 +562,7 @@ Examples:
         elif args.values_command == 'edit':
             values_edit(
                 value_id=args.id,
-                name=args.name if hasattr(args, 'name') else None,
+                name=args.value_name if hasattr(args, 'name') else None,
                 description=args.description if hasattr(args, 'description') else None,
                 domain=args.domain if hasattr(args, 'domain') else None,
                 priority=args.priority if hasattr(args, 'priority') else None,
@@ -576,7 +576,7 @@ Examples:
     elif args.command == 'life-areas':
         if args.life_areas_command == 'create':
             life_areas_create(
-                name=args.name,
+                name=args.value_name,
                 description=args.description,
                 domain=args.domain,
                 priority=args.priority

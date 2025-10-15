@@ -201,7 +201,7 @@ class ValuesOrchestrationService:
 
             # Update fields
             if name is not None:
-                value.name = name
+                value.value_name = name
             if description is not None:
                 value.description = description
             if domain is not None:
@@ -250,7 +250,7 @@ class ValuesOrchestrationService:
                 )
 
             # Delete with custom or default notes
-            delete_notes = notes or f'Deleted value: {value.name}'
+            delete_notes = notes or f'Deleted value: {value.value_name}'
             self.storage.delete(value_id, notes=delete_notes)
             return ValueOperationResult(success=True, value=value)
 

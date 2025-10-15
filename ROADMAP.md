@@ -192,7 +192,7 @@ Business rules:
 - Description required and non-empty
 - Measurements must be positive numbers
 - If start_time provided, duration_minutes required
-- logtime cannot be in future
+- log_time cannot be in future
 - Measurement keys must be valid units
 """
 
@@ -348,10 +348,10 @@ for v in all_values:
 #### 4.2 Action-Goal Relationships (Already Mature)
 
 **What exists:**
-- ✅ Inference: `ethica/progress_matching.py` with actionability
+- ✅ Inference: `ethica/progress_matching.py` with how_goal_is_actionable
 - ✅ Storage: `rhetorica/progress_storage.py`
 - ✅ Table: `action_goal_progress`
-- ✅ Tests: `test_actionability_matching.py`
+- ✅ Tests: `test_how_goal_is_actionable_matching.py`
 
 **What's missing:**
 - ❌ Review UI for ambiguous matches
