@@ -52,7 +52,7 @@ class ValuesOrchestrationService:
         """
         try:
             value = ValuesStorageService.create_major_value(
-                name=name,
+                value_name=name,
                 description=description,
                 priority=PriorityLevel(priority),  # Domain validates here
                 life_domain=life_domain,
@@ -79,7 +79,7 @@ class ValuesOrchestrationService:
         """
         try:
             value = ValuesStorageService.create_highest_order_value(
-                name=name,
+                value_name=name,
                 description=description,
                 priority=PriorityLevel(priority),  # Domain validates here
                 life_domain=life_domain
@@ -105,7 +105,7 @@ class ValuesOrchestrationService:
         """
         try:
             area = ValuesStorageService.create_life_area(
-                name=name,
+                value_name=name,
                 description=description,
                 priority=PriorityLevel(priority),  # Domain validates here
                 life_domain=life_domain
@@ -131,7 +131,7 @@ class ValuesOrchestrationService:
         """
         try:
             value = ValuesStorageService.create_value(
-                name=name,
+                value_name=name,
                 description=description,
                 priority=PriorityLevel(priority),  # Domain validates here
                 life_domain=life_domain

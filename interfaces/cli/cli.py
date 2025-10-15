@@ -1,595 +1,1286 @@
 """
-REFACTORED Command-line interface for Ten Week Goal App.
+Command-line interface for Ten Week Goal App.
 
-This is a STUB showing proper separation of concerns.
+Architecture: Mirrors Flask API simplicity
+- Storage services (rhetorica) for data access
+- Serializers (rhetorica) for entity construction
+- Formatters (interfaces/cli) for display
+- Try/except error handling throughout
 
-Written by Claude Code on 2025-10-12
+No orchestration layer, no result objects - just direct operations.
+
+Written by Claude Code on 2025-10-15
 """
 
 import argparse
 import sys
+import json
 from pathlib import Path
 from typing import Optional
 
+# Path setup for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from rhetorica.storage_service import GoalStorageService, ActionStorageService
+from rhetorica.storage_service import (
+    ActionStorageService,
+    GoalStorageService,
+    TermStorageService
+)
 from rhetorica.values_storage_service import ValuesStorageService
-from rhetorica.values_orchestration_service import ValuesOrchestrationService
+from rhetorica.serializers import serialize, deserialize
 from ethica.progress_matching import infer_matches
-from ethica.progress_aggregation import aggregate_all_goals
+from ethica.progress_aggregation import aggregate_all_goals, aggregate_goal_progress
+from ethica.term_lifecycle import (
+    get_active_term,
+    get_committed_goals,
+    get_term_status,
+    prepare_terms_list_view
+)
+
+from categoriae.actions import Action
+from categoriae.goals import Goal
+from categoriae.terms import GoalTerm
+from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas
+
+from interfaces.cli.cli_utils import (
+    parse_json_arg,
+    parse_datetime_arg,
+    confirm_action,
+    format_success,
+    format_error,
+    format_table_row,
+    format_datetime,
+    format_json,
+    truncate
+)
 from interfaces.cli.cli_formatters import (
     render_section_header,
     render_goal_header,
     render_progress_metrics,
     render_timeline,
     render_action_list,
-    render_summary_stats,
-    render_value_list,
-    render_value_detail
+    render_summary_stats
 )
-from interfaces.cli.cli_config import DEFAULT_DISPLAY, DEFAULT_FILTERS
+
 from config.logging_setup import get_logger
 
 logger = get_logger(__name__)
 
 
+# ===== ACTION COMMANDS =====
+
+def action_create(description: str, measurements: Optional[str] = None,
+                 duration: Optional[float] = None, start_time: Optional[str] = None):
+    """
+    Create new action.
+
+    Matches: POST /api/actions
+    """
+    try:
+        # Build entity
+        action = Action(description=description)
+
+        if measurements:
+            action.measurements = parse_json_arg(measurements, "measurements")
+        if duration:
+            action.duration_minutes = duration
+        if start_time:
+            action.start_time = parse_datetime_arg(start_time, "start_time")
+
+        # Save
+        service = ActionStorageService()
+        service.store_single_instance(action)
+
+        print(format_success(f"Created action {action.id}: {action.description}"))
+
+    except Exception as e:
+        logger.error(f"Error creating action: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def action_list(start_date: Optional[str] = None, end_date: Optional[str] = None,
+               has_measurements: bool = False, has_duration: bool = False):
+    """
+    List all actions with optional filters.
+
+    Matches: GET /api/actions
+    """
+    try:
+        service = ActionStorageService()
+        actions = service.get_all()
+
+        # Apply filters
+        if has_measurements:
+            actions = [a for a in actions if a.measurements is not None]
+        if has_duration:
+            actions = [a for a in actions if a.duration_minutes is not None]
+        if start_date:
+            start_dt = parse_datetime_arg(start_date, "start_date")
+            actions = [a for a in actions if a.log_time and a.log_time >= start_dt]
+        if end_date:
+            end_dt = parse_datetime_arg(end_date, "end_date")
+            actions = [a for a in actions if a.log_time and a.log_time <= end_dt]
+
+        # Display
+        if not actions:
+            print("No actions found.")
+            return
+
+        print(render_section_header(f"ACTIONS ({len(actions)})"))
+        print(format_table_row(["ID", "Description", "Date", "Measurements"], [5, 50, 12, 30]))
+        print("-" * 100)
+
+        for action in actions:
+            print(format_table_row([
+                action.id,
+                truncate(action.description, 50),
+                format_datetime(action.log_time),
+                format_json(action.measurements, 30)
+            ], [5, 50, 12, 30]))
+
+        print(f"\nTotal: {len(actions)} actions")
+
+    except Exception as e:
+        logger.error(f"Error listing actions: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def action_show(action_id: int):
+    """
+    Show detailed information for single action.
+
+    Matches: GET /api/actions/<id>
+    """
+    try:
+        service = ActionStorageService()
+        action = service.get_by_id(action_id)
+
+        if not action:
+            print(format_error(f"Action {action_id} not found"))
+            sys.exit(1)
+
+        # Display details
+        print(render_section_header(f"ACTION #{action_id}"))
+        print(f"Description:      {action.description}")
+        print(f"Logged:           {format_datetime(action.log_time, show_time=True)}")
+
+        if action.measurements:
+            print(f"Measurements:     {json.dumps(action.measurements, indent=2)}")
+        if action.duration_minutes:
+            print(f"Duration:         {action.duration_minutes} minutes")
+        if action.start_time:
+            print(f"Start Time:       {format_datetime(action.start_time, show_time=True)}")
+
+    except Exception as e:
+        logger.error(f"Error showing action {action_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def action_edit(action_id: int, description: Optional[str] = None,
+               measurements: Optional[str] = None, duration: Optional[float] = None):
+    """
+    Update existing action.
+
+    Matches: PUT /api/actions/<id>
+    """
+    try:
+        service = ActionStorageService()
+        action = service.get_by_id(action_id)
+
+        if not action:
+            print(format_error(f"Action {action_id} not found"))
+            sys.exit(1)
+
+        # Apply updates
+        if description:
+            action.description = description
+        if measurements:
+            action.measurements = parse_json_arg(measurements, "measurements")
+        if duration:
+            action.duration_minutes = duration
+
+        # Save
+        service.save(action, notes=f'CLI edit: Updated action {action_id}')
+
+        print(format_success(f"Updated action {action_id}"))
+
+    except Exception as e:
+        logger.error(f"Error editing action {action_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def action_delete(action_id: int, force: bool = False):
+    """
+    Delete action with confirmation.
+
+    Matches: DELETE /api/actions/<id>
+    """
+    try:
+        service = ActionStorageService()
+        action = service.get_by_id(action_id)
+
+        if not action:
+            print(format_error(f"Action {action_id} not found"))
+            sys.exit(1)
+
+        # Confirm unless --force
+        if not force and not confirm_action(f"Delete '{action.description}'?"):
+            print("Delete cancelled")
+            return
+
+        # Delete with archiving
+        service.delete(action_id, notes=f'CLI delete: {action.description}')
+
+        print(format_success(f"Deleted action {action_id}"))
+
+    except Exception as e:
+        logger.error(f"Error deleting action {action_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def action_goals(action_id: int):
+    """
+    Show goals this action contributes to.
+
+    Matches: GET /api/actions/<id>/goals
+    """
+    try:
+        action_service = ActionStorageService()
+        action = action_service.get_by_id(action_id)
+
+        if not action:
+            print(format_error(f"Action {action_id} not found"))
+            sys.exit(1)
+
+        # Fetch goals and infer matches
+        goal_service = GoalStorageService()
+        goals = goal_service.get_all()
+
+        matches = infer_matches(actions=[action], goals=goals)
+
+        # Display
+        print(render_section_header(f"GOALS FOR ACTION #{action_id}"))
+        print(f"Action: {action.description}\n")
+
+        if not matches:
+            print("No matching goals found.")
+            return
+
+        print(format_table_row(["Goal ID", "Description", "Contribution", "Method"], [8, 50, 15, 15]))
+        print("-" * 90)
+
+        for match in matches:
+            print(format_table_row([
+                match.goal.id,
+                truncate(match.goal.description, 50),
+                f"{match.contribution} {match.goal.measurement_unit or ''}",
+                match.assignment_method
+            ], [8, 50, 15, 15]))
+
+        print(f"\nTotal: {len(matches)} matching goals")
+
+    except Exception as e:
+        logger.error(f"Error fetching goals for action {action_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+# ===== GOAL COMMANDS =====
+
+def goal_create(description: str, unit: Optional[str] = None, target: Optional[float] = None,
+               start_date: Optional[str] = None, end_date: Optional[str] = None,
+               relevant: Optional[str] = None, actionable: Optional[str] = None):
+    """
+    Create new goal.
+
+    Matches: POST /api/goals
+    """
+    try:
+        # Build entity
+        goal = Goal(
+            description=description,
+            measurement_unit=unit,
+            measurement_target=target,
+            start_date=parse_datetime_arg(start_date, "start_date"),
+            end_date=parse_datetime_arg(end_date, "end_date"),
+            how_goal_is_relevant=relevant,
+            how_goal_is_actionable=actionable
+        )
+
+        # Save
+        service = GoalStorageService()
+        service.store_single_instance(goal)
+
+        print(format_success(f"Created goal {goal.id}: {goal.description}"))
+
+    except Exception as e:
+        logger.error(f"Error creating goal: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def goal_list(has_dates: bool = False, has_target: bool = False):
+    """
+    List all goals with optional filters.
+
+    Matches: GET /api/goals
+    """
+    try:
+        service = GoalStorageService()
+        goals = service.get_all()
+
+        # Apply filters
+        if has_dates:
+            goals = [g for g in goals if g.is_time_bound()]
+        if has_target:
+            goals = [g for g in goals if g.is_measurable()]
+
+        # Display
+        if not goals:
+            print("No goals found.")
+            return
+
+        print(render_section_header(f"GOALS ({len(goals)})"))
+        print(format_table_row(["ID", "Description", "Target", "Dates"], [5, 50, 20, 25]))
+        print("-" * 102)
+
+        for goal in goals:
+            target_str = f"{goal.measurement_target} {goal.measurement_unit}" if goal.is_measurable() else ""
+            dates_str = ""
+            if goal.start_date and goal.end_date:
+                dates_str = f"{format_datetime(goal.start_date)} → {format_datetime(goal.end_date)}"
+
+            print(format_table_row([
+                goal.id,
+                truncate(goal.description, 50),
+                target_str,
+                dates_str
+            ], [5, 50, 20, 25]))
+
+        print(f"\nTotal: {len(goals)} goals")
+
+    except Exception as e:
+        logger.error(f"Error listing goals: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def goal_show(goal_id: int):
+    """
+    Show detailed information for single goal.
+
+    Matches: GET /api/goals/<id>
+    """
+    try:
+        service = GoalStorageService()
+        goal = service.get_by_id(goal_id)
+
+        if not goal:
+            print(format_error(f"Goal {goal_id} not found"))
+            sys.exit(1)
+
+        # Display details
+        print(render_section_header(f"GOAL #{goal_id}"))
+        print(f"Description:      {goal.description}")
+
+        if goal.is_measurable():
+            print(f"Target:           {goal.measurement_target} {goal.measurement_unit}")
+        if goal.is_time_bound():
+            print(f"Start Date:       {format_datetime(goal.start_date)}")
+            print(f"End Date:         {format_datetime(goal.end_date)}")
+        if goal.how_goal_is_relevant:
+            print(f"Relevant:         {goal.how_goal_is_relevant}")
+        if goal.how_goal_is_actionable:
+            print(f"Actionable:       {goal.how_goal_is_actionable}")
+
+        print(f"Created:          {format_datetime(goal.created_at, show_time=True)}")
+
+    except Exception as e:
+        logger.error(f"Error showing goal {goal_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def goal_edit(goal_id: int, description: Optional[str] = None, unit: Optional[str] = None,
+             target: Optional[float] = None, start_date: Optional[str] = None,
+             end_date: Optional[str] = None):
+    """
+    Update existing goal.
+
+    Matches: PUT /api/goals/<id>
+    """
+    try:
+        service = GoalStorageService()
+        goal = service.get_by_id(goal_id)
+
+        if not goal:
+            print(format_error(f"Goal {goal_id} not found"))
+            sys.exit(1)
+
+        # Apply updates
+        if description:
+            goal.description = description
+        if unit:
+            goal.measurement_unit = unit
+        if target:
+            goal.measurement_target = target
+        if start_date:
+            goal.start_date = parse_datetime_arg(start_date, "start_date")
+        if end_date:
+            goal.end_date = parse_datetime_arg(end_date, "end_date")
+
+        # Save
+        service.save(goal, notes=f'CLI edit: Updated goal {goal_id}')
+
+        print(format_success(f"Updated goal {goal_id}"))
+
+    except Exception as e:
+        logger.error(f"Error editing goal {goal_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def goal_delete(goal_id: int, force: bool = False):
+    """
+    Delete goal with confirmation.
+
+    Matches: DELETE /api/goals/<id>
+    """
+    try:
+        service = GoalStorageService()
+        goal = service.get_by_id(goal_id)
+
+        if not goal:
+            print(format_error(f"Goal {goal_id} not found"))
+            sys.exit(1)
+
+        # Confirm unless --force
+        if not force and not confirm_action(f"Delete '{goal.description}'?"):
+            print("Delete cancelled")
+            return
+
+        # Delete with archiving
+        service.delete(goal_id, notes=f'CLI delete: {goal.description}')
+
+        print(format_success(f"Deleted goal {goal_id}"))
+
+    except Exception as e:
+        logger.error(f"Error deleting goal {goal_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def goal_progress(goal_id: int):
+    """
+    Show detailed progress metrics for goal.
+
+    Matches: GET /api/goals/<id>/progress
+    """
+    try:
+        goal_service = GoalStorageService()
+        goal = goal_service.get_by_id(goal_id)
+
+        if not goal:
+            print(format_error(f"Goal {goal_id} not found"))
+            sys.exit(1)
+
+        # Fetch actions and calculate progress
+        action_service = ActionStorageService()
+        actions = action_service.get_all()
+
+        matches = infer_matches(actions, [goal])
+        progress = aggregate_goal_progress(goal, matches)
+
+        # Display using formatter
+        print(render_goal_header(1, goal))
+        for line in render_progress_metrics(progress):
+            print(line)
+
+        timeline = render_timeline(goal)
+        if timeline:
+            print(timeline)
+
+        # Show matching actions
+        if matches:
+            print("\nMatching Actions:")
+            for line in render_action_list(matches, progress.unit, max_preview=10):
+                print(line)
+
+    except Exception as e:
+        logger.error(f"Error showing progress for goal {goal_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+# ===== TERM COMMANDS =====
+
+def term_create(term_number: int, start_date: str, theme: Optional[str] = None,
+               goal_ids: Optional[str] = None):
+    """
+    Create new term.
+
+    Matches: POST /api/terms
+    """
+    try:
+        # Parse goal_ids if provided (comma-separated or JSON array)
+        term_goal_ids = []
+        if goal_ids:
+            try:
+                # Try JSON array first
+                term_goal_ids = json.loads(goal_ids)
+            except json.JSONDecodeError:
+                # Fall back to comma-separated
+                term_goal_ids = [int(gid.strip()) for gid in goal_ids.split(',')]
+
+        # Build entity
+        term = GoalTerm(
+            term_number=term_number,
+            start_date=parse_datetime_arg(start_date, "start_date"),
+            theme=theme,
+            term_goal_ids=term_goal_ids
+        )
+
+        # Save
+        service = TermStorageService()
+        service.store_single_instance(term)
+
+        print(format_success(f"Created term {term.id} (Term #{term.term_number})"))
+
+    except Exception as e:
+        logger.error(f"Error creating term: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def term_list(status_filter: Optional[str] = None):
+    """
+    List all terms with status.
+
+    Matches: GET /api/terms
+    """
+    try:
+        term_service = TermStorageService()
+        goal_service = GoalStorageService()
+
+        terms = term_service.get_all()
+        goals = goal_service.get_all()
+
+        # Enrich with status
+        enriched = prepare_terms_list_view(terms, goals)
+
+        # Apply status filter
+        if status_filter:
+            enriched = [t for t in enriched if t['status'] == status_filter]
+
+        # Display
+        if not enriched:
+            print("No terms found.")
+            return
+
+        print(render_section_header(f"TERMS ({len(enriched)})"))
+        print(format_table_row(["#", "Start Date", "Theme", "Goals", "Status"], [5, 12, 30, 8, 10]))
+        print("-" * 68)
+
+        for item in enriched:
+            term = item['term']
+            print(format_table_row([
+                term.term_number,
+                format_datetime(term.start_date),
+                truncate(term.theme or "", 30),
+                item['committed_goal_count'],
+                item['status']
+            ], [5, 12, 30, 8, 10]))
+
+        print(f"\nTotal: {len(enriched)} terms")
+
+    except Exception as e:
+        logger.error(f"Error listing terms: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def term_show(term_id: int):
+    """
+    Show detailed information for single term.
+
+    Matches: GET /api/terms/<id>
+    """
+    try:
+        term_service = TermStorageService()
+        term = term_service.get_by_id(term_id)
+
+        if not term:
+            print(format_error(f"Term {term_id} not found"))
+            sys.exit(1)
+
+        goal_service = GoalStorageService()
+        goals = goal_service.get_all()
+
+        committed = get_committed_goals(term, goals)
+        status = get_term_status(term)
+
+        # Display details
+        print(render_section_header(f"TERM #{term.term_number} (ID: {term.id})"))
+        print(f"Start Date:       {format_datetime(term.start_date)}")
+        print(f"End Date:         {format_datetime(term.end_date)}")
+        print(f"Status:           {status}")
+        if term.theme:
+            print(f"Theme:            {term.theme}")
+        if term.reflection:
+            print(f"Reflection:       {term.reflection}")
+
+        print(f"\nCommitted Goals:  {len(committed)}")
+        if committed:
+            for goal in committed:
+                print(f"  - {goal.id}: {truncate(goal.description, 60)}")
+
+    except Exception as e:
+        logger.error(f"Error showing term {term_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def term_current():
+    """
+    Show currently active term.
+
+    Matches: GET /api/terms/active
+    """
+    try:
+        service = TermStorageService()
+        terms = service.get_all()
+
+        active_term = get_active_term(terms)
+
+        if not active_term:
+            print("No active term found.")
+            return
+
+        # Show details for active term
+        term_show(active_term.id)
+
+    except Exception as e:
+        logger.error(f"Error fetching active term: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def term_edit(term_id: int, theme: Optional[str] = None, reflection: Optional[str] = None):
+    """
+    Update existing term.
+
+    Matches: PUT /api/terms/<id>
+    """
+    try:
+        service = TermStorageService()
+        term = service.get_by_id(term_id)
+
+        if not term:
+            print(format_error(f"Term {term_id} not found"))
+            sys.exit(1)
+
+        # Apply updates
+        if theme:
+            term.theme = theme
+        if reflection:
+            term.reflection = reflection
+
+        # Save
+        service.save(term, notes=f'CLI edit: Updated term {term_id}')
+
+        print(format_success(f"Updated term {term_id}"))
+
+    except Exception as e:
+        logger.error(f"Error editing term {term_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def term_add_goal(term_id: int, goal_id: int):
+    """
+    Add goal to term.
+
+    Matches: POST /api/terms/<id>/goals
+    """
+    try:
+        term_service = TermStorageService()
+        term = term_service.get_by_id(term_id)
+
+        if not term:
+            print(format_error(f"Term {term_id} not found"))
+            sys.exit(1)
+
+        goal_service = GoalStorageService()
+        goal = goal_service.get_by_id(goal_id)
+
+        if not goal:
+            print(format_error(f"Goal {goal_id} not found"))
+            sys.exit(1)
+
+        # Check if already assigned
+        if goal_id in term.term_goal_ids:
+            print(format_error(f"Goal {goal_id} already assigned to term {term_id}"))
+            sys.exit(1)
+
+        # Add goal
+        term.term_goal_ids.append(goal_id)
+        term_service.save(term, notes=f'CLI: Added goal {goal_id}')
+
+        print(format_success(f"Added goal {goal_id} to term {term_id}"))
+
+    except Exception as e:
+        logger.error(f"Error adding goal to term: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def term_remove_goal(term_id: int, goal_id: int):
+    """
+    Remove goal from term.
+
+    Matches: DELETE /api/terms/<id>/goals/<goal_id>
+    """
+    try:
+        term_service = TermStorageService()
+        term = term_service.get_by_id(term_id)
+
+        if not term:
+            print(format_error(f"Term {term_id} not found"))
+            sys.exit(1)
+
+        # Check if goal is assigned
+        if goal_id not in term.term_goal_ids:
+            print(format_error(f"Goal {goal_id} not assigned to term {term_id}"))
+            sys.exit(1)
+
+        # Remove goal
+        term.term_goal_ids.remove(goal_id)
+        term_service.save(term, notes=f'CLI: Removed goal {goal_id}')
+
+        print(format_success(f"Removed goal {goal_id} from term {term_id}"))
+
+    except Exception as e:
+        logger.error(f"Error removing goal from term: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+# ===== VALUE COMMANDS =====
+
+def value_create(name: str, description: str, value_type: str, domain: str = "General",
+                priority: int = 50, guidance: Optional[str] = None):
+    """
+    Create new value (consolidated command for all types).
+
+    Matches: POST /api/values
+    """
+    try:
+        # Build entity based on type
+        if value_type == "highest-order":
+            value = HighestOrderValues(
+                description=description,
+                life_domain=domain,
+                priority=priority
+            )
+            value.value_name = name
+        elif value_type == "major":
+            if not guidance:
+                print(format_error("Major values require --guidance"))
+                sys.exit(1)
+            value = MajorValues(
+                description=description,
+                life_domain=domain,
+                priority=priority,
+                alignment_guidance=guidance
+            )
+            value.value_name = name
+        elif value_type == "life-area":
+            value = LifeAreas(
+                description=description,
+                life_domain=domain,
+                priority=priority
+            )
+            value.value_name = name
+        elif value_type == "general":
+            value = Values(
+                description=description,
+                life_domain=domain,
+                priority=priority
+            )
+            value.value_name = name
+        else:
+            print(format_error(f"Invalid value type: {value_type}"))
+            sys.exit(1)
+
+        # Save
+        service = ValuesStorageService()
+        service.store_single_instance(value)
+
+        print(format_success(f"Created {value_type} value {value.id}: {value.value_name}"))
+
+    except Exception as e:
+        logger.error(f"Error creating value: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def value_list(value_type: Optional[str] = None, domain: Optional[str] = None):
+    """
+    List all values with optional filters.
+
+    Matches: GET /api/values
+    """
+    try:
+        service = ValuesStorageService()
+
+        # Get filtered values
+        values = service.get_all(type_filter=value_type, domain_filter=domain)
+
+        # Display
+        if not values:
+            print("No values found.")
+            return
+
+        print(render_section_header(f"VALUES ({len(values)})"))
+        print(format_table_row(["ID", "Name", "Type", "Domain", "Priority"], [5, 30, 15, 15, 10]))
+        print("-" * 78)
+
+        for value in values:
+            print(format_table_row([
+                value.id,
+                truncate(value.value_name, 30),
+                value.incentive_type,
+                value.life_domain,
+                value.priority
+            ], [5, 30, 15, 15, 10]))
+
+        print(f"\nTotal: {len(values)} values")
+
+    except Exception as e:
+        logger.error(f"Error listing values: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def value_show(value_id: int):
+    """
+    Show detailed information for single value.
+
+    Matches: GET /api/values/<id>
+    """
+    try:
+        service = ValuesStorageService()
+        value = service.get_by_id(value_id)
+
+        if not value:
+            print(format_error(f"Value {value_id} not found"))
+            sys.exit(1)
+
+        # Display details
+        print(render_section_header(f"VALUE #{value_id}"))
+        print(f"Name:             {value.value_name}")
+        print(f"Type:             {value.incentive_type}")
+        print(f"Description:      {value.description}")
+        print(f"Life Domain:      {value.life_domain}")
+        print(f"Priority:         {value.priority}")
+
+        if hasattr(value, 'alignment_guidance') and value.alignment_guidance:
+            print(f"Guidance:         {value.alignment_guidance}")
+
+    except Exception as e:
+        logger.error(f"Error showing value {value_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def value_edit(value_id: int, name: Optional[str] = None, description: Optional[str] = None,
+              domain: Optional[str] = None, priority: Optional[int] = None,
+              guidance: Optional[str] = None):
+    """
+    Update existing value.
+
+    Matches: PUT /api/values/<id>
+    """
+    try:
+        service = ValuesStorageService()
+        value = service.get_by_id(value_id)
+
+        if not value:
+            print(format_error(f"Value {value_id} not found"))
+            sys.exit(1)
+
+        # Apply updates
+        if name:
+            value.value_name = name
+        if description:
+            value.description = description
+        if domain:
+            value.life_domain = domain
+        if priority:
+            value.priority = priority
+        if guidance and hasattr(value, 'alignment_guidance'):
+            value.alignment_guidance = guidance
+
+        # Save
+        service.save(value, notes=f'CLI edit: Updated value {value_id}')
+
+        print(format_success(f"Updated value {value_id}"))
+
+    except Exception as e:
+        logger.error(f"Error editing value {value_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+def value_delete(value_id: int, force: bool = False):
+    """
+    Delete value with confirmation.
+
+    Matches: DELETE /api/values/<id>
+    """
+    try:
+        service = ValuesStorageService()
+        value = service.get_by_id(value_id)
+
+        if not value:
+            print(format_error(f"Value {value_id} not found"))
+            sys.exit(1)
+
+        # Confirm unless --force
+        if not force and not confirm_action(f"Delete '{value.value_name}'?"):
+            print("Delete cancelled")
+            return
+
+        # Delete with archiving
+        service.delete(value_id, notes=f'CLI delete: {value.value_name}')
+
+        print(format_success(f"Deleted value {value_id}"))
+
+    except Exception as e:
+        logger.error(f"Error deleting value {value_id}: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
+        sys.exit(1)
+
+
+# ===== PROGRESS COMMAND =====
+
 def show_progress(verbose: bool = False):
     """
     Display progress for all goals with matching actions.
 
-    This command ORCHESTRATES - it doesn't implement:
-    - rhetorica: Retrieves data (storage services)
-    - ethica: Calculates metrics (aggregate_all_goals)
-    - interfaces: Formats output (formatters module)
-
-    Compare this to cli.py lines 27-131 (100+ lines of mixed concerns).
-    This version: ~40 lines of pure orchestration.
-
-    Args:
-        verbose: If True, show detailed action listings
+    Original command - shows progress dashboard.
     """
-    # Step 1: Fetch data (orchestrates rhetorica)
     try:
-        goals, actions = _fetch_goals_and_actions()
-    except Exception as e:
-        _handle_database_error(e)
-        return
+        goal_service = GoalStorageService()
+        action_service = ActionStorageService()
 
-    if not goals:
-        print("No goals found. Add some goals first!")
-        return
+        goals = goal_service.get_all()
+        actions = action_service.get_all()
 
-    # Step 2: Calculate relationships (orchestrates ethica)
-    all_matches = infer_matches(
-        actions,
-        goals,
-        require_period_match=DEFAULT_FILTERS.require_period_match
-    )
-
-    # Step 3: Calculate progress metrics (orchestrates ethica)
-    all_progress = aggregate_all_goals(goals, all_matches)
-
-    # Step 4: Display results (orchestrates formatters)
-    _display_progress_report(all_progress, len(actions), len(all_matches), verbose)
-
-
-def _fetch_goals_and_actions():
-    """
-    Fetch goals and actions from storage.
-
-    Extracted helper for clarity and error handling.
-    Returns tuple of (goals, actions).
-    """
-    goal_service = GoalStorageService()
-    action_service = ActionStorageService()
-
-    goals = goal_service.get_all()
-    actions = action_service.get_all()
-
-    return goals, actions
-
-
-def _handle_database_error(error: Exception):
-    """
-    Handle database access errors gracefully.
-
-    Extracted for testability and reuse.
-    """
-    print(f"Error accessing database: {error}")
-    print("Make sure database is initialized. Run: from politica.database import init_db; init_db()")
-    sys.exit(1)
-
-
-def _display_progress_report(all_progress, total_actions, total_matches, verbose=False):
-    """
-    Display formatted progress report.
-
-    Pure orchestration of formatter functions.
-    No business logic, no formatting logic.
-
-    Args:
-        all_progress: List of GoalProgress objects
-        total_actions: Total number of actions in database
-        total_matches: Total number of action-goal matches
-        verbose: Whether to show action details
-    """
-    # Header
-    print(render_section_header("GOAL PROGRESS REPORT"))
-    print(render_summary_stats(len(all_progress), total_actions, total_matches))
-
-    # Display each goal
-    for i, progress in enumerate(all_progress, 1):
-        _display_single_goal(i, progress, verbose)
-
-    # Footer
-    print("=" * DEFAULT_DISPLAY.separator_width)
-    print()
-
-
-def _display_single_goal(goal_number, progress, verbose=False):
-    """
-    Display progress for a single goal.
-
-    Pure orchestration of formatter functions.
-
-    Args:
-        goal_number: Sequential number (1, 2, 3...)
-        progress: GoalProgress object with metrics
-        verbose: Whether to show action details
-    """
-    # Header
-    print(render_goal_header(goal_number, progress.goal))
-
-    # Metrics (target, progress, bar, completion status)
-    for line in render_progress_metrics(progress):
-        print(line)
-
-    # Timeline (if dates exist)
-    timeline = render_timeline(progress.goal)
-    if timeline:
-        print(timeline)
-
-    # Action details (if verbose mode)
-    if verbose:
-        action_lines = render_action_list(
-            progress.matches,
-            progress.unit,
-            max_preview=DEFAULT_DISPLAY.preview_action_count
-        )
-        for line in action_lines:
-            print(line)
-
-    print()  # Blank line between goals
-
-
-def values_create_major(name: str, description: str, domain: str, priority: int, alignment_guidance: str):
-    """Create a major value using orchestration service."""
-    orchestrator = ValuesOrchestrationService()
-    result = orchestrator.create_major_value(
-        name=name,
-        description=description,
-        priority=priority,
-        life_domain=domain,
-        alignment_guidance=alignment_guidance
-    )
-
-    if result.success and result.value:
-        print(f"✓ Created major value: {result.value.value_name} (ID: {result.value.id})")
-    else:
-        print(f"Error: {result.error or 'Unknown error'}")
-        sys.exit(1)
-
-
-def values_create_highest_order(name: str, description: str, domain: str = 'General', priority: int = 1):
-    """Create a highest order value using orchestration service."""
-    orchestrator = ValuesOrchestrationService()
-    result = orchestrator.create_highest_order_value(
-        name=name,
-        description=description,
-        priority=priority,
-        life_domain=domain
-    )
-
-    if result.success and result.value:
-        print(f"✓ Created highest order value: {result.value.value_name} (ID: {result.value.id})")
-    else:
-        print(f"Error: {result.error or 'Unknown error'}")
-        sys.exit(1)
-
-
-def life_areas_create(name: str, description: str, domain: str = 'General', priority: int = 40):
-    """Create a life area using orchestration service."""
-    orchestrator = ValuesOrchestrationService()
-    result = orchestrator.create_life_area(
-        name=name,
-        description=description,
-        priority=priority,
-        life_domain=domain
-    )
-
-    if result.success and result.value:
-        print(f"✓ Created life area: {result.value.value_name} (ID: {result.value.id})")
-    else:
-        print(f"Error: {result.error or 'Unknown error'}")
-        sys.exit(1)
-
-
-def values_create_general(name: str, description: str, domain: str = 'General', priority: int = 50):
-    """Create a general value using orchestration service."""
-    orchestrator = ValuesOrchestrationService()
-    result = orchestrator.create_general_value(
-        name=name,
-        description=description,
-        priority=priority,
-        life_domain=domain
-    )
-
-    if result.success and result.value:
-        print(f"✓ Created general value: {result.value.value_name} (ID: {result.value.id})")
-    else:
-        print(f"Error: {result.error or 'Unknown error'}")
-        sys.exit(1)
-
-
-def values_list(value_type: Optional[str] = None, domain: Optional[str] = None):
-    """
-    Display list of all personal values.
-
-    This command ORCHESTRATES - it doesn't implement:
-    - rhetorica: Retrieves and filters data (ValuesOrchestrationService)
-    - interfaces: Formats output (render_value_list)
-
-    Args:
-        value_type: Optional filter by type ('general', 'major', 'highest_order', 'life_area')
-        domain: Optional filter by life domain
-    """
-    # Fetch data with filtering at storage layer
-    orchestrator = ValuesOrchestrationService()
-    filtered_values = orchestrator.get_all_values(
-        type_filter=value_type,
-        domain_filter=domain
-    )
-
-    if not filtered_values:
-        if value_type or domain:
-            print(f"No values found matching filters (type={value_type}, domain={domain})")
-        else:
-            print("No values found. Add some values first!")
-        return
-
-    # Display results (orchestrates formatters)
-    print(render_value_list(filtered_values))
-
-
-def values_show(value_id: int):
-    """
-    Display detailed information for a single value.
-
-    This command ORCHESTRATES - it doesn't implement:
-    - rhetorica: Retrieves data (ValuesStorageService)
-    - interfaces: Formats output (render_value_detail)
-
-    Args:
-        value_id: Database ID of the value to display
-
-    Written by Claude Code on 2025-10-13
-    """
-    # Step 1: Fetch data (orchestrates rhetorica)
-    try:
-        service = ValuesStorageService()
-        value = service.get_by_id(value_id)
-    except Exception as e:
-        _handle_database_error(e)
-        return
-
-    if not value:
-        print(f"Error: Value with ID {value_id} not found")
-        sys.exit(1)
-
-    # Step 2: Display results (orchestrates formatters)
-    print(render_value_detail(value))
-
-
-def values_edit(value_id: int, name: Optional[str] = None, description: Optional[str] = None,
-                domain: Optional[str] = None, priority: Optional[int] = None,
-                alignment_guidance: Optional[str] = None):
-    """
-    Update an existing value's fields using orchestration service.
-
-    Only provided fields are updated; others remain unchanged.
-    Type cannot be changed (general -> major, etc.).
-
-    Args:
-        value_id: Database ID of the value to update
-        name: New name (optional)
-        description: New description (optional)
-        domain: New life domain (optional)
-        priority: New priority level 1-100 (optional)
-        alignment_guidance: New alignment guidance (optional, only for MajorValues)
-    """
-    orchestrator = ValuesOrchestrationService()
-    result = orchestrator.update_value(
-        value_id=value_id,
-        name=name,
-        description=description,
-        domain=domain,
-        priority=priority,
-        alignment_guidance=alignment_guidance,
-        notes=f'CLI edit: Updated value {value_id}'
-    )
-
-    if result.success and result.value:
-        print(f"✓ Updated value: {result.value.value_name} (ID: {value_id})")
-    else:
-        print(f"Error: {result.error or 'Unknown error'}")
-        sys.exit(1)
-
-
-def values_delete(value_id: int, force: bool = False):
-    """
-    Delete a value with confirmation prompt using orchestration service.
-
-    Archives the value before deletion for audit trail.
-
-    Args:
-        value_id: Database ID of the value to delete
-        force: If True, skip confirmation prompt
-    """
-    # Fetch value for confirmation prompt
-    orchestrator = ValuesOrchestrationService()
-    fetch_result = orchestrator.get_value_by_id(value_id)
-
-    if not fetch_result.success or not fetch_result.value:
-        print(f"Error: {fetch_result.error or f'Value with ID {value_id} not found'}")
-        sys.exit(1)
-
-    value = fetch_result.value
-
-    # Confirmation prompt (unless --force)
-    if not force:
-        response = input(f"Delete '{value.value_name}'? [y/N]: ")
-        if response.lower() not in ['y', 'yes']:
-            print("Delete cancelled")
+        if not goals:
+            print("No goals found. Add some goals first!")
             return
 
-    # Delete using orchestration service
-    result = orchestrator.delete_value(
-        value_id=value_id,
-        notes=f'CLI delete: {value.value_name}'
-    )
+        # Calculate relationships and progress
+        all_matches = infer_matches(actions, goals)
+        all_progress = aggregate_all_goals(goals, all_matches)
 
-    if result.success:
-        print(f"✓ Deleted value: {value.value_name} (ID: {value_id})")
-    else:
-        print(f"Error: {result.error or 'Unknown error'}")
+        # Display report
+        print(render_section_header("GOAL PROGRESS REPORT"))
+        print(render_summary_stats(len(all_progress), len(actions), len(all_matches)))
+
+        # Display each goal
+        for i, progress in enumerate(all_progress, 1):
+            print(render_goal_header(i, progress.goal))
+
+            # Metrics
+            for line in render_progress_metrics(progress):
+                print(line)
+
+            # Timeline
+            timeline = render_timeline(progress.goal)
+            if timeline:
+                print(timeline)
+
+            # Action details (if verbose mode)
+            if verbose:
+                action_lines = render_action_list(progress.matches, progress.unit, max_preview=5)
+                for line in action_lines:
+                    print(line)
+
+            print()  # Blank line between goals
+
+        print("=" * 80)
+        print()
+
+    except Exception as e:
+        logger.error(f"Error showing progress: {e}", exc_info=True)
+        print(format_error(f"Error: {e}"))
         sys.exit(1)
 
+
+# ===== MAIN CLI ENTRY POINT =====
 
 def main():
     """
-    Main CLI entry point.
+    Main CLI entry point with argparse routing.
 
-    Handles argument parsing and command routing.
+    Handles argument parsing and command dispatch.
     """
     parser = argparse.ArgumentParser(
         description='Ten Week Goal App - Track actions against goals',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s show-progress           # Show all goal progress
-  %(prog)s show-progress -v        # Show progress with action details
+  %(prog)s action create "Ran 5km" --measurements '{"distance_km": 5.0}'
+  %(prog)s action list --from 2025-10-01 --to 2025-10-31
+  %(prog)s goal create "Run 120km" --unit km --target 120
+  %(prog)s goal progress 5
+  %(prog)s term create --number 4 --start 2025-12-23 --theme "New Year"
+  %(prog)s value create "Health" "Stay fit" --type major --guidance "Exercise 3x/week"
+  %(prog)s progress --verbose
         """
     )
 
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    subparsers = parser.add_subparsers(dest='command', help='Available commands', required=True)
 
-    # show-progress command
-    progress_parser = subparsers.add_parser(
-        'show-progress',
-        help='Display progress for all goals'
-    )
-    progress_parser.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help='Show detailed action listings'
-    )
+    # ===== ACTION COMMANDS =====
+    action_parser = subparsers.add_parser('action', help='Manage actions')
+    action_subparsers = action_parser.add_subparsers(dest='action_command', required=True)
 
-    # values command group
-    values_parser = subparsers.add_parser(
-        'values',
-        help='Manage personal values'
-    )
-    values_subparsers = values_parser.add_subparsers(dest='values_command', help='Values commands')
+    # action create
+    action_create_parser = action_subparsers.add_parser('create', help='Create new action')
+    action_create_parser.add_argument('description', help='Action description')
+    action_create_parser.add_argument('--measurements', help='JSON dict of measurements')
+    action_create_parser.add_argument('--duration', type=float, help='Duration in minutes')
+    action_create_parser.add_argument('--start-time', help='Start time (ISO format)')
 
-    # values create-major command
-    create_major_parser = values_subparsers.add_parser(
-        'create-major',
-        help='Create a major value (actionable, tracked regularly)'
-    )
-    create_major_parser.add_argument('name', help='Value name')
-    create_major_parser.add_argument('description', help='What this value means')
-    create_major_parser.add_argument('--domain', default='General', help='Life domain')
-    create_major_parser.add_argument('--priority', type=int, default=5, help='Priority 1-100 (default: 5)')
-    create_major_parser.add_argument('--guidance', required=True, help='How this value shows up in actions/goals')
+    # action list
+    action_list_parser = action_subparsers.add_parser('list', help='List all actions')
+    action_list_parser.add_argument('--from', dest='start_date', help='Start date (ISO format)')
+    action_list_parser.add_argument('--to', dest='end_date', help='End date (ISO format)')
+    action_list_parser.add_argument('--has-measurements', action='store_true')
+    action_list_parser.add_argument('--has-duration', action='store_true')
 
-    # values create-highest-order command
-    create_highest_parser = values_subparsers.add_parser(
-        'create-highest-order',
-        help='Create a highest order value (philosophical, abstract)'
-    )
-    create_highest_parser.add_argument('name', help='Value name')
-    create_highest_parser.add_argument('description', help='What this value means')
-    create_highest_parser.add_argument('--domain', default='General', help='Life domain')
-    create_highest_parser.add_argument('--priority', type=int, default=1, help='Priority 1-100 (default: 1)')
+    # action show
+    action_show_parser = action_subparsers.add_parser('show', help='Show action details')
+    action_show_parser.add_argument('id', type=int, help='Action ID')
 
-    # values create-general command
-    create_general_parser = values_subparsers.add_parser(
-        'create-general',
-        help='Create a general value (aspirational)'
-    )
-    create_general_parser.add_argument('name', help='Value name')
-    create_general_parser.add_argument('description', help='What this value means')
-    create_general_parser.add_argument('--domain', default='General', help='Life domain')
-    create_general_parser.add_argument('--priority', type=int, default=50, help='Priority 1-100 (default: 50)')
+    # action edit
+    action_edit_parser = action_subparsers.add_parser('edit', help='Edit action')
+    action_edit_parser.add_argument('id', type=int, help='Action ID')
+    action_edit_parser.add_argument('--description', help='New description')
+    action_edit_parser.add_argument('--measurements', help='New measurements (JSON)')
+    action_edit_parser.add_argument('--duration', type=float, help='New duration')
 
-    # life-areas command group
-    life_areas_parser = subparsers.add_parser(
-        'life-areas',
-        help='Manage life areas (organizational domains)'
-    )
-    life_areas_subparsers = life_areas_parser.add_subparsers(dest='life_areas_command', help='Life areas commands')
+    # action delete
+    action_delete_parser = action_subparsers.add_parser('delete', help='Delete action')
+    action_delete_parser.add_argument('id', type=int, help='Action ID')
+    action_delete_parser.add_argument('--force', action='store_true', help='Skip confirmation')
 
-    # life-areas create command
-    create_area_parser = life_areas_subparsers.add_parser(
-        'create',
-        help='Create a life area (organizational, not a value)'
-    )
-    create_area_parser.add_argument('name', help='Area name')
-    create_area_parser.add_argument('description', help='What this area encompasses')
-    create_area_parser.add_argument('--domain', default='General', help='Life domain')
-    create_area_parser.add_argument('--priority', type=int, default=40, help='Priority 1-100 (default: 40)')
+    # action goals
+    action_goals_parser = action_subparsers.add_parser('goals', help='Show goals for action')
+    action_goals_parser.add_argument('id', type=int, help='Action ID')
 
-    # values list command
-    list_parser = values_subparsers.add_parser(
-        'list',
-        help='List all personal values'
-    )
-    list_parser.add_argument(
-        '--type',
-        choices=['general', 'major', 'highest_order', 'life_area'],
-        help='Filter by value type'
-    )
-    list_parser.add_argument(
-        '--domain',
-        help='Filter by life domain'
-    )
+    # ===== GOAL COMMANDS =====
+    goal_parser = subparsers.add_parser('goal', help='Manage goals')
+    goal_subparsers = goal_parser.add_subparsers(dest='goal_command', required=True)
 
-    # values show command
-    show_parser = values_subparsers.add_parser(
-        'show',
-        help='Show detailed information for a single value'
-    )
-    show_parser.add_argument(
-        'id',
-        type=int,
-        help='Database ID of the value to display'
-    )
+    # goal create
+    goal_create_parser = goal_subparsers.add_parser('create', help='Create new goal')
+    goal_create_parser.add_argument('description', help='Goal description')
+    goal_create_parser.add_argument('--unit', help='Measurement unit')
+    goal_create_parser.add_argument('--target', type=float, help='Target value')
+    goal_create_parser.add_argument('--start-date', help='Start date (ISO format)')
+    goal_create_parser.add_argument('--end-date', help='End date (ISO format)')
+    goal_create_parser.add_argument('--relevant', help='How goal is relevant')
+    goal_create_parser.add_argument('--actionable', help='How goal is actionable')
 
-    # values edit command
-    edit_parser = values_subparsers.add_parser(
-        'edit',
-        help='Update an existing value'
-    )
-    edit_parser.add_argument(
-        'id',
-        type=int,
-        help='Database ID of the value to update'
-    )
-    edit_parser.add_argument(
-        '--name',
-        help='New name for the value'
-    )
-    edit_parser.add_argument(
-        '--description',
-        help='New description'
-    )
-    edit_parser.add_argument(
-        '--domain',
-        help='New life domain'
-    )
-    edit_parser.add_argument(
-        '--priority',
-        type=int,
-        help='New priority level (1-100)'
-    )
-    edit_parser.add_argument(
-        '--alignment-guidance',
-        help='New alignment guidance (only for MajorValues)'
-    )
+    # goal list
+    goal_list_parser = goal_subparsers.add_parser('list', help='List all goals')
+    goal_list_parser.add_argument('--has-dates', action='store_true')
+    goal_list_parser.add_argument('--has-target', action='store_true')
 
-    # values delete command
-    delete_parser = values_subparsers.add_parser(
-        'delete',
-        help='Delete a value with confirmation'
-    )
-    delete_parser.add_argument(
-        'id',
-        type=int,
-        help='Database ID of the value to delete'
-    )
-    delete_parser.add_argument(
-        '--force',
-        action='store_true',
-        help='Skip confirmation prompt'
-    )
+    # goal show
+    goal_show_parser = goal_subparsers.add_parser('show', help='Show goal details')
+    goal_show_parser.add_argument('id', type=int, help='Goal ID')
 
+    # goal edit
+    goal_edit_parser = goal_subparsers.add_parser('edit', help='Edit goal')
+    goal_edit_parser.add_argument('id', type=int, help='Goal ID')
+    goal_edit_parser.add_argument('--description', help='New description')
+    goal_edit_parser.add_argument('--unit', help='New measurement unit')
+    goal_edit_parser.add_argument('--target', type=float, help='New target value')
+    goal_edit_parser.add_argument('--start-date', help='New start date')
+    goal_edit_parser.add_argument('--end-date', help='New end date')
+
+    # goal delete
+    goal_delete_parser = goal_subparsers.add_parser('delete', help='Delete goal')
+    goal_delete_parser.add_argument('id', type=int, help='Goal ID')
+    goal_delete_parser.add_argument('--force', action='store_true', help='Skip confirmation')
+
+    # goal progress
+    goal_progress_parser = goal_subparsers.add_parser('progress', help='Show goal progress')
+    goal_progress_parser.add_argument('id', type=int, help='Goal ID')
+
+    # ===== TERM COMMANDS =====
+    term_parser = subparsers.add_parser('term', help='Manage terms')
+    term_subparsers = term_parser.add_subparsers(dest='term_command', required=True)
+
+    # term create
+    term_create_parser = term_subparsers.add_parser('create', help='Create new term')
+    term_create_parser.add_argument('--number', type=int, required=True, help='Term number')
+    term_create_parser.add_argument('--start', required=True, help='Start date (ISO format)')
+    term_create_parser.add_argument('--theme', help='Term theme')
+    term_create_parser.add_argument('--goal-ids', help='Goal IDs (comma-separated or JSON array)')
+
+    # term list
+    term_list_parser = term_subparsers.add_parser('list', help='List all terms')
+    term_list_parser.add_argument('--status', choices=['active', 'upcoming', 'complete'])
+
+    # term show
+    term_show_parser = term_subparsers.add_parser('show', help='Show term details')
+    term_show_parser.add_argument('id', type=int, help='Term ID')
+
+    # term current
+    term_current_parser = term_subparsers.add_parser('current', help='Show active term')
+
+    # term edit
+    term_edit_parser = term_subparsers.add_parser('edit', help='Edit term')
+    term_edit_parser.add_argument('id', type=int, help='Term ID')
+    term_edit_parser.add_argument('--theme', help='New theme')
+    term_edit_parser.add_argument('--reflection', help='Term reflection')
+
+    # term add-goal
+    term_add_goal_parser = term_subparsers.add_parser('add-goal', help='Add goal to term')
+    term_add_goal_parser.add_argument('term_id', type=int, help='Term ID')
+    term_add_goal_parser.add_argument('goal_id', type=int, help='Goal ID')
+
+    # term remove-goal
+    term_remove_goal_parser = term_subparsers.add_parser('remove-goal', help='Remove goal from term')
+    term_remove_goal_parser.add_argument('term_id', type=int, help='Term ID')
+    term_remove_goal_parser.add_argument('goal_id', type=int, help='Goal ID')
+
+    # ===== VALUE COMMANDS =====
+    value_parser = subparsers.add_parser('value', help='Manage values')
+    value_subparsers = value_parser.add_subparsers(dest='value_command', required=True)
+
+    # value create
+    value_create_parser = value_subparsers.add_parser('create', help='Create new value')
+    value_create_parser.add_argument('name', help='Value name')
+    value_create_parser.add_argument('description', help='Value description')
+    value_create_parser.add_argument('--type', required=True,
+                                      choices=['general', 'major', 'highest-order', 'life-area'],
+                                      help='Value type')
+    value_create_parser.add_argument('--domain', default='General', help='Life domain')
+    value_create_parser.add_argument('--priority', type=int, default=50, help='Priority (1-100)')
+    value_create_parser.add_argument('--guidance', help='Alignment guidance (required for major values)')
+
+    # value list
+    value_list_parser = value_subparsers.add_parser('list', help='List all values')
+    value_list_parser.add_argument('--type', choices=['general', 'major', 'highest_order', 'life_area'])
+    value_list_parser.add_argument('--domain', help='Filter by domain')
+
+    # value show
+    value_show_parser = value_subparsers.add_parser('show', help='Show value details')
+    value_show_parser.add_argument('id', type=int, help='Value ID')
+
+    # value edit
+    value_edit_parser = value_subparsers.add_parser('edit', help='Edit value')
+    value_edit_parser.add_argument('id', type=int, help='Value ID')
+    value_edit_parser.add_argument('--name', help='New name')
+    value_edit_parser.add_argument('--description', help='New description')
+    value_edit_parser.add_argument('--domain', help='New domain')
+    value_edit_parser.add_argument('--priority', type=int, help='New priority')
+    value_edit_parser.add_argument('--guidance', help='New guidance')
+
+    # value delete
+    value_delete_parser = value_subparsers.add_parser('delete', help='Delete value')
+    value_delete_parser.add_argument('id', type=int, help='Value ID')
+    value_delete_parser.add_argument('--force', action='store_true', help='Skip confirmation')
+
+    # ===== PROGRESS COMMAND =====
+    progress_parser = subparsers.add_parser('progress', help='Show progress dashboard')
+    progress_parser.add_argument('-v', '--verbose', action='store_true',
+                                 help='Show detailed action listings')
+
+    # Parse and route
     args = parser.parse_args()
 
-    # Route to appropriate command
-    if args.command == 'show-progress':
-        show_progress(verbose=args.verbose)
-    elif args.command == 'values':
-        if args.values_command == 'create-major':
-            values_create_major(
-                name=args.value_name,
-                description=args.description,
-                domain=args.domain,
-                priority=args.priority,
-                alignment_guidance=args.guidance
-            )
-        elif args.values_command == 'create-highest-order':
-            values_create_highest_order(
-                name=args.value_name,
-                description=args.description,
-                domain=args.domain,
-                priority=args.priority
-            )
-        elif args.values_command == 'create-general':
-            values_create_general(
-                name=args.value_name,
-                description=args.description,
-                domain=args.domain,
-                priority=args.priority
-            )
-        elif args.values_command == 'list':
-            values_list(
-                value_type=args.type if hasattr(args, 'type') else None,
-                domain=args.domain if hasattr(args, 'domain') else None
-            )
-        elif args.values_command == 'show':
-            values_show(value_id=args.id)
-        elif args.values_command == 'edit':
-            values_edit(
-                value_id=args.id,
-                name=args.value_name if hasattr(args, 'name') else None,
-                description=args.description if hasattr(args, 'description') else None,
-                domain=args.domain if hasattr(args, 'domain') else None,
-                priority=args.priority if hasattr(args, 'priority') else None,
-                alignment_guidance=args.alignment_guidance if hasattr(args, 'alignment_guidance') else None
-            )
-        elif args.values_command == 'delete':
-            values_delete(value_id=args.id, force=args.force)
-        else:
-            values_parser.print_help()
-            sys.exit(1)
-    elif args.command == 'life-areas':
-        if args.life_areas_command == 'create':
-            life_areas_create(
-                name=args.value_name,
-                description=args.description,
-                domain=args.domain,
-                priority=args.priority
-            )
-        else:
-            life_areas_parser.print_help()
-            sys.exit(1)
-    else:
-        parser.print_help()
-        sys.exit(1)
+    # Dispatch to command handlers
+    try:
+        if args.command == 'action':
+            if args.action_command == 'create':
+                action_create(args.description, args.measurements, args.duration, args.start_time)
+            elif args.action_command == 'list':
+                action_list(args.start_date, args.end_date, args.has_measurements, args.has_duration)
+            elif args.action_command == 'show':
+                action_show(args.id)
+            elif args.action_command == 'edit':
+                action_edit(args.id, args.description, args.measurements, args.duration)
+            elif args.action_command == 'delete':
+                action_delete(args.id, args.force)
+            elif args.action_command == 'goals':
+                action_goals(args.id)
+
+        elif args.command == 'goal':
+            if args.goal_command == 'create':
+                goal_create(args.description, args.unit, args.target, args.start_date,
+                           args.end_date, args.relevant, args.actionable)
+            elif args.goal_command == 'list':
+                goal_list(args.has_dates, args.has_target)
+            elif args.goal_command == 'show':
+                goal_show(args.id)
+            elif args.goal_command == 'edit':
+                goal_edit(args.id, args.description, args.unit, args.target,
+                         args.start_date, args.end_date)
+            elif args.goal_command == 'delete':
+                goal_delete(args.id, args.force)
+            elif args.goal_command == 'progress':
+                goal_progress(args.id)
+
+        elif args.command == 'term':
+            if args.term_command == 'create':
+                term_create(args.number, args.start, args.theme, args.goal_ids)
+            elif args.term_command == 'list':
+                term_list(args.status)
+            elif args.term_command == 'show':
+                term_show(args.id)
+            elif args.term_command == 'current':
+                term_current()
+            elif args.term_command == 'edit':
+                term_edit(args.id, args.theme, args.reflection)
+            elif args.term_command == 'add-goal':
+                term_add_goal(args.term_id, args.goal_id)
+            elif args.term_command == 'remove-goal':
+                term_remove_goal(args.term_id, args.goal_id)
+
+        elif args.command == 'value':
+            if args.value_command == 'create':
+                value_create(args.name, args.description, args.type, args.domain,
+                           args.priority, args.guidance)
+            elif args.value_command == 'list':
+                value_list(args.type, args.domain)
+            elif args.value_command == 'show':
+                value_show(args.id)
+            elif args.value_command == 'edit':
+                value_edit(args.id, args.name, args.description, args.domain,
+                          args.priority, args.guidance)
+            elif args.value_command == 'delete':
+                value_delete(args.id, args.force)
+
+        elif args.command == 'progress':
+            show_progress(args.verbose)
+
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user")
+        sys.exit(130)
 
 
 if __name__ == '__main__':
     main()
-
-

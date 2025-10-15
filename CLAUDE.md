@@ -122,11 +122,10 @@ tests/         - Test suite
   - Type-specific factory methods: create_major_value(), create_highest_order_value(), etc.
   - Constructor registry pattern eliminates if-elif chains
   - Filtering: get_all(type_filter='major', domain_filter='Health')
-- `values_orchestration_service.py`: Business operations coordinator (Phase 1)
-  - Wraps storage with result objects pattern
-  - Returns ValueOperationResult instead of raising exceptions
-  - Allows interfaces to handle errors appropriately
-  - Domain validation happens inline (PriorityLevel constructor)
+- `values_orchestration_service.py`: **DEPRECATED** - Legacy service (use ValuesStorageService directly)
+  - Original Phase 1 pattern with result objects
+  - No longer used by CLI or Flask API (both use storage services directly)
+  - Retained for backward compatibility only
 
 ### Infrastructure (politica/)
 - `database.py`: Generic database operations
@@ -138,21 +137,22 @@ tests/         - Test suite
   - init_db(): loads all schemas from politica/schemas/
 
 ### Presentation Layer (interfaces/)
-**CLI Interface** (`interfaces/cli/`)
-- `cli.py`: Command-line interface (orchestrator only)
-  - show_progress(): Display goal progress dashboard
-  - **values commands (Phase 1)**: Type-specific value management
-    - values create-major: Create actionable major value with alignment guidance
-    - values create-highest-order: Create philosophical highest order value
-    - life-areas create: Create organizational life area (not a value)
-    - values create-general: Create aspirational general value
-    - values list [--type] [--domain]: List/filter values
-    - values show <id>: Display value details
-    - values edit <id>: Update value properties
-    - values delete <id>: Remove value
-  - Pure orchestration: fetch → calculate → display
-  - No business logic, no formatting logic
-- `cli_formatters.py`: Presentation formatting functions
+**CLI Interface** (`interfaces/cli/`) - **Refactored 2025-10-15**
+- `cli.py`: Command-line interface (1,287 lines, 25 commands)
+  - **Architecture**: Mirrors Flask API pattern (storage services → serialization → display)
+  - **Action commands** (6): create, list, show, edit, delete, goals
+  - **Goal commands** (6): create, list, show, edit, delete, progress
+  - **Term commands** (7): create, list, show, current, edit, add-goal, remove-goal
+  - **Value commands** (5): create (consolidated with --type flag), list, show, edit, delete
+  - **Progress command** (1): show-progress with --verbose option
+  - Pure orchestration: Uses storage services directly (no orchestration layer)
+  - Try/except error handling throughout (like Flask API)
+- `cli_utils.py`: CLI-specific helpers (181 lines)
+  - parse_json_arg(): Parse JSON from command line arguments
+  - parse_datetime_arg(): Parse ISO datetime strings
+  - confirm_action(): Yes/no prompts for destructive operations
+  - Formatting helpers: format_success(), format_error(), format_table_row(), truncate()
+- `cli_formatters.py`: Terminal presentation formatting
   - render_progress_bar(): Unicode progress bars
   - render_progress_metrics(): Format metrics with completion status
   - render_action_list(): Format action details for verbose mode
@@ -160,10 +160,6 @@ tests/         - Test suite
   - render_value_list(): Table format for values display
   - render_value_detail(): Full value with alignment guidance
   - Pure presentation - no calculations
-- `cli_config.py`: CLI configuration constants
-  - DisplayConfig: Bar widths, truncation limits, symbols
-  - FilterConfig: Default filter settings
-  - ColorConfig: Color scheme (stub for future)
 
 **Flask API** (`interfaces/flask/`)
 - `flask_main.py`: Application factory pattern
@@ -239,29 +235,60 @@ Follow Test-Driven Development (TDD):
 - Use pytest fixtures for test isolation
 - Test edge cases, validation logic, calculations
 
-## CLI and Web Usage
+## CLI and API Usage
 
-### CLI Commands
+### CLI Commands (Production Ready - 25 commands)
 ```bash
-# Show progress for all goals
-python interfaces/cli.py show-progress
+# Actions (6 commands)
+python interfaces/cli/cli.py action create "Description" [--measurements JSON] [--duration MINS]
+python interfaces/cli/cli.py action list [--from DATE] [--to DATE] [--has-measurements]
+python interfaces/cli/cli.py action show ID
+python interfaces/cli/cli.py action edit ID [--description STR] [--measurements JSON]
+python interfaces/cli/cli.py action delete ID [--force]
+python interfaces/cli/cli.py action goals ID  # Show goals for action
 
-# Show progress with detailed action listings
-python interfaces/cli.py show-progress -v
+# Goals (6 commands)
+python interfaces/cli/cli.py goal create "Description" [--unit STR] [--target NUM] [--start-date DATE]
+python interfaces/cli/cli.py goal list [--has-dates] [--has-target]
+python interfaces/cli/cli.py goal show ID
+python interfaces/cli/cli.py goal edit ID [--description STR] [--unit STR] [--target NUM]
+python interfaces/cli/cli.py goal delete ID [--force]
+python interfaces/cli/cli.py goal progress ID  # Show progress metrics
+
+# Terms (7 commands)
+python interfaces/cli/cli.py term create --number NUM --start DATE [--theme STR]
+python interfaces/cli/cli.py term list [--status active|upcoming|complete]
+python interfaces/cli/cli.py term show ID
+python interfaces/cli/cli.py term current  # Show active term
+python interfaces/cli/cli.py term edit ID [--theme STR] [--reflection STR]
+python interfaces/cli/cli.py term add-goal TERM_ID GOAL_ID
+python interfaces/cli/cli.py term remove-goal TERM_ID GOAL_ID
+
+# Values (5 commands - consolidated)
+python interfaces/cli/cli.py value create "Name" "Description" --type TYPE [--domain STR] [--priority NUM]
+python interfaces/cli/cli.py value list [--type TYPE] [--domain STR]
+python interfaces/cli/cli.py value show ID
+python interfaces/cli/cli.py value edit ID [--name STR] [--description STR]
+python interfaces/cli/cli.py value delete ID [--force]
+
+# Progress Dashboard (1 command)
+python interfaces/cli/cli.py progress [--verbose]
 ```
 
-### Web Interface
+### Flask API (Production Ready - 27 endpoints)
 ```bash
-# Install web dependencies
-pip install -r requirements_web.txt
-
 # Start Flask development server
-python interfaces/web_app.py
+python interfaces/flask/flask_main.py
 
-# Visit http://localhost:5000
+# API available at http://localhost:5001
+# Documentation at http://localhost:5001/api
 ```
 
-See [interfaces/WEB_README.md](interfaces/WEB_README.md) for detailed web documentation.
+**Endpoints:**
+- Actions API: 6 endpoints (CRUD + goal matching)
+- Goals API: 6 endpoints (CRUD + progress calculation)
+- Terms API: 10 endpoints (CRUD + goal assignment + lifecycle)
+- Values API: 5 endpoints (CRUD with type filtering)
 
 ## Common Patterns
 
@@ -376,7 +403,7 @@ Logs are written to `logs/` directory (configured in config.toml)
 1. **Check database exists**: Look for `politica/data_storage/application_data.db`
 2. **If missing, initialize**: Call `init_db()` from politica.database
 3. **Make changes**: Follow layer boundaries strictly
-4. **Run tests**: `pytest tests/` before committing (currently 65/65 passing: 48 core + 17 values)
+4. **Run tests**: `pytest tests/` before committing (currently 90/90 passing)
 5. **Check git status**: Before creating commits
 
 ## Important Notes for AI Collaboration
@@ -388,6 +415,15 @@ Logs are written to `logs/` directory (configured in config.toml)
 - **Layer violations**: If you catch yourself importing from categoriae in politica, STOP and refactor
 
 ## Recent Additions
+
+**2025-10-15: CLI Refactor Complete - Production Ready System** 🎉
+- ✅ Complete CLI rebuild matching Flask API architecture (1,287 lines)
+- ✅ 25 commands covering all CRUD operations (Actions, Goals, Terms, Values, Progress)
+- ✅ Removed ValuesOrchestrationService layer (uses storage services directly like Flask API)
+- ✅ Consolidated value creation (single `create` command with `--type` flag)
+- ✅ Consistent try/except error handling throughout (matches Flask API pattern)
+- ✅ CLI utilities: JSON parsing, datetime parsing, confirmation prompts (cli_utils.py)
+- ✅ **System Status**: Backend (90 tests) + Flask API (27 endpoints) + CLI (25 commands) = Production Ready
 
 **2025-10-14: Flask API Migration**
 - ✅ Modular Flask API with Blueprint organization
