@@ -500,8 +500,9 @@ def render_value_detail(value: Union[Values, MajorValues, HighestOrderValues, Li
     lines.append(f"Domain:      {value.life_domain}")
     lines.append(f"Priority:    {int(value.priority)}")
 
-    # Show alignment guidance for major values
-    if value.incentive_type == 'major' and value.alignment_guidance:
+    # Show alignment guidance for major values (matches Flask API pattern)
+    from categoriae.values import MajorValues
+    if isinstance(value, MajorValues) and value.alignment_guidance:
         if isinstance(value.alignment_guidance, dict):
             # Format dict nicely
             import json

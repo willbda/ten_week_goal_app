@@ -40,7 +40,7 @@ from ethica.term_lifecycle import (
 from categoriae.actions import Action
 from categoriae.goals import Goal
 from categoriae.terms import GoalTerm
-from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas
+# Values imported in value_show for isinstance check only
 
 from interfaces.cli.cli_utils import (
     parse_json_arg,
@@ -780,46 +780,44 @@ def value_create(name: str, description: str, value_type: str, domain: str = "Ge
     Matches: POST /api/values
     """
     try:
-        # Build entity based on type
-        if value_type == "highest-order":
-            value = HighestOrderValues(
-                description=description,
-                life_domain=domain,
-                priority=priority
-            )
-            value.value_name = name
-        elif value_type == "major":
+        # Use storage service factory methods (matches Flask API pattern)
+        service = ValuesStorageService()
+
+        if value_type == "major":
             if not guidance:
                 print(format_error("Major values require --guidance"))
                 sys.exit(1)
-            value = MajorValues(
+            value = service.create_major_value(
+                value_name=name,
                 description=description,
-                life_domain=domain,
                 priority=priority,
+                life_domain=domain,
                 alignment_guidance=guidance
             )
-            value.value_name = name
+        elif value_type == "highest-order":
+            value = service.create_highest_order_value(
+                value_name=name,
+                description=description,
+                priority=priority,
+                life_domain=domain
+            )
         elif value_type == "life-area":
-            value = LifeAreas(
+            value = service.create_life_area(
+                value_name=name,
                 description=description,
-                life_domain=domain,
-                priority=priority
+                priority=priority,
+                life_domain=domain
             )
-            value.value_name = name
         elif value_type == "general":
-            value = Values(
+            value = service.create_value(
+                value_name=name,
                 description=description,
-                life_domain=domain,
-                priority=priority
+                priority=priority,
+                life_domain=domain
             )
-            value.value_name = name
         else:
             print(format_error(f"Invalid value type: {value_type}"))
             sys.exit(1)
-
-        # Save
-        service = ValuesStorageService()
-        service.store_single_instance(value)
 
         print(format_success(f"Created {value_type} value {value.id}: {value.value_name}"))
 

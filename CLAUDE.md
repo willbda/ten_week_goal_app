@@ -122,10 +122,6 @@ tests/         - Test suite
   - Type-specific factory methods: create_major_value(), create_highest_order_value(), etc.
   - Constructor registry pattern eliminates if-elif chains
   - Filtering: get_all(type_filter='major', domain_filter='Health')
-- `values_orchestration_service.py`: **DEPRECATED** - Legacy service (use ValuesStorageService directly)
-  - Original Phase 1 pattern with result objects
-  - No longer used by CLI or Flask API (both use storage services directly)
-  - Retained for backward compatibility only
 
 ### Infrastructure (politica/)
 - `database.py`: Generic database operations
@@ -416,10 +412,11 @@ Logs are written to `logs/` directory (configured in config.toml)
 
 ## Recent Additions
 
-**2025-10-15: CLI Refactor Complete - Production Ready System** 🎉
+**2025-10-15: CLI Refactor + Cleanup Complete - Production Ready System** 🎉
 - ✅ Complete CLI rebuild matching Flask API architecture (1,287 lines)
 - ✅ 25 commands covering all CRUD operations (Actions, Goals, Terms, Values, Progress)
 - ✅ Removed ValuesOrchestrationService layer (uses storage services directly like Flask API)
+- ✅ Deleted unused values_orchestration_service.py (259 lines removed)
 - ✅ Consolidated value creation (single `create` command with `--type` flag)
 - ✅ Consistent try/except error handling throughout (matches Flask API pattern)
 - ✅ CLI utilities: JSON parsing, datetime parsing, confirmation prompts (cli_utils.py)

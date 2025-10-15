@@ -228,7 +228,7 @@ Test configuration is separate in `config/testing.py` to keep test data isolated
 - [x] **Phase 1: Values Foundation** (NEW)
   - [x] Values CLI (create-major, create-highest-order, life-areas create, create-general)
   - [x] ValuesStorageService with polymorphic type support
-  - [x] ValuesOrchestrationService with result objects pattern
+  - [x] ~~ValuesOrchestrationService~~ (removed 2025-10-15 - interfaces use storage directly)
   - [x] Entity self-identification (incentive_type)
   - [x] VALUES_QUICKSTART.md documentation
 - [x] Comprehensive tests (90 passing: 48 core + 17 values + 25 other)
