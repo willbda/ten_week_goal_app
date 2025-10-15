@@ -138,6 +138,7 @@ tests/         - Test suite
   - init_db(): loads all schemas from politica/schemas/
 
 ### Presentation Layer (interfaces/)
+**CLI Interface** (`interfaces/cli/`)
 - `cli.py`: Command-line interface (orchestrator only)
   - show_progress(): Display goal progress dashboard
   - **values commands (Phase 1)**: Type-specific value management
@@ -163,18 +164,51 @@ tests/         - Test suite
   - DisplayConfig: Bar widths, truncation limits, symbols
   - FilterConfig: Default filter settings
   - ColorConfig: Color scheme (stub for future)
-- `web_app.py`: Flask web application
-  - Routes: /, /goal/<id>, /api/progress
+
+**Flask API** (`interfaces/flask/`)
+- `flask_main.py`: Application factory pattern
+  - create_app(): Factory function with blueprint registration
+  - Entry point: `python interfaces/flask/flask_main.py`
+  - Serves API on http://localhost:5001
+- `routes/api/__init__.py`: API blueprint registration
+- `routes/api/goals.py`: Goals CRUD + progress endpoints
+  - GET /api/goals - List with filters (has_dates, has_target)
+  - GET /api/goals/<id> - Single goal detail
+  - POST /api/goals - Create new goal
+  - PUT /api/goals/<id> - Update goal
+  - DELETE /api/goals/<id> - Delete with archiving
+  - GET /api/goals/<id>/progress - Detailed progress metrics
+- `routes/api/actions.py`: Actions CRUD + matching endpoints
+  - GET /api/actions - List with filters (has_measurements, date range)
+  - GET /api/actions/<id> - Single action detail
+  - POST /api/actions - Create new action
+  - PUT /api/actions/<id> - Update action
+  - DELETE /api/actions/<id> - Delete with archiving
+  - GET /api/actions/<id>/goals - Goals matched to action
+- `routes/api/values.py`: Values CRUD with polymorphism
+  - GET /api/values - List with filters (type, domain)
+  - GET /api/values/<id> - Single value detail
+  - POST /api/values - Create with type-specific handling
+  - PUT /api/values/<id> - Update value
+  - DELETE /api/values/<id> - Delete with archiving
+- `routes/api/terms.py`: Terms CRUD + lifecycle management
+  - GET /api/terms - List with status filters
+  - GET /api/terms/<id> - Single term with metrics
+  - GET /api/terms/active - Current active term
+  - POST /api/terms - Create new term
+  - PUT /api/terms/<id> - Update term
+  - DELETE /api/terms/<id> - Delete with archiving
+  - POST /api/terms/<id>/goals - Add goal to term
+  - DELETE /api/terms/<id>/goals/<goal_id> - Remove goal from term
+  - GET /api/terms/<id>/progress - Detailed term progress
+- `templates/api_reference.html`: API documentation page
+
+**Documentation**
 - **docs/VALUES_QUICKSTART.md**: Values CLI usage guide (Phase 1)
   - Comprehensive examples for each value type
   - Copy-paste commands ready to use
   - Explains Values vs Life Areas distinction
   - Priority guidance (1-100 scale)
-  - Uses SAME business logic as CLI (ethica/progress_aggregation.py)
-  - Template filters for Jinja2 formatting
-- `templates/`: Jinja2 HTML templates
-  - base.html, progress.html, goal_detail.html, error.html
-- `static/css/style.css`: Web UI styling
 
 ### Configuration
 - `config/config.toml`: Paths for storage, schemas, logs
@@ -353,20 +387,30 @@ Logs are written to `logs/` directory (configured in config.toml)
 - **Jupyter notebooks**: Check cell order when working with .ipynb files
 - **Layer violations**: If you catch yourself importing from categoriae in politica, STOP and refactor
 
-## Recent Additions (2025-10-13)
+## Recent Additions
 
+**2025-10-14: Flask API Migration**
+- ✅ Modular Flask API with Blueprint organization
+- ✅ RESTful endpoints for Goals, Actions, Values, Terms
+- ✅ Application factory pattern (flask_main.py)
+- ✅ Serialization infrastructure (rhetorica/serializers.py)
+- ✅ Field name standardization (logtime → log_time, name → value_name)
+- ✅ Clean imports (removed unnecessary sys.path manipulation)
+- ✅ 8 new term-action filtering tests (90 total passing)
+
+**2025-10-13: Phase 1 Complete**
 - ✅ CLI interface with formatted progress display
-- ✅ Web dashboard (Flask) with dashboard and detail views
+- ✅ Values system with polymorphic storage
 - ✅ JSON API endpoints for integrations
 - ✅ Progress aggregation business logic (ethica/progress_aggregation.py)
 - ✅ Presentation layer separation (interfaces/ directory)
-- ✅ 34 new tests (formatters + aggregation)
 
 ## Future Extensions (Not Yet Implemented)
 
 - GoalValueAlignment inference (connecting goals to values)
-- Authentication for web UI
-- Goal creation/editing through web interface
+- Flask API integration tests
+- Web UI frontend (HTML/JS consuming Flask API)
+- Authentication for API
 - Bulk import from CSV/JSON
 - Export functionality (PDF, CSV)
 - Charts and visualizations for progress over time

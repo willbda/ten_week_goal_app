@@ -56,18 +56,20 @@ python interfaces/cli.py show-progress
 python interfaces/cli.py show-progress -v
 ```
 
-**Web Interface:**
+**Flask API:**
 ```bash
-# Install web dependencies
-pip install -r requirements_web.txt
+# Start Flask API server
+python interfaces/flask/flask_main.py
 
-# Start web server
-python interfaces/web_app.py
-
-# Visit http://localhost:5000
+# Visit http://localhost:5001
+# API documentation: http://localhost:5001/api/docs
 ```
 
-See [interfaces/WEB_README.md](interfaces/WEB_README.md) for detailed web UI documentation.
+**API Endpoints:**
+- `/api/goals` - Goals CRUD and progress tracking
+- `/api/actions` - Actions CRUD and goal matching
+- `/api/values` - Values CRUD with polymorphic types
+- `/api/terms` - Terms CRUD and lifecycle management
 
 ## Project Structure
 
@@ -100,18 +102,19 @@ ten_week_goal_app/
 │   └── storage_service.py   # Repository pattern with polymorphic type support
 │
 ├── interfaces/              # Presentation layer (USER INTERACTION)
-│   ├── cli.py               # Command-line interface with formatted output
-│   ├── cli_formatters.py    # Presentation formatting functions
-│   ├── cli_config.py        # CLI configuration constants
-│   ├── web_app.py           # Flask web application
-│   ├── templates/           # Jinja2 HTML templates
-│   │   ├── base.html        # Base layout
-│   │   ├── progress.html    # Dashboard view
-│   │   ├── goal_detail.html # Goal detail page
-│   │   └── error.html       # Error page
-│   ├── static/              # CSS and static assets
-│   │   └── css/style.css
-│   └── WEB_README.md        # Web UI documentation
+│   ├── cli/                 # Command-line interface
+│   │   ├── cli.py           # CLI orchestrator
+│   │   ├── cli_formatters.py # Presentation formatting
+│   │   └── cli_config.py    # CLI configuration
+│   └── flask/               # Flask API application
+│       ├── flask_main.py    # Application factory
+│       ├── routes/api/      # API blueprints
+│       │   ├── goals.py     # Goals endpoints
+│       │   ├── actions.py   # Actions endpoints
+│       │   ├── values.py    # Values endpoints
+│       │   └── terms.py     # Terms endpoints
+│       └── templates/       # API documentation
+│           └── api_reference.html
 │
 ├── config/                  # Configuration and setup
 │   ├── config.toml          # Application settings
@@ -119,13 +122,15 @@ ten_week_goal_app/
 │   ├── logging_setup.py     # Logging configuration
 │   └── testing.py           # Test-specific config
 │
-├── tests/                   # Test suite (82 passing tests)
+├── tests/                   # Test suite (90 passing tests)
 │   ├── conftest.py          # Pytest fixtures
 │   ├── test_actions.py      # Domain entity tests
 │   ├── test_action_storage.py   # Storage integration tests
 │   ├── test_goal_storage.py     # Goal persistence tests
-│   ├── test_progress_aggregation.py  # Business logic tests (new)
-│   ├── test_cli_formatters.py  # Presentation formatting tests (new)
+│   ├── test_progress_aggregation.py  # Business logic tests
+│   ├── test_cli_formatters.py  # Presentation formatting tests
+│   ├── test_actionability_matching.py # Matching algorithm tests
+│   ├── test_term_actions.py # Term-action filtering tests
 │   ├── test_values.py       # Values entity tests
 │   └── test_values_storage.py   # Values storage with polymorphism
 │
@@ -215,17 +220,18 @@ Test configuration is separate in `config/testing.py` to keep test data isolated
 - [x] Inference service for batch/realtime relationship detection
 - [x] Import historical Actions and Goals from tabular data
 - [x] CLI interface with formatted progress display
-- [x] Web dashboard with Flask
-- [x] JSON API endpoints
+- [x] Modular Flask API with Blueprint organization
+- [x] RESTful JSON API endpoints (Goals, Actions, Values, Terms)
 - [x] Progress aggregation business logic
 - [x] Presentation layer separation
+- [x] Serialization infrastructure (rhetorica/serializers.py)
 - [x] **Phase 1: Values Foundation** (NEW)
   - [x] Values CLI (create-major, create-highest-order, life-areas create, create-general)
   - [x] ValuesStorageService with polymorphic type support
   - [x] ValuesOrchestrationService with result objects pattern
   - [x] Entity self-identification (incentive_type)
   - [x] VALUES_QUICKSTART.md documentation
-- [x] Comprehensive tests (65 passing: 48 core + 17 values)
+- [x] Comprehensive tests (90 passing: 48 core + 17 values + 25 other)
 
 ### Next (Following [ROADMAP.md](.documentation/ROADMAP.md))
 - [ ] **Phase 3**: Enter personal values using CLI (validates Phase 1)
@@ -286,9 +292,9 @@ Personal project - all rights reserved.
 ---
 
 **Project Status**: Active Development
-**Current Phase**: Phase 1 Complete, Phase 3 in Progress
-**Last Updated**: 2025-10-13
-**Test Coverage**: 65/65 passing (48 core + 17 values)
-**Development Guide**: See [ROADMAP.md](.documentation/ROADMAP.md) for systematic development plan
+**Current Phase**: Phase 1 Complete, Flask API Migration Complete
+**Last Updated**: 2025-10-14
+**Test Coverage**: 90/90 passing (100% pass rate)
+**Development Guide**: See [ROADMAP.md](ROADMAP.md) for systematic development plan
 
 *Built with clean architecture principles as a foundation for future personal development tracking systems.*
