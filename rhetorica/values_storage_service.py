@@ -29,19 +29,6 @@ class ValuesStorageService(StorageService):
 
     table_name = 'personal_values'
 
-    def _to_dict(self, entity: Union[Values, MajorValues, HighestOrderValues, LifeAreas]) -> dict:
-        """
-        Convert any Values subclass to dict for storage.
-
-        Uses generic serializer with json_encode for database compatibility.
-        Field names match 1:1 with database columns (no renaming needed).
-        """
-        from rhetorica.serializers import serialize
-
-        # Use serializer with json_encode=True for database storage
-        # Field names in dataclass match DB columns exactly
-        return serialize(entity, include_type=False, json_encode=True)
-
     def _from_dict(self, data: dict) -> Union[Values, MajorValues, HighestOrderValues, LifeAreas]:
         """
         Reconstruct appropriate Values subclass from stored dict.
@@ -93,74 +80,27 @@ class ValuesStorageService(StorageService):
         priority: Optional[Union[int, 'PriorityLevel']] = None,
         life_domain: str = 'General',
         alignment_guidance: Optional[str] = None
-    ) -> Union[Values, MajorValues, HighestOrderValues, LifeAreas]:
-        """
-        Factory method to create the appropriate Value subclass based on incentive_type.
+        ) -> Union[Values, MajorValues, HighestOrderValues, LifeAreas]:
+        """Factory method using class registry pattern."""
 
-        This keeps the interface layer free from business logic about class selection.
-        The rhetorica layer handles:
-        - Translation from type string to concrete class
-        - Type conversion (int → PriorityLevel)
-        - Default priority values per type
+        # Get the appropriate class from registry
+        entity_class = _CLASS_MAP.get(incentive_type)
+        if not entity_class:
+            raise ValueError(f"Invalid incentive_type: {incentive_type}")
 
-        Args:
-            incentive_type: Type of value ('major', 'highest_order', 'life_area', 'general')
-            common_name: Value name
-            description: What this value means
-            priority: Priority level (int or PriorityLevel). If None, uses type-specific defaults.
-            life_domain: Life domain categorization (default: 'General')
-            alignment_guidance: How this value shows up (MajorValues only)
+        # Convert priority if provided
+        if priority is not None:
+            priority = PriorityLevel(priority) if isinstance(priority, int) else priority
 
-        Returns:
-            Appropriate Values subclass instance
+        # Build kwargs conditionally
+        kwargs = {
+            'common_name': common_name,
+            'description': description,
+            'life_domain': life_domain
+        }
+        if priority is not None:
+            kwargs['priority'] = priority
+        if alignment_guidance and incentive_type == 'major':
+            kwargs['alignment_guidance'] = alignment_guidance
 
-        Raises:
-            ValueError: If incentive_type is invalid or priority is out of range
-        """
-
-        # Handle priority conversion and defaults
-        if priority is None:
-            # Type-specific defaults
-            defaults = {
-                'major': 1,
-                'highest_order': 1,
-                'life_area': 40,
-                'general': 50
-            }
-            priority = PriorityLevel(defaults.get(incentive_type, 50))
-        elif isinstance(priority, int):
-            # Convert int to PriorityLevel (validates range)
-            priority = PriorityLevel(priority)
-        # else: already a PriorityLevel, use as-is
-
-        if incentive_type == 'major':
-            return MajorValues(
-                common_name=common_name,
-                description=description,
-                priority=priority,
-                life_domain=life_domain,
-                alignment_guidance=alignment_guidance
-            )
-        elif incentive_type == 'highest_order':
-            return HighestOrderValues(
-                common_name=common_name,
-                description=description,
-                priority=priority,
-                life_domain=life_domain
-            )
-        elif incentive_type == 'life_area':
-            return LifeAreas(
-                common_name=common_name,
-                description=description,
-                priority=priority,
-                life_domain=life_domain
-            )
-        elif incentive_type == 'general':
-            return Values(
-                common_name=common_name,
-                description=description,
-                priority=priority,
-                life_domain=life_domain
-            )
-        else:
-            raise ValueError(f"Invalid incentive_type: {incentive_type}. Must be one of: major, highest_order, life_area, general")
+        return entity_class(**kwargs)

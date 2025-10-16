@@ -223,10 +223,18 @@ class StorageService(ABC, Generic[T]):
 
         return result
 
-    @abstractmethod
     def _to_dict(self, entity: T) -> dict:
-        """Convert entity to dict for storage"""
-        pass
+        """
+        Convert entity to dict for storage.
+
+        Uses generic serializer with json_encode for database compatibility.
+        Override this method only if custom serialization logic is needed.
+
+        Default implementation uses rhetorica.serializers.serialize() with
+        json_encode=True to handle dataclass conversion for database storage.
+        """
+        from rhetorica.serializers import serialize
+        return serialize(entity, include_type=False, json_encode=True)
 
     @abstractmethod
     def _from_dict(self, data: dict) -> T:
@@ -243,18 +251,6 @@ class GoalStorageService(StorageService[Goal]):
     """
 
     table_name = 'goals'
-
-    def _to_dict(self, entity: Goal) -> dict:
-        """
-        Convert Goal or SmartGoal object to dict for storage.
-
-        Uses serialize() with dataclass field introspection to handle formatting.
-        No manual field mapping needed - entity fields match DB columns.
-        """
-        from rhetorica.serializers import serialize
-
-        # Use serialize with json_encode=True for database storage (exclude 'type')
-        return serialize(entity, include_type=False, json_encode=True)
 
     def _from_dict(self, data: dict) -> Goal:
         """
@@ -275,16 +271,6 @@ class ActionStorageService(StorageService[Action]):
     """
 
     table_name = 'actions'
-
-    def _to_dict(self, entity: Action) -> dict:
-        """
-        Convert Action object to dict for storage.
-
-        Uses serialize() - measurements dict is automatically converted to JSON string
-        based on dataclass field type annotations.
-        """
-        from rhetorica.serializers import serialize
-        return serialize(entity, include_type=False, json_encode=True)
 
     def _from_dict(self, data: dict) -> Action:
         """
@@ -311,16 +297,6 @@ class TermStorageService(StorageService[GoalTerm]):
     """
 
     table_name = 'terms'
-
-    def _to_dict(self, entity: GoalTerm) -> dict:
-        """
-        Convert GoalTerm object to dict for storage.
-
-        Uses serialize() - term_goal_ids list is automatically converted to JSON string
-        based on dataclass field type annotations.
-        """
-        from rhetorica.serializers import serialize
-        return serialize(entity, include_type=False, json_encode=True)
 
     def _from_dict(self, data: dict) -> GoalTerm:
         """
