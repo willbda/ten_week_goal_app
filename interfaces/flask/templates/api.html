@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Ten Week Goal App - Minimal Build{% endblock %}
+
+{% block header %}Ten Week Goal App - Minimal Build{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > API</p>
+{% endblock %}
+
+{% block content %}
+<h2>API Routes</h2>
+
+<h3>Actions (6 endpoints)</h3>
+<ul>
+    <li>
+        <strong>GET /api/actions</strong>
+        <span style="color: #666; font-size: 0.9em;">(List all actions)</span>
+        <div><a href="/api/actions">/api/actions</a></div>
+    </li>
+    <li>
+        <strong>GET /api/actions/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Get single action)</span>
+        <form class="route-form" onsubmit="handleSubmit(event, '/api/actions/<action_id>')">
+            <input type="text" name="action_id" placeholder="action_id" required>
+            <button type="submit">Go</button>
+        </form>
+    </li>
+    <li>
+        <strong>POST /api/actions</strong>
+        <span style="color: #666; font-size: 0.9em;">(Create new action)</span>
+    </li>
+    <li>
+        <strong>PUT /api/actions/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Update action)</span>
+    </li>
+    <li>
+        <strong>DELETE /api/actions/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Delete action)</span>
+    </li>
+    <li>
+        <strong>GET /api/actions/&lt;id&gt;/goals</strong>
+        <span style="color: #666; font-size: 0.9em;">(Get goals matched to action)</span>
+        <form class="route-form" onsubmit="handleSubmit(event, '/api/actions/<action_id>/goals')">
+            <input type="text" name="action_id" placeholder="action_id" required>
+            <button type="submit">Go</button>
+        </form>
+    </li>
+</ul>
+
+<h3>Goals (6 endpoints)</h3>
+<ul>
+    <li>
+        <strong>GET /api/goals</strong>
+        <span style="color: #666; font-size: 0.9em;">(List all goals)</span>
+        <div><a href="/api/goals">/api/goals</a></div>
+    </li>
+    <li>
+        <strong>GET /api/goals/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Get single goal)</span>
+        <form class="route-form" onsubmit="handleSubmit(event, '/api/goals/<goal_id>')">
+            <input type="text" name="goal_id" placeholder="goal_id" required>
+            <button type="submit">Go</button>
+        </form>
+    </li>
+    <li>
+        <strong>POST /api/goals</strong>
+        <span style="color: #666; font-size: 0.9em;">(Create new goal)</span>
+    </li>
+    <li>
+        <strong>PUT /api/goals/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Update goal)</span>
+    </li>
+    <li>
+        <strong>DELETE /api/goals/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Delete goal)</span>
+    </li>
+    <li>
+        <strong>GET /api/goals/&lt;id&gt;/progress</strong>
+        <span style="color: #666; font-size: 0.9em;">(Get goal progress metrics)</span>
+        <form class="route-form" onsubmit="handleSubmit(event, '/api/goals/<goal_id>/progress')">
+            <input type="text" name="goal_id" placeholder="goal_id" required>
+            <button type="submit">Go</button>
+        </form>
+    </li>
+</ul>
+
+<h3>Terms (10 endpoints)</h3>
+<ul>
+    <li>
+        <strong>GET /api/terms</strong>
+        <span style="color: #666; font-size: 0.9em;">(List all terms)</span>
+        <div><a href="/api/terms">/api/terms</a></div>
+    </li>
+    <li>
+        <strong>GET /api/terms/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Get single term)</span>
+        <form class="route-form" onsubmit="handleSubmit(event, '/api/terms/<term_id>')">
+            <input type="text" name="term_id" placeholder="term_id" required>
+            <button type="submit">Go</button>
+        </form>
+    </li>
+    <li>
+        <strong>POST /api/terms</strong>
+        <span style="color: #666; font-size: 0.9em;">(Create new term)</span>
+    </li>
+    <li>
+        <strong>PUT /api/terms/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Update term)</span>
+    </li>
+    <li>
+        <strong>DELETE /api/terms/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Delete term)</span>
+    </li>
+    <li>
+        <strong>GET /api/terms/active</strong>
+        <span style="color: #666; font-size: 0.9em;">(Get currently active term)</span>
+        <div><a href="/api/terms/active">/api/terms/active</a></div>
+    </li>
+    <li>
+        <strong>POST /api/terms/&lt;id&gt;/goals</strong>
+        <span style="color: #666; font-size: 0.9em;">(Add goal to term)</span>
+    </li>
+    <li>
+        <strong>DELETE /api/terms/&lt;id&gt;/goals/&lt;goal_id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Remove goal from term)</span>
+    </li>
+    <li>
+        <strong>GET /api/terms/&lt;id&gt;/progress</strong>
+        <span style="color: #666; font-size: 0.9em;">(Get detailed term progress)</span>
+        <form class="route-form" onsubmit="handleSubmit(event, '/api/terms/<term_id>/progress')">
+            <input type="text" name="term_id" placeholder="term_id" required>
+            <button type="submit">Go</button>
+        </form>
+    </li>
+</ul>
+
+<h3>Values (5 endpoints)</h3>
+<ul>
+    <li>
+        <strong>GET /api/values</strong>
+        <span style="color: #666; font-size: 0.9em;">(List all values)</span>
+        <div><a href="/api/values">/api/values</a></div>
+    </li>
+    <li>
+        <strong>GET /api/values/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Get single value)</span>
+        <form class="route-form" onsubmit="handleSubmit(event, '/api/values/<value_id>')">
+            <input type="text" name="value_id" placeholder="value_id" required>
+            <button type="submit">Go</button>
+        </form>
+    </li>
+    <li>
+        <strong>POST /api/values</strong>
+        <span style="color: #666; font-size: 0.9em;">(Create new value)</span>
+    </li>
+    <li>
+        <strong>PUT /api/values/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Update value)</span>
+    </li>
+    <li>
+        <strong>DELETE /api/values/&lt;id&gt;</strong>
+        <span style="color: #666; font-size: 0.9em;">(Delete value)</span>
+    </li>
+</ul>
+
+<script>
+function handleSubmit(event, urlTemplate) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+
+    // Replace URL parameters with form values (handles both <param> and <type:param>)
+    let url = urlTemplate;
+    for (let [key, value] of formData.entries()) {
+        // Match both <param> and <type:param> formats
+        const regex = new RegExp('<(?:\\w+:)?' + key + '>', 'g');
+        url = url.replace(regex, value);
+    }
+
+    // Navigate to the constructed URL
+    window.location.href = url;
+}
+</script>
+{% endblock %}

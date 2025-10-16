@@ -794,14 +794,14 @@ def value_create(name: str, description: str, value_type: str, domain: str = "Ge
                 life_domain=domain,
                 alignment_guidance=guidance
             )
-        elif value_type == "highest-order":
+        elif value_type == "highest_order":
             value = service.create_highest_order_value(
                 value_name=name,
                 description=description,
                 priority=priority,
                 life_domain=domain
             )
-        elif value_type == "life-area":
+        elif value_type == "life_area":
             value = service.create_life_area(
                 value_name=name,
                 description=description,
@@ -1173,7 +1173,7 @@ Examples:
     value_create_parser.add_argument('name', help='Value name')
     value_create_parser.add_argument('description', help='Value description')
     value_create_parser.add_argument('--type', required=True,
-                                      choices=['general', 'major', 'highest-order', 'life-area'],
+                                      choices=['general', 'major', 'highest_order', 'life_area'],
                                       help='Value type')
     value_create_parser.add_argument('--domain', default='General', help='Life domain')
     value_create_parser.add_argument('--priority', type=int, default=50, help='Priority (1-100)')

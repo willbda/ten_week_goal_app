@@ -1,0 +1,14 @@
+*.DS_Store
+*.db
+.*
+*/__pycache__/*
+__pycache__/*
+*logs/
+*.backup
+
+# Test data
+test_data/
+
+# Build artifacts
+*.egg-info/
+*.pyc

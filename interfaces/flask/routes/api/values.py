@@ -10,7 +10,7 @@ Written by Claude Code on 2025-10-14.
 from flask import request, jsonify
 from datetime import datetime
 
-from interfaces.flask.routes.api import api_bp
+from . import api_bp
 from rhetorica.values_storage_service import ValuesStorageService
 from rhetorica.serializers import serialize
 from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas, PriorityLevel
@@ -172,38 +172,30 @@ def create_value():
         except (ValueError, TypeError) as e:
             return jsonify({'error': f'Invalid priority: {e}'}), 400
 
-        # Create appropriate value type using factory methods
+        # Create appropriate value type using existing factory methods
         service = ValuesStorageService()
 
+        # Dispatch to factory methods (all logic already in ValuesStorageService)
+        type_factories = {
+            'major': service.create_major_value,
+            'highest_order': service.create_highest_order_value,
+            'life_area': service.create_life_area,
+            'general': service.create_value
+        }
+
+        factory = type_factories[value_type]  # Already validated above
+        factory_kwargs = {
+            'value_name': data['value_name'],
+            'description': data['description'],
+            'priority': priority,
+            'life_domain': data.get('life_domain', 'General')
+        }
+
+        # Add alignment_guidance only for major values
         if value_type == 'major':
-            value = service.create_major_value(
-                value_name=data['value_name'],
-                description=data['description'],
-                priority=priority,
-                life_domain=data.get('life_domain', 'General'),
-                alignment_guidance=data.get('alignment_guidance')
-            )
-        elif value_type == 'highest_order':
-            value = service.create_highest_order_value(
-                value_name=data['value_name'],
-                description=data['description'],
-                priority=priority,
-                life_domain=data.get('life_domain', 'General')
-            )
-        elif value_type == 'life_area':
-            value = service.create_life_area(
-                value_name=data['value_name'],
-                description=data['description'],
-                priority=priority,
-                life_domain=data.get('life_domain', 'General')
-            )
-        else:  # general
-            value = service.create_value(
-                value_name=data['value_name'],
-                description=data['description'],
-                priority=priority,
-                life_domain=data.get('life_domain', 'General')
-            )
+            factory_kwargs['alignment_guidance'] = data.get('alignment_guidance')
+
+        value = factory(**factory_kwargs)
 
         # Save to database
         service.store_single_instance(value)

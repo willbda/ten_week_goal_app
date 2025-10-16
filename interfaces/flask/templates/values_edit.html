@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Value - Ten Week Goal App{% endblock %}
+
+{% block header %}Edit Value{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/values">Values</a> > <a href="/values/list">List</a> > Edit</p>
+{% endblock %}
+
+{% block content %}
+<h2>Edit Value: {{ value.value_name }}</h2>
+
+<form method="POST" action="/values/edit/{{ value.id }}">
+    <div>
+        <label for="value_type">Value Type:</label>
+        <select id="value_type" name="value_type" required onchange="toggleAlignmentGuidance()">
+            <option value="general" {% if value.incentive_type == 'general' %}selected{% endif %}>General Value</option>
+            <option value="major" {% if value.incentive_type == 'major' %}selected{% endif %}>Major Value (actionable, tracked regularly)</option>
+            <option value="highest_order" {% if value.incentive_type == 'highest_order' %}selected{% endif %}>Highest Order Value (philosophical)</option>
+            <option value="life_area" {% if value.incentive_type == 'life_area' %}selected{% endif %}>Life Area (domain, not a value)</option>
+        </select>
+        <p><small>Note: Changing type may affect how the value is used</small></p>
+    </div>
+
+    <div>
+        <label for="value_name">Name:</label>
+        <input type="text" id="value_name" name="value_name" required value="{{ value.value_name }}">
+    </div>
+
+    <div>
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" rows="3" required>{{ value.description }}</textarea>
+    </div>
+
+    <div>
+        <label for="life_domain">Life Domain:</label>
+        <input type="text" id="life_domain" name="life_domain" value="{{ value.life_domain }}">
+    </div>
+
+    <div>
+        <label for="priority">Priority (1-100):</label>
+        <input type="number" id="priority" name="priority" min="1" max="100" value="{{ value.priority }}">
+        <p><small>Lower numbers = higher priority</small></p>
+    </div>
+
+    <div id="alignment_guidance_section" style="display: {% if value.incentive_type == 'major' %}block{% else %}none{% endif %};">
+        <label for="alignment_guidance">Alignment Guidance:</label>
+        <textarea id="alignment_guidance" name="alignment_guidance" rows="3">{{ value.alignment_guidance or '' }}</textarea>
+        <p><small>For Major Values only: Describe how this value manifests in your life</small></p>
+    </div>
+
+    <div>
+        <button type="submit">Update Value</button>
+        <a href="/values/list">Cancel</a>
+    </div>
+</form>
+
+<script>
+function toggleAlignmentGuidance() {
+    const valueType = document.getElementById('value_type').value;
+    const alignmentSection = document.getElementById('alignment_guidance_section');
+
+    if (valueType === 'major') {
+        alignmentSection.style.display = 'block';
+    } else {
+        alignmentSection.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

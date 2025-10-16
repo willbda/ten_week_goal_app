@@ -1,19 +1,10 @@
 """
 Flask application factory for Ten Week Goal App.
 
-Written by Claude Code on 2025-10-14.
 """
-import sys
-from pathlib import Path
-
-# Add project root to path when running as entry point
-# This allows: python interfaces/flask/flask_main.py
-if __name__ == '__main__':
-    project_root = Path(__file__).parent.parent.parent
-    sys.path.insert(0, str(project_root))
 
 import logging
-from flask import Flask
+from flask import Flask, render_template
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +30,16 @@ def create_app(config: dict | None = None):
 
     # Register blueprints
     from interfaces.flask.routes.api import api_bp
+    from interfaces.flask.routes.ui_values import ui_values_bp
+
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(ui_values_bp)
+
+    # Home route
+    @app.route('/')
+    def home():
+        """Home page route."""
+        return render_template('home.html')
 
     logger.info("Flask application initialized")
 

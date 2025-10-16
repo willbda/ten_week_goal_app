@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Add Value - Ten Week Goal App{% endblock %}
+
+{% block header %}Add Value{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/values">Values</a> > Add</p>
+{% endblock %}
+
+{% block content %}
+<h2>Create New Value</h2>
+
+<form method="POST" action="/values/add">
+    <div>
+        <label for="value_type">Value Type:</label>
+        <select id="value_type" name="value_type" required onchange="toggleAlignmentGuidance()">
+            <option value="">-- Select Type --</option>
+            <option value="general">General Value</option>
+            <option value="major">Major Value (actionable, tracked regularly)</option>
+            <option value="highest_order">Highest Order Value (philosophical)</option>
+            <option value="life_area">Life Area (domain, not a value)</option>
+        </select>
+        <p><small>Major Values require regular tracking. General Values are aspirational. Life Areas are organizational domains.</small></p>
+    </div>
+
+    <div>
+        <label for="value_name">Name:</label>
+        <input type="text" id="value_name" name="value_name" required placeholder="e.g., Health, Growth, Family">
+    </div>
+
+    <div>
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" rows="3" required placeholder="What does this value mean to you?"></textarea>
+    </div>
+
+    <div>
+        <label for="life_domain">Life Domain:</label>
+        <input type="text" id="life_domain" name="life_domain" value="General" placeholder="e.g., Health, Career, Relationships">
+        <p><small>Optional: Categorize this value into a life domain</small></p>
+    </div>
+
+    <div>
+        <label for="priority">Priority (1-100):</label>
+        <input type="number" id="priority" name="priority" min="1" max="100" placeholder="1 = highest priority">
+        <p><small>Lower numbers = higher priority. Defaults: Major/Highest Order = 1, Life Area = 40, General = 50</small></p>
+    </div>
+
+    <div id="alignment_guidance_section" style="display: none;">
+        <label for="alignment_guidance">Alignment Guidance:</label>
+        <textarea id="alignment_guidance" name="alignment_guidance" rows="3" placeholder="How does this value show up in your actions and goals?"></textarea>
+        <p><small>For Major Values only: Describe how this value manifests in your life</small></p>
+    </div>
+
+    <div>
+        <button type="submit">Create Value</button>
+        <a href="/values">Cancel</a>
+    </div>
+</form>
+
+<script>
+function toggleAlignmentGuidance() {
+    const valueType = document.getElementById('value_type').value;
+    const alignmentSection = document.getElementById('alignment_guidance_section');
+
+    if (valueType === 'major') {
+        alignmentSection.style.display = 'block';
+    } else {
+        alignmentSection.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

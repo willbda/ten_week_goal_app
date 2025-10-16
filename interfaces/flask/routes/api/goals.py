@@ -10,7 +10,7 @@ Written by Claude Code on 2025-10-14.
 from flask import request, jsonify
 from datetime import datetime
 
-from interfaces.flask.routes.api import api_bp
+from . import api_bp
 from rhetorica.storage_service import GoalStorageService, ActionStorageService
 from rhetorica.serializers import serialize, deserialize
 from ethica.progress_matching import infer_matches
