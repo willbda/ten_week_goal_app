@@ -1,15 +1,23 @@
 """
 Translation layer between domain entities (categoriae) and storage (politica).
 
+Contents:
+- StorageService: Base class for all storage services
+- Simple Storage Services: Goal, Action, Term (entity_class pattern)
+- PolymorphicStorageService: Base for polymorphic entities
+- Values Storage: ValuesStorageService with type hierarchy
+
 Written by Claude Code on 2025-10-10
 Updated by Claude Code on 2025-10-11
+Consolidated with polymorphic storage on 2025-10-16
 """
 
-from abc import ABC, abstractmethod
-from typing import List, Optional, TypeVar, Generic, Protocol
+from abc import ABC
+from typing import List, Optional, TypeVar, Generic, Protocol, Type, Union, Any
 from categoriae.actions import Action
 from categoriae.goals import Goal
 from categoriae.terms import GoalTerm
+from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas, PriorityLevel
 from politica.database import Database
 
 # Protocol for entities that can be persisted (have optional id)
@@ -26,9 +34,10 @@ class StorageService(ABC, Generic[T]):
     Base class for entity storage services.
 
     Provides common save/load patterns for all entities.
-    Subclasses must implement _to_dict() and _from_dict().
+    Subclasses can override _to_dict() and _from_dict() for custom behavior.
     """
     table_name: str = ''
+    entity_class: Optional[Type[T]] = None  # Override in subclass for automatic _from_dict()
 
     def __init__(self, database: Optional[Database] = None):
         """
@@ -236,10 +245,24 @@ class StorageService(ABC, Generic[T]):
         from rhetorica.serializers import serialize
         return serialize(entity, include_type=False, json_encode=True)
 
-    @abstractmethod
     def _from_dict(self, data: dict) -> T:
-        """Reconstruct entity from stored dict"""
-        pass
+        """
+        Reconstruct entity from stored dict.
+
+        Uses deserialize() with json_decode for standard dataclass entities.
+        Override this method for polymorphic entities (like Values hierarchy).
+
+        Requires subclass to set entity_class class attribute.
+        """
+        from rhetorica.serializers import deserialize
+
+        if self.entity_class is None:
+            raise NotImplementedError(
+                f"{self.__class__.__name__} must either set entity_class "
+                "class attribute or override _from_dict()"
+            )
+
+        return deserialize(data, self.entity_class, json_decode=True)
 
 
 class GoalStorageService(StorageService[Goal]):
@@ -251,16 +274,7 @@ class GoalStorageService(StorageService[Goal]):
     """
 
     table_name = 'goals'
-
-    def _from_dict(self, data: dict) -> Goal:
-        """
-        Reconstruct Goal object from stored dict.
-
-        Uses deserialize() to automatically parse all fields based on
-        dataclass field type annotations.
-        """
-        from rhetorica.serializers import deserialize
-        return deserialize(data, Goal, json_decode=True)
+    entity_class = Goal
 
 
 class ActionStorageService(StorageService[Action]):
@@ -271,16 +285,7 @@ class ActionStorageService(StorageService[Action]):
     """
 
     table_name = 'actions'
-
-    def _from_dict(self, data: dict) -> Action:
-        """
-        Reconstruct Action object from stored dict.
-
-        Uses deserialize() to automatically parse all fields based on
-        dataclass field type annotations.
-        """
-        from rhetorica.serializers import deserialize
-        return deserialize(data, Action, json_decode=True)
+    entity_class = Action
 
 
 class TermStorageService(StorageService[GoalTerm]):
@@ -297,15 +302,117 @@ class TermStorageService(StorageService[GoalTerm]):
     """
 
     table_name = 'terms'
+    entity_class = GoalTerm
 
-    def _from_dict(self, data: dict) -> GoalTerm:
+
+# ============================================================================
+# POLYMORPHIC STORAGE SERVICES
+# ============================================================================
+# For entities with type hierarchies that require dynamic class selection
+# during deserialization (e.g., Values → MajorValues → HighestOrderValues)
+# ============================================================================
+
+
+class PolymorphicStorageService(StorageService):
+    """
+    Base class for storage services handling polymorphic entities.
+
+    Provides common patterns for storing and retrieving entities with type hierarchies.
+    Subclasses should define CLASS_MAP to map type identifiers to classes.
+    """
+
+    CLASS_MAP: dict = {}
+
+
+class ValuesStorageService(PolymorphicStorageService):
+    """
+    Handles translation between Values/MajorValues/HighestOrderValues/LifeAreas and database storage.
+
+    Manages polymorphic values hierarchy by storing incentive_type and reconstructing
+    the appropriate class on retrieval using the CLASS_MAP.
+    """
+
+    CLASS_MAP = {
+        'major': MajorValues,
+        'highest_order': HighestOrderValues,
+        'life_area': LifeAreas,
+        'general': Values
+    }
+
+    table_name = 'personal_values'
+
+    def _from_dict(self, data: dict) -> Union[Values, MajorValues, HighestOrderValues, LifeAreas]:
         """
-        Reconstruct GoalTerm object from stored dict.
+        Reconstruct appropriate Values subclass from stored dict.
 
-        Uses deserialize() to automatically parse all fields based on
-        dataclass field type annotations.
+        Uses deserialize with polymorphic class selection based on incentive_type.
+        Field names match 1:1 with database columns (no renaming needed).
         """
         from rhetorica.serializers import deserialize
-        return deserialize(data, GoalTerm, json_decode=True)
 
+        # Determine which class to deserialize to based on incentive_type
+        incentive_type = data.get('incentive_type', 'general')
+        entity_class = self.CLASS_MAP.get(incentive_type, Values)
+
+        # Use deserialize with json_decode=True to parse alignment_guidance
+        return deserialize(data, entity_class, json_decode=True)
+
+    def get_all(
+        self,
+        type_filter: Optional[str] = None,
+        domain_filter: Optional[str] = None
+    ) -> List[Union[Values, MajorValues, HighestOrderValues, LifeAreas]]:
+        """
+        Get all values with optional type and domain filtering.
+
+        Filtering at storage layer prevents presentation layers from reimplementing.
+
+        Args:
+            type_filter: Filter by class name ('Values', 'MajorValues', 'HighestOrderValues', 'LifeAreas')
+            domain_filter: Filter by life_domain
+
+        Returns:
+            List of Values entities matching filters
+        """
+        # Build database filters
+        filters = {}
+        if type_filter:
+            filters['type'] = type_filter  # Now uses class name, not incentive_type
+        if domain_filter:
+            filters['life_domain'] = domain_filter
+
+        # Delegate to base class with filters
+        return super().get_all(filters=filters if filters else None)
+
+    def create_value(
+        self,
+        incentive_type: str,
+        common_name: str,
+        description: str,
+        priority: Optional[int] = None,
+        life_domain: str = 'General',
+        alignment_guidance: Optional[str] = None
+    ) -> Union[Values, MajorValues, HighestOrderValues, LifeAreas]:
+        """Factory method using class registry pattern."""
+
+        # Get the appropriate class from registry
+        entity_class = self.CLASS_MAP.get(incentive_type)
+        if not entity_class:
+            raise ValueError(f"Invalid incentive_type: {incentive_type}")
+
+        # Build kwargs conditionally (using Any to avoid type checker issues with Union types)
+        kwargs: dict[str, Any] = {
+            'common_name': common_name,
+            'description': description,
+            'life_domain': life_domain
+        }
+
+        # Convert priority if provided (input is int, entities expect PriorityLevel)
+        if priority is not None:
+            kwargs['priority'] = PriorityLevel(priority)
+
+        if alignment_guidance and incentive_type == 'major':
+            kwargs['alignment_guidance'] = alignment_guidance
+
+        return entity_class(**kwargs)
 

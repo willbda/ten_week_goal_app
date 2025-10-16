@@ -8,7 +8,7 @@ Written by Claude Code on 2025-10-15.
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from rhetorica.values_storage_service import ValuesStorageService
+from rhetorica.storage_service import ValuesStorageService
 from categoriae.values import PriorityLevel
 from config.logging_setup import get_logger
 
@@ -69,48 +69,30 @@ def values_add():
         service = ValuesStorageService()
 
         # Extract form data
-        value_type = request.form.get('value_type')
-        value_name = request.form.get('value_name')
+        incentive_type = request.form.get('incentive_type')
+        common_name = request.form.get('common_name')
         description = request.form.get('description')
         life_domain = request.form.get('life_domain', 'General')
         alignment_guidance = request.form.get('alignment_guidance')
 
-        # Parse priority (only if user provided one)
+        # Parse priority (convert to int if provided, else None for defaults)
         priority_str = request.form.get('priority')
+        priority = int(priority_str) if priority_str else None
 
-        # Create value using factory methods
-        factory_kwargs = {
-            'value_name': value_name,
-            'description': description,
-            'life_domain': life_domain
-        }
-
-        # Only add priority if user specified it (let factory use defaults)
-        if priority_str:
-            factory_kwargs['priority'] = PriorityLevel(int(priority_str))
-
-        # Add alignment_guidance only for major values
-        if value_type == 'major':
-            factory_kwargs['alignment_guidance'] = alignment_guidance
-
-        # Dispatch to appropriate factory method
-        type_factories = {
-            'major': service.create_major_value,
-            'highest_order': service.create_highest_order_value,
-            'life_area': service.create_life_area,
-            'general': service.create_value
-        }
-
-        if value_type not in type_factories:
-            return f"Invalid value type: {value_type}", 400
-
-        factory = type_factories[value_type]
-        value = factory(**factory_kwargs)
+        # Create value (rhetorica handles type conversion, defaults, and class selection)
+        value = service.create_value(
+            incentive_type=incentive_type,
+            common_name=common_name,
+            description=description,
+            priority=priority,  # Pass None or int - rhetorica handles it
+            life_domain=life_domain,
+            alignment_guidance=alignment_guidance
+        )
 
         # Save to database
         service.store_single_instance(value)
 
-        logger.info(f"Created {value_type} value {value.id}: {value.value_name}")
+        logger.info(f"Created {incentive_type} value {value.id}: {value.common_name}")
 
         return redirect(url_for('ui_values.values_list'))
 
@@ -148,7 +130,7 @@ def values_edit(value_id: int):
             return f"Value {value_id} not found", 404
 
         # Update fields from form
-        value.value_name = request.form.get('value_name')
+        value.common_name = request.form.get('common_name')
         value.description = request.form.get('description')
         value.life_domain = request.form.get('life_domain', 'General')
 

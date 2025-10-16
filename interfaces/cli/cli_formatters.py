@@ -26,7 +26,7 @@ from categoriae.goals import Goal
 from categoriae.relationships import ActionGoalRelationship
 from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas
 from ethica.progress_aggregation import GoalProgress
-from rhetorica.values_storage_service import ValuesStorageService
+from rhetorica.storage_service import ValuesStorageService
 
 
 # ===== CONFIGURATION =====

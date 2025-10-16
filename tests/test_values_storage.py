@@ -9,7 +9,7 @@ Written by Claude Code on 2025-10-11
 
 import pytest
 from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas, PriorityLevel
-from rhetorica.values_storage_service import ValuesStorageService
+from rhetorica.storage_service import ValuesStorageService
 
 
 def test_general_values_storage(test_db):

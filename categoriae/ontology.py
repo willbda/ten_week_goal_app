@@ -15,6 +15,7 @@ from datetime import datetime
 @dataclass
 class IndependentEntity(ABC):
     common_name: str
+    id: Optional[int] = None
     description: Optional[str] = None  # Optional elaboration
     notes: Optional[str] = None  # Freeform notes about the goal
 
@@ -31,7 +32,6 @@ class PersistableEntity(IndependentEntity):
     Pattern: Children add required fields → inherit these defaulted fields → add optional fields
     """
     log_time: datetime = field(default_factory=datetime.now)
-    id: Optional[int] = None
 
 
 @dataclass

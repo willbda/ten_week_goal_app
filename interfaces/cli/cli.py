@@ -24,9 +24,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from rhetorica.storage_service import (
     ActionStorageService,
     GoalStorageService,
-    TermStorageService
+    TermStorageService,
+    ValuesStorageService
 )
-from rhetorica.values_storage_service import ValuesStorageService
 from rhetorica.serializers import serialize, deserialize
 from ethica.progress_matching import infer_matches
 from ethica.progress_aggregation import aggregate_all_goals, aggregate_goal_progress

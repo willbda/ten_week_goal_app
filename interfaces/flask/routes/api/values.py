@@ -11,7 +11,7 @@ from flask import request, jsonify
 from datetime import datetime
 
 from . import api_bp
-from rhetorica.values_storage_service import ValuesStorageService
+from rhetorica.storage_service import ValuesStorageService
 from rhetorica.serializers import serialize
 from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas, PriorityLevel
 from config.logging_setup import get_logger
