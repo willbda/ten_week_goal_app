@@ -110,8 +110,8 @@ def create_value():
     POST /api/values - Create new value.
 
     Request body (JSON):
-        value_type: str (required) - Type of value ('major', 'highest_order', 'life_area', 'general')
-        value_name: str (required) - Name of the value
+        incentive_type: str (required) - Type of value ('major', 'highest_order', 'life_area', 'general')
+        common_name: str (required) - Name of the value
         description: str (required) - Description of what this value means
         priority: int (optional) - Priority level 1-100 (default varies by type)
         life_domain: str (optional) - Life domain (default: 'General')
@@ -125,8 +125,8 @@ def create_value():
     Example:
         POST /api/values
         {
-            "value_type": "major",
-            "value_name": "Health",
+            "incentive_type": "major",
+            "common_name": "Health",
             "description": "Physical and mental wellbeing",
             "priority": 5,
             "life_domain": "Personal",
@@ -140,67 +140,45 @@ def create_value():
             return jsonify({'error': 'Request body must be JSON'}), 400
 
         # Validate required fields
-        if 'value_type' not in data:
-            return jsonify({'error': 'Field "value_type" is required'}), 400
-        if 'value_name' not in data or not data['value_name']:
-            return jsonify({'error': 'Field "value_name" is required'}), 400
+        if 'incentive_type' not in data:
+            return jsonify({'error': 'Field "incentive_type" is required'}), 400
+        if 'common_name' not in data or not data['common_name']:
+            return jsonify({'error': 'Field "common_name" is required'}), 400
         if 'description' not in data or not data['description']:
             return jsonify({'error': 'Field "description" is required'}), 400
 
-        value_type = data['value_type'].lower()
+        incentive_type = data['incentive_type'].lower()
         valid_types = ['major', 'highest_order', 'life_area', 'general']
 
-        if value_type not in valid_types:
+        if incentive_type not in valid_types:
             return jsonify({
-                'error': f'Invalid value_type. Must be one of: {", ".join(valid_types)}'
+                'error': f'Invalid incentive_type. Must be one of: {", ".join(valid_types)}'
             }), 400
 
-        # Validate and parse priority
-        try:
-            priority_value = data.get('priority')
-            if priority_value is not None:
-                priority = PriorityLevel(int(priority_value))
-            else:
-                # Use default priorities per type
-                defaults = {
-                    'major': PriorityLevel(1),
-                    'highest_order': PriorityLevel(1),
-                    'life_area': PriorityLevel(40),
-                    'general': PriorityLevel(50)
-                }
-                priority = defaults[value_type]
-        except (ValueError, TypeError) as e:
-            return jsonify({'error': f'Invalid priority: {e}'}), 400
+        # Extract priority (rhetorica will handle conversion and defaults)
+        priority = data.get('priority')  # May be None, int, or string
+        if priority is not None:
+            try:
+                priority = int(priority)  # Convert to int if string
+            except (ValueError, TypeError) as e:
+                return jsonify({'error': f'Invalid priority: {e}'}), 400
 
-        # Create appropriate value type using existing factory methods
+        # Create value (rhetorica handles type conversion, defaults, and class selection)
         service = ValuesStorageService()
 
-        # Dispatch to factory methods (all logic already in ValuesStorageService)
-        type_factories = {
-            'major': service.create_major_value,
-            'highest_order': service.create_highest_order_value,
-            'life_area': service.create_life_area,
-            'general': service.create_value
-        }
-
-        factory = type_factories[value_type]  # Already validated above
-        factory_kwargs = {
-            'value_name': data['value_name'],
-            'description': data['description'],
-            'priority': priority,
-            'life_domain': data.get('life_domain', 'General')
-        }
-
-        # Add alignment_guidance only for major values
-        if value_type == 'major':
-            factory_kwargs['alignment_guidance'] = data.get('alignment_guidance')
-
-        value = factory(**factory_kwargs)
+        value = service.create_value(
+            incentive_type=incentive_type,
+            common_name=data['common_name'],
+            description=data['description'],
+            priority=priority,  # Pass None or int - rhetorica handles it
+            life_domain=data.get('life_domain', 'General'),
+            alignment_guidance=data.get('alignment_guidance')
+        )
 
         # Save to database
         service.store_single_instance(value)
 
-        logger.info(f"Created {value_type} value {value.id}: {value.value_name}")
+        logger.info(f"Created {incentive_type} value {value.id}: {value.common_name}")
 
         return jsonify(serialize(value, include_type=True)), 201
 
@@ -218,7 +196,7 @@ def update_value(value_id: int):
         value_id: Value database ID
 
     Request body (JSON):
-        Any value field to update (value_name, description, priority, life_domain, alignment_guidance)
+        Any value field to update (common_name, description, priority, life_domain, alignment_guidance)
 
     Returns:
         200: Updated value

@@ -40,7 +40,6 @@ from ethica.term_lifecycle import (
 from categoriae.actions import Action
 from categoriae.goals import Goal
 from categoriae.terms import GoalTerm
-# Values imported in value_show for isinstance check only
 
 from interfaces.cli.cli_utils import (
     parse_json_arg,
@@ -78,10 +77,10 @@ def action_create(description: str, measurements: Optional[str] = None,
     """
     try:
         # Build entity
-        action = Action(description=description)
+        action = Action(common_name=description)
 
         if measurements:
-            action.measurements = parse_json_arg(measurements, "measurements")
+            action.measurement_units_by_amount = parse_json_arg(measurements, "measurements")
         if duration:
             action.duration_minutes = duration
         if start_time:
@@ -91,7 +90,7 @@ def action_create(description: str, measurements: Optional[str] = None,
         service = ActionStorageService()
         service.store_single_instance(action)
 
-        print(format_success(f"Created action {action.id}: {action.description}"))
+        print(format_success(f"Created action {action.id}: {action.common_name}"))
 
     except Exception as e:
         logger.error(f"Error creating action: {e}", exc_info=True)
@@ -112,7 +111,7 @@ def action_list(start_date: Optional[str] = None, end_date: Optional[str] = None
 
         # Apply filters
         if has_measurements:
-            actions = [a for a in actions if a.measurements is not None]
+            actions = [a for a in actions if a.measurement_units_by_amount is not None]
         if has_duration:
             actions = [a for a in actions if a.duration_minutes is not None]
         if start_date:
@@ -134,9 +133,9 @@ def action_list(start_date: Optional[str] = None, end_date: Optional[str] = None
         for action in actions:
             print(format_table_row([
                 action.id,
-                truncate(action.description, 50),
+                truncate(action.common_name, 50),
                 format_datetime(action.log_time),
-                format_json(action.measurements, 30)
+                format_json(action.measurement_units_by_amount, 30)
             ], [5, 50, 12, 30]))
 
         print(f"\nTotal: {len(actions)} actions")
@@ -163,11 +162,11 @@ def action_show(action_id: int):
 
         # Display details
         print(render_section_header(f"ACTION #{action_id}"))
-        print(f"Description:      {action.description}")
+        print(f"Description:      {action.common_name}")
         print(f"Logged:           {format_datetime(action.log_time, show_time=True)}")
 
-        if action.measurements:
-            print(f"Measurements:     {json.dumps(action.measurements, indent=2)}")
+        if action.measurement_units_by_amount:
+            print(f"Measurements:     {json.dumps(action.measurement_units_by_amount, indent=2)}")
         if action.duration_minutes:
             print(f"Duration:         {action.duration_minutes} minutes")
         if action.start_time:
@@ -196,9 +195,9 @@ def action_edit(action_id: int, description: Optional[str] = None,
 
         # Apply updates
         if description:
-            action.description = description
+            action.common_name = description
         if measurements:
-            action.measurements = parse_json_arg(measurements, "measurements")
+            action.measurement_units_by_amount = parse_json_arg(measurements, "measurements")
         if duration:
             action.duration_minutes = duration
 
@@ -228,12 +227,12 @@ def action_delete(action_id: int, force: bool = False):
             sys.exit(1)
 
         # Confirm unless --force
-        if not force and not confirm_action(f"Delete '{action.description}'?"):
+        if not force and not confirm_action(f"Delete '{action.common_name}'?"):
             print("Delete cancelled")
             return
 
         # Delete with archiving
-        service.delete(action_id, notes=f'CLI delete: {action.description}')
+        service.delete(action_id, notes=f'CLI delete: {action.common_name}')
 
         print(format_success(f"Deleted action {action_id}"))
 
@@ -265,7 +264,7 @@ def action_goals(action_id: int):
 
         # Display
         print(render_section_header(f"GOALS FOR ACTION #{action_id}"))
-        print(f"Action: {action.description}\n")
+        print(f"Action: {action.common_name}\n")
 
         if not matches:
             print("No matching goals found.")
@@ -277,7 +276,7 @@ def action_goals(action_id: int):
         for match in matches:
             print(format_table_row([
                 match.goal.id,
-                truncate(match.goal.description, 50),
+                truncate(match.goal.common_name, 50),
                 f"{match.contribution} {match.goal.measurement_unit or ''}",
                 match.assignment_method
             ], [8, 50, 15, 15]))
@@ -303,7 +302,7 @@ def goal_create(description: str, unit: Optional[str] = None, target: Optional[f
     try:
         # Build entity
         goal = Goal(
-            description=description,
+            common_name=description,
             measurement_unit=unit,
             measurement_target=target,
             start_date=parse_datetime_arg(start_date, "start_date"),
@@ -316,7 +315,7 @@ def goal_create(description: str, unit: Optional[str] = None, target: Optional[f
         service = GoalStorageService()
         service.store_single_instance(goal)
 
-        print(format_success(f"Created goal {goal.id}: {goal.description}"))
+        print(format_success(f"Created goal {goal.id}: {goal.common_name}"))
 
     except Exception as e:
         logger.error(f"Error creating goal: {e}", exc_info=True)
@@ -357,7 +356,7 @@ def goal_list(has_dates: bool = False, has_target: bool = False):
 
             print(format_table_row([
                 goal.id,
-                truncate(goal.description, 50),
+                truncate(goal.common_name, 50),
                 target_str,
                 dates_str
             ], [5, 50, 20, 25]))
@@ -386,7 +385,7 @@ def goal_show(goal_id: int):
 
         # Display details
         print(render_section_header(f"GOAL #{goal_id}"))
-        print(f"Description:      {goal.description}")
+        print(f"Description:      {goal.common_name}")
 
         if goal.is_measurable():
             print(f"Target:           {goal.measurement_target} {goal.measurement_unit}")
@@ -398,7 +397,7 @@ def goal_show(goal_id: int):
         if goal.how_goal_is_actionable:
             print(f"Actionable:       {goal.how_goal_is_actionable}")
 
-        print(f"Created:          {format_datetime(goal.created_at, show_time=True)}")
+        print(f"Created:          {format_datetime(goal.log_time, show_time=True)}")
 
     except Exception as e:
         logger.error(f"Error showing goal {goal_id}: {e}", exc_info=True)
@@ -424,7 +423,7 @@ def goal_edit(goal_id: int, description: Optional[str] = None, unit: Optional[st
 
         # Apply updates
         if description:
-            goal.description = description
+            goal.common_name = description
         if unit:
             goal.measurement_unit = unit
         if target:
@@ -460,12 +459,12 @@ def goal_delete(goal_id: int, force: bool = False):
             sys.exit(1)
 
         # Confirm unless --force
-        if not force and not confirm_action(f"Delete '{goal.description}'?"):
+        if not force and not confirm_action(f"Delete '{goal.common_name}'?"):
             print("Delete cancelled")
             return
 
         # Delete with archiving
-        service.delete(goal_id, notes=f'CLI delete: {goal.description}')
+        service.delete(goal_id, notes=f'CLI delete: {goal.common_name}')
 
         print(format_success(f"Deleted goal {goal_id}"))
 
@@ -541,8 +540,8 @@ def term_create(term_number: int, start_date: str, theme: Optional[str] = None,
         term = GoalTerm(
             term_number=term_number,
             start_date=parse_datetime_arg(start_date, "start_date"),
-            theme=theme,
-            term_goal_ids=term_goal_ids
+            description=theme,
+            term_goals_by_id=term_goal_ids
         )
 
         # Save
@@ -629,15 +628,15 @@ def term_show(term_id: int):
         print(f"Start Date:       {format_datetime(term.start_date)}")
         print(f"End Date:         {format_datetime(term.end_date)}")
         print(f"Status:           {status}")
-        if term.theme:
-            print(f"Theme:            {term.theme}")
+        if term.description:
+            print(f"Theme:            {term.description}")
         if term.reflection:
             print(f"Reflection:       {term.reflection}")
 
         print(f"\nCommitted Goals:  {len(committed)}")
         if committed:
             for goal in committed:
-                print(f"  - {goal.id}: {truncate(goal.description, 60)}")
+                print(f"  - {goal.id}: {truncate(goal.common_name, 60)}")
 
     except Exception as e:
         logger.error(f"Error showing term {term_id}: {e}", exc_info=True)
@@ -686,7 +685,7 @@ def term_edit(term_id: int, theme: Optional[str] = None, reflection: Optional[st
 
         # Apply updates
         if theme:
-            term.theme = theme
+            term.description = theme
         if reflection:
             term.reflection = reflection
 
@@ -723,12 +722,12 @@ def term_add_goal(term_id: int, goal_id: int):
             sys.exit(1)
 
         # Check if already assigned
-        if goal_id in term.term_goal_ids:
+        if goal_id in term.term_goals_by_id:
             print(format_error(f"Goal {goal_id} already assigned to term {term_id}"))
             sys.exit(1)
 
         # Add goal
-        term.term_goal_ids.append(goal_id)
+        term.term_goals_by_id.append(goal_id)
         term_service.save(term, notes=f'CLI: Added goal {goal_id}')
 
         print(format_success(f"Added goal {goal_id} to term {term_id}"))
@@ -754,12 +753,12 @@ def term_remove_goal(term_id: int, goal_id: int):
             sys.exit(1)
 
         # Check if goal is assigned
-        if goal_id not in term.term_goal_ids:
+        if goal_id not in term.term_goals_by_id:
             print(format_error(f"Goal {goal_id} not assigned to term {term_id}"))
             sys.exit(1)
 
         # Remove goal
-        term.term_goal_ids.remove(goal_id)
+        term.term_goals_by_id.remove(goal_id)
         term_service.save(term, notes=f'CLI: Removed goal {goal_id}')
 
         print(format_success(f"Removed goal {goal_id} from term {term_id}"))
@@ -772,7 +771,7 @@ def term_remove_goal(term_id: int, goal_id: int):
 
 # ===== VALUE COMMANDS =====
 
-def value_create(name: str, description: str, value_type: str, domain: str = "General",
+def value_create(name: str, description: str, incentive_type: str, domain: str = "General",
                 priority: int = 50, guidance: Optional[str] = None):
     """
     Create new value (consolidated command for all types).
@@ -780,46 +779,26 @@ def value_create(name: str, description: str, value_type: str, domain: str = "Ge
     Matches: POST /api/values
     """
     try:
-        # Use storage service factory methods (matches Flask API pattern)
-        service = ValuesStorageService()
-
-        if value_type == "major":
-            if not guidance:
-                print(format_error("Major values require --guidance"))
-                sys.exit(1)
-            value = service.create_major_value(
-                value_name=name,
-                description=description,
-                priority=priority,
-                life_domain=domain,
-                alignment_guidance=guidance
-            )
-        elif value_type == "highest_order":
-            value = service.create_highest_order_value(
-                value_name=name,
-                description=description,
-                priority=priority,
-                life_domain=domain
-            )
-        elif value_type == "life_area":
-            value = service.create_life_area(
-                value_name=name,
-                description=description,
-                priority=priority,
-                life_domain=domain
-            )
-        elif value_type == "general":
-            value = service.create_value(
-                value_name=name,
-                description=description,
-                priority=priority,
-                life_domain=domain
-            )
-        else:
-            print(format_error(f"Invalid value type: {value_type}"))
+        # Validate major value requirements
+        if incentive_type == "major" and not guidance:
+            print(format_error("Major values require --guidance"))
             sys.exit(1)
 
-        print(format_success(f"Created {value_type} value {value.id}: {value.value_name}"))
+        # Create and save value (rhetorica handles type conversion and class selection)
+        service = ValuesStorageService()
+
+        value = service.create_value(
+            incentive_type=incentive_type,
+            common_name=name,
+            description=description,
+            priority=priority,  # Pass raw int - rhetorica will convert
+            life_domain=domain,
+            alignment_guidance=guidance
+        )
+
+        service.store_single_instance(value)
+
+        print(format_success(f"Created {incentive_type} value {value.id}: {value.common_name}"))
 
     except Exception as e:
         logger.error(f"Error creating value: {e}", exc_info=True)
@@ -827,7 +806,7 @@ def value_create(name: str, description: str, value_type: str, domain: str = "Ge
         sys.exit(1)
 
 
-def value_list(value_type: Optional[str] = None, domain: Optional[str] = None):
+def value_list(incentive_type: Optional[str] = None, domain: Optional[str] = None):
     """
     List all values with optional filters.
 
@@ -837,7 +816,7 @@ def value_list(value_type: Optional[str] = None, domain: Optional[str] = None):
         service = ValuesStorageService()
 
         # Get filtered values
-        values = service.get_all(type_filter=value_type, domain_filter=domain)
+        values = service.get_all(type_filter=incentive_type, domain_filter=domain)
 
         # Display
         if not values:
@@ -851,7 +830,7 @@ def value_list(value_type: Optional[str] = None, domain: Optional[str] = None):
         for value in values:
             print(format_table_row([
                 value.id,
-                truncate(value.value_name, 30),
+                truncate(value.common_name, 30),
                 value.incentive_type,
                 value.life_domain,
                 value.priority
@@ -881,7 +860,7 @@ def value_show(value_id: int):
 
         # Display details
         print(render_section_header(f"VALUE #{value_id}"))
-        print(f"Name:             {value.value_name}")
+        print(f"Name:             {value.common_name}")
         print(f"Type:             {value.incentive_type}")
         print(f"Description:      {value.description}")
         print(f"Life Domain:      {value.life_domain}")
@@ -914,7 +893,7 @@ def value_edit(value_id: int, name: Optional[str] = None, description: Optional[
 
         # Apply updates
         if name:
-            value.value_name = name
+            value.common_name = name
         if description:
             value.description = description
         if domain:
@@ -950,12 +929,12 @@ def value_delete(value_id: int, force: bool = False):
             sys.exit(1)
 
         # Confirm unless --force
-        if not force and not confirm_action(f"Delete '{value.value_name}'?"):
+        if not force and not confirm_action(f"Delete '{value.common_name}'?"):
             print("Delete cancelled")
             return
 
         # Delete with archiving
-        service.delete(value_id, notes=f'CLI delete: {value.value_name}')
+        service.delete(value_id, notes=f'CLI delete: {value.common_name}')
 
         print(format_success(f"Deleted value {value_id}"))
 

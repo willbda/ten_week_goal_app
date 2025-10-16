@@ -115,7 +115,7 @@ def render_goal_header(goal_number: int, goal: Goal) -> str:
            ──────────────────────────────────────────────────────────────────'
     """
     separator = '─' * 66
-    return f"{goal_number}. {goal.description}\n   {separator}"
+    return f"{goal_number}. {goal.common_name}\n   {separator}"
 
 
 def render_section_header(title: str, width: int = FormatConfig.SEPARATOR_WIDTH) -> str:
@@ -236,7 +236,7 @@ def render_action_summary(
         '  • Movement: 5.11 km run: 5.1 km (2025-04-18, conf: 90%)'
     """
     # Truncate description if too long
-    desc = match.action.description
+    desc = match.action.common_name
     if len(desc) > max_length:
         desc = desc[:max_length-3] + "..."
 
@@ -444,7 +444,7 @@ def render_value_list(values: List) -> str:
         type_str = value.incentive_type
 
         # Truncate name if too long
-        name = value.value_name[:21] + "..." if len(value.value_name) > 24 else value.value_name
+        name = value.common_name[:21] + "..." if len(value.common_name) > 24 else value.common_name
 
         # Format row
         value_id = value.id if value.id else "N/A"
@@ -489,14 +489,14 @@ def render_value_detail(value: Union[Values, MajorValues, HighestOrderValues, Li
     lines.append("")
 
     # Get type string from rhetorica
-    value_type = value.incentive_type
+    incentive_type = value.incentive_type
 
     # Format fields
     value_id = value.id if value.id else "N/A"
     lines.append(f"ID:          {value_id}")
-    lines.append(f"Name:        {value.value_name}")
-    lines.append(f"Type:        {value_type}")
-    lines.append(f"Description: {value.description}")
+    lines.append(f"Name:        {value.common_name}")
+    lines.append(f"Type:        {incentive_type}")
+    lines.append(f"Description: {value.common_name}")
     lines.append(f"Domain:      {value.life_domain}")
     lines.append(f"Priority:    {int(value.priority)}")
 
