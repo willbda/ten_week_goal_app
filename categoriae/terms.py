@@ -9,18 +9,24 @@ A Term is a bounded period of intentional focus. Terms provide:
 - Context for priority decisions (what matters THIS term?)
 
 Written by Claude Code on 2025-10-12
+Refactored to use dataclasses on 2025-10-16
 """
 
 from abc import ABC
-from datetime import datetime, timedelta
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta
+from sqlite3 import Time
 from typing import Optional, List
 
-# Time horizon constants
+from click import Option
+
+from categoriae.ontology import DerivedEntity, IndependentEntity
+
 MN_LIFE_EXPECTANCY_YEARS = 79  # CDC Minnesota life expectancy
-DAYS_PER_YEAR = 365.25  # Accounting for leap years
+DAYS_PER_YEAR = 365.25 
 
-
-class TimeFrame(ABC):
+@dataclass
+class TimeFrame(IndependentEntity):
     """
     Abstract base for all time-bounded planning horizons.
 
@@ -30,56 +36,31 @@ class TimeFrame(ABC):
     pass
 
 
+@dataclass
 class GoalTerm(TimeFrame):
     """
     Goal term -- a fundamental unit of structured planning. The idea of a "term" is inspired by academic terms but adapted for personal productivity. It should be long enough to make meaningful progress on goals, but short enough to maintain focus and urgency.
 
     A typical term is 10 weeks (70 days), but this can be adjusted based on personal preference or context. The key is to have a clear start and end date, along with defined goals and a theme or focus area if desired.
+
     Attributes:
         term_number: Sequential identifier (e.g., Term 1, Term 2)
         start_date: First day of term
         end_date: Last day of term (70 days later)
         theme: Optional focus area (e.g., "Health & Learning", "Relationships")
-        goals: List of goal IDs associated with this term
+        term_goal_ids: List of goal IDs associated with this term
         reflection: Post-term reflection notes
     """
     TEN_WEEKS_IN_DAYS = 70  # 10 weeks × 7 days/week
 
-    # Declare serializable fields with types
-    __serialize__ = {
-        'id': int,
-        'term_number': int,
-        'start_date': datetime,
-        'end_date': datetime,
-        'theme': str,
-        'term_goal_ids': list,  # Will be JSON string in DB
-        'reflection': str
-    }
+    term_number: int = 0
+    start_date: datetime = datetime.today()
+    end_date: datetime = datetime.today() + timedelta(days=TEN_WEEKS_IN_DAYS)
+    description = "A focused 10-week period for achieving specific goals related to ..."
+    term_goals_by_id: List[int] = field(default_factory=list)
+    reflection: str = ''
 
-    def __init__(
-        self,
-        term_number: int,
-        start_date: datetime,
-        end_date: Optional[datetime] = None,
-        theme: Optional[str] = None,
-        term_goal_ids: Optional[List[int]] = None,
-        reflection: Optional[str] = None,
-        id: Optional[int] = None
-    ):
-        self.id = id  # Database-assigned ID (None for new instances)
-        self.term_number = term_number
-        self.start_date = start_date
-
-        # Calculate end_date if not provided
-        if end_date is None:
-            self.end_date = start_date + timedelta(days=GoalTerm.TEN_WEEKS_IN_DAYS)
-        else:
-            self.end_date = end_date
-
-        self.theme = theme
-        self.term_goal_ids = term_goal_ids or []
-        self.reflection = reflection
-
+# refactor is_active, days_remaining, progress_percentage to ethica or rhetorica
     def is_active(self, check_date: Optional[datetime] = None) -> bool:
         """Check if term is currently active."""
         check = check_date or datetime.now()
@@ -106,6 +87,7 @@ class GoalTerm(TimeFrame):
             return elapsed_days / total_days
 
 
+@dataclass
 class YearlyPlan(TimeFrame):
     """
     Annual planning horizon - typically 5 terms.
@@ -115,22 +97,14 @@ class YearlyPlan(TimeFrame):
 
     Attributes:
         year: Calendar year
-        terms: List of TenWeekTerm objects in this year
+        terms: List of GoalTerm objects in this year
         annual_theme: Overarching focus (e.g., "Year of Health")
         annual_reflection: End-of-year retrospective
     """
-
-    def __init__(
-        self,
-        year: int,
-        terms: Optional[List[GoalTerm]] = None,
-        annual_theme: Optional[str] = None,
-        annual_reflection: Optional[str] = None
-    ):
-        self.year = year
-        self.terms = terms or []
-        self.annual_theme = annual_theme
-        self.annual_reflection = annual_reflection
+    year: int = date.today().year
+    terms: List[GoalTerm] = field(default_factory=list)
+    annual_theme: Optional[str] = None
+    annual_reflection: Optional[str] = None
 
     def get_current_term(self, check_date: Optional[datetime] = None) -> Optional[GoalTerm]:
         """Return the active term, if any."""
@@ -140,9 +114,10 @@ class YearlyPlan(TimeFrame):
         return None
 
 
-class LifeTime(TimeFrame):
+@dataclass
+class LifeTime(DerivedEntity):
     """
-    Memento Mori 
+    Memento Mori
     The full arc of a human life - roughly 4,500 weeks.
 
     "I will be dead here shortly. Realistically, maybe that's another 30 to 70 years."
@@ -160,28 +135,15 @@ class LifeTime(TimeFrame):
         life_areas_allocation: How you INTEND to spend remaining time
         life_reflection: Ongoing philosophical reflection
     """
+    birth_date: datetime
+    estimated_death_date: datetime
+    life_areas_allocation: dict = field(default_factory=dict)
 
-    def __init__(
-        self,
-        birth_date: datetime,
-        estimated_death_date: Optional[datetime] = None,
-        life_areas_allocation: Optional[dict] = None,
-        life_reflection: Optional[str] = None
-    ):
-        self.birth_date = birth_date
-
-        # Default to Minnesota life expectancy
-        if estimated_death_date is None:
+    def __post_init__(self):
+        """Calculate estimated death date if not provided"""
+        if self.estimated_death_date is None:
             days_to_live = int(MN_LIFE_EXPECTANCY_YEARS * DAYS_PER_YEAR)
-            self.estimated_death_date = birth_date + timedelta(days=days_to_live)
-        else:
-            self.estimated_death_date = estimated_death_date
-
-        # How do you want to allocate your remaining time across life areas?
-        # e.g., {"sleep": 0.31, "work": 0.24, "exercise": 0.08, ...}
-        self.life_areas_allocation = life_areas_allocation or {}
-
-        self.life_reflection = life_reflection
+            self.estimated_death_date = self.birth_date + timedelta(days=days_to_live)
 
     def weeks_lived(self, from_date: Optional[datetime] = None) -> int:
         """Calculate approximate weeks lived so far."""

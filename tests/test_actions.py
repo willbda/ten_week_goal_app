@@ -20,7 +20,7 @@ def test_action_creation_with_description():
     """Action should be created with just a description"""
     action = Action("Did pushups")
 
-    assert action.description == "Did pushups"
+    assert action.common_name == "Did pushups"
     assert action.log_time is not None
     assert isinstance(action.log_time, datetime)
 
@@ -29,7 +29,7 @@ def test_action_has_optional_attributes():
     """Action should have optional measurement/timing attributes"""
     action = Action("Ran")
 
-    assert action.measurements is None
+    assert action.measurement_units_by_amount is None
     assert action.duration_minutes is None
     assert action.start_time is None
 
@@ -39,7 +39,7 @@ def test_action_has_optional_attributes():
 def test_valid_action_with_measurements():
     """Valid action with positive measurements should pass validation"""
     action = Action("Ran 3 miles")
-    action.measurements = {"distance_miles": 3.0, "duration_minutes": 30.0}
+    action.measurement_units_by_amount = {"distance_miles": 3.0, "duration_minutes": 30.0}
 
     assert action.is_valid()
 
@@ -47,7 +47,7 @@ def test_valid_action_with_measurements():
 def test_invalid_action_with_negative_measurement():
     """Action with negative measurements should fail validation"""
     action = Action("Ran")
-    action.measurements = {"distance_miles": -5.0}
+    action.measurement_units_by_amount = {"distance_miles": -5.0}
 
     assert not action.is_valid()
 
@@ -55,7 +55,7 @@ def test_invalid_action_with_negative_measurement():
 def test_invalid_action_with_zero_measurement():
     """Action with zero measurements should fail validation"""
     action = Action("Ran")
-    action.measurements = {"distance_miles": 0.0}
+    action.measurement_units_by_amount = {"distance_miles": 0.0}
 
     assert not action.is_valid()
 
@@ -84,18 +84,18 @@ def test_action_with_empty_description():
     """Should allow empty description (validation could catch this)"""
     action = Action("")
 
-    assert action.description == ""
+    assert action.common_name == ""
     # Note: is_valid() currently doesn't check this - design decision
 
 
 def test_action_with_mixed_measurements():
     """Action can have multiple different measurements"""
     action = Action("Complex workout")
-    action.measurements = {
+    action.measurement_units_by_amount = {
         "weight_lbs": 150.0,
         "reps": 20.0,
         "sets": 3.0
     }
 
     assert action.is_valid()
-    assert len(action.measurements) == 3
+    assert len(action.measurement_units_by_amount) == 3

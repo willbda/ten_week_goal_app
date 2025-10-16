@@ -4,39 +4,18 @@ Relationship definitions - describe connections between domain entities.
 These are NOT source entities - they represent derived/computed relationships.
 The definitions (data shape) live here in categoriae.
 The logic (how to compute them) lives in ethica.
-
-Written by Claude Code on 2025-10-11
 """
 
 from dataclasses import dataclass
-from abc import ABC
-from typing import TYPE_CHECKING
 
-# Avoid circular imports at runtime
-if TYPE_CHECKING:
-    from categoriae.actions import Action
-    from categoriae.goals import Goal
-    from categoriae.values import MajorValues
 
+from categoriae.actions import Action
+from categoriae.goals import Goal
+from categoriae.ontology import DerivedEntity
+from categoriae.values import MajorValues
 
 @dataclass
-class DerivedRelationship(ABC):
-    """
-    Base class for relationships computed from existing entities.
-
-    These are NOT source of truth - they can be recalculated from base entities.
-    Persisting them is purely for performance optimization and auditability.
-
-    Examples:
-        - An action contributing to a goal
-        - A goal aligned with a value
-        - An action reflecting a value
-    """
-    pass
-
-
-@dataclass
-class ActionGoalRelationship(DerivedRelationship):
+class ActionGoalRelationship(DerivedEntity):
     """
     Represents a discovered or assigned relationship between an action and a goal.
 
@@ -55,23 +34,15 @@ class ActionGoalRelationship(DerivedRelationship):
             - 1.0 for manual/confirmed matches
             - Variable for auto-inferred matches based on match quality
     """
-    action: 'Action'
-    goal: 'Goal'
+    action: Action
+    goal: Goal
     contribution: float
     assignment_method: str  # 'auto_inferred', 'user_confirmed', 'manual'
     confidence: float = 1.0
 
-    # Note: For relationships, action and goal will be serialized by their own __serialize__
-    # This is just the direct fields of the relationship itself
-    __serialize__ = {
-        'contribution': float,
-        'assignment_method': str,
-        'confidence': float
-    }
-
 
 @dataclass
-class GoalValueAlignment(DerivedRelationship):
+class MajorValueAlignment(DerivedEntity):
     """
     Represents alignment between a goal and a personal value.
 
@@ -96,15 +67,8 @@ class GoalValueAlignment(DerivedRelationship):
             - 1.0 for manual/confirmed alignments
             - Variable for auto-inferred based on signal strength
     """
-    goal: 'Goal'
-    value: 'MajorValues'
+    goal: Goal
+    value: MajorValues
     alignment_strength: float  # 0.0-1.0, distinct from confidence
     assignment_method: str  # 'auto_inferred', 'user_confirmed', 'manual'
     confidence: float = 1.0
-
-    # Note: goal and value will be serialized by their own __serialize__
-    __serialize__ = {
-        'alignment_strength': float,
-        'assignment_method': str,
-        'confidence': float
-    }

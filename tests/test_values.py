@@ -43,7 +43,7 @@ def test_incentives_has_sensible_defaults():
     """Incentives provides description, priority, life_domain, and incentive_type"""
     incentive = Incentives("Be a good person")
 
-    assert incentive.description == "Be a good person"
+    assert incentive.common_name == "Be a good person"
     assert incentive.priority == 50  # Default middle priority
     assert incentive.life_domain == "General"
     assert incentive.incentive_type == 'incentive'  # Base type
@@ -52,11 +52,11 @@ def test_incentives_has_sensible_defaults():
 # ===== VALUES - Adds name and value flags =====
 
 def test_values_adds_name_and_type():
-    """Values adds name attribute and has incentive_type 'general'"""
-    value = Values("Compassion", "Showing kindness to others")
+    """Values has common_name and has incentive_type 'general'"""
+    value = Values("Compassion")
 
-    assert value.value_name == "Compassion"
-    assert value.description == "Showing kindness to others"
+    assert value.common_name == "Compassion"
+    assert value.description is None  # Optional - not provided
     assert value.priority == 40  # Values default to 40
     assert value.incentive_type == 'general'  # General value type
 
@@ -65,8 +65,9 @@ def test_values_adds_name_and_type():
 
 def test_life_areas_not_a_value():
     """LifeAreas inherit from Incentives but are NOT Values"""
-    life_area = LifeAreas("Career", "Career success and growth")
+    life_area = LifeAreas("Career")
 
+    assert life_area.common_name == "Career"
     assert life_area.incentive_type == 'life_area'  # Life area type
     assert isinstance(life_area, Incentives)
     assert not isinstance(life_area, Values)  # LifeAreas are NOT Values
@@ -78,10 +79,10 @@ def test_major_values_distinctive_features():
     """MajorValues: priority 1, incentive_type='major', has alignment_guidance"""
     major = MajorValues(
         "Integrity",
-        "Acting consistently with principles",
         alignment_guidance={"weekly_check": "Review goals vs values"}
     )
 
+    assert major.common_name == "Integrity"
     assert major.priority == 1  # Defaults to highest priority
     assert major.incentive_type == 'major'  # Major value type
     assert isinstance(major, Values)  # Still a Value
@@ -90,8 +91,9 @@ def test_major_values_distinctive_features():
 
 def test_major_values_alignment_guidance_optional():
     """MajorValues work without alignment_guidance (flexible design)"""
-    major = MajorValues("Courage", "Acting despite fear")
+    major = MajorValues("Courage")
 
+    assert major.common_name == "Courage"
     assert major.alignment_guidance is None
 
 
@@ -99,8 +101,9 @@ def test_major_values_alignment_guidance_optional():
 
 def test_highest_order_values_distinctive_features():
     """HighestOrderValues: priority 1, incentive_type='highest_order'"""
-    highest = HighestOrderValues("Truth", "Commitment to reality")
+    highest = HighestOrderValues("Truth")
 
+    assert highest.common_name == "Truth"
     assert highest.priority == 1
     assert highest.incentive_type == 'highest_order'  # Highest order type
     assert isinstance(highest, Values)  # Is a Value
@@ -111,10 +114,10 @@ def test_highest_order_values_distinctive_features():
 
 def test_type_hierarchy():
     """Verify each class knows its place in the inheritance tree"""
-    value = Values("Regular", "A regular value")
-    major = MajorValues("Major", "A major value")
-    highest = HighestOrderValues("Highest", "Highest order")
-    life_area = LifeAreas("Life Areas", "Life area description")
+    value = Values("Regular")
+    major = MajorValues("Major")
+    highest = HighestOrderValues("Highest")
+    life_area = LifeAreas("Life Areas")
 
     # Values inherit from Incentives
     assert isinstance(value, Incentives)

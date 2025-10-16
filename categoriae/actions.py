@@ -1,53 +1,33 @@
 """
 Actions serve as the primary entity for this application. Much turns on the attributes and methods of actions.
+
+Refactored to use dataclasses on 2025-10-16
 """
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Dict
 
+from categoriae.ontology import PersistableEntity
 
-class Action:
+
+@dataclass
+class Action(PersistableEntity):
     """
-    Base class defining what all Actions consist in.
-
-    All actions must track when they were logged and have a description.
-    Actions can optionally include measurements, timing data, etc.
-
-
-    The initializer defines the object and expresses required variables that must either be set when instantiated or by default values provided in the code.
-
-    Following the initializer, we might have additional derived or computed values, properties, or methods which don't need to be provided directly by the user but which are still instramental to the basic functioning of the class. For instance, we can add an is_valid that derives a boolean value to guarantee that the initialized goal actually manages to contain values that make sense for the class. Moreover, when it fails we can direct the error in meaningful ways by alerting the user of the problem.
-
+    An action taken at a point in time.
     """
 
-    # Declare serializable fields with types for translation layer (rhetorica)
-    __serialize__ = {
-        'id': int,
-        'description': str,
-        'log_time': datetime,
-        'measurements': dict,  # Will be JSON string in DB
-        'duration_minutes': float,
-        'start_time': datetime
-    }
-
-    # These fields are set as attributes after construction, not passed to __init__
-    __constructed_without__ = ['log_time', 'measurements', 'duration_minutes', 'start_time']
-
-    def __init__(self, description: str, id: Optional[int] = None):
-        self.id = id  # None for new actions, int for stored actions
-        self.description = description
-        self.log_time = datetime.now()
-        self.measurements: Optional[Dict[str, float]] = None
-        self.duration_minutes: Optional[float] = None
-        self.start_time: Optional[datetime] = None
+    measurement_units_by_amount: Optional[Dict[str, float]] = None
+    duration_minutes: Optional[float] = None
+    start_time: Optional[datetime] = None
 
     def is_valid(self) -> bool:
         """Validate that this action meets core requirements"""
         if not self.log_time:
             return False
-        if self.measurements:
+        if self.measurement_units_by_amount:
             # Check that all measurement values are positive
-            for value in self.measurements.values():
+            for value in self.measurement_units_by_amount.values():
                 if value <= 0:
                     return False
         # If start_time exists, duration should too

@@ -1,19 +1,34 @@
 -- Terms table: Time-bounded planning horizons for goal organization
 -- Written by Claude Code on 2025-10-13
+-- Updated 2025-10-16 to align with new categoriae structure
 --
 -- A term is a structured planning period (typically 10 weeks) that provides:
 -- - Temporal scaffolding for related goals
 -- - Rhythmic reflection points
 -- - Context for priority decisions
+--
+-- Inherits from IndependentEntity (not PersistableEntity):
+--   - common_name: Short identifier (required)
+--   - description: Optional elaboration
+--   - notes: Freeform notes
+--   - id: Database primary key
+--
+-- Term-specific fields:
+--   - term_number: Sequential identifier
+--   - start_date, end_date: Time bounds
+--   - term_goals_by_id: JSON array of goal IDs
+--   - reflection: Post-term notes
 
 CREATE TABLE IF NOT EXISTS terms (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  term_number INTEGER NOT NULL,                   -- Sequential identifier (Term 1, Term 2, etc.)
-  start_date TEXT NOT NULL,                       -- First day of term (ISO format: '2025-10-13')
-  end_date TEXT NOT NULL,                         -- Last day of term (ISO format: '2025-12-22')
-  theme TEXT,                                     -- Optional focus area (e.g., "Health & Learning")
-  term_goal_ids TEXT,                             -- JSON array of goal IDs: "[1, 3, 5]"
-  reflection TEXT,                                -- Post-term reflection notes
+  common_name TEXT NOT NULL,                      -- Short identifier (e.g., "Term 1: Health Focus")
+  description TEXT,                               -- Optional elaboration
+  notes TEXT,                                     -- Freeform notes
+  term_number INTEGER NOT NULL,                   -- Sequential identifier (1, 2, 3, etc.)
+  start_date TEXT NOT NULL,                       -- First day of term (ISO format)
+  end_date TEXT NOT NULL,                         -- Last day of term (ISO format)
+  term_goals_by_id TEXT,                          -- JSON array of goal IDs: "[1, 3, 5]"
+  reflection TEXT,                                -- Post-term reflection
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
 
