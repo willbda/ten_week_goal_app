@@ -20,7 +20,7 @@ def test_action_save(test_db):
     action_two = Action('call mom')
     action_three = Action('sweep neighbors porch')
 
-    action_one.measurements = {'units': 12}
+    action_one.measurement_units_by_amount = {'units': 12}
     action_two.duration_minutes = 15.0
     action_three.start_time = datetime.now()
     action_three.duration_minutes = 15.0
@@ -45,7 +45,7 @@ def test_action_roundtrip(test_db):
 
     # Create and save an action
     original_action = Action('Test roundtrip action')
-    original_action.measurements = {'distance_km': 5.2, 'time_minutes': 30}
+    original_action.measurement_units_by_amount = {'distance_km': 5.2, 'time_minutes': 30}
     original_action.duration_minutes = 30.0
 
     service = ActionStorageService(database=db)
@@ -59,8 +59,8 @@ def test_action_roundtrip(test_db):
 
     # Verify the retrieved action matches the original
     retrieved = retrieved_actions[0]
-    assert retrieved.description == original_action.description
-    assert retrieved.measurements == original_action.measurements
+    assert retrieved.common_name == original_action.common_name
+    assert retrieved.measurement_units_by_amount == original_action.measurement_units_by_amount
     assert retrieved.duration_minutes == original_action.duration_minutes
 
 
@@ -92,7 +92,7 @@ def test_action_update(test_db):
 
     # Create and save an action
     action = Action('Original description')
-    action.measurements = {'distance_km': 5.0}
+    action.measurement_units_by_amount = {'distance_km': 5.0}
 
     service = ActionStorageService(database=db)
     service.store_single_instance(action)
@@ -106,8 +106,8 @@ def test_action_update(test_db):
     assert original_id is not None
 
     # Modify the action
-    stored_action.description = 'Updated description'
-    stored_action.measurements = {'distance_km': 10.0}
+    stored_action.common_name = 'Updated description'
+    stored_action.measurement_units_by_amount = {'distance_km': 10.0}
 
     # Update it
     result = service.update_instance(stored_action)
@@ -120,8 +120,8 @@ def test_action_update(test_db):
 
     updated = updated_actions[0]
     assert updated.id == original_id  # Same ID
-    assert updated.description == 'Updated description'  # Updated field
-    assert updated.measurements == {'distance_km': 10.0}  # Updated field
+    assert updated.common_name == 'Updated description'  # Updated field
+    assert updated.measurement_units_by_amount == {'distance_km': 10.0}  # Updated field
 
 
 def test_action_update_without_id_raises_error(test_db):

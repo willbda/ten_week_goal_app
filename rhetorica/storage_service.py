@@ -239,7 +239,7 @@ class GoalStorageService(StorageService[Goal]):
     Handles translation between Goal/SmartGoal objects and database storage.
 
     Works with both loose Goals (optional fields) and strict SmartGoals (all required).
-    Uses entity's __serialize__ attribute via rhetorica.serializers.
+    Uses generic dataclass serialization via rhetorica.serializers.
     """
 
     table_name = 'goals'
@@ -248,30 +248,30 @@ class GoalStorageService(StorageService[Goal]):
         """
         Convert Goal or SmartGoal object to dict for storage.
 
-        Uses entity.__serialize__ to get field list and rhetorica.serializers.serialize()
-        to handle formatting. No manual field mapping needed - entity fields match DB columns.
+        Uses serialize() with dataclass field introspection to handle formatting.
+        No manual field mapping needed - entity fields match DB columns.
         """
         from rhetorica.serializers import serialize
 
-        # Use serialize but exclude 'type' field (not stored in DB)
-        return serialize(entity, include_type=False)
+        # Use serialize with json_encode=True for database storage (exclude 'type')
+        return serialize(entity, include_type=False, json_encode=True)
 
     def _from_dict(self, data: dict) -> Goal:
         """
         Reconstruct Goal object from stored dict.
 
-        Uses deserialize() to automatically parse all fields according to
-        Goal.__serialize__ type declarations.
+        Uses deserialize() to automatically parse all fields based on
+        dataclass field type annotations.
         """
         from rhetorica.serializers import deserialize
-        return deserialize(data, Goal)
+        return deserialize(data, Goal, json_decode=True)
 
 
 class ActionStorageService(StorageService[Action]):
     """
     Handles translation between Action objects and database storage.
 
-    Uses entity's __serialize__ attribute via rhetorica.serializers.
+    Uses generic dataclass serialization via rhetorica.serializers.
     """
 
     table_name = 'actions'
@@ -281,20 +281,20 @@ class ActionStorageService(StorageService[Action]):
         Convert Action object to dict for storage.
 
         Uses serialize() - measurements dict is automatically converted to JSON string
-        based on Action.__serialize__ type declaration.
+        based on dataclass field type annotations.
         """
         from rhetorica.serializers import serialize
-        return serialize(entity, include_type=False)
+        return serialize(entity, include_type=False, json_encode=True)
 
     def _from_dict(self, data: dict) -> Action:
         """
         Reconstruct Action object from stored dict.
 
-        Uses deserialize() to automatically parse all fields according to
-        Action.__serialize__ type declarations.
+        Uses deserialize() to automatically parse all fields based on
+        dataclass field type annotations.
         """
         from rhetorica.serializers import deserialize
-        return deserialize(data, Action)
+        return deserialize(data, Action, json_decode=True)
 
 
 class TermStorageService(StorageService[GoalTerm]):
@@ -317,19 +317,19 @@ class TermStorageService(StorageService[GoalTerm]):
         Convert GoalTerm object to dict for storage.
 
         Uses serialize() - term_goal_ids list is automatically converted to JSON string
-        based on GoalTerm.__serialize__ type declaration.
+        based on dataclass field type annotations.
         """
         from rhetorica.serializers import serialize
-        return serialize(entity, include_type=False)
+        return serialize(entity, include_type=False, json_encode=True)
 
     def _from_dict(self, data: dict) -> GoalTerm:
         """
         Reconstruct GoalTerm object from stored dict.
 
-        Uses deserialize() to automatically parse all fields according to
-        GoalTerm.__serialize__ type declarations.
+        Uses deserialize() to automatically parse all fields based on
+        dataclass field type annotations.
         """
         from rhetorica.serializers import deserialize
-        return deserialize(data, GoalTerm)
+        return deserialize(data, GoalTerm, json_decode=True)
 
 

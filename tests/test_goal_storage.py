@@ -15,10 +15,10 @@ def test_loose_goal_storage(test_db):
     db, _ = test_db
 
     # Create test goals with optional fields
-    loose_goal = Goal(description="Run a marathon someday")
+    loose_goal = Goal(common_name="Run a marathon someday")
 
     partial_goal = Goal(
-        description="Get better at Python",
+        common_name="Get better at Python",
         measurement_unit="hours_coding",
         measurement_target=100.0
     )
@@ -29,7 +29,7 @@ def test_loose_goal_storage(test_db):
     # Verify records were stored
     stored_goals = service.get_all()
     assert len(stored_goals) == 2
-    assert stored_goals[0].description == "Run a marathon someday"
+    assert stored_goals[0].common_name == "Run a marathon someday"
     assert stored_goals[1].measurement_unit == "hours_coding"
 
 
@@ -39,7 +39,7 @@ def test_smart_goal_storage(test_db):
 
     # Create SMART goals
     smart_goal_one = SmartGoal(
-        description="Run 120km total",
+        common_name="Run 120km total",
         measurement_unit="km_run",
         measurement_target=120.0,
         start_date=datetime.now() + timedelta(days=1),
@@ -49,7 +49,7 @@ def test_smart_goal_storage(test_db):
     )
 
     smart_goal_two = SmartGoal(
-        description="Read 40 hours of technical content",
+        common_name="Read 40 hours of technical content",
         measurement_unit="hours_reading",
         measurement_target=40.0,
         start_date=datetime.now() + timedelta(days=1),
@@ -75,7 +75,7 @@ def test_goal_roundtrip(test_db):
 
     # Create and save a goal with all fields
     original_goal = Goal(
-        description="Test roundtrip goal",
+        common_name="Test roundtrip goal",
         measurement_unit="test_units",
         measurement_target=50.0,
         start_date=datetime.now() + timedelta(days=1),
@@ -95,7 +95,7 @@ def test_goal_roundtrip(test_db):
 
     # Verify the retrieved goal matches the original
     retrieved = retrieved_goals[0]
-    assert retrieved.description == original_goal.description
+    assert retrieved.common_name == original_goal.common_name
     assert retrieved.measurement_unit == original_goal.measurement_unit
     assert retrieved.measurement_target == original_goal.measurement_target
     assert retrieved.how_goal_is_relevant == original_goal.how_goal_is_relevant
@@ -129,7 +129,7 @@ def test_goal_update(test_db):
 
     # Create and save a goal
     goal = Goal(
-        description='Original goal',
+        common_name='Original goal',
         measurement_unit='km',
         measurement_target=100.0
     )
@@ -143,7 +143,7 @@ def test_goal_update(test_db):
     original_id = stored_goal.id
 
     # Modify the goal
-    stored_goal.description = 'Updated goal'
+    stored_goal.common_name = 'Updated goal'
     stored_goal.measurement_target = 150.0
 
     # Update it
@@ -155,5 +155,5 @@ def test_goal_update(test_db):
     updated_goals = service.get_all()
     updated = updated_goals[0]
     assert updated.id == original_id
-    assert updated.description == 'Updated goal'
+    assert updated.common_name == 'Updated goal'
     assert updated.measurement_target == 150.0

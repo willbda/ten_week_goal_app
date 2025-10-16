@@ -18,14 +18,14 @@ def test_general_values_storage(test_db):
 
     # Create test values
     value1 = Values(
-        value_name="Continuous Learning",
+        common_name="Continuous Learning",
         description="Regular pursuit of knowledge and skill development",
         priority=PriorityLevel(30),
         life_domain="Personal Growth"
     )
 
     value2 = Values(
-        value_name="Environmental Stewardship",
+        common_name="Environmental Stewardship",
         description="Care for the planet through daily actions",
         priority=PriorityLevel(20)
     )
@@ -36,7 +36,7 @@ def test_general_values_storage(test_db):
     # Verify records were stored
     stored_values = service.get_all()
     assert len(stored_values) == 2
-    assert stored_values[0].value_name == "Continuous Learning"
+    assert stored_values[0].common_name == "Continuous Learning"
     assert stored_values[1].life_domain == "General"  # Default value
 
 
@@ -46,7 +46,7 @@ def test_major_values_storage_with_dict_guidance(test_db):
 
     # Create MajorValue with structured guidance
     mental_health = MajorValues(
-        value_name="Mental Health and Longevity",
+        common_name="Mental Health and Longevity",
         description="My brain is a thing in the world that requires maintenance",
         priority=PriorityLevel(1),
         life_domain="Physical Health",
@@ -64,7 +64,7 @@ def test_major_values_storage_with_dict_guidance(test_db):
     stored = service.get_all()
     assert len(stored) == 1
     assert isinstance(stored[0], MajorValues)
-    assert stored[0].value_name == "Mental Health and Longevity"
+    assert stored[0].common_name == "Mental Health and Longevity"
     assert isinstance(stored[0].alignment_guidance, dict)
     assert "cardio" in stored[0].alignment_guidance
 
@@ -74,7 +74,7 @@ def test_major_values_storage_with_text_guidance(test_db):
     db, _ = test_db
 
     companionship = MajorValues(
-        value_name="Companionship with Solène",
+        common_name="Companionship with Solène",
         description="Solène has bound her lot with mine",
         priority=PriorityLevel(1),
         life_domain="Relationships",
@@ -97,7 +97,7 @@ def test_highest_order_values_storage(test_db):
     db, _ = test_db
 
     highest = HighestOrderValues(
-        value_name="Live Well, Die in Peace",
+        common_name="Live Well, Die in Peace",
         description="To live well is to take and share beneficial pleasures",
         priority=PriorityLevel(1),
         life_domain="Philosophy"
@@ -111,7 +111,7 @@ def test_highest_order_values_storage(test_db):
     assert len(stored) == 1
     assert isinstance(stored[0], HighestOrderValues)
     assert stored[0].incentive_type == 'highest_order'
-    assert stored[0].value_name == "Live Well, Die in Peace"
+    assert stored[0].common_name == "Live Well, Die in Peace"
 
 
 def test_life_areas_storage(test_db):
@@ -119,7 +119,7 @@ def test_life_areas_storage(test_db):
     db, _ = test_db
 
     life_area = LifeAreas(
-        value_name="Career",
+        common_name="Career",
         description="Career and professional development",
         priority=PriorityLevel(15),
         life_domain="Work"
@@ -133,6 +133,7 @@ def test_life_areas_storage(test_db):
     assert len(stored) == 1
     assert isinstance(stored[0], LifeAreas)
     assert stored[0].incentive_type == 'life_area'
+    assert stored[0].common_name == "Career"
     assert stored[0].description == "Career and professional development"
 
 
@@ -142,26 +143,26 @@ def test_values_polymorphism(test_db):
 
     # Create one of each type
     general = Values(
-        value_name="Creativity",
+        common_name="Creativity",
         description="Express yourself through making",
         priority=PriorityLevel(40)
     )
 
     major = MajorValues(
-        value_name="Equanimity",
+        common_name="Equanimity",
         description="Peace and freedom from suffering",
         priority=PriorityLevel(1),
         alignment_guidance="Meditation, mindful breathing, therapy sessions"
     )
 
     highest = HighestOrderValues(
-        value_name="Holistic Cultivation",
+        common_name="Holistic Cultivation",
         description="Transform capability into beautiful performance",
         priority=PriorityLevel(1)
     )
 
     life_area = LifeAreas(
-        value_name="Physical Fitness",
+        common_name="Physical Fitness",
         description="Physical fitness and health",
         priority=PriorityLevel(10),
         life_domain="Health"
@@ -187,7 +188,7 @@ def test_values_roundtrip(test_db):
     db, _ = test_db
 
     original = MajorValues(
-        value_name="Test Value",
+        common_name="Test Value",
         description="This is a comprehensive test",
         priority=PriorityLevel(5),
         life_domain="Testing",
@@ -201,7 +202,7 @@ def test_values_roundtrip(test_db):
     retrieved = service.get_all()[0]
 
     assert isinstance(retrieved, MajorValues)
-    assert retrieved.value_name == original.value_name
+    assert retrieved.common_name == original.common_name
     assert retrieved.description == original.description
     assert retrieved.priority == original.priority
     assert retrieved.life_domain == original.life_domain
@@ -215,7 +216,7 @@ def test_values_id_roundtrip(test_db):
 
     # Create and save a value (no ID initially)
     value = Values(
-        value_name="Test Value with ID",
+        common_name="Test Value with ID",
         description="Testing ID persistence",
         priority=PriorityLevel(25)
     )
@@ -241,7 +242,7 @@ def test_values_update(test_db):
 
     # Create and save a value
     value = MajorValues(
-        value_name="Original Value",
+        common_name="Original Value",
         description="Original description",
         priority=PriorityLevel(10),
         life_domain="Testing",

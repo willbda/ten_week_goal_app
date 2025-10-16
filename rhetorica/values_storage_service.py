@@ -1,132 +1,75 @@
 """
 Values storage service - handles translation between Values entities and database storage.
 
-Extracted from storage_service.py on 2025-10-13 for better organization.
-Written by Claude Code on 2025-10-13.
+Refactored for Pythonic clarity on 2025-10-16 by Claude Code.
 """
 
-import json
-from typing import Optional, Union, List
+from typing import Optional, List, Union, TYPE_CHECKING
 from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas, PriorityLevel
+
 from rhetorica.storage_service import StorageService
 
-# Type alias for Values hierarchy
-ValuesType = Union[Values, MajorValues, HighestOrderValues, LifeAreas]
+# Module-level constant: Maps incentive_type strings to entity classes
+# Used for polymorphic deserialization in _from_dict()
+_CLASS_MAP = {
+    'major': MajorValues,
+    'highest_order': HighestOrderValues,
+    'life_area': LifeAreas,
+    'general': Values
+}
 
 
 class ValuesStorageService(StorageService):
     """
     Handles translation between Values/MajorValues/HighestOrderValues/LifeAreas and database storage.
 
-    Manages polymorphic values hierarchy by storing value_type and reconstructing
-    the appropriate class on retrieval.
+    Manages polymorphic values hierarchy by storing incentive_type and reconstructing
+    the appropriate class on retrieval using the _CLASS_MAP.
     """
 
-    table_name = 'personal_values'  # 'values' is SQL reserved keyword
-
-    # Constructor registry: maps type strings to constructor lambdas
-    # Eliminates if-elif chain in _from_dict()
-    _CONSTRUCTORS = {
-        'major': lambda data, priority, alignment_guidance, value_id: MajorValues(
-            value_name=data['value_name'],
-            description=data['description'],
-            priority=priority,
-            life_domain=data.get('life_domain', 'General'),
-            alignment_guidance=alignment_guidance,
-            id=value_id
-        ),
-        'highest_order': lambda data, priority, alignment_guidance, value_id: HighestOrderValues(
-            value_name=data['value_name'],
-            description=data['description'],
-            priority=priority,
-            life_domain=data.get('life_domain', 'General'),
-            id=value_id
-        ),
-        'life_area': lambda data, priority, alignment_guidance, value_id: LifeAreas(
-            value_name=data['value_name'],
-            description=data['description'],
-            priority=priority,
-            life_domain=data.get('life_domain', 'General'),
-            id=value_id
-        ),
-        'general': lambda data, priority, alignment_guidance, value_id: Values(
-            value_name=data['value_name'],
-            description=data['description'],
-            priority=priority,
-            life_domain=data.get('life_domain', 'General'),
-            id=value_id
-        )
-    }
+    table_name = 'personal_values'
 
     def _to_dict(self, entity: Union[Values, MajorValues, HighestOrderValues, LifeAreas]) -> dict:
         """
         Convert any Values subclass to dict for storage.
 
-        Uses entity.incentive_type for type discrimination (no isinstance checks needed).
-        Handles alignment_guidance flexibly (can be dict, str, or None).
-        Includes ID only if present (for updates).
+        Uses generic serializer with json_encode for database compatibility.
+        Field names match 1:1 with database columns (no renaming needed).
         """
-        value = entity
+        from rhetorica.serializers import serialize
 
-        # Handle alignment_guidance - only MajorValues has this attribute
-        alignment_guidance = None
-        if isinstance(value, MajorValues) and value.alignment_guidance:
-            if isinstance(value.alignment_guidance, dict):
-                alignment_guidance = json.dumps(value.alignment_guidance)
-            else:
-                alignment_guidance = str(value.alignment_guidance)
-
-        result = {
-            'value_name': value.value_name,
-            'description': value.description,
-            'value_type': value.incentive_type,  # Entity knows its own type!
-            'priority': int(value.priority),
-            'life_domain': value.life_domain,
-            'alignment_guidance': alignment_guidance
-        }
-
-        # Include ID only if entity has one (stored entities)
-        if value.id is not None:
-            result['id'] = value.id
-
-        return result
+        # Use serializer with json_encode=True for database storage
+        # Field names in dataclass match DB columns exactly
+        return serialize(entity, include_type=False, json_encode=True)
 
     def _from_dict(self, data: dict) -> Union[Values, MajorValues, HighestOrderValues, LifeAreas]:
         """
         Reconstruct appropriate Values subclass from stored dict.
 
-        Uses constructor registry to eliminate if-elif chain.
-        Parses alignment_guidance from JSON if it looks like JSON, otherwise keeps as text.
-        Includes ID from database.
+        Uses deserialize with polymorphic class selection based on incentive_type.
+        Field names match 1:1 with database columns (no renaming needed).
         """
-        value_type = data.get('value_type', 'general')
-        priority = PriorityLevel(data.get('priority', 50))
-        value_id = data.get('id')  # Extract ID from stored record
+        from rhetorica.serializers import deserialize
 
-        # Parse alignment_guidance - try JSON first, fall back to text
-        alignment_guidance = None
-        if data.get('alignment_guidance'):
-            try:
-                alignment_guidance = json.loads(data['alignment_guidance'])
-            except (json.JSONDecodeError, TypeError):
-                alignment_guidance = data['alignment_guidance']
+        # Determine which class to deserialize to based on incentive_type
+        incentive_type = data.get('incentive_type', 'general')
+        entity_class = _CLASS_MAP.get(incentive_type, Values)
 
-        # Use constructor registry for clean type dispatch
-        constructor = self._CONSTRUCTORS.get(value_type, self._CONSTRUCTORS['general'])
-        return constructor(data, priority, alignment_guidance, value_id)
+        # Use deserialize with json_decode=True to parse alignment_guidance
+        return deserialize(data, entity_class, json_decode=True)
 
     def get_all(
         self,
         type_filter: Optional[str] = None,
         domain_filter: Optional[str] = None
-    ) -> List[ValuesType]:
+    ) -> List[Union[Values, MajorValues, HighestOrderValues, LifeAreas]]:
         """
         Get all values with optional type and domain filtering.
 
         Filtering at storage layer prevents presentation layers from reimplementing.
 
         Args:
-            type_filter: Filter by incentive_type ('major', 'highest_order', 'life_area', 'general')
+            type_filter: Filter by class name ('Values', 'MajorValues', 'HighestOrderValues', 'LifeAreas')
             domain_filter: Filter by life_domain
 
         Returns:
@@ -135,7 +78,7 @@ class ValuesStorageService(StorageService):
         # Build database filters
         filters = {}
         if type_filter:
-            filters['value_type'] = type_filter.lower()
+            filters['type'] = type_filter  # Now uses class name, not incentive_type
         if domain_filter:
             filters['life_domain'] = domain_filter
 
@@ -143,167 +86,81 @@ class ValuesStorageService(StorageService):
         return super().get_all(filters=filters if filters else None)
 
     @staticmethod
-    def create_major_value(
-        value_name: str,
+    def create_value(
+        incentive_type: str,
+        common_name: str,
         description: str,
-        priority: PriorityLevel,
+        priority: Optional[Union[int, 'PriorityLevel']] = None,
         life_domain: str = 'General',
         alignment_guidance: Optional[str] = None
-    ) -> MajorValues:
+    ) -> Union[Values, MajorValues, HighestOrderValues, LifeAreas]:
         """
-        Create a MajorValue - actionable value requiring regular tracking.
+        Factory method to create the appropriate Value subclass based on incentive_type.
 
-        MajorValues are commitments that should show up in actions and goals.
-        It should be a concern if MajorValues are not reflected in tracked activities.
+        This keeps the interface layer free from business logic about class selection.
+        The rhetorica layer handles:
+        - Translation from type string to concrete class
+        - Type conversion (int → PriorityLevel)
+        - Default priority values per type
 
         Args:
-            value_name: Value name (e.g., "Health", "Family")
+            incentive_type: Type of value ('major', 'highest_order', 'life_area', 'general')
+            common_name: Value name
             description: What this value means
-            priority: Priority level (1 = highest, 100 = lowest)
+            priority: Priority level (int or PriorityLevel). If None, uses type-specific defaults.
             life_domain: Life domain categorization (default: 'General')
-            alignment_guidance: How this value shows up in actions/goals
+            alignment_guidance: How this value shows up (MajorValues only)
 
         Returns:
-            MajorValues instance
+            Appropriate Values subclass instance
 
-        Example:
-            >>> value = ValuesStorageService.create_major_value(
-            ...     value_name='Health',
-            ...     description='Physical and mental wellbeing',
-            ...     priority=PriorityLevel(5),
-            ...     life_domain='Personal',
-            ...     alignment_guidance='Exercise 3x/week, sleep 8hrs'
-            ... )
-            >>> isinstance(value, MajorValues)
-            True
-
-        Written by Claude Code on 2025-10-13.
+        Raises:
+            ValueError: If incentive_type is invalid or priority is out of range
         """
-        return MajorValues(
-            value_name=value_name,
-            description=description,
-            priority=priority,
-            life_domain=life_domain,
-            alignment_guidance=alignment_guidance
-        )
 
-    @staticmethod
-    def create_highest_order_value(
-        value_name: str,
-        description: str,
-        priority: PriorityLevel = PriorityLevel(1),
-        life_domain: str = 'General'
-    ) -> HighestOrderValues:
-        """
-        Create a HighestOrderValue - abstract philosophical value.
+        # Handle priority conversion and defaults
+        if priority is None:
+            # Type-specific defaults
+            defaults = {
+                'major': 1,
+                'highest_order': 1,
+                'life_area': 40,
+                'general': 50
+            }
+            priority = PriorityLevel(defaults.get(incentive_type, 50))
+        elif isinstance(priority, int):
+            # Convert int to PriorityLevel (validates range)
+            priority = PriorityLevel(priority)
+        # else: already a PriorityLevel, use as-is
 
-        HighestOrderValues are high-level concepts not actionable in a daily or
-        monthly sense. They provide meaning and context but aren't tracked directly.
-
-        Args:
-            value_name: Value name (e.g., "Flourishing", "Excellence")
-            description: What this value means
-            priority: Priority level (default: 1 = highest)
-            life_domain: Life domain categorization (default: 'General')
-
-        Returns:
-            HighestOrderValues instance
-
-        Example:
-            >>> value = ValuesStorageService.create_highest_order_value(
-            ...     value_name='Flourishing',
-            ...     description='Living a meaningful, excellent life',
-            ...     priority=PriorityLevel(1)
-            ... )
-            >>> isinstance(value, HighestOrderValues)
-            True
-
-        Written by Claude Code on 2025-10-13.
-        """
-        return HighestOrderValues(
-            value_name=value_name,
-            description=description,
-            priority=priority,
-            life_domain=life_domain
-        )
-
-    @staticmethod
-    def create_life_area(
-        value_name: str,
-        description: str,
-        priority: PriorityLevel = PriorityLevel(40),
-        life_domain: str = 'General'
-    ) -> LifeAreas:
-        """
-        Create a LifeArea - organizational domain (importantly, NOT a value).
-
-        LifeAreas help explain why certain goals matter without implying they are
-        affirmed or recognized as values. They provide structure for organizing
-        activities without evaluative judgment.
-
-        Args:
-            value_name: Area name (e.g., "Career", "Family", "Hobbies")
-            description: What this area encompasses
-            priority: Priority level (default: 40 = mid-range)
-            life_domain: Life domain categorization (default: 'General')
-
-        Returns:
-            LifeAreas instance
-
-        Example:
-            >>> area = ValuesStorageService.create_life_area(
-            ...     value_name='Career',
-            ...     description='Professional development and work',
-            ...     priority=PriorityLevel(20)
-            ... )
-            >>> isinstance(area, LifeAreas)
-            True
-
-        Written by Claude Code on 2025-10-13.
-        """
-        return LifeAreas(
-            value_name=value_name,
-            description=description,
-            priority=priority,
-            life_domain=life_domain
-        )
-
-    @staticmethod
-    def create_value(
-        value_name: str,
-        description: str,
-        priority: PriorityLevel = PriorityLevel(50),
-        life_domain: str = 'General'
-    ) -> Values:
-        """
-        Create a general Value - aspirational but not primary focus.
-
-        General Values are things you value and affirm, but not necessarily
-        tracked regularly in actions and goals. More diffuse than MajorValues.
-
-        Args:
-            value_name: Value name
-            description: What this value means
-            priority: Priority level (default: 50 = mid-range)
-            life_domain: Life domain categorization (default: 'General')
-
-        Returns:
-            Values instance
-
-        Example:
-            >>> value = ValuesStorageService.create_value(
-            ...     value_name='Kindness',
-            ...     description='Being kind to others',
-            ...     priority=PriorityLevel(30)
-            ... )
-            >>> isinstance(value, Values)
-            True
-
-        Written by Claude Code on 2025-10-13.
-        """
-        return Values(
-            value_name=value_name,
-            description=description,
-            priority=priority,
-            life_domain=life_domain
-        )
+        if incentive_type == 'major':
+            return MajorValues(
+                common_name=common_name,
+                description=description,
+                priority=priority,
+                life_domain=life_domain,
+                alignment_guidance=alignment_guidance
+            )
+        elif incentive_type == 'highest_order':
+            return HighestOrderValues(
+                common_name=common_name,
+                description=description,
+                priority=priority,
+                life_domain=life_domain
+            )
+        elif incentive_type == 'life_area':
+            return LifeAreas(
+                common_name=common_name,
+                description=description,
+                priority=priority,
+                life_domain=life_domain
+            )
+        elif incentive_type == 'general':
+            return Values(
+                common_name=common_name,
+                description=description,
+                priority=priority,
+                life_domain=life_domain
+            )
+        else:
+            raise ValueError(f"Invalid incentive_type: {incentive_type}. Must be one of: major, highest_order, life_area, general")
