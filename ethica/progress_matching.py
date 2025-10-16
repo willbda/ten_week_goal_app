@@ -98,13 +98,13 @@ def matches_on_unit(action: Action, goal: Goal) -> Tuple[bool, Optional[str], Op
         - matched_key: The measurement key that matched (e.g., "distance_km")
         - value: The measurement value (e.g., 5.0)
     """
-    if not action.measurements or not goal.measurement_unit:
+    if not action.measurement_units_by_amount or not goal.measurement_unit:
         return (False, None, None)
 
     goal_unit = goal.measurement_unit.lower().replace(' ', '_')
 
     # Look for measurement keys that contain the goal unit
-    for measurement_key, value in action.measurements.items():
+    for measurement_key, value in action.measurement_units_by_amount.items():
         if goal_unit in measurement_key.lower():
             return (True, measurement_key, value)
 
@@ -157,7 +157,7 @@ def matches_with_how_goal_is_actionable(action: Action, goal: Goal) -> Tuple[boo
     except (json.JSONDecodeError, AttributeError, TypeError) as e:
         # Malformed JSON - log warning and fall back to unit matching
         logger.warning(
-            f"Malformed how_goal_is_actionable JSON for goal '{goal.description[:50]}...': {e}. "
+            f"Malformed how_goal_is_actionable JSON for goal '{goal.common_name[:50]}...': {e}. "
             f"Value was: {goal.how_goal_is_actionable!r}. Falling back to simple unit matching."
         )
         unit_match, _, contribution = matches_on_unit(action, goal)
@@ -166,7 +166,7 @@ def matches_with_how_goal_is_actionable(action: Action, goal: Goal) -> Tuple[boo
     if not allowed_units or not required_keywords:
         # Empty how_goal_is_actionable hints - log and fall back to unit matching
         logger.debug(
-            f"Empty how_goal_is_actionable hints for goal '{goal.description[:50]}...'. "
+            f"Empty how_goal_is_actionable hints for goal '{goal.common_name[:50]}...'. "
             f"Units: {allowed_units}, Keywords: {required_keywords}. "
             f"Falling back to simple unit matching."
         )
@@ -174,12 +174,12 @@ def matches_with_how_goal_is_actionable(action: Action, goal: Goal) -> Tuple[boo
         return (unit_match, contribution)
 
     # Check 1: Does action have measurement matching allowed units?
-    if not action.measurements:
+    if not action.measurement_units_by_amount:
         return (False, None)
 
     # Check for exact unit match (case-insensitive)
     contribution = None
-    for key, value in action.measurements.items():
+    for key, value in action.measurement_units_by_amount.items():
         if key.lower() in allowed_units:
             contribution = value
             break
@@ -188,11 +188,11 @@ def matches_with_how_goal_is_actionable(action: Action, goal: Goal) -> Tuple[boo
         return (False, None)
 
     # Check 2: Does action description contain required keywords?
-    if not action.description:
+    if not action.common_name:
         return (False, None)
 
     # Check if any keyword appears in description (substring, case-insensitive)
-    action_lower = action.description.lower()
+    action_lower = action.common_name.lower()
     keyword_matched = any(kw in action_lower for kw in required_keywords)
 
     if not keyword_matched:

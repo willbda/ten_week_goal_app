@@ -77,7 +77,7 @@ def get_committed_goals(term: GoalTerm, all_goals: List[Goal]) -> List[Goal]:
 
     for goal in all_goals:
         # Explicit assignment (goal ID in term.term_goal_ids list)
-        if hasattr(goal, 'id') and goal.id in term.term_goal_ids:
+        if hasattr(goal, 'id') and goal.id in term.term_goals_by_id:
             committed.append(goal)
 
     return committed
@@ -96,7 +96,7 @@ def get_overlapping_goals(term: GoalTerm, all_goals: List[Goal]) -> List[Goal]:
     Returns:
         List of goals with date overlap (excluding already-committed goals)
     """
-    committed_ids = set(term.term_goal_ids)
+    committed_ids = set(term.term_goals_by_id)
     overlapping = []
 
     for goal in all_goals:
@@ -315,7 +315,7 @@ def get_unassigned_goals(all_goals: List[Goal], all_terms: List[GoalTerm]) -> Li
     # Collect all goal IDs that are assigned to any term
     assigned_ids = set()
     for term in all_terms:
-        assigned_ids.update(term.term_goal_ids)
+        assigned_ids.update(term.term_goals_by_id)
 
     # Return goals whose IDs are not in the assigned set
     unassigned = []

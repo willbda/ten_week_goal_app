@@ -379,11 +379,11 @@ def add_goal_to_term(term_id: int):
             return jsonify({'error': f'Term {term_id} not found'}), 404
 
         # Check if goal already assigned
-        if goal_id in term.term_goal_ids:
+        if goal_id in term.term_goals_by_id:
             return jsonify({'error': f'Goal {goal_id} already assigned to term {term_id}'}), 400
 
         # Add goal to term
-        term.term_goal_ids.append(goal_id)
+        term.term_goals_by_id.append(goal_id)
 
         # Save updated term
         term_service.save(term, notes=f'Added goal {goal_id} via API')
@@ -427,11 +427,11 @@ def remove_goal_from_term(term_id: int, goal_id: int):
             return jsonify({'error': f'Term {term_id} not found'}), 404
 
         # Check if goal is assigned to this term
-        if goal_id not in term.term_goal_ids:
+        if goal_id not in term.term_goals_by_id:
             return jsonify({'error': f'Goal {goal_id} not assigned to term {term_id}'}), 404
 
         # Remove goal from term
-        term.term_goal_ids.remove(goal_id)
+        term.term_goals_by_id.remove(goal_id)
 
         # Save updated term
         term_service.save(term, notes=f'Removed goal {goal_id} via API')

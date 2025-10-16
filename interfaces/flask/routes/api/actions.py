@@ -50,7 +50,7 @@ def get_actions():
         end_date_str = request.args.get('end_date')
 
         if has_measurements:
-            actions = [a for a in actions if a.measurements is not None]
+            actions = [a for a in actions if a.measurement_units_by_amount is not None]
 
         if has_duration:
             actions = [a for a in actions if a.duration_minutes is not None]
@@ -312,7 +312,7 @@ def get_action_goals(action_id: int):
         for match in matches:
             matches_data.append({
                 'goal_id': match.goal.id,
-                'goal_description': match.goal.description,
+                'goal_description': match.goal.common_name,
                 'contribution': match.contribution,
                 'assignment_method': match.assignment_method,
                 'confidence': match.confidence
