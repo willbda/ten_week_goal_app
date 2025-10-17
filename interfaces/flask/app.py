@@ -31,9 +31,11 @@ def create_app(config: dict | None = None):
     # Register blueprints
     from interfaces.flask.routes.api import api_bp
     from interfaces.flask.routes.ui_values import ui_values_bp
+    from interfaces.flask.routes.ui_terms import ui_terms_bp
 
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(ui_values_bp)
+    app.register_blueprint(ui_terms_bp)
 
     # Home route
     @app.route('/')

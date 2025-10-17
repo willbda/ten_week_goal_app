@@ -937,20 +937,20 @@ cli.py progress [--verbose]
 - RESTful endpoints for Goals, Actions, Values, Terms (4 complete APIs)
 - Application factory pattern (flask_main.py)
 - Serialization infrastructure (rhetorica/serializers.py)
-- Field name standardization (logtime → log_time, name → value_name)
+- Field name standardization (logtime → log_time, name → common_name)
 - Clean imports (removed sys.path manipulation from route files)
 - 8 new term-action filtering tests (90 total passing)
 
 **Architectural decisions:**
 - Entry point scripts handle path setup (flask_main.py, cli.py)
 - Route files have clean imports (no sys.path manipulation)
-- serialize/deserialize utilities use entity __serialize__ declarations
+- serialize/deserialize utilities use entity constitutive_parts declarations
 - API routes are pure orchestration (delegate to ethica + rhetorica)
 - Blueprint organization mirrors domain layer structure
 
 **Bug fixes:**
 - Fixed Action.logtime → Action.log_time throughout codebase
-- Fixed Values.name → Values.value_name in CLI and formatters
+- Fixed Values.name → Values.common_name in CLI and formatters
 - Fixed LifeTime to use datetime instead of date for consistency
 
 **Infrastructure improvements:**

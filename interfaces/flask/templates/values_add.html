@@ -13,20 +13,20 @@
 
 <form method="POST" action="/values/add">
     <div>
-        <label for="value_type">Value Type:</label>
-        <select id="value_type" name="value_type" required onchange="toggleAlignmentGuidance()">
+        <label for="incentive_type">Value Type:</label>
+        <select id="incentive_type" name="incentive_type" required onchange="toggleAlignmentGuidance()">
             <option value="">-- Select Type --</option>
             <option value="general">General Value</option>
-            <option value="major">Major Value (actionable, tracked regularly)</option>
-            <option value="highest_order">Highest Order Value (philosophical)</option>
-            <option value="life_area">Life Area (domain, not a value)</option>
+            <option value="major">Major Value</option>
+            <option value="highest_order">Highest Order Value</option>
+            <option value="life_area">Life Area</option>
         </select>
         <p><small>Major Values require regular tracking. General Values are aspirational. Life Areas are organizational domains.</small></p>
     </div>
 
     <div>
-        <label for="value_name">Name:</label>
-        <input type="text" id="value_name" name="value_name" required placeholder="e.g., Health, Growth, Family">
+        <label for="common_name">Name:</label>
+        <input type="text" id="common_name" name="common_name" required placeholder="What do you call this value?">
     </div>
 
     <div>
@@ -41,15 +41,15 @@
     </div>
 
     <div>
-        <label for="priority">Priority (1-100):</label>
-        <input type="number" id="priority" name="priority" min="1" max="100" placeholder="1 = highest priority">
-        <p><small>Lower numbers = higher priority. Defaults: Major/Highest Order = 1, Life Area = 40, General = 50</small></p>
+        <label for="priority">Priority:</label>
+        <input type="number" id="priority" name="priority" min="1" max="100">
+        <p><small>1 is highest priority for you and 100 is lowest priority</small></p>
     </div>
 
     <div id="alignment_guidance_section" style="display: none;">
         <label for="alignment_guidance">Alignment Guidance:</label>
         <textarea id="alignment_guidance" name="alignment_guidance" rows="3" placeholder="How does this value show up in your actions and goals?"></textarea>
-        <p><small>For Major Values only: Describe how this value manifests in your life</small></p>
+        <p><small>For Major Values only: Describe how this value is actionable for you</small></p>
     </div>
 
     <div>
@@ -60,7 +60,7 @@
 
 <script>
 function toggleAlignmentGuidance() {
-    const valueType = document.getElementById('value_type').value;
+    const valueType = document.getElementById('incentive_type').value;
     const alignmentSection = document.getElementById('alignment_guidance_section');
 
     if (valueType === 'major') {

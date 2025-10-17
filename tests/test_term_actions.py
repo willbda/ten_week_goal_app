@@ -18,7 +18,7 @@ def test_get_actions_in_term_basic():
     """Test that actions within term boundaries are matched."""
     term_start = datetime(2025, 10, 1, 0, 0, 0)
     term_end = datetime(2025, 10, 31, 23, 59, 59)
-    term = GoalTerm(term_number=1, start_date=term_start, end_date=term_end)
+    term = GoalTerm(common_name="Term 1", term_number=1, start_date=term_start, end_date=term_end)
 
     # Action inside term
     action_inside = Action("Did something")
@@ -44,7 +44,7 @@ def test_get_actions_in_term_boundary_conditions():
     """Test actions exactly at term boundaries."""
     term_start = datetime(2025, 10, 1, 0, 0, 0)
     term_end = datetime(2025, 10, 31, 23, 59, 59)
-    term = GoalTerm(term_number=1, start_date=term_start, end_date=term_end)
+    term = GoalTerm(common_name="Term 1", term_number=1, start_date=term_start, end_date=term_end)
 
     # Action at exact start
     action_at_start = Action("Started right on time")
@@ -64,7 +64,7 @@ def test_get_actions_in_term_just_outside_boundaries():
     """Test actions just outside term boundaries are excluded."""
     term_start = datetime(2025, 10, 1, 0, 0, 0)
     term_end = datetime(2025, 10, 31, 23, 59, 59)
-    term = GoalTerm(term_number=1, start_date=term_start, end_date=term_end)
+    term = GoalTerm(common_name="Term 1", term_number=1, start_date=term_start, end_date=term_end)
 
     # Action one second before start
     action_before = Action("Too early")
@@ -84,7 +84,7 @@ def test_get_actions_in_term_empty_list():
     """Test with no actions returns empty list."""
     term_start = datetime(2025, 10, 1, 0, 0, 0)
     term_end = datetime(2025, 10, 31, 23, 59, 59)
-    term = GoalTerm(term_number=1, start_date=term_start, end_date=term_end)
+    term = GoalTerm(common_name="Term 1", term_number=1, start_date=term_start, end_date=term_end)
 
     matched = get_actions_in_term(term, [])
 
@@ -95,7 +95,7 @@ def test_get_actions_in_term_no_log_time():
     """Test actions without log_time are skipped."""
     term_start = datetime(2025, 10, 1, 0, 0, 0)
     term_end = datetime(2025, 10, 31, 23, 59, 59)
-    term = GoalTerm(term_number=1, start_date=term_start, end_date=term_end)
+    term = GoalTerm(common_name="Term 1", term_number=1, start_date=term_start, end_date=term_end)
 
     action_with_time = Action("Has time")
     action_with_time.log_time = datetime(2025, 10, 15, 14, 30, 0)
@@ -131,7 +131,7 @@ def test_get_actions_in_term_with_microseconds():
     """Test that microsecond-level precision works correctly."""
     term_start = datetime(2025, 10, 1, 0, 0, 0, 0)
     term_end = datetime(2025, 10, 31, 23, 59, 59, 999999)
-    term = GoalTerm(term_number=1, start_date=term_start, end_date=term_end)
+    term = GoalTerm(common_name="Term 1", term_number=1, start_date=term_start, end_date=term_end)
 
     # Action with microseconds
     action = Action("Microsecond precision")
@@ -147,7 +147,7 @@ def test_get_actions_in_term_multiple_matches():
     """Test multiple actions within term are all matched."""
     term_start = datetime(2025, 10, 1, 0, 0, 0)
     term_end = datetime(2025, 10, 31, 23, 59, 59)
-    term = GoalTerm(term_number=1, start_date=term_start, end_date=term_end)
+    term = GoalTerm(common_name="Term 1", term_number=1, start_date=term_start, end_date=term_end)
 
     actions = []
     for day in range(1, 31):  # Create 30 actions (one per day)

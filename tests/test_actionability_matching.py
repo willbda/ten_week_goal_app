@@ -25,10 +25,10 @@ from ethica.progress_matching import (
 def test_matches_with_how_goal_is_actionable_success():
     """Test successful match with how_goal_is_actionable (unit + keyword)"""
     action = Action("Yoga with Jessica")
-    action.measurements = {"minutes": 30.0}
+    action.measurement_units_by_amount = {"minutes": 30.0}
 
     goal = SmartGoal(
-        description="90 minutes weekly of yoga",
+        common_name="90 minutes weekly of yoga",
         measurement_unit="minutes",
         measurement_target=900.0,
         start_date=datetime(2025, 7, 13),
@@ -47,10 +47,10 @@ def test_matches_with_how_goal_is_actionable_wrong_keyword():
     """Test failed match due to wrong keyword (unit matches but keyword doesn't)"""
     # Yoga action trying to match writing goal
     action = Action("Yoga with Jessica")
-    action.measurements = {"minutes": 30.0}
+    action.measurement_units_by_amount = {"minutes": 30.0}
 
     goal = SmartGoal(
-        description="Write 3x30 minutes weekly",
+        common_name="Write 3x30 minutes weekly",
         measurement_unit="minutes",
         measurement_target=900.0,
         start_date=datetime(2025, 7, 13),
@@ -68,10 +68,10 @@ def test_matches_with_how_goal_is_actionable_wrong_keyword():
 def test_matches_with_how_goal_is_actionable_wrong_unit():
     """Test failed match due to wrong unit"""
     action = Action("Movement: 5km run")
-    action.measurements = {"km": 5.0}
+    action.measurement_units_by_amount = {"km": 5.0}
 
     goal = SmartGoal(
-        description="Spend 30 hours learning",
+        common_name="Spend 30 hours learning",
         measurement_unit="hours",
         measurement_target=30.0,
         start_date=datetime(2025, 7, 13),
@@ -89,10 +89,10 @@ def test_matches_with_how_goal_is_actionable_wrong_unit():
 def test_matches_with_how_goal_is_actionable_multiple_units():
     """Test matching with multiple allowed units"""
     action = Action("Movement: 3.1 miles run")
-    action.measurements = {"miles": 3.1}
+    action.measurement_units_by_amount = {"miles": 3.1}
 
     goal = SmartGoal(
-        description="Run 120km",
+        common_name="Run 120km",
         measurement_unit="km",
         measurement_target=120.0,
         start_date=datetime(2025, 4, 12),
@@ -116,17 +116,17 @@ def test_infer_matches_prevents_false_positives():
     """
     # Create actions
     yoga_action = Action("Yoga with Jessica")
-    yoga_action.measurements = {"minutes": 30.0}
+    yoga_action.measurement_units_by_amount = {"minutes": 30.0}
     yoga_action.log_time = datetime(2025, 7, 15)
 
     # Use "write" explicitly to match the keyword
     writing_action = Action("write about my goals and revise earlier drafts")
-    writing_action.measurements = {"minutes": 30.0}
+    writing_action.measurement_units_by_amount = {"minutes": 30.0}
     writing_action.log_time = datetime(2025, 7, 16)
 
     # Create goals
     movement_goal = SmartGoal(
-        description="90 minutes weekly of yoga, pilates, core",
+        common_name="90 minutes weekly of yoga, pilates, core",
         measurement_unit="minutes",
         measurement_target=900.0,
         start_date=datetime(2025, 7, 13),
@@ -137,7 +137,7 @@ def test_infer_matches_prevents_false_positives():
     )
 
     writing_goal = SmartGoal(
-        description="write, revise 3x30 minutes weekly",
+        common_name="write, revise 3x30 minutes weekly",
         measurement_unit="minutes",
         measurement_target=900.0,
         start_date=datetime(2025, 7, 13),
@@ -172,15 +172,15 @@ def test_running_vs_walking_distinction():
     Both have km measurements, but keywords should distinguish them.
     """
     running_action = Action("Movement: 5km run")
-    running_action.measurements = {"km": 5.0}
+    running_action.measurement_units_by_amount = {"km": 5.0}
     running_action.log_time = datetime(2025, 4, 15)
 
     walking_action = Action("Walked 3km to the store")
-    walking_action.measurements = {"km": 3.0}
+    walking_action.measurement_units_by_amount = {"km": 3.0}
     walking_action.log_time = datetime(2025, 4, 16)
 
     running_goal = SmartGoal(
-        description="Run 120km in 10 weeks",
+        common_name="Run 120km in 10 weeks",
         measurement_unit="km",
         measurement_target=120.0,
         start_date=datetime(2025, 4, 12),
@@ -203,12 +203,12 @@ def test_fallback_to_unit_matching_without_how_goal_is_actionable():
     from categoriae.goals import Goal
 
     action = Action("Some activity")
-    action.measurements = {"hours": 2.0}
+    action.measurement_units_by_amount = {"hours": 2.0}
     action.log_time = datetime(2025, 7, 15)
 
     # Use base Goal class which allows empty how_goal_is_actionable
     goal = Goal(
-        description="Generic goal",
+        common_name="Generic goal",
         measurement_unit="hours",
         measurement_target=10.0,
         start_date=datetime(2025, 7, 13),

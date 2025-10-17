@@ -26,7 +26,7 @@ from ethica.progress_aggregation import (
 def sample_goal():
     """Create a standard goal for testing."""
     return Goal(
-        description="Run 120km",
+        common_name="Run 120km",
         measurement_unit="km",
         measurement_target=120.0,
         start_date=datetime(2025, 4, 12),
@@ -40,7 +40,7 @@ def sample_actions():
     actions = []
     for distance in [5.0, 10.0, 15.0, 20.0]:
         action = Action(f"Run {distance}km")
-        action.measurements = {"km": distance}
+        action.measurement_units_by_amount = {"km": distance}
         actions.append(action)
     return actions
 
@@ -53,7 +53,7 @@ def sample_matches(sample_goal, sample_actions):
         match = ActionGoalRelationship(
             action=action,
             goal=sample_goal,
-            contribution=action.measurements["km"],
+            contribution=action.measurement_units_by_amount["km"],
             assignment_method="auto_inferred",
             confidence=0.9
         )
@@ -94,7 +94,7 @@ def test_aggregate_complete_goal(sample_goal, sample_actions):
     matches = []
     for i in range(4):
         action = sample_actions[i]
-        action.measurements = {"km": 30.0}  # 4 × 30 = 120
+        action.measurement_units_by_amount = {"km": 30.0}  # 4 × 30 = 120
         match = ActionGoalRelationship(
             action=action,
             goal=sample_goal,
@@ -118,7 +118,7 @@ def test_aggregate_overachieved_goal(sample_goal, sample_actions):
     matches = []
     for i in range(4):
         action = sample_actions[i]
-        action.measurements = {"km": 40.0}  # 4 × 40 = 160 (>120)
+        action.measurement_units_by_amount = {"km": 40.0}  # 4 × 40 = 160 (>120)
         match = ActionGoalRelationship(
             action=action,
             goal=sample_goal,
@@ -142,13 +142,13 @@ def test_aggregate_overachieved_goal(sample_goal, sample_actions):
 def test_aggregate_goal_with_no_target():
     """Test progress for goal without measurement target."""
     goal = Goal(
-        description="Do yoga regularly",
+        common_name="Do yoga regularly",
         measurement_unit="sessions",
         measurement_target=None  # No target set
     )
 
     action = Action("Yoga session")
-    action.measurements = {"sessions": 1.0}
+    action.measurement_units_by_amount = {"sessions": 1.0}
     match = ActionGoalRelationship(
         action=action,
         goal=goal,
@@ -217,7 +217,7 @@ def test_goal_progress_properties(sample_goal, sample_matches):
 def test_unit_property_defaults_to_units():
     """Test unit property when goal has no measurement_unit."""
     goal = Goal(
-        description="Generic goal",
+        common_name="Generic goal",
         measurement_unit=None,
         measurement_target=10.0
     )
@@ -231,14 +231,14 @@ def test_unit_property_defaults_to_units():
 
 def test_aggregate_all_goals():
     """Test batch processing of multiple goals."""
-    goal1 = Goal(description="Goal 1", measurement_unit="km", measurement_target=100.0)
-    goal2 = Goal(description="Goal 2", measurement_unit="hours", measurement_target=50.0)
+    goal1 = Goal(common_name="Goal 1", measurement_unit="km", measurement_target=100.0)
+    goal2 = Goal(common_name="Goal 2", measurement_unit="hours", measurement_target=50.0)
 
     action1 = Action("Action 1")
-    action1.measurements = {"km": 30.0}
+    action1.measurement_units_by_amount = {"km": 30.0}
 
     action2 = Action("Action 2")
-    action2.measurements = {"hours": 10.0}
+    action2.measurement_units_by_amount = {"hours": 10.0}
 
     matches = [
         ActionGoalRelationship(action=action1, goal=goal1, contribution=30.0,
@@ -256,12 +256,12 @@ def test_aggregate_all_goals():
 
 def test_aggregate_all_goals_with_no_matches():
     """Test batch processing when some goals have no matches."""
-    goal1 = Goal(description="Goal 1", measurement_unit="km", measurement_target=100.0)
-    goal2 = Goal(description="Goal 2", measurement_unit="hours", measurement_target=50.0)
+    goal1 = Goal(common_name="Goal 1", measurement_unit="km", measurement_target=100.0)
+    goal2 = Goal(common_name="Goal 2", measurement_unit="hours", measurement_target=50.0)
 
     # Only match for goal1
     action = Action("Action")
-    action.measurements = {"km": 30.0}
+    action.measurement_units_by_amount = {"km": 30.0}
     matches = [
         ActionGoalRelationship(action=action, goal=goal1, contribution=30.0,
                              assignment_method="auto_inferred", confidence=0.9)
@@ -291,7 +291,7 @@ def test_get_progress_summary_with_data(sample_goal, sample_matches):
     """Test summary statistics calculation."""
     # Create mix of complete and incomplete goals
     goal1 = sample_goal
-    goal2 = Goal(description="Goal 2", measurement_unit="hours", measurement_target=50.0)
+    goal2 = Goal(common_name="Goal 2", measurement_unit="hours", measurement_target=50.0)
 
     progress1 = aggregate_goal_progress(goal1, sample_matches)  # 41.67%
     progress2 = aggregate_goal_progress(goal2, [])  # 0%

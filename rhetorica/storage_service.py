@@ -7,9 +7,7 @@ Contents:
 - PolymorphicStorageService: Base for polymorphic entities
 - Values Storage: ValuesStorageService with type hierarchy
 
-Written by Claude Code on 2025-10-10
-Updated by Claude Code on 2025-10-11
-Consolidated with polymorphic storage on 2025-10-16
+
 """
 
 from abc import ABC

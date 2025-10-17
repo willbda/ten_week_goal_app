@@ -72,7 +72,7 @@ def test_render_compact_progress_bar():
 
 def test_render_goal_header():
     """Test goal header formatting."""
-    goal = Goal(description="Run 120km")
+    goal = Goal(common_name="Run 120km")
     header = render_goal_header(1, goal)
 
     assert "1. Run 120km" in header
@@ -93,7 +93,7 @@ def test_render_section_header():
 def test_render_progress_metrics_with_target():
     """Test metrics formatting for goal with target."""
     goal = Goal(
-        description="Run 120km",
+        common_name="Run 120km",
         measurement_unit="km",
         measurement_target=120.0
     )
@@ -117,7 +117,7 @@ def test_render_progress_metrics_with_target():
 def test_render_progress_metrics_complete():
     """Test metrics when goal is complete."""
     goal = Goal(
-        description="Run 120km",
+        common_name="Run 120km",
         measurement_unit="km",
         measurement_target=120.0
     )
@@ -137,7 +137,7 @@ def test_render_progress_metrics_complete():
 def test_render_progress_metrics_no_target():
     """Test metrics when goal has no target."""
     goal = Goal(
-        description="Generic goal",
+        common_name="Generic goal",
         measurement_unit=None,
         measurement_target=None
     )
@@ -159,7 +159,7 @@ def test_render_progress_metrics_no_target():
 def test_render_timeline_both_dates():
     """Test timeline with start and end dates."""
     goal = Goal(
-        description="Goal",
+        common_name="Goal",
         start_date=datetime(2025, 4, 12),
         end_date=datetime(2025, 6, 21)
     )
@@ -174,7 +174,7 @@ def test_render_timeline_both_dates():
 def test_render_timeline_only_end_date():
     """Test timeline with only end date."""
     goal = Goal(
-        description="Goal",
+        common_name="Goal",
         start_date=None,
         end_date=datetime(2025, 12, 31)
     )
@@ -189,7 +189,7 @@ def test_render_timeline_only_end_date():
 def test_render_timeline_no_dates():
     """Test timeline with no dates."""
     goal = Goal(
-        description="Goal",
+        common_name="Goal",
         start_date=None,
         end_date=None
     )
@@ -205,9 +205,9 @@ def test_render_action_summary():
     """Test formatting of single action."""
     action = Action("Run 5km")
     action.log_time = datetime(2025, 4, 15)
-    action.measurements = {"km": 5.0}
+    action.measurement_units_by_amount = {"km": 5.0}
 
-    goal = Goal(description="Run 120km", measurement_unit="km")
+    goal = Goal(common_name="Run 120km", measurement_unit="km")
 
     match = ActionGoalRelationship(
         action=action,
@@ -230,7 +230,7 @@ def test_render_action_summary_truncates_long_description():
     action = Action("A" * 100)  # Very long description
     action.log_time = datetime(2025, 4, 15)
 
-    goal = Goal(description="Goal", measurement_unit="units")
+    goal = Goal(common_name="Goal", measurement_unit="units")
 
     match = ActionGoalRelationship(
         action=action,
@@ -250,10 +250,10 @@ def test_render_action_list():
     """Test rendering list of actions."""
     actions = [Action(f"Action {i}") for i in range(10)]
     for action in actions:
-        action.measurements = {"units": 1.0}
+        action.measurement_units_by_amount = {"units": 1.0}
         action.log_time = datetime(2025, 4, 15)
 
-    goal = Goal(description="Goal", measurement_unit="units")
+    goal = Goal(common_name="Goal", measurement_unit="units")
 
     matches = [
         ActionGoalRelationship(
@@ -325,7 +325,7 @@ def test_complete_goal_rendering_workflow():
     """
     # Create goal with matches
     goal = Goal(
-        description="Run 120km",
+        common_name="Run 120km",
         measurement_unit="km",
         measurement_target=120.0,
         start_date=datetime(2025, 4, 12),
@@ -333,7 +333,7 @@ def test_complete_goal_rendering_workflow():
     )
 
     action = Action("Run 5km")
-    action.measurements = {"km": 5.0}
+    action.measurement_units_by_amount = {"km": 5.0}
     action.log_time = datetime(2025, 4, 15)
 
     match = ActionGoalRelationship(

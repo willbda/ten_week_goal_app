@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}List Terms - Ten Week Goal App{% endblock %}
+
+{% block header %}Terms List{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/terms">Terms</a> > List</p>
+{% endblock %}
+
+{% block content %}
+<h2>All Terms</h2>
+
+<div>
+    <a href="/terms/add">Add New Term</a>
+</div>
+
+<h3>Filter</h3>
+<form method="GET" action="/terms/list">
+    <label for="status_filter">Status:</label>
+    <select id="status_filter" name="status">
+        <option value="">All Terms</option>
+        <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
+        <option value="upcoming" {% if current_status == 'upcoming' %}selected{% endif %}>Upcoming</option>
+        <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Completed</option>
+    </select>
+
+    <button type="submit">Filter</button>
+    <a href="/terms/list">Clear</a>
+</form>
+
+{% if terms %}
+<h3>Results ({{ terms|length }})</h3>
+<table border="1" cellpadding="5">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Term #</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Theme</th>
+            <th>Goals</th>
+            <th>Days Remaining</th>
+            <th>Progress</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for term in terms %}
+        <tr>
+            <td>{{ term.id }}</td>
+            <td><strong>{{ term.term_number }}</strong></td>
+            <td>{{ term.start_date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ term.end_date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ term.theme if term.theme else '-' }}</td>
+            <td>{{ term.term_goal_ids|length }}</td>
+            <td>
+                {% set days = term.days_remaining() %}
+                {% if days > 0 %}
+                    {{ days }} days
+                {% elif term.is_active() %}
+                    Last day!
+                {% else %}
+                    Complete
+                {% endif %}
+            </td>
+            <td>
+                {% set progress = (term.progress_percentage() * 100) | int %}
+                {{ progress }}%
+            </td>
+            <td>
+                <a href="/terms/edit/{{ term.id }}">Edit</a> |
+                <form method="POST" action="/terms/delete/{{ term.id }}" style="display: inline;" onsubmit="return confirm('Delete this term?');">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% if term.reflection %}
+        <tr>
+            <td colspan="9" style="background-color: #f0f0f0; padding-left: 20px;">
+                <small><strong>Reflection:</strong> {{ term.reflection }}</small>
+            </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No terms found. <a href="/terms/add">Add your first term</a></p>
+{% endif %}
+
+{% endblock %}

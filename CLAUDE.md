@@ -212,7 +212,7 @@ tests/         - Test suite
 Tables are defined in `politica/schemas/`:
 - `actions.sql`: description, log_time, measurements (JSON), start_time, duration_minutes
 - `goals.sql`: description, measurement_target, measurement_unit, start_date, end_date, how_goal_is_relevant, how_goal_is_actionable, expected_term_length, created_at
-- `values.sql`: Polymorphic storage with value_name, value_type for class hierarchy, life_domain, priority, alignment_guidance
+- `values.sql`: Polymorphic storage with common_name, incentive_type for class hierarchy, life_domain, priority, alignment_guidance
 - `terms.sql`: term_number, start_date, end_date, theme, term_goal_ids (JSON array), reflection, created_at, updated_at
 - `action_goal_progress.sql`: Cached relationship projections (action_id, goal_id, match_strength, match_reasons JSON)
 - `archive.sql`: Stores deleted/updated records for audit trail
@@ -427,7 +427,7 @@ Logs are written to `logs/` directory (configured in config.toml)
 - ✅ RESTful endpoints for Goals, Actions, Values, Terms
 - ✅ Application factory pattern (flask_main.py)
 - ✅ Serialization infrastructure (rhetorica/serializers.py)
-- ✅ Field name standardization (logtime → log_time, name → value_name)
+- ✅ Field name standardization (logtime → log_time, name → common_name)
 - ✅ Clean imports (removed unnecessary sys.path manipulation)
 - ✅ 8 new term-action filtering tests (90 total passing)
 

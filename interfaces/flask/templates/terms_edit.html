@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Term - Ten Week Goal App{% endblock %}
+
+{% block header %}Edit Term{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/terms">Terms</a> > <a href="/terms/list">List</a> > Edit</p>
+{% endblock %}
+
+{% block content %}
+<h2>Edit Term #{{ term.term_number }}</h2>
+
+<form method="POST" action="/terms/edit/{{ term.id }}">
+    <div>
+        <label for="term_number">Term Number:</label>
+        <input type="number" id="term_number" name="term_number" required min="1" value="{{ term.term_number }}">
+    </div>
+
+    <div>
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" required value="{{ term.start_date.strftime('%Y-%m-%d') }}">
+    </div>
+
+    <div>
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date" value="{{ term.end_date.strftime('%Y-%m-%d') }}">
+    </div>
+
+    <div>
+        <label for="theme">Theme:</label>
+        <input type="text" id="theme" name="theme" value="{{ term.theme or '' }}" placeholder="e.g., Health & Learning">
+        <p><small>Optional focus area for this term</small></p>
+    </div>
+
+    <div>
+        <label for="reflection">Reflection:</label>
+        <textarea id="reflection" name="reflection" rows="4" placeholder="Post-term retrospective notes...">{{ term.reflection or '' }}</textarea>
+        <p><small>Add reflection notes after completing the term</small></p>
+    </div>
+
+    <div>
+        <label for="goal_ids">Goals:</label>
+        <select id="goal_ids" name="goal_ids" multiple size="10">
+            {% if goals %}
+                {% for goal in goals %}
+                <option value="{{ goal.id }}" {% if goal.id in term.term_goal_ids %}selected{% endif %}>
+                    {{ goal.description[:60] }}{% if goal.description|length > 60 %}...{% endif %}
+                </option>
+                {% endfor %}
+            {% else %}
+                <option value="" disabled>No goals available</option>
+            {% endif %}
+        </select>
+        <p><small>Hold Ctrl/Cmd to select multiple goals. Currently: {{ term.term_goal_ids|length }} goals</small></p>
+    </div>
+
+    <div>
+        <button type="submit">Update Term</button>
+        <a href="/terms/list">Cancel</a>
+    </div>
+</form>
+
+<h3>Term Details</h3>
+<ul>
+    <li><strong>Days Remaining:</strong> {{ term.days_remaining() }}</li>
+    <li><strong>Progress:</strong> {{ (term.progress_percentage() * 100) | int }}%</li>
+    <li><strong>Status:</strong>
+        {% if term_status == 'active' %}
+            🟢 Active
+        {% elif term_status == 'upcoming' %}
+            🔵 Upcoming
+        {% else %}
+            ⚫ Complete
+        {% endif %}
+    </li>
+</ul>
+
+{% endblock %}

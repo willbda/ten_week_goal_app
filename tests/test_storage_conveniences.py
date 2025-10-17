@@ -30,7 +30,7 @@ def test_save_creates_new_entity(test_db):
     # Verify in database
     retrieved = service.get_by_id(saved_action.id)
     assert retrieved is not None
-    assert retrieved.description == "Run 5km"
+    assert retrieved.common_name == "Run 5km"
 
 
 def test_save_updates_existing_entity(test_db):
@@ -43,8 +43,8 @@ def test_save_updates_existing_entity(test_db):
     original_id = action.id
 
     # Modify and save again
-    action.description = "Updated"
-    action.measurements = {"distance_km": 10.0}
+    action.common_name = "Updated"
+    action.measurement_units_by_amount = {"distance_km": 10.0}
 
     updated_action = service.save(action)
 
@@ -53,8 +53,8 @@ def test_save_updates_existing_entity(test_db):
 
     # Verify changes persisted
     retrieved = service.get_by_id(original_id)
-    assert retrieved.description == "Updated"
-    assert retrieved.measurements == {"distance_km": 10.0}
+    assert retrieved.common_name == "Updated"
+    assert retrieved.measurement_units_by_amount == {"distance_km": 10.0}
 
 
 def test_save_workflow_complete_cycle(test_db):
@@ -64,7 +64,7 @@ def test_save_workflow_complete_cycle(test_db):
 
     # Create new goal
     goal = service.save(Goal(
-        description="Run 100km",
+        common_name="Run 100km",
         measurement_unit="km",
         measurement_target=100.0
     ))
@@ -79,7 +79,7 @@ def test_save_workflow_complete_cycle(test_db):
 
     # Modify
     retrieved_goal.measurement_target = 150.0
-    retrieved_goal.description = "Run 150km"
+    retrieved_goal.common_name = "Run 150km"
 
     # Save updates
     service.save(retrieved_goal)
@@ -87,7 +87,7 @@ def test_save_workflow_complete_cycle(test_db):
     # Verify final state
     final_goal = service.get_by_id(goal_id)
     assert final_goal.measurement_target == 150.0
-    assert final_goal.description == "Run 150km"
+    assert final_goal.common_name == "Run 150km"
 
 
 def test_get_by_id_returns_none_for_missing(test_db):
@@ -107,7 +107,7 @@ def test_save_preserves_all_attributes(test_db):
     # Create with all attributes
     from datetime import datetime
     action = Action("Test action")
-    action.measurements = {"test": 1.0}
+    action.measurement_units_by_amount = {"test": 1.0}
     action.duration_minutes = 30.0
 
     # Save
@@ -115,13 +115,13 @@ def test_save_preserves_all_attributes(test_db):
     action_id = action.id
 
     # Modify one attribute
-    action.description = "Updated description"
+    action.common_name = "Updated description"
 
     # Save again
     service.save(action)
 
     # Verify all attributes preserved
     retrieved = service.get_by_id(action_id)
-    assert retrieved.description == "Updated description"
-    assert retrieved.measurements == {"test": 1.0}
+    assert retrieved.common_name == "Updated description"
+    assert retrieved.measurement_units_by_amount == {"test": 1.0}
     assert retrieved.duration_minutes == 30.0

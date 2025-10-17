@@ -13,7 +13,7 @@
 -- Incentives-specific fields:
 --   - priority: 1-100 priority level
 --   - life_domain: Categorization (e.g., 'Physical Health')
---   - type: Class name for polymorphism ('Values', 'MajorValues', 'HighestOrderValues', 'LifeAreas')
+--   - incentive_type: Class identifier for polymorphism ('general', 'major', 'highest_order', 'life_area')
 --   - alignment_guidance: How this value shows up (optional, JSON or text)
 
 CREATE TABLE IF NOT EXISTS personal_values (
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS personal_values (
   description TEXT,                               -- Optional elaboration
   notes TEXT,                                     -- Freeform notes
   log_time TEXT NOT NULL,                         -- When created (ISO format)
-  incentive_type TEXT NOT NULL,                             -- Class name: 'Values', 'MajorValues', 'HighestOrderValues', 'LifeAreas'
+  incentive_type TEXT NOT NULL,                   -- Type identifier: 'general', 'major', 'highest_order', 'life_area'
   priority INTEGER NOT NULL DEFAULT 50,           -- 1 = highest priority, 100 = lowest
   life_domain TEXT DEFAULT 'General',             -- Domain (e.g., 'Relationships', 'Health')
   alignment_guidance TEXT                         -- Optional: How value shows up (JSON or text)

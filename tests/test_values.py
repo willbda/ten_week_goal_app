@@ -76,14 +76,14 @@ def test_life_areas_not_a_value():
 # ===== MAJOR VALUES - What makes them distinct =====
 
 def test_major_values_distinctive_features():
-    """MajorValues: priority 1, incentive_type='major', has alignment_guidance"""
+    """MajorValues: priority 10, incentive_type='major', has alignment_guidance"""
     major = MajorValues(
         "Integrity",
         alignment_guidance={"weekly_check": "Review goals vs values"}
     )
 
     assert major.common_name == "Integrity"
-    assert major.priority == 1  # Defaults to highest priority
+    assert major.priority == 10  # Defaults to priority 10 (high priority)
     assert major.incentive_type == 'major'  # Major value type
     assert isinstance(major, Values)  # Still a Value
     assert major.alignment_guidance is not None

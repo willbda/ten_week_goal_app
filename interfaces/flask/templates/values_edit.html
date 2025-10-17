@@ -9,12 +9,12 @@
 {% endblock %}
 
 {% block content %}
-<h2>Edit Value: {{ value.value_name }}</h2>
+<h2>Edit Value: {{ value.common_name }}</h2>
 
 <form method="POST" action="/values/edit/{{ value.id }}">
     <div>
-        <label for="value_type">Value Type:</label>
-        <select id="value_type" name="value_type" required onchange="toggleAlignmentGuidance()">
+        <label for="incentive_type">Value Type:</label>
+        <select id="incentive_type" name="incentive_type" required onchange="toggleAlignmentGuidance()">
             <option value="general" {% if value.incentive_type == 'general' %}selected{% endif %}>General Value</option>
             <option value="major" {% if value.incentive_type == 'major' %}selected{% endif %}>Major Value (actionable, tracked regularly)</option>
             <option value="highest_order" {% if value.incentive_type == 'highest_order' %}selected{% endif %}>Highest Order Value (philosophical)</option>
@@ -24,8 +24,8 @@
     </div>
 
     <div>
-        <label for="value_name">Name:</label>
-        <input type="text" id="value_name" name="value_name" required value="{{ value.value_name }}">
+        <label for="common_name">Name:</label>
+        <input type="text" id="common_name" name="common_name" required value="{{ value.common_name }}">
     </div>
 
     <div>
@@ -58,7 +58,7 @@
 
 <script>
 function toggleAlignmentGuidance() {
-    const valueType = document.getElementById('value_type').value;
+    const valueType = document.getElementById('incentive_type').value;
     const alignmentSection = document.getElementById('alignment_guidance_section');
 
     if (valueType === 'major') {

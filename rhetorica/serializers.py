@@ -134,14 +134,31 @@ def deserialize(data: dict, entity_class: type, json_decode: bool = False) -> An
         # Parse based on field type annotation
         field_type = field.type
 
-        # Handle Optional[T] by extracting T
-        if hasattr(field_type, '__origin__') and field_type.__origin__ is type(None) or True:
-            # Get actual type from Optional[T]
-            if hasattr(field_type, '__args__'):
-                # Optional[T] has __args__ = (T, NoneType)
-                non_none_types = [t for t in field_type.__args__ if t is not type(None)]
-                if non_none_types:
-                    field_type = non_none_types[0]
+        # Extract type from Optional[T], Union[T, None], etc.
+        origin = getattr(field_type, '__origin__', None)
+        type_args = getattr(field_type, '__args__', ())
+
+        # Handle Optional[T] and Union[T, None] by extracting non-None types
+        if origin is type(None) or (hasattr(field_type, '__class__') and 'Union' in str(origin)):
+            non_none_types = [t for t in type_args if t is not type(None)]
+            if len(non_none_types) == 1:
+                # Optional[T] or Union[T, None] - use T
+                field_type = non_none_types[0]
+                origin = getattr(field_type, '__origin__', None)
+                type_args = getattr(field_type, '__args__', ())
+            elif len(non_none_types) > 1:
+                # Union[str, dict] - handle specially
+                # Try JSON decode first, fall back to string
+                if json_decode and isinstance(value, str) and value.strip().startswith(('{', '[')):
+                    try:
+                        parsed[field.name] = json.loads(value)
+                        continue
+                    except json.JSONDecodeError:
+                        parsed[field.name] = value  # Keep as string
+                        continue
+                else:
+                    parsed[field.name] = value
+                    continue
 
         # Type-specific parsing
         if field_type == datetime or field_type is datetime:
@@ -154,18 +171,43 @@ def deserialize(data: dict, entity_class: type, json_decode: bool = False) -> An
                 parsed[field.name] = datetime.strptime(value, '%Y-%m-%d').date()
             else:
                 parsed[field.name] = value  # Already date
+        elif origin is dict and json_decode:
+            # Handles both dict and Dict[K, V]
+            if isinstance(value, str) and value.strip().startswith('{'):
+                try:
+                    parsed[field.name] = json.loads(value)
+                except json.JSONDecodeError:
+                    # Not valid JSON, keep as string (shouldn't happen but defensive)
+                    parsed[field.name] = value
+            else:
+                parsed[field.name] = value  # Already dict or not JSON
+        elif origin is list and json_decode:
+            # Handles both list and List[T]
+            if isinstance(value, str) and value.strip().startswith('['):
+                try:
+                    parsed[field.name] = json.loads(value)
+                except json.JSONDecodeError:
+                    parsed[field.name] = value
+            else:
+                parsed[field.name] = value  # Already list or not JSON
         elif (field_type == dict or field_type is dict) and json_decode:
-            # Only parse JSON if explicitly requested (for database reads)
-            if isinstance(value, str):
-                parsed[field.name] = json.loads(value)
+            # Plain dict annotation (fallback for older Python)
+            if isinstance(value, str) and value.strip().startswith('{'):
+                try:
+                    parsed[field.name] = json.loads(value)
+                except json.JSONDecodeError:
+                    parsed[field.name] = value
             else:
-                parsed[field.name] = value  # Already dict
+                parsed[field.name] = value
         elif (field_type == list or field_type is list) and json_decode:
-            # Only parse JSON if explicitly requested (for database reads)
-            if isinstance(value, str):
-                parsed[field.name] = json.loads(value)
+            # Plain list annotation (fallback for older Python)
+            if isinstance(value, str) and value.strip().startswith('['):
+                try:
+                    parsed[field.name] = json.loads(value)
+                except json.JSONDecodeError:
+                    parsed[field.name] = value
             else:
-                parsed[field.name] = value  # Already list
+                parsed[field.name] = value
         else:
             # Primitive types - keep as-is (includes dict/list if not json_decode)
             parsed[field.name] = value
