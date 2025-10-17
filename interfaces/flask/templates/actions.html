@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Actions - Ten Week Goal App{% endblock %}
+
+{% block header %}Actions Management{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > Actions</p>
+{% endblock %}
+
+{% block content %}
+<h2>Actions</h2>
+<p>Track your daily actions with optional measurements, duration, and timing details.</p>
+
+<h3>Navigation</h3>
+<ul>
+    <li><a href="/actions/list">View All Actions</a> - Browse and filter your logged actions</li>
+    <li><a href="/actions/add">Add New Action</a> - Log a new action you've taken</li>
+</ul>
+
+<h3>Features</h3>
+<ul>
+    <li>Log actions with timestamps</li>
+    <li>Track measurements (distance, reps, pages, etc.)</li>
+    <li>Record duration and start times</li>
+    <li>Match actions to goals automatically</li>
+</ul>
+{% endblock %}

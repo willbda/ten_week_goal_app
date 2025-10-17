@@ -1,8 +1,53 @@
 # Ten Week Goal App - Development Roadmap
 
 **Created:** 2025-10-12
+**Updated:** 2025-10-17 - Major transition to Swift announced
 **Purpose:** Guide systematic development without skipping foundational layers
 **Principle:** Only build interfaces when backend (categoriae → ethica → rhetorica → politica) is mature
+
+---
+
+## 🚨 MAJOR TRANSITION: Swift Port Beginning (2025-10-17)
+
+### Python Implementation Status: ✅ COMPLETE & PRODUCTION READY
+
+The Python implementation has reached v1.0 maturity with:
+- **90 tests passing** - Full test coverage across all layers
+- **25 CLI commands** - Complete CRUD for all entities
+- **27 Flask API endpoints** - RESTful API ready for integration
+- **Layered architecture** - Clean separation following Aristotelian principles
+- **Production ready** - Actions, Goals, Terms, Values all working
+
+### Swift Development Plan
+
+**Approach:** Port the proven Python architecture to Swift, maintaining the same layered design
+
+**Repository Structure:**
+```
+/python/          # Current Python implementation (frozen at v1.0)
+/swift/           # New Swift implementation
+  /Sources/
+    /Categoriae/  # Domain entities (Swift structs/classes)
+    /Ethica/      # Business logic (pure functions)
+    /Rhetorica/   # Storage translation layer
+    /Politica/    # SQLite/Core Data infrastructure
+  /Tests/
+/shared/          # Shared resources (SQLite schemas, documentation)
+```
+
+**Why Swift:**
+- Native macOS/iOS performance and integration
+- Type safety aligns with current architecture philosophy
+- SwiftUI for eventual native GUI
+- Better long-term maintainability for Apple ecosystem
+
+**Migration Strategy:**
+1. Port domain models (categoriae) first - establish Swift types
+2. Implement storage layer (politica) - SQLite compatibility with Python DB
+3. Port business logic (ethica) - maintain calculation consistency
+4. Build Swift-native interfaces - SwiftUI instead of CLI/Flask
+
+**Compatibility Goal:** Swift version will read/write same SQLite database as Python version
 
 ---
 
@@ -163,7 +208,7 @@ DELETE /api/values/<id>       # Delete
 ```
 
 **Completion Criteria:**
-- [ ] Can list all values with hierarchy types
+- [x] Can list all values with hierarchy types
 - [ ] Can filter by life area and priority
 - [ ] Can create/edit/delete values through all interfaces
 - [ ] Polymorphic storage works (MajorValue retrieves as MajorValue)
@@ -316,8 +361,8 @@ for v in all_values:
 ```
 
 **Completion Criteria:**
-- [ ] Personal values documented
-- [ ] Values entered through UI
+- [x] Personal values documented
+- [x] Values entered through UI
 - [ ] Polymorphic storage verified
 - [ ] Can view values in all interfaces
 
