@@ -2,6 +2,18 @@
 
 A personal development tracking system built with clean architecture principles. Track actions, set SMART goals, define personal values, and monitor progress over time with intelligent automatic matching.
 
+## 🚨 Major Transition: Swift Port in Progress (2025-10-17)
+
+**Python v1.0**: Complete and production-ready (tagged as `v1.0-python`)
+- 36 essential tests covering core functionality
+- Flask API with 27 RESTful endpoints
+- Full CRUD for Actions, Goals, Terms, Values
+
+**Swift Development**: Active development in `/swift` directory
+- Maintaining same layered architecture
+- SQLite compatibility with Python database
+- Native macOS/iOS with SwiftUI planned
+
 ## What This Does
 
 - **Log Actions**: Record daily activities with optional measurements (distance, duration, reps, etc.)
@@ -10,9 +22,7 @@ A personal development tracking system built with clean architecture principles.
 - **Automatic Matching**: Intelligent inference system matches actions to goals by time period, units, and description
 - **Progress Tracking**: Calculate progress automatically with cached projections
 - **Store History**: Maintain complete audit trail of all entities in SQLite with archiving
-- **CLI Interface**: Command-line tool for viewing goal progress with formatted output
-- **Web Dashboard**: Flask-based web UI showing progress, charts, and detailed views
-- **JSON API**: RESTful endpoints for integrations and external tools
+- **Flask API**: RESTful endpoints for integrations and web UI
 
 ## Why This Architecture
 
@@ -46,15 +56,6 @@ pytest tests/ -v
 ```
 
 ### Usage
-
-**CLI Interface:**
-```bash
-# Show progress for all goals
-python interfaces/cli.py show-progress
-
-# Show progress with detailed action listings
-python interfaces/cli.py show-progress -v
-```
 
 **Flask API:**
 ```bash
@@ -102,19 +103,17 @@ ten_week_goal_app/
 │   └── storage_service.py   # Repository pattern with polymorphic type support
 │
 ├── interfaces/              # Presentation layer (USER INTERACTION)
-│   ├── cli/                 # Command-line interface
-│   │   ├── cli.py           # CLI orchestrator
-│   │   ├── cli_formatters.py # Presentation formatting
-│   │   └── cli_config.py    # CLI configuration
-│   └── flask/               # Flask API application
+│   └── flask/               # Flask API application (sole interface)
 │       ├── flask_main.py    # Application factory
-│       ├── routes/api/      # API blueprints
-│       │   ├── goals.py     # Goals endpoints
-│       │   ├── actions.py   # Actions endpoints
-│       │   ├── values.py    # Values endpoints
-│       │   └── terms.py     # Terms endpoints
-│       └── templates/       # API documentation
-│           └── api_reference.html
+│       ├── routes/          # Routes organization
+│       │   ├── api/         # API blueprints
+│       │   │   ├── goals.py     # Goals endpoints
+│       │   │   ├── actions.py   # Actions endpoints
+│       │   │   ├── values.py    # Values endpoints
+│       │   │   └── terms.py     # Terms endpoints
+│       │   └── ui_*.py      # Web UI routes
+│       ├── templates/       # HTML templates
+│       └── static/          # CSS, JS assets
 │
 ├── config/                  # Configuration and setup
 │   ├── config.toml          # Application settings
@@ -122,17 +121,25 @@ ten_week_goal_app/
 │   ├── logging_setup.py     # Logging configuration
 │   └── testing.py           # Test-specific config
 │
-├── tests/                   # Test suite (90 passing tests)
+├── tests/                   # Test suite (36 essential tests)
 │   ├── conftest.py          # Pytest fixtures
-│   ├── test_actions.py      # Domain entity tests
-│   ├── test_action_storage.py   # Storage integration tests
-│   ├── test_goal_storage.py     # Goal persistence tests
-│   ├── test_progress_aggregation.py  # Business logic tests
-│   ├── test_cli_formatters.py  # Presentation formatting tests
-│   ├── test_actionability_matching.py # Matching algorithm tests
-│   ├── test_term_actions.py # Term-action filtering tests
-│   ├── test_values.py       # Values entity tests
-│   └── test_values_storage.py   # Values storage with polymorphism
+│   ├── test_actions.py      # Domain entity tests (9 tests)
+│   ├── test_values.py       # Values hierarchy tests (8 tests)
+│   ├── test_progress_aggregation.py  # Business logic tests (12 tests)
+│   ├── test_action_storage.py   # Storage roundtrip tests (3 tests)
+│   ├── test_goal_storage.py     # Goal persistence test (1 test)
+│   ├── test_values_storage.py   # Polymorphism test (1 test)
+│   └── test_term_actions.py # Date filtering tests (2 tests)
+│
+├── swift/                   # Swift implementation (in progress)
+│   ├── Package.swift        # Swift Package Manager config
+│   ├── README.md           # Swift-specific documentation
+│   ├── Sources/            # Swift source code
+│   │   ├── Categoriae/     # Domain entities
+│   │   ├── Ethica/         # Business logic
+│   │   ├── Rhetorica/      # Translation layer
+│   │   └── Politica/       # Infrastructure
+│   └── Tests/              # Swift tests
 │
 └── .documentation/          # Architecture documentation
     ├── architecture_decision_record.md
