@@ -2,18 +2,15 @@
 
 A personal development tracking system built with clean architecture principles. Track actions, set SMART goals, define personal values, and monitor progress over time with intelligent automatic matching.
 
-## 🚨 Project Reorganization: Multi-Language Structure (2025-10-17)
+## Project Reorganization: Multi-Language Structure (2025-10-17)
 
-**Python Implementation**: Complete and production-ready in `/python` directory
-- 90+ tests covering all functionality
+**Python Implementation**: in `/python` directory
 - Flask API with 27 RESTful endpoints
-- Full CRUD for Actions, Goals, Terms, Values
-- Web UI for Goals, Terms, Values management
+- UI for Goals, Terms, Values management
 - Polymorphic storage for class hierarchies
 
 **Swift Development**: Active development in `/swift` directory
 - Maintaining same layered architecture
-- SQLite compatibility via `/shared/schemas`
 - Native macOS/iOS with SwiftUI planned
 
 ## What This Does
@@ -21,7 +18,6 @@ A personal development tracking system built with clean architecture principles.
 - **Log Actions**: Record daily activities with optional measurements (distance, duration, reps, etc.)
 - **Define Goals**: Create Goals, Milestones, or fully-validated SmartGoals with polymorphic storage
 - **Track Values**: Define personal values hierarchy (Incentives → Values → Major/Highest Order Values)
-- **Automatic Matching**: Intelligent inference system matches actions to goals by time period, units, and description
 - **Progress Tracking**: Calculate progress automatically with cached projections
 - **Store History**: Maintain complete audit trail of all entities in SQLite with archiving
 - **Flask API**: RESTful endpoints for integrations and web UI
