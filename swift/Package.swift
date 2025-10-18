@@ -12,16 +12,10 @@ let package = Package(
     products: [
         .library(
             name: "TenWeekGoalApp",
-            targets: ["Categoriae", "Ethica", "Rhetorica", "Politica"]
-        ),
-        .executable(
-            name: "TenWeekGoalCLI",
-            targets: ["TenWeekGoalCLI"]
+            targets: ["Categoriae"]
         )
     ],
-    dependencies: [
-        .package(url: "https://github.com/stephencelis/SQLite.swift.git", from: "0.15.0"),
-    ],
+    dependencies: [],
     targets: [
         // Domain layer
         .target(
@@ -29,35 +23,10 @@ let package = Package(
             dependencies: [],
             path: "Sources/Categoriae"
         ),
-        // Business logic layer
-        .target(
-            name: "Ethica",
-            dependencies: ["Categoriae"],
-            path: "Sources/Ethica"
-        ),
-        // Translation layer
-        .target(
-            name: "Rhetorica",
-            dependencies: ["Categoriae", "Politica"],
-            path: "Sources/Rhetorica"
-        ),
-        // Infrastructure layer
-        .target(
-            name: "Politica",
-            dependencies: [
-                .product(name: "SQLite", package: "SQLite.swift")
-            ],
-            path: "Sources/Politica"
-        ),
-        // CLI executable
-        .executableTarget(
-            name: "TenWeekGoalCLI",
-            dependencies: ["Categoriae", "Ethica", "Rhetorica", "Politica"]
-        ),
         // Tests
         .testTarget(
             name: "TenWeekGoalAppTests",
-            dependencies: ["Categoriae", "Ethica", "Rhetorica", "Politica"],
+            dependencies: ["Categoriae"],
             path: "Tests"
         ),
     ]

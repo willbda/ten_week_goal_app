@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ten Week Goal App{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+
+    <!-- Development Auto-Refresh with EventSource (Server-Sent Events) -->
+    <script>
+        // Auto-refresh for development - uses server polling
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            (function() {
+                let contentHash = null;
+
+                async function checkForChanges() {
+                    try {
+                        const response = await fetch(window.location.href);
+                        const text = await response.text();
+
+                        // Create a simple hash of the content
+                        const newHash = text.length + '_' + text.substring(0, 100).length;
+
+                        if (contentHash && contentHash !== newHash) {
+                            console.log('Page content changed, reloading...');
+                            window.location.reload();
+                        }
+
+                        contentHash = newHash;
+                    } catch (error) {
+                        // Server might be restarting
+                        console.log('Server check failed, will retry...');
+                    }
+                }
+
+                // Check every 1.5 seconds
+                setInterval(checkForChanges, 1500);
+
+                // Initial hash
+                checkForChanges();
+
+                console.log('🔄 Dev auto-refresh enabled (checking every 1.5s)');
+            })();
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>{% block header %}Ten Week Goal App{% endblock %}</h1>
+        {% block breadcrumb %}
+        <p><a href="/">Home</a></p>
+        {% endblock %}
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

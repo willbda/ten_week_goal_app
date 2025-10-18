@@ -469,7 +469,7 @@ def infer_value_alignments(
 
 **Step 2: Create storage**
 
-Schema `politica/schemas/goal_value_alignment.sql`:
+Schema `shared/schemas/goal_value_alignment.sql`:
 ```sql
 CREATE TABLE goal_value_alignment (
   id INTEGER PRIMARY KEY,
@@ -580,13 +580,13 @@ def get_action_values(action: Action) -> List[Tuple[Value, float]]:
 
 #### 5.1 Storage Layer
 
-**Schema** `politica/schemas/terms.sql`:
+**Schema** `shared/schemas/terms.sql`:
 ```sql
 CREATE TABLE terms (
   id INTEGER PRIMARY KEY,
   term_number INTEGER NOT NULL,
   start_date TEXT NOT NULL,
-  end_date TEXT NOT NULL,
+  target_date TEXT NOT NULL,
   theme TEXT,
   reflection TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,

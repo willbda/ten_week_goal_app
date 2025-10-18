@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Add Action - Ten Week Goal App{% endblock %}
+
+{% block header %}Add Action{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/actions">Actions</a> > Add</p>
+{% endblock %}
+
+{% block content %}
+<h2>Log New Action</h2>
+
+<form method="POST" action="/actions/add">
+    <div>
+        <label for="description">Description:</label>
+        <input type="text" id="description" name="description" required
+               placeholder="What did you do?" style="width: 400px;">
+        <p><small>Required: Brief description of the action taken</small></p>
+    </div>
+
+    <div>
+        <label for="log_time">Log Time:</label>
+        <input type="datetime-local" id="log_time" name="log_time"
+               value="{{ default_time }}" required>
+        <p><small>Required: When this action was logged (defaults to now)</small></p>
+    </div>
+
+    <h3>Optional Details</h3>
+
+    <div>
+        <label for="start_time">Start Time:</label>
+        <input type="datetime-local" id="start_time" name="start_time">
+        <p><small>Optional: When the action actually started (if different from log time)</small></p>
+    </div>
+
+    <div>
+        <label for="duration_minutes">Duration (minutes):</label>
+        <input type="number" id="duration_minutes" name="duration_minutes"
+               min="0" step="0.5" placeholder="30">
+        <p><small>Optional: How long the action took in minutes</small></p>
+    </div>
+
+    <div>
+        <label for="measurements">Measurements (JSON):</label>
+        <textarea id="measurements" name="measurements" rows="4"
+                  placeholder='{"distance_km": 5.0, "pace_min_per_km": 6.5}'
+                  style="width: 400px; font-family: monospace;"></textarea>
+        <p><small>Optional: Track quantities as JSON. Examples:</small></p>
+        <ul style="font-size: small;">
+            <li>Running: {"distance_km": 5.0, "pace_min_per_km": 6.5}</li>
+            <li>Reading: {"pages": 25, "chapters": 2}</li>
+            <li>Exercise: {"reps": 20, "sets": 3, "weight_kg": 10}</li>
+            <li>Writing: {"words": 500}</li>
+        </ul>
+    </div>
+
+    <div>
+        <button type="submit">Log Action</button>
+        <a href="/actions/list">Cancel</a>
+    </div>
+</form>
+
+<script>
+// Auto-format JSON when field loses focus
+document.getElementById('measurements').addEventListener('blur', function() {
+    const value = this.value.trim();
+    if (value) {
+        try {
+            const parsed = JSON.parse(value);
+            this.value = JSON.stringify(parsed, null, 2);
+        } catch(e) {
+            // Invalid JSON, leave as is
+        }
+    }
+});
+</script>
+
+{% endblock %}

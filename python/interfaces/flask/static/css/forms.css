@@ -1,0 +1,58 @@
+/* Form Styles - Written by Claude Code on 2025-01-17 */
+
+/* Make all text inputs and textareas full width */
+input[type="text"],
+input[type="number"],
+input[type="datetime-local"],
+textarea,
+select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Includes padding in width calculation */
+    font-family: inherit; /* Use same font as rest of page */
+}
+
+/* Make textareas resizable vertically only */
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Style labels */
+label {
+    display: block;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* Style form buttons */
+form button[type="submit"] {
+    background-color: #0066cc;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+}
+
+form button[type="submit"]:hover {
+    background-color: #0052a3;
+}
+
+/* Form sections */
+form div {
+    margin-bottom: 20px;
+}
+
+/* Small help text */
+form small {
+    color: #666;
+    display: block;
+    margin-top: 5px;
+}

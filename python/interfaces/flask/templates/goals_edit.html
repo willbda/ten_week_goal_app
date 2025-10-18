@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Goal - Ten Week Goal App{% endblock %}
+
+{% block header %}Edit Goal{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/goals">Goals</a> > <a href="/goals/list">List</a> > Edit</p>
+{% endblock %}
+
+{% block content %}
+<h2>Edit Goal: {{ goal.common_name }}</h2>
+
+<p><strong>Type:</strong> {{ goal.goal_type }}</p>
+
+<form method="POST" action="/goals/edit/{{ goal.id }}">
+    <h3>Basic Information</h3>
+    <label for="common_name">Name:</label>
+    <input type="text" id="common_name" name="common_name" value="{{ goal.common_name }}" required>
+    <br>
+
+    <label for="description">Description:</label>
+    <textarea id="description" name="description" rows="3">{{ goal.description or '' }}</textarea>
+    <br>
+
+    <label for="notes">Notes:</label>
+    <textarea id="notes" name="notes" rows="2">{{ goal.notes or '' }}</textarea>
+    <br>
+
+    <h3>Measurement</h3>
+    <label for="measurement_unit">Unit:</label>
+    <input type="text" id="measurement_unit" name="measurement_unit" value="{{ goal.measurement_unit or '' }}"
+           {% if goal.goal_type == 'SmartGoal' %}required{% endif %}>
+    <br>
+
+    <label for="measurement_target">Target:</label>
+    <input type="number" step="0.1" id="measurement_target" name="measurement_target" value="{{ goal.measurement_target or '' }}"
+           {% if goal.goal_type == 'SmartGoal' %}required{% endif %}>
+    <br>
+
+    <h3>Time Period</h3>
+    {% if goal.goal_type == 'Milestone' %}
+    <label for="target_date">Target Date:</label>
+    <input type="datetime-local" id="target_date" name="target_date"
+           value="{% if goal.target_date %}{{ goal.target_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+    <br>
+    {% else %}
+    <label for="start_date">Start Date:</label>
+    <input type="datetime-local" id="start_date" name="start_date"
+           value="{% if goal.start_date %}{{ goal.start_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}"
+           {% if goal.goal_type == 'SmartGoal' %}required{% endif %}>
+    <br>
+
+    <label for="target_date">End Date:</label>
+    <input type="datetime-local" id="target_date" name="target_date"
+           value="{% if goal.target_date %}{{ goal.target_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}"
+           {% if goal.goal_type == 'SmartGoal' %}required{% endif %}>
+    <br>
+    {% endif %}
+
+    {% if goal.goal_type == 'SmartGoal' %}
+    <h3>SMART Criteria</h3>
+    <label for="how_goal_is_relevant">Relevance (Why this matters):</label>
+    <textarea id="how_goal_is_relevant" name="how_goal_is_relevant" rows="2" required>{{ goal.how_goal_is_relevant or '' }}</textarea>
+    <br>
+
+    <label for="how_goal_is_actionable">Actionability (How to achieve):</label>
+    <textarea id="how_goal_is_actionable" name="how_goal_is_actionable" rows="2" required>{{ goal.how_goal_is_actionable or '' }}</textarea>
+    <br>
+    {% endif %}
+
+    <h3>Planning</h3>
+    <label for="expected_term_length">Expected Term Length (weeks):</label>
+    <input type="number" id="expected_term_length" name="expected_term_length" value="{{ goal.expected_term_length or '' }}">
+    <br><br>
+
+    <button type="submit">Update Goal</button>
+    <a href="/goals/list">Cancel</a>
+</form>
+
+<h3>Actions</h3>
+<form method="POST" action="/goals/delete/{{ goal.id }}" onsubmit="return confirm('Are you sure you want to delete this goal?');">
+    <button type="submit" style="background-color: #dc3545;">Delete Goal</button>
+</form>
+
+{% endblock %}

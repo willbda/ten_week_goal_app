@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}List Values - Ten Week Goal App{% endblock %}
+
+{% block header %}Values List{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/values">Values</a> > List</p>
+{% endblock %}
+
+{% block content %}
+<h2>All Values</h2>
+
+<div>
+    <a href="/values/add">Add New Value</a>
+</div>
+
+<h3>Filter</h3>
+<form method="GET" action="/values/list">
+    <label for="type_filter">Type:</label>
+    <select id="type_filter" name="type">
+        <option value="">All Types</option>
+        <option value="general" {% if current_type == 'general' %}selected{% endif %}>General</option>
+        <option value="major" {% if current_type == 'major' %}selected{% endif %}>Major</option>
+        <option value="highest_order" {% if current_type == 'highest_order' %}selected{% endif %}>Highest Order</option>
+        <option value="life_area" {% if current_type == 'life_area' %}selected{% endif %}>Life Area</option>
+    </select>
+
+    <label for="domain_filter">Domain:</label>
+    <input type="text" id="domain_filter" name="domain" value="{{ current_domain or '' }}" placeholder="e.g., Health, Career">
+
+    <button type="submit">Filter</button>
+    <a href="/values/list">Clear</a>
+</form>
+
+{% if values %}
+<h3>Results ({{ values|length }})</h3>
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Domain</th>
+            <th>Priority</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for value in values %}
+        <tr>
+            <td>{{ value.id }}</td>
+            <td>{{ value.incentive_type }}</td>
+            <td><strong>{{ value.common_name }}</strong></td>
+            <td>{{ value.description[:50] }}{% if value.description|length > 50 %}...{% endif %}</td>
+            <td>{{ value.life_domain }}</td>
+            <td>{{ value.priority }}</td>
+            <td>
+                <a href="/values/edit/{{ value.id }}">Edit</a> |
+                <form method="POST" action="/values/delete/{{ value.id }}" style="display: inline;" onsubmit="return confirm('Delete this value?');">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% if value.incentive_type == 'major' and value.alignment_guidance %}
+        <tr>
+            <td colspan="7" style="background-color: #f0f0f0; padding-left: 20px;">
+                <small><strong>Alignment Guidance:</strong> {{ value.alignment_guidance }}</small>
+            </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No values found. <a href="/values/add">Add your first value</a></p>
+{% endif %}
+
+{% endblock %}

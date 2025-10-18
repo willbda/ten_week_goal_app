@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Goals - Ten Week Goal App{% endblock %}
+
+{% block header %}Goals{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > Goals</p>
+{% endblock %}
+
+{% block content %}
+<h2>Goals Management</h2>
+
+<p>Manage your goals, milestones, and SMART goals.</p>
+
+<ul>
+    <li><a href="/goals/list">List All Goals</a></li>
+    <li><a href="/goals/add">Add New Goal</a></li>
+</ul>
+
+<h3>Goal Types</h3>
+<ul>
+    <li><strong>Goal:</strong> General objectives with optional measurements and dates</li>
+    <li><strong>Milestone:</strong> Checkpoints with a specific target date</li>
+    <li><strong>SmartGoal:</strong> Fully validated SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound)</li>
+</ul>
+
+{% endblock %}

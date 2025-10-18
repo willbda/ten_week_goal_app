@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Add Goal - Ten Week Goal App{% endblock %}
+
+{% block header %}Add New Goal{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/goals">Goals</a> > <a href="/goals/list">List</a> > Add</p>
+{% endblock %}
+
+{% block content %}
+<h2>Create New Goal</h2>
+
+<form method="POST" action="/goals/add" id="goalForm">
+    <h3>Goal Type</h3>
+    <label for="goal_type">Type:</label>
+    <select id="goal_type" name="goal_type" required onchange="updateFormFields()">
+        <option value="Goal" selected>Goal (flexible)</option>
+        <option value="Milestone">Milestone (checkpoint)</option>
+        <option value="SmartGoal">SmartGoal (validated)</option>
+    </select>
+    <p id="type_description">General objective with optional measurements and dates</p>
+
+    <h3>Basic Information</h3>
+    <label for="common_name">Name:</label>
+    <input type="text" id="common_name" name="common_name" required placeholder="Short identifier">
+    <br>
+
+    <label for="description">Description:</label>
+    <textarea id="description" name="description" rows="3" placeholder="Optional elaboration"></textarea>
+    <br>
+
+    <label for="notes">Notes:</label>
+    <textarea id="notes" name="notes" rows="2" placeholder="Freeform notes"></textarea>
+    <br>
+
+    <h3>Measurement</h3>
+    <label for="measurement_unit">Unit:</label>
+    <input type="text" id="measurement_unit" name="measurement_unit" placeholder="e.g., km, hours">
+    <br>
+
+    <label for="measurement_target">Target:</label>
+    <input type="number" step="0.1" id="measurement_target" name="measurement_target" placeholder="e.g., 120.0">
+    <br>
+
+    <h3>Time Period</h3>
+    <div id="date_fields">
+        <label for="start_date">Start Date:</label>
+        <input type="datetime-local" id="start_date" name="start_date">
+        <br>
+
+        <label for="target_date">End Date:</label>
+        <input type="datetime-local" id="target_date" name="target_date">
+        <br>
+    </div>
+
+    <div id="milestone_fields" style="display: none;">
+        <label for="target_date">Target Date:</label>
+        <input type="datetime-local" id="target_date" name="target_date">
+        <br>
+    </div>
+
+    <h3 id="smart_section_header" style="display: none;">SMART Criteria</h3>
+    <div id="smart_fields" style="display: none;">
+        <label for="how_goal_is_relevant">Relevance (Why this matters):</label>
+        <textarea id="how_goal_is_relevant" name="how_goal_is_relevant" rows="2" placeholder="Why this goal matters"></textarea>
+        <br>
+
+        <label for="how_goal_is_actionable">Actionability (How to achieve):</label>
+        <textarea id="how_goal_is_actionable" name="how_goal_is_actionable" rows="2" placeholder="How to achieve it"></textarea>
+        <br>
+    </div>
+
+    <h3>Planning</h3>
+    <label for="expected_term_length">Expected Term Length (weeks):</label>
+    <input type="number" id="expected_term_length" name="expected_term_length" placeholder="e.g., 10">
+    <br><br>
+
+    <button type="submit">Create Goal</button>
+    <a href="/goals/list">Cancel</a>
+</form>
+
+<script>
+function updateFormFields() {
+    const goalType = document.getElementById('goal_type').value;
+    const typeDesc = document.getElementById('type_description');
+    const dateFields = document.getElementById('date_fields');
+    const milestoneFields = document.getElementById('milestone_fields');
+    const smartFields = document.getElementById('smart_fields');
+    const smartHeader = document.getElementById('smart_section_header');
+
+    // Update description
+    if (goalType === 'Goal') {
+        typeDesc.textContent = 'General objective with optional measurements and dates';
+        dateFields.style.display = 'block';
+        milestoneFields.style.display = 'none';
+        smartFields.style.display = 'none';
+        smartHeader.style.display = 'none';
+        // Make SMART fields optional
+        document.getElementById('how_goal_is_relevant').required = false;
+        document.getElementById('how_goal_is_actionable').required = false;
+        document.getElementById('measurement_unit').required = false;
+        document.getElementById('measurement_target').required = false;
+        document.getElementById('start_date').required = false;
+        document.getElementById('target_date').required = false;
+    } else if (goalType === 'Milestone') {
+        typeDesc.textContent = 'Checkpoint with a specific target date';
+        dateFields.style.display = 'none';
+        milestoneFields.style.display = 'block';
+        smartFields.style.display = 'none';
+        smartHeader.style.display = 'none';
+        // Make SMART fields optional
+        document.getElementById('how_goal_is_relevant').required = false;
+        document.getElementById('how_goal_is_actionable').required = false;
+        document.getElementById('measurement_unit').required = false;
+        document.getElementById('measurement_target').required = false;
+        document.getElementById('target_date').required = false;
+    } else if (goalType === 'SmartGoal') {
+        typeDesc.textContent = 'Fully validated SMART goal (all fields required)';
+        dateFields.style.display = 'block';
+        milestoneFields.style.display = 'none';
+        smartFields.style.display = 'block';
+        smartHeader.style.display = 'block';
+        // Make SMART fields required
+        document.getElementById('how_goal_is_relevant').required = true;
+        document.getElementById('how_goal_is_actionable').required = true;
+        document.getElementById('measurement_unit').required = true;
+        document.getElementById('measurement_target').required = true;
+        document.getElementById('start_date').required = true;
+        document.getElementById('target_date').required = true;
+    }
+}
+
+// Initialize form state on page load
+updateFormFields();
+</script>
+
+{% endblock %}

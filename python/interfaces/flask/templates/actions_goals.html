@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Action Goals - Ten Week Goal App{% endblock %}
+
+{% block header %}Goals for Action #{{ action.id }}{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/actions">Actions</a> > <a href="/actions/list">List</a> > Goals</p>
+{% endblock %}
+
+{% block content %}
+<h2>Action Details</h2>
+
+<div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+    <h3>{{ action.description }}</h3>
+    <p><strong>Logged:</strong> {{ action.log_time.strftime('%Y-%m-%d %H:%M') }}</p>
+
+    {% if action.measurement_units_by_amount %}
+    <p><strong>Measurements:</strong>
+        {% for key, value in action.measurement_units_by_amount.items() %}
+            {{ key }}: {{ value }}{% if not loop.last %}, {% endif %}
+        {% endfor %}
+    </p>
+    {% endif %}
+
+    {% if action.duration_minutes %}
+    <p><strong>Duration:</strong> {{ action.duration_minutes }} minutes</p>
+    {% endif %}
+</div>
+
+<h2>Matched Goals</h2>
+
+{% if matches %}
+<p>This action matches {{ matches|length }} goal(s) based on time period, measurements, and description.</p>
+
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Goal ID</th>
+            <th>Goal Description</th>
+            <th>Match Strength</th>
+            <th>Match Reasons</th>
+            <th>Goal Target</th>
+            <th>Goal Period</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for match in matches %}
+        <tr>
+            <td>{{ match.goal.id }}</td>
+            <td><strong>{{ match.goal.description }}</strong></td>
+            <td>
+                <div style="background-color:
+                    {% if match.match_strength >= 0.8 %}#4CAF50{% elif match.match_strength >= 0.5 %}#FFC107{% else %}#FF9800{% endif %};
+                    color: white; padding: 3px 8px; border-radius: 3px; text-align: center;">
+                    {{ (match.match_strength * 100) | int }}%
+                </div>
+            </td>
+            <td>
+                <ul style="margin: 0; padding-left: 20px;">
+                    {% for reason in match.match_reasons %}
+                    <li>{{ reason }}</li>
+                    {% endfor %}
+                </ul>
+            </td>
+            <td>
+                {% if match.goal.measurement_target %}
+                    {{ match.goal.measurement_target }} {{ match.goal.measurement_unit or '' }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                {% if match.goal.start_date %}
+                    {{ match.goal.start_date.strftime('%Y-%m-%d') }} to
+                    {{ match.goal.target_date.strftime('%Y-%m-%d') if match.goal.target_date else 'ongoing' }}
+                {% else %}
+                    No specific period
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3>Understanding Match Strength</h3>
+<ul style="font-size: small;">
+    <li><span style="background-color: #4CAF50; color: white; padding: 2px 5px;">80-100%</span> Strong match - Action clearly contributes to this goal</li>
+    <li><span style="background-color: #FFC107; color: white; padding: 2px 5px;">50-79%</span> Moderate match - Partial alignment with goal</li>
+    <li><span style="background-color: #FF9800; color: white; padding: 2px 5px;">Below 50%</span> Weak match - Loose connection to goal</li>
+</ul>
+
+{% else %}
+<p>No goals matched this action. This could mean:</p>
+<ul>
+    <li>The action falls outside the time period of any goals</li>
+    <li>The action's measurements don't match any goal units</li>
+    <li>The description doesn't align with any goal descriptions</li>
+    <li>No goals have been created yet</li>
+</ul>
+{% endif %}
+
+<div style="margin-top: 20px;">
+    <a href="/actions/list">Back to Actions</a> |
+    <a href="/actions/edit/{{ action.id }}">Edit Action</a>
+</div>
+
+{% endblock %}

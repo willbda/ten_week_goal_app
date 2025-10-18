@@ -1,4 +1,0 @@
-# TUI (Text User Interface) Dependencies for Ten Week Goal App
-# Install with: pip install -r requirements_tui.txt
-
-textual==6.3.0

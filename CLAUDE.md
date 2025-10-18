@@ -33,7 +33,7 @@ init_db()
 # politica/data_storage/application_data.db
 
 # Schema files location
-# politica/schemas/*.sql
+# shared/schemas/*.sql
 ```
 
 
@@ -130,7 +130,7 @@ tests/         - Test suite
   - Safety: requires filters for deletes, automatic archiving
   - get_db_connection(): context manager for transactions
   - build_where_clause(), build_set_clause(): SQL builders
-  - init_db(): loads all schemas from politica/schemas/
+  - init_db(): loads all schemas from shared/schemas/
 
 ### Presentation Layer (interfaces/)
 **CLI Interface** (`interfaces/cli/`) - **Refactored 2025-10-15**
@@ -209,11 +209,11 @@ tests/         - Test suite
 
 ## Database Schema
 
-Tables are defined in `politica/schemas/`:
+Tables are defined in `shared/schemas/`:
 - `actions.sql`: description, log_time, measurements (JSON), start_time, duration_minutes
-- `goals.sql`: description, measurement_target, measurement_unit, start_date, end_date, how_goal_is_relevant, how_goal_is_actionable, expected_term_length, created_at
+- `goals.sql`: description, measurement_target, measurement_unit, start_date, target_date, how_goal_is_relevant, how_goal_is_actionable, expected_term_length, created_at
 - `values.sql`: Polymorphic storage with common_name, incentive_type for class hierarchy, life_domain, priority, alignment_guidance
-- `terms.sql`: term_number, start_date, end_date, theme, term_goal_ids (JSON array), reflection, created_at, updated_at
+- `terms.sql`: term_number, start_date, target_date, theme, term_goals_by_id (JSON array), reflection, created_at, updated_at
 - `action_goal_progress.sql`: Cached relationship projections (action_id, goal_id, match_strength, match_reasons JSON)
 - `archive.sql`: Stores deleted/updated records for audit trail
 - `schema.sql`: Main schema file
@@ -300,7 +300,7 @@ class MyEntity:
         return bool(self.required_field)
 ```
 
-2. **Create schema** in politica/schemas/my_entity.sql
+2. **Create schema** in shared/schemas/my_entity.sql
 3. **Create StorageService** in rhetorica/:
 ```python
 class MyEntityStorageService(StorageService):

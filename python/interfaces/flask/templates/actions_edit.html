@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Action - Ten Week Goal App{% endblock %}
+
+{% block header %}Edit Action{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/actions">Actions</a> > Edit</p>
+{% endblock %}
+
+{% block content %}
+<h2>Edit Action #{{ action.id }}</h2>
+
+<form method="POST" action="/actions/edit/{{ action.id }}">
+    <div>
+        <label for="description">Description:</label>
+        <input type="text" id="description" name="description" required
+               value="{{ action.description }}" style="width: 400px;">
+        <p><small>Required: Brief description of the action taken</small></p>
+    </div>
+
+    <div>
+        <label for="log_time">Log Time:</label>
+        <input type="datetime-local" id="log_time" name="log_time"
+               value="{{ log_time_str }}" required>
+        <p><small>Required: When this action was logged</small></p>
+    </div>
+
+    <h3>Optional Details</h3>
+
+    <div>
+        <label for="start_time">Start Time:</label>
+        <input type="datetime-local" id="start_time" name="start_time"
+               value="{{ start_time_str }}">
+        <p><small>Optional: When the action actually started (if different from log time)</small></p>
+    </div>
+
+    <div>
+        <label for="duration_minutes">Duration (minutes):</label>
+        <input type="number" id="duration_minutes" name="duration_minutes"
+               min="0" step="0.5"
+               value="{{ action.duration_minutes if action.duration_minutes else '' }}">
+        <p><small>Optional: How long the action took in minutes</small></p>
+    </div>
+
+    <div>
+        <label for="measurements">Measurements (JSON):</label>
+        <textarea id="measurements" name="measurements" rows="6"
+                  style="width: 400px; font-family: monospace;">{{ measurements_json }}</textarea>
+        <p><small>Optional: Track quantities as JSON. Examples:</small></p>
+        <ul style="font-size: small;">
+            <li>Running: {"distance_km": 5.0, "pace_min_per_km": 6.5}</li>
+            <li>Reading: {"pages": 25, "chapters": 2}</li>
+            <li>Exercise: {"reps": 20, "sets": 3, "weight_kg": 10}</li>
+            <li>Writing: {"words": 500}</li>
+        </ul>
+    </div>
+
+    <div>
+        <label>Created:</label>
+        <span>{{ action.created_at.strftime('%Y-%m-%d %H:%M:%S') if action.created_at else 'Unknown' }}</span>
+    </div>
+
+    <div>
+        <label>Last Updated:</label>
+        <span>{{ action.updated_at.strftime('%Y-%m-%d %H:%M:%S') if action.updated_at else 'Never' }}</span>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <button type="submit">Save Changes</button>
+        <a href="/actions/list">Cancel</a>
+    </div>
+</form>
+
+<script>
+// Auto-format JSON when field loses focus
+document.getElementById('measurements').addEventListener('blur', function() {
+    const value = this.value.trim();
+    if (value) {
+        try {
+            const parsed = JSON.parse(value);
+            this.value = JSON.stringify(parsed, null, 2);
+        } catch(e) {
+            // Invalid JSON, leave as is
+        }
+    }
+});
+
+// Format on page load if there's existing JSON
+window.addEventListener('load', function() {
+    const field = document.getElementById('measurements');
+    const value = field.value.trim();
+    if (value) {
+        try {
+            const parsed = JSON.parse(value);
+            field.value = JSON.stringify(parsed, null, 2);
+        } catch(e) {
+            // Invalid JSON, leave as is
+        }
+    }
+});
+</script>
+
+{% endblock %}

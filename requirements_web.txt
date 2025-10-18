@@ -1,5 +1,0 @@
-# Web Interface Dependencies for Ten Week Goal App
-# Install with: pip install -r requirements_web.txt
-
-# Core web framework
-Flask==3.1.2

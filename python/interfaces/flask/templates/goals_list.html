@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}List Goals - Ten Week Goal App{% endblock %}
+
+{% block header %}Goals List{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/goals">Goals</a> > List</p>
+{% endblock %}
+
+{% block content %}
+<h2>All Goals</h2>
+
+<div>
+    <a href="/goals/add">Add New Goal</a>
+</div>
+
+<h3>Filter</h3>
+<form method="GET" action="/goals/list">
+    <label for="type_filter">Type:</label>
+    <select id="type_filter" name="type">
+        <option value="">All Types</option>
+        <option value="Goal" {% if current_type == 'Goal' %}selected{% endif %}>Goal</option>
+        <option value="Milestone" {% if current_type == 'Milestone' %}selected{% endif %}>Milestone</option>
+        <option value="SmartGoal" {% if current_type == 'SmartGoal' %}selected{% endif %}>SmartGoal</option>
+    </select>
+
+    <label>
+        <input type="checkbox" name="has_dates" value="true" {% if has_dates_filter %}checked{% endif %}>
+        Time-bound only
+    </label>
+
+    <label>
+        <input type="checkbox" name="has_target" value="true" {% if has_target_filter %}checked{% endif %}>
+        Measurable only
+    </label>
+
+    <button type="submit">Filter</button>
+    <a href="/goals/list">Clear</a>
+</form>
+
+{% if goals %}
+<h3>Results ({{ goals|length }})</h3>
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Target</th>
+            <th>Time Period</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for goal in goals %}
+        <tr>
+            <td>{{ goal.id }}</td>
+            <td>
+                <span class="badge badge-{{ 'success' if goal.goal_type == 'SmartGoal' else 'warning' if goal.goal_type == 'Milestone' else 'info' }}">
+                    {{ goal.goal_type }}
+                </span>
+            </td>
+            <td><strong>{{ goal.common_name }}</strong></td>
+            <td>
+                {% if goal.description %}
+                    {{ goal.description[:50] }}{% if goal.description|length > 50 %}...{% endif %}
+                {% else %}
+                    <em>No description</em>
+                {% endif %}
+            </td>
+            <td>
+                {% if goal.measurement_target and goal.measurement_unit %}
+                    {{ goal.measurement_target }} {{ goal.measurement_unit }}
+                {% else %}
+                    <em>No target</em>
+                {% endif %}
+            </td>
+            <td>
+                {% if goal.goal_type == 'Milestone' and goal.target_date %}
+                    By {{ goal.target_date.strftime('%Y-%m-%d') }}
+                {% elif goal.start_date and goal.target_date %}
+                    {{ goal.start_date.strftime('%Y-%m-%d') }} to {{ goal.target_date.strftime('%Y-%m-%d') }}
+                {% elif goal.target_date %}
+                    By {{ goal.target_date.strftime('%Y-%m-%d') }}
+                {% else %}
+                    <em>No dates</em>
+                {% endif %}
+            </td>
+            <td>
+                <a href="/goals/edit/{{ goal.id }}">Edit</a> |
+                <form method="POST" action="/goals/delete/{{ goal.id }}" style="display: inline;" onsubmit="return confirm('Delete this goal?');">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% if goal.goal_type == 'SmartGoal' %}
+        <tr>
+            <td colspan="7" style="background-color: #f0f0f0; padding-left: 20px;">
+                <small>
+                    {% if goal.how_goal_is_relevant %}<strong>Relevant:</strong> {{ goal.how_goal_is_relevant }} | {% endif %}
+                    {% if goal.how_goal_is_actionable %}<strong>Actionable:</strong> {{ goal.how_goal_is_actionable }}{% endif %}
+                </small>
+            </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No goals found. <a href="/goals/add">Add your first goal</a></p>
+{% endif %}
+
+{% endblock %}

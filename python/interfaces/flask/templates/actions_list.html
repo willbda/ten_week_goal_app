@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}List Actions - Ten Week Goal App{% endblock %}
+
+{% block header %}Actions List{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/actions">Actions</a> > List</p>
+{% endblock %}
+
+{% block content %}
+<h2>All Actions</h2>
+
+<div>
+    <a href="/actions/add">Add New Action</a>
+</div>
+
+<h3>Filter</h3>
+<form method="GET" action="/actions/list">
+    <div>
+        <label for="from_date">From Date:</label>
+        <input type="datetime-local" id="from_date" name="from_date" value="{{ from_date or '' }}">
+
+        <label for="to_date">To Date:</label>
+        <input type="datetime-local" id="to_date" name="to_date" value="{{ to_date or '' }}">
+    </div>
+
+    <div>
+        <label for="has_measurements">Has Measurements:</label>
+        <select id="has_measurements" name="has_measurements">
+            <option value="">All</option>
+            <option value="true" {% if has_measurements == 'true' %}selected{% endif %}>Yes</option>
+            <option value="false" {% if has_measurements == 'false' %}selected{% endif %}>No</option>
+        </select>
+
+        <label for="has_duration">Has Duration:</label>
+        <select id="has_duration" name="has_duration">
+            <option value="">All</option>
+            <option value="true" {% if has_duration == 'true' %}selected{% endif %}>Yes</option>
+            <option value="false" {% if has_duration == 'false' %}selected{% endif %}>No</option>
+        </select>
+    </div>
+
+    <button type="submit">Filter</button>
+    <a href="/actions/list">Clear</a>
+</form>
+
+{% if actions %}
+<h3>Results ({{ actions|length }})</h3>
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Description</th>
+            <th>Logged At</th>
+            <th>Measurements</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for action in actions %}
+        <tr>
+            <td>{{ action.id }}</td>
+            <td><strong>{{ action.description[:40] }}{% if action.description|length > 40 %}...{% endif %}</strong></td>
+            <td>{{ action.log_time.strftime('%-m/%d/%y') }}</td>
+            <td>
+                {% if action.measurement_units_by_amount %}
+                    {% set measurements = action.measurement_units_by_amount.items() | list %}
+                    {% if measurements|length <= 2 %}
+                        {% for key, value in measurements %}
+                            {{ key }}: {{ value }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        {% for key, value in measurements[:2] %}
+                            {{ key }}: {{ value }},
+                        {% endfor %}
+                        ... +{{ measurements|length - 2 }} more
+                    {% endif %}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                <a href="/actions/edit/{{ action.id }}">Edit</a> |
+                <a href="/actions/{{ action.id }}/goals">Goals</a> |
+                <form method="POST" action="/actions/delete/{{ action.id }}" style="display: inline;" onsubmit="return confirm('Delete this action?');">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No actions found. <a href="/actions/add">Add your first action</a></p>
+{% endif %}
+
+{% endblock %}

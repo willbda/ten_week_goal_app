@@ -1,0 +1,47 @@
+/* Basic Table Styles - Written by Claude Code on 2025-01-17 */
+
+/* Base table styles - apply to all tables */
+.table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 8px;
+    text-align: left;
+}
+
+.table th {
+    font-weight: bold;
+}
+
+/* Bordered table variant */
+.table-bordered th,
+.table-bordered td {
+    border: 1px solid #ddd;
+}
+
+.table-bordered th {
+    background-color: #f5f5f5;
+}
+
+/* Borderless table variant (minimal separators) */
+.table-borderless th {
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+}
+
+.table-borderless td {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.table-borderless tr:last-child td {
+    border-bottom: none;
+}
+
+/* Hover effect (optional - works with both variants) */
+.table-hover tbody tr:hover {
+    background-color: #f9f9f9;
+}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Add Term - Ten Week Goal App{% endblock %}
+
+{% block header %}Add Term{% endblock %}
+
+{% block breadcrumb %}
+<p><a href="/">Home</a> > <a href="/terms">Terms</a> > Add</p>
+{% endblock %}
+
+{% block content %}
+<h2>Create New Term</h2>
+
+<form method="POST" action="/terms/add">
+    <div>
+        <label for="term_number">Term Number:</label>
+        <input type="number" id="term_number" name="term_number" required min="1" placeholder="e.g., 1, 2, 3...">
+        <p><small>Sequential identifier for this term (e.g., Term 1, Term 2)</small></p>
+    </div>
+
+    <div>
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" required>
+        <p><small>First day of the term</small></p>
+    </div>
+
+    <div>
+        <label for="target_date">End Date (optional):</label>
+        <input type="date" id="target_date" name="target_date">
+        <p><small>Last day of the term. If not specified, defaults to 70 days (10 weeks) from start.</small></p>
+    </div>
+
+    <div>
+        <label for="theme">Theme (optional):</label>
+        <input type="text" id="theme" name="theme" placeholder="e.g., Health & Learning, Career Focus">
+        <p><small>A focus area or theme for this term</small></p>
+    </div>
+
+    <div>
+        <label for="goal_ids">Goals (optional):</label>
+        <select id="goal_ids" name="goal_ids" multiple size="8">
+            {% if goals %}
+                {% for goal in goals %}
+                <option value="{{ goal.id }}">{{ goal.description[:60] }}{% if goal.description|length > 60 %}...{% endif %}</option>
+                {% endfor %}
+            {% else %}
+                <option value="" disabled>No goals available</option>
+            {% endif %}
+        </select>
+        <p><small>Hold Ctrl/Cmd to select multiple goals for this term</small></p>
+    </div>
+
+    <div>
+        <button type="submit">Create Term</button>
+        <a href="/terms">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}
