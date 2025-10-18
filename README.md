@@ -2,22 +2,24 @@
 
 A personal development tracking system built with clean architecture principles. Track actions, set SMART goals, define personal values, and monitor progress over time with intelligent automatic matching.
 
-## 🚨 Major Transition: Swift Port in Progress (2025-10-17)
+## 🚨 Project Reorganization: Multi-Language Structure (2025-10-17)
 
-**Python v1.0**: Complete and production-ready (tagged as `v1.0-python`)
-- 36 essential tests covering core functionality
+**Python Implementation**: Complete and production-ready in `/python` directory
+- 90+ tests covering all functionality
 - Flask API with 27 RESTful endpoints
 - Full CRUD for Actions, Goals, Terms, Values
+- Web UI for Goals, Terms, Values management
+- Polymorphic storage for class hierarchies
 
 **Swift Development**: Active development in `/swift` directory
 - Maintaining same layered architecture
-- SQLite compatibility with Python database
+- SQLite compatibility via `/shared/schemas`
 - Native macOS/iOS with SwiftUI planned
 
 ## What This Does
 
 - **Log Actions**: Record daily activities with optional measurements (distance, duration, reps, etc.)
-- **Define Goals**: Create loose aspirations or strict SMART goals with deadlines and targets
+- **Define Goals**: Create Goals, Milestones, or fully-validated SmartGoals with polymorphic storage
 - **Track Values**: Define personal values hierarchy (Incentives → Values → Major/Highest Order Values)
 - **Automatic Matching**: Intelligent inference system matches actions to goals by time period, units, and description
 - **Progress Tracking**: Calculate progress automatically with cached projections
@@ -51,19 +53,32 @@ rhetorica/    → Translation between domains (coordination layer with polymorph
 # Clone and navigate to project
 cd ten_week_goal_app
 
+# Set up environment
+cp .env.example .env  # Create .env file (or use existing)
+
+# Navigate to Python directory
+cd python/
+
 # Run tests to verify setup
 pytest tests/ -v
 ```
 
 ### Usage
 
-**Flask API:**
+**Flask Web App:**
 ```bash
-# Start Flask API server
-python interfaces/flask/flask_main.py
+# From project root (recommended)
+python run_flask.py
+# OR
+flask run  # Uses .flaskenv configuration
+
+# From python/ directory (alternative)
+cd python/
+python interfaces/flask/app.py
 
 # Visit http://localhost:5001
-# API documentation: http://localhost:5001/api/docs
+# Web UI: http://localhost:5001/goals
+# API endpoints: http://localhost:5001/api/
 ```
 
 **API Endpoints:**
@@ -76,52 +91,33 @@ python interfaces/flask/flask_main.py
 
 ```
 ten_week_goal_app/
-├── categoriae/              # Domain entities (WHAT things ARE)
-│   ├── actions.py           # Action class with validation
-│   ├── goals.py             # Goal hierarchy (ThingIWant → Goal → SmartGoal)
-│   ├── values.py            # Values hierarchy with life areas and priorities
-│   ├── relationships.py     # Derived relationships (ActionGoalRelationship, GoalValueAlignment)
-│   └── terms.py             # Time period entities (TenWeekTerm, LifeTime)
-│
-├── ethica/                  # Business logic (HOW things RELATE)
-│   ├── progress.py          # Legacy progress calculations (deprecated)
-│   ├── progress_aggregation.py  # Progress metrics and aggregation (authoritative)
-│   ├── progress_matching.py # Stateless matching functions (period, unit, description)
-│   └── inference_service.py # Service orchestrator for batch/realtime inference
-│
-├── politica/                # Infrastructure (HOW it's STORED)
-│   ├── database.py          # Generic SQLite operations
-│   └── schemas/             # Database table definitions
-│       ├── actions.sql
-│       ├── goals.sql
-│       ├── values.sql
-│       ├── action_goal_progress.sql  # Cached relationship projections
-│       ├── archive.sql
-│       └── schema.sql
-│
-├── rhetorica/               # Translation layer (COORDINATION)
-│   └── storage_service.py   # Repository pattern with polymorphic type support
-│
-├── interfaces/              # Presentation layer (USER INTERACTION)
-│   └── flask/               # Flask API application (sole interface)
-│       ├── flask_main.py    # Application factory
-│       ├── routes/          # Routes organization
-│       │   ├── api/         # API blueprints
-│       │   │   ├── goals.py     # Goals endpoints
-│       │   │   ├── actions.py   # Actions endpoints
-│       │   │   ├── values.py    # Values endpoints
-│       │   │   └── terms.py     # Terms endpoints
-│       │   └── ui_*.py      # Web UI routes
-│       ├── templates/       # HTML templates
-│       └── static/          # CSS, JS assets
-│
-├── config/                  # Configuration and setup
-│   ├── config.toml          # Application settings
-│   ├── settings.py          # Config loader
-│   ├── logging_setup.py     # Logging configuration
-│   └── testing.py           # Test-specific config
-│
-├── tests/                   # Test suite (36 essential tests)
+├── python/                  # Python implementation
+│   ├── categoriae/          # Domain entities (WHAT things ARE)
+│   │   ├── actions.py       # Action class with validation
+│   │   ├── goals.py         # Goal hierarchy (Goal → Milestone → SmartGoal)
+│   │   ├── values.py        # Values hierarchy with life areas
+│   │   ├── relationships.py # Derived relationships
+│   │   └── terms.py         # Time period entities
+│   │
+│   ├── ethica/              # Business logic (HOW things RELATE)
+│   │   ├── progress_aggregation.py  # Progress metrics
+│   │   ├── progress_matching.py     # Matching functions
+│   │   └── inference_service.py     # Batch/realtime inference
+│   │
+│   ├── politica/            # Infrastructure (HOW it's STORED)
+│   │   └── database.py      # Generic SQLite operations
+│   │
+│   ├── rhetorica/           # Translation layer (COORDINATION)
+│   │   └── storage_service.py   # Polymorphic storage
+│   │
+│   ├── interfaces/          # Presentation layer
+│   │   └── flask/           # Flask web application
+│   │       ├── app.py       # Application factory
+│   │       ├── routes/      # API and UI routes
+│   │       ├── templates/   # HTML templates
+│   │       └── static/      # CSS, JS assets
+│   │
+│   └── tests/               # Test suite (90+ tests)
 │   ├── conftest.py          # Pytest fixtures
 │   ├── test_actions.py      # Domain entity tests (9 tests)
 │   ├── test_values.py       # Values hierarchy tests (8 tests)
@@ -131,19 +127,21 @@ ten_week_goal_app/
 │   ├── test_values_storage.py   # Polymorphism test (1 test)
 │   └── test_term_actions.py # Date filtering tests (2 tests)
 │
+├── shared/                  # Shared between languages
+│   └── schemas/             # Database table definitions
+│       ├── actions.sql
+│       ├── goals.sql        # Includes goal_type for polymorphism
+│       ├── values.sql
+│       ├── terms.sql
+│       └── archive.sql
+│
 ├── swift/                   # Swift implementation (in progress)
 │   ├── Package.swift        # Swift Package Manager config
-│   ├── README.md           # Swift-specific documentation
 │   ├── Sources/            # Swift source code
-│   │   ├── Categoriae/     # Domain entities
-│   │   ├── Ethica/         # Business logic
-│   │   ├── Rhetorica/      # Translation layer
-│   │   └── Politica/       # Infrastructure
 │   └── Tests/              # Swift tests
 │
+├── .env                     # Environment variables (SECRET_KEY, etc)
 └── .documentation/          # Architecture documentation
-    ├── architecture_decision_record.md
-    └── architectural_lessons_from_grant_project.md
 ```
 
 ## Architecture Highlights
@@ -299,9 +297,10 @@ Personal project - all rights reserved.
 ---
 
 **Project Status**: Active Development
-**Current Phase**: Phase 1 Complete, Flask API Migration Complete
-**Last Updated**: 2025-10-14
-**Test Coverage**: 90/90 passing (100% pass rate)
+**Current Phase**: Production Ready - Web UI and API Complete
+**Last Updated**: 2025-10-17
+**Test Coverage**: 90+ tests passing (100% pass rate)
+**Architecture**: Multi-language structure (Python complete, Swift in progress)
 **Development Guide**: See [ROADMAP.md](ROADMAP.md) for systematic development plan
 
 *Built with clean architecture principles as a foundation for future personal development tracking systems.*

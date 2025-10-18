@@ -13,6 +13,10 @@ let package = Package(
         .library(
             name: "TenWeekGoalApp",
             targets: ["Categoriae"]
+        ),
+        .executable(
+            name: "TenWeekGoalDemo",
+            targets: ["Demo"]
         )
     ],
     dependencies: [],
@@ -22,6 +26,12 @@ let package = Package(
             name: "Categoriae",
             dependencies: [],
             path: "Sources/Categoriae"
+        ),
+        // Demo app
+        .executableTarget(
+            name: "Demo",
+            dependencies: ["Categoriae"],
+            path: "Sources/Demo"
         ),
         // Tests
         .testTarget(

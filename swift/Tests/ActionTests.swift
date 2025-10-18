@@ -93,8 +93,9 @@ final class ActionTests: XCTestCase {
     // MARK: - Equatable Tests
 
     func testActionEquality() {
-        let action1 = Action(commonName: "Test", id: 1)
-        let action2 = Action(commonName: "Test", id: 1)
+        let sharedLogTime = Date()
+        let action1 = Action(commonName: "Test", id: 1, logTime: sharedLogTime)
+        let action2 = Action(commonName: "Test", id: 1, logTime: sharedLogTime)
 
         XCTAssertEqual(action1, action2)
     }

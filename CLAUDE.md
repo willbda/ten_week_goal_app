@@ -6,18 +6,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Ten Week Goal App - A personal goal tracking system built with layered architecture. Tracks Actions (what you do) against Goals (what you want to achieve), defines personal Values (what motivates you), and automatically infers relationships between them using SQLite storage with a clear separation between domain logic and infrastructure.
 
+## Project Structure (Multi-Language)
+
+```
+ten_week_goal_app/
+├── python/         # Python implementation
+│   ├── categoriae/ # Domain entities
+│   ├── ethica/     # Business logic
+│   ├── rhetorica/  # Translation layer
+│   ├── politica/   # Infrastructure
+│   ├── interfaces/ # CLI and Flask
+│   └── tests/      # Python tests
+├── swift/          # Swift implementation (in development)
+│   ├── Sources/    # Swift source code
+│   └── Tests/      # Swift tests
+├── shared/         # Shared between languages
+│   └── schemas/    # Database schemas
+└── .env           # Environment variables (SECRET_KEY, etc)
+```
+
 ## Essential Commands
 
 ### Testing
 ```bash
+# Navigate to Python directory first
+cd python/
+
 # Run all tests
 pytest tests/
 
 # Run specific test file
 pytest tests/test_actions.py
-
-# Run single test
-pytest tests/test_actions.py::test_action_creation_with_description
 
 # Verbose output
 pytest tests/ -v
@@ -25,17 +44,28 @@ pytest tests/ -v
 
 ### Database Operations
 ```python
-# Initialize database (creates all tables from schemas)
+# From python/ directory
 from politica.database import init_db
 init_db()
 
 # Database location
-# politica/data_storage/application_data.db
+# python/politica/data_storage/application_data.db
 
 # Schema files location
 # shared/schemas/*.sql
 ```
 
+### Running Flask App
+```bash
+# From project root (recommended)
+python run_flask.py
+# OR
+flask run  # Uses .flaskenv + .env
+
+# From python/ directory (alternative)
+cd python/
+python interfaces/flask/app.py
+```
 
 ## Architecture: Aristotelian Layers
 
@@ -86,7 +116,10 @@ tests/         - Test suite
 
 ### Domain Entities (categoriae/)
 - `actions.py`: Action class with optional measurements, timing
-- `goals.py`: Goal hierarchy (ThingIWant → Goal → SmartGoal)
+- `goals.py`: Goal hierarchy (ThingIWant → Goal → Milestone → SmartGoal)
+  - Goal: General objective with optional measurements
+  - Milestone: Point-in-time checkpoint (uses end_date as target)
+  - SmartGoal: Fully validated SMART goal with all fields required
 - `values.py`: Values hierarchy (Incentive → Value → MajorValue → HighestOrderValue)
   - LifeArea: Life domains (distinct from values)
   - PriorityLevel: Validated 1-100 priority scoring
@@ -114,7 +147,9 @@ tests/         - Test suite
 ### Translation Layer (rhetorica/)
 - `storage_service.py`: StorageService base class with polymorphic support
   - ActionStorageService: translates Action ↔ dict
-  - GoalStorageService: translates Goal ↔ dict
+  - GoalStorageService: polymorphic Goal ↔ dict (Goal/Milestone/SmartGoal)
+    - Uses `goal_type` field for class identification
+    - CLASS_MAP pattern for dynamic instantiation
   - Pattern: store_single_instance(), store_many_instances(), save(), update_instance(), get_by_id()
   - Polymorphism: Automatically saves/retrieves correct subclass types
 - `values_storage_service.py`: Values-specific storage (Phase 1)
@@ -411,6 +446,15 @@ Logs are written to `logs/` directory (configured in config.toml)
 - **Layer violations**: If you catch yourself importing from categoriae in politica, STOP and refactor
 
 ## Recent Additions
+
+**2025-10-17: Goal Hierarchy Polymorphism + Project Reorganization** 🎨
+- ✅ Full polymorphic support for Goal → Milestone → SmartGoal hierarchy
+- ✅ Web UI for Goals management (5 templates, dynamic forms)
+- ✅ Flask session configuration with secure SECRET_KEY in .env
+- ✅ Project reorganized: python/, swift/, shared/ directories
+- ✅ Migrated from .flaskenv to .env (with python-dotenv)
+- ✅ Goal API supports type filtering: GET /api/goals?type=SmartGoal
+- ✅ Database schema updated with goal_type column
 
 **2025-10-15: CLI Refactor + Cleanup Complete - Production Ready System** 🎉
 - ✅ Complete CLI rebuild matching Flask API architecture (1,287 lines)

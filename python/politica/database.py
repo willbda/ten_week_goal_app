@@ -334,22 +334,34 @@ class Database:
             logger.warning("Attempted to insert empty list of records")
             raise ValueError("Cannot insert empty list of records")
 
-        # Infer columns from first record
-        columns = list(records[0].keys())
-        placeholders = ', '.join(['?' for _ in columns])
-        columns_str = ', '.join(columns)
-
-        sql = f"INSERT INTO {table} ({columns_str}) VALUES ({placeholders})"
-        logger.info(f"Inserting {len(records)} records into {table}")
-        logger.debug(f"SQL: {sql}")
-
-        inserted_ids = []
+        # Get actual table columns from database schema (not from data!)
+        # This ensures we use the schema as the source of truth
         with self._get_connection() as conn:
             cursor = conn.cursor()
+            cursor.execute(f"PRAGMA table_info({table})")
+            table_info = cursor.fetchall()
 
+            # Extract column names, excluding id (autoincrement)
+            # table_info format: (cid, name, type, notnull, dflt_value, pk)
+            schema_columns = [col[1] for col in table_info if col[1] != 'id']
+
+            if not schema_columns:
+                raise ValueError(f"No columns found in {table} schema (excluding id)")
+
+            # Use schema columns for INSERT statement
+            placeholders = ', '.join(['?' for _ in schema_columns])
+            columns_str = ', '.join(schema_columns)
+
+            sql = f"INSERT INTO {table} ({columns_str}) VALUES ({placeholders})"
+            logger.info(f"Inserting {len(records)} records into {table}")
+            logger.debug(f"Using schema columns: {schema_columns}")
+            logger.debug(f"SQL: {sql}")
+
+            inserted_ids = []
             for record in records:
                 # Use .get() to handle missing keys gracefully (defaults to None)
-                values = [record.get(col) for col in columns]
+                # This ensures all schema columns get a value (None if not in record)
+                values = [record.get(col) for col in schema_columns]
                 cursor.execute(sql, values)
                 inserted_ids.append(cursor.lastrowid)
 

@@ -2,7 +2,7 @@
 // Domain entity representing an action taken at a point in time
 //
 // Written by Claude Code on 2025-10-17
-// Ported from Python implementation (categoriae/actions.py)
+// Ported from Python implementation (python/categoriae/actions.py)
 
 import Foundation
 
@@ -11,24 +11,9 @@ import Foundation
 /// Actions serve as the primary entity for tracking what you've done.
 /// They can include quantitative measurements (distance, duration, reps, etc.)
 /// and timing information (when started, how long it took).
-struct Action: Identifiable {
-    // MARK: - Properties from PersistableEntity
-
-    /// Unique identifier assigned by database
-    var id: Int?
-
-    /// Short description of the action
-    var commonName: String
-
-    /// Optional detailed description
-    var description: String?
-
-    /// Freeform notes
-    var notes: String?
-
-    /// When the action was logged
-    var logTime: Date
-
+///
+/// Inherits from PersistableEntity: commonName, id, description, notes, logTime
+class Action: PersistableEntity {
     // MARK: - Action-specific Properties
 
     /// Quantitative measurements associated with this action
@@ -44,7 +29,7 @@ struct Action: Identifiable {
 
     // MARK: - Initialization
 
-    /// Create a new action with required fields
+    /// Create a new action with required and optional fields
     /// - Parameters:
     ///   - commonName: Short description of the action
     ///   - id: Database identifier (nil for new actions)
@@ -64,14 +49,17 @@ struct Action: Identifiable {
         durationMinutes: Double? = nil,
         startTime: Date? = nil
     ) {
-        self.commonName = commonName
-        self.id = id
-        self.description = description
-        self.notes = notes
-        self.logTime = logTime
         self.measurementUnitsByAmount = measurementUnitsByAmount
         self.durationMinutes = durationMinutes
         self.startTime = startTime
+
+        super.init(
+            commonName: commonName,
+            id: id,
+            description: description,
+            notes: notes,
+            logTime: logTime
+        )
     }
 
     // MARK: - Validation
@@ -101,11 +89,13 @@ struct Action: Identifiable {
 
 extension Action: Equatable {
     static func == (lhs: Action, rhs: Action) -> Bool {
+        // Compare inherited properties
         lhs.id == rhs.id &&
         lhs.commonName == rhs.commonName &&
         lhs.description == rhs.description &&
         lhs.notes == rhs.notes &&
         lhs.logTime == rhs.logTime &&
+        // Compare Action-specific properties
         lhs.measurementUnitsByAmount == rhs.measurementUnitsByAmount &&
         lhs.durationMinutes == rhs.durationMinutes &&
         lhs.startTime == rhs.startTime
