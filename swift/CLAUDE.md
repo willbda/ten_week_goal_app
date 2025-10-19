@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Swift implementation of the Ten Week Goal App - a personal goal tracking system with protocol-oriented architecture. This port uses Swift's protocol system to define ontological "ways of being" for domain entities, while maintaining data compatibility with the Python version.
+Swift implementation of the Ten Week Goal App using Swift 6.2 strict concurrency and GRDB for type-safe database operations. This port leverages Swift's protocol system and modern concurrency features while maintaining data compatibility with the Python version.
+
+**Key Architectural Decision**: Uses GRDB's Codable integration for direct database-to-domain-model mapping, eliminating the need for a translation layer (Rhetorica).
 
 The Swift and Python implementations share the same SQLite database format, ensuring data compatibility between languages.
 
@@ -15,6 +17,9 @@ The Swift and Python implementations share the same SQLite database format, ensu
 # Build the project
 swift build
 
+# Build without warnings
+swift build -Xswiftc -suppress-warnings
+
 # Run tests
 swift test
 
@@ -24,23 +29,20 @@ swift test --verbose
 # Run specific test
 swift test --filter ActionTests
 
-# Run the demo app
-swift run TenWeekGoalDemo
-
 # Clean build artifacts
 swift package clean
 ```
 
 ### Development Workflow
 ```bash
-# Generate Xcode project (optional, for IDE development)
-swift package generate-xcodeproj
-
 # Update dependencies
 swift package update
 
 # Show resolved package dependencies
 swift package show-dependencies
+
+# Generate Xcode project (optional)
+swift package generate-xcodeproj
 ```
 
 ## Project Structure
@@ -49,32 +51,66 @@ swift package show-dependencies
 swift/
 ├── Sources/
 │   ├── Models/              # Domain entities (protocol-oriented)
-│   │   ├── Protocols.swift  # Core ontological protocols
+│   │   ├── Protocols.swift  # Core ontological protocols (public)
 │   │   └── Categoriae/      # Entity implementations
-│   │       ├── Actions.swift
-│   │       ├── Goals.swift
-│   │       ├── Values.swift
-│   │       └── Terms.swift
+│   │       ├── Actions.swift      # ✅ GRDB integrated
+│   │       ├── Goals.swift        # Has GRDB in domain models
+│   │       ├── Values.swift       # Needs GRDB integration
+│   │       └── Terms.swift        # Needs GRDB integration
+│   ├── Politica/            # Infrastructure (Database operations)
+│   │   ├── DatabaseManager.swift      # ✅ Actor with generic CRUD
+│   │   ├── DatabaseConfiguration.swift # ✅ Path management
+│   │   └── DatabaseError.swift        # ✅ Typed errors
 │   ├── Ethica/              # Business logic (planned)
-│   ├── Rhetorica/           # Translation layer (planned)
-│   ├── Politica/            # Infrastructure/SQLite (planned)
-│   └── Demo/
-│       └── DemoApp.swift    # SwiftUI demo application
+│   └── Rhetorica/           # Translation layer (NOT NEEDED!)
 ├── Tests/
-│   ├── ActionTests.swift    # Action entity tests (5 tests)
-│   └── GoalTests.swift      # Goal hierarchy tests (9 tests)
-└── Package.swift            # Swift Package Manager configuration
+│   ├── ActionTests.swift    # 5 tests passing
+│   └── GoalTests.swift      # 9 tests passing
+├── Package.swift            # SPM configuration
+├── SWIFTROADMAP.md          # Complete project roadmap
+└── CLAUDE.md                # This file
 ```
 
-## Architecture: Protocol-Oriented Ontology
+## Architecture: GRDB-Native Design
 
-The Swift implementation uses protocols to define "ways of being" rather than "things to do."
+### Core Principle
 
-### Core Ontology Protocols
+**Embrace GRDB's type system** instead of Python's dictionary-based approach:
 
-**Persistable** - Things that exist in the database
+**Python**:
+```python
+Database → dict[str, Any] → StorageService → Domain Entity
+           ↑ Runtime types, not Sendable
+```
+
+**Swift**:
 ```swift
-protocol Persistable: Identifiable, Equatable {
+Database → GRDB Row → Domain Entity (via Codable)
+           ↑ Compile-time types, Sendable
+```
+
+### No Rhetorica Layer Needed
+
+**Key Insight**: GRDB's `FetchableRecord` + `PersistableRecord` + `Codable` provides automatic serialization. Domain models communicate directly with the database.
+
+```swift
+// Old approach (would need translation layer):
+let storage = ActionStorageService(database: db)
+let actions = try await storage.getAll()
+
+// New approach (direct GRDB):
+let actions: [Action] = try await db.fetchAll()
+```
+
+## Core Ontology Protocols
+
+All protocols are now **public** for cross-module access.
+
+### Temporal Protocols
+
+**Persistable** - Things that exist in the database (ONGOING)
+```swift
+public protocol Persistable: Identifiable, Equatable {
     var id: UUID { get set }
     var friendlyName: String? { get set }
     var detailedDescription: String? { get set }
@@ -83,9 +119,9 @@ protocol Persistable: Identifiable, Equatable {
 }
 ```
 
-**Achievable** - Future-oriented targets (goals)
+**Achievable** - Future-oriented targets (FUTURE)
 ```swift
-protocol Achievable {
+public protocol Achievable {
     var targetDate: Date? { get set }
     var measurementUnit: String? { get set }
     var measurementTarget: Double? { get set }
@@ -93,18 +129,18 @@ protocol Achievable {
 }
 ```
 
-**Performed** - Past-oriented actions (what you did)
+**Performed** - Past-oriented actions (PAST)
 ```swift
-protocol Performed {
+public protocol Performed {
     var measurements: [String: Double]? { get set }
     var durationMinutes: Double? { get set }
     var startTime: Date? { get set }
 }
 ```
 
-**Motivating** - Values and priorities
+**Motivating** - Values and priorities (TIMELESS)
 ```swift
-protocol Motivating {
+public protocol Motivating {
     var priority: Int { get set }
     var lifeDomain: String? { get set }
 }
@@ -114,16 +150,8 @@ protocol Motivating {
 
 - **Validatable**: Structural self-validation (`isValid()`)
 - **TypeIdentifiable**: Polymorphic storage support (goalType, incentiveType)
-- **Serializable**, **JSONSerializable**: Translation layer support
+- **Serializable**, **JSONSerializable**: API support
 - **Archivable**: Soft-delete capability
-
-### Temporal Orientation
-
-The protocols reflect temporal nature:
-- **Achievable** = FUTURE (targets, goals, what you want)
-- **Performed** = PAST (actions, what you did)
-- **Motivating** = TIMELESS (values, priorities, meaning)
-- **Persistable** = ONGOING (exists in the database)
 
 ### What Doesn't Belong in Protocols
 
@@ -134,144 +162,204 @@ The protocols reflect temporal nature:
 
 ## Current Implementation Status
 
-### ✅ Implemented (Phase 2 - Protocol Refactoring Complete)
+### ✅ Phase 1-4: Foundation Complete (Oct 18, 2025)
 
-**Models/Protocols.swift**: Ontological protocol system (2025-10-18)
-- 9 essential protocols (down from 17 over-engineered ones)
-- Clear separation: ontology (what things ARE) vs behavior (what you DO)
-- Infrastructure support for polymorphism, validation, serialization
+**Models Layer**:
+- ✅ 9 public protocols (Persistable, Achievable, Performed, Motivating, etc.)
+- ✅ Action with GRDB conformance (FetchableRecord, PersistableRecord, TableRecord)
+- ✅ Goal hierarchy (Goal, SmartGoal, Milestone) - domain models ready
+- ✅ Values hierarchy (Values, MajorValues, HighestOrderValues) - domain models ready
+- ✅ Terms (GoalTerm, LifeTime) - domain models ready
 
-**Models/Categoriae/Actions.swift**: Action entity
-- `struct Action: Persistable, Performed`
-- Measurements support via `measurements: [String: Double]?`
-- Timing fields: `durationMinutes`, `startTime`
-- Validation logic: positive measurements, startTime requires duration
-- UUID-based equality via Persistable
+**Politica Layer (Database)**:
+- ✅ DatabaseManager actor with generic CRUD operations
+- ✅ DatabaseConfiguration with Sendable conformance
+- ✅ DatabaseError with typed, Sendable errors
+- ✅ Schema initialization from `shared/schemas/` directory
+- ✅ Automatic archiving (preserves old versions before updates/deletes)
+- ✅ Swift 6.2 strict concurrency compliance
+- ✅ 380 lines vs Python's 527 lines (simpler!)
 
-**Models/Categoriae/Goals.swift**: Goal hierarchy (class-based inheritance)
-- `class Goal: Persistable, Achievable, TypeIdentifiable`
-- `class SmartGoal: Goal` - strict SMART validation
-- `class Milestone: Goal` - point-in-time targets (no start date)
-- Polymorphic `goalType` field for database storage
+**GRDB Integration**:
+- ✅ GRDB.swift 7.8.0 dependency added
+- ✅ Action conforms to FetchableRecord, PersistableRecord, TableRecord
+- ✅ CodingKeys for snake_case ↔ camelCase mapping
+- ✅ JSON serialization for `measurements` dictionary
+- ✅ TableRecord.databaseTableName = "actions"
 
-**Models/Categoriae/Values.swift**: Values hierarchy
-- `class Incentives: Persistable, Motivating, TypeIdentifiable`
-- `class Values: Incentives` - general values
-- `class MajorValues: Values` - actionable values with alignment guidance
-- `class HighestOrderValues: Values` - philosophical ideals
-- `class LifeAreas: Incentives` - life domains (distinct from values)
-- `struct PriorityLevel` - validated 1-100 priority
+**Testing**:
+- ✅ 14/14 tests passing (5 Action + 9 Goal)
+- ✅ Zero build errors
+- ✅ Zero Swift 6 concurrency warnings
+- ✅ In-memory database support for fast testing
 
-**Models/Categoriae/Terms.swift**: Time horizons
-- `class GoalTerm: Persistable` - 10-week planning periods
-- `class LifeTime` - lifetime perspective ("4,000 weeks" thinking)
-- Note: Contains business logic methods (isActive, daysRemaining) that should move to Ethica
+**Cleanup**:
+- ✅ Deleted StorageService.swift (GRDB provides this)
+- ✅ Deleted ActionStorageService.swift (direct database access)
+- ✅ Deleted DatabaseValue.swift (GRDB handles Sendable types)
 
-**Tests**: 14 passing tests
-- **ActionTests.swift**: 5 tests (creation, validation, equality)
-- **GoalTests.swift**: 9 tests (Goal, SmartGoal, Milestone, polymorphism)
+### 🚧 Phase 5-8: Next Steps
 
-**Demo/DemoApp.swift**: SwiftUI demonstration app
-- macOS-native (simplified from cross-platform)
-- Action creation and listing
-- Shows domain model in action
+**Immediate**:
+1. Write database integration tests for Action CRUD
+2. Add GRDB conformance to Goal hierarchy (polymorphic storage)
+3. Add GRDB conformance to Values hierarchy
+4. Add GRDB conformance to Terms
 
-### 🚧 Next Steps (Planned)
-1. Write Values tests (planned)
-2. Write Terms tests (planned)
-3. Move business logic from Terms to Ethica layer
-4. Implement SQLite infrastructure (Politica layer)
-5. Port business logic (Ethica: progress calculations, matching algorithms)
-6. Build translation layer (Rhetorica: storage services)
-7. Create production SwiftUI interface
+**Business Logic**:
+5. Port Ethica layer (progress calculations, matching algorithms)
+6. Write Ethica tests (30+ tests)
 
-## Swift-Specific Patterns
+**Target**: 90+ tests matching Python implementation
 
-### Entity Definition Pattern
+## GRDB Patterns
 
-**Struct with Protocols (Actions)**:
+### Entity with GRDB Conformance
+
 ```swift
-struct Action: Persistable, Performed {
-    // Persistable properties
-    var id: UUID = UUID()
-    var friendlyName: String?
-    var detailedDescription: String?
-    var freeformNotes: String?
-    var logTime: Date = Date()
+import Foundation
+import GRDB
 
-    // Performed properties
+struct Action: Persistable, Performed, Codable, Sendable,
+               FetchableRecord, PersistableRecord, TableRecord {
+    var id: UUID
+    var friendlyName: String?
     var measurements: [String: Double]?
     var durationMinutes: Double?
     var startTime: Date?
-
-    // Validation
-    func isValid() -> Bool {
-        // Measurements must be positive
-        if let measurements = measurements {
-            for (_, value) in measurements {
-                if value <= 0 { return false }
-            }
-        }
-
-        // startTime requires duration
-        if startTime != nil && durationMinutes == nil {
-            return false
-        }
-
-        return true
-    }
-}
-```
-
-**Class with Inheritance (Goals)**:
-```swift
-class Goal: Persistable, Achievable, TypeIdentifiable {
-    // Persistable
-    var id: UUID
-    var friendlyName: String?
-    var detailedDescription: String?
-    var freeformNotes: String?
     var logTime: Date
 
-    // Achievable
-    var targetDate: Date?
-    var measurementUnit: String?
-    var measurementTarget: Double?
-    var startDate: Date?
+    // TableRecord
+    static let databaseTableName = "actions"
 
-    // TypeIdentifiable
-    var goalType: String { return "Goal" }
-
-    // Goal-specific
-    var howGoalIsRelevant: String?
-    var howGoalIsActionable: String?
-    var expectedTermLength: Int?
+    // Codable keys for snake_case mapping
+    enum CodingKeys: String, CodingKey {
+        case id
+        case friendlyName = "friendly_name"
+        case measurements = "measurement_units_by_amount"
+        case durationMinutes = "duration_minutes"
+        case startTime = "start_time"
+        case logTime = "log_time"
+    }
 
     func isValid() -> Bool {
-        // Validate measurement and date constraints
-    }
-}
-
-class SmartGoal: Goal {
-    override var goalType: String { return "SmartGoal" }
-
-    // Requires all SMART fields in init
-    init(
-        measurementUnit: String,  // Required!
-        measurementTarget: Double,
-        startDate: Date,
-        targetDate: Date,
-        howGoalIsRelevant: String,
-        howGoalIsActionable: String
-        // ...
-    ) {
-        super.init(/* ... */)
-        validateSmartCriteria()  // Post-init validation
+        // Validation logic
     }
 }
 ```
 
-### Testing Pattern (XCTest)
+### DatabaseManager Usage
+
+```swift
+import Politica
+import Models
+
+// Initialize (in-memory for tests, file-based for production)
+let db = try await DatabaseManager(configuration: .inMemory)
+
+// Fetch all
+let actions: [Action] = try await db.fetchAll()
+
+// Fetch by ID
+if let action = try await db.fetchOne(Action.self, id: someUUID) {
+    print(action.friendlyName ?? "")
+}
+
+// Save (generates UUID if new)
+var action = Action(friendlyName: "Run")
+try await db.save(&action)
+print(action.id) // Now has UUID
+
+// Update (automatically archives old version)
+action.measurements = ["km": 10.0]
+try await db.save(&action) // Detects existing ID, updates
+
+// Delete (automatically archives before deletion)
+try await db.delete(Action.self, id: action.id)
+```
+
+### Custom SQL Queries
+
+```swift
+// Fetch with custom SQL
+let runs: [Action] = try await db.fetch(
+    Action.self,
+    sql: "SELECT * FROM actions WHERE friendly_name LIKE ?",
+    arguments: ["%run%"]
+)
+```
+
+### Polymorphic Storage (Goals)
+
+```swift
+// Custom Decodable init for polymorphism
+extension Goal {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let goalType = try container.decode(String.self, forKey: .goalType)
+
+        switch goalType {
+        case "SmartGoal":
+            // Decode as SmartGoal (all SMART fields required)
+            self = try SmartGoal(from: decoder)
+        case "Milestone":
+            // Decode as Milestone (targetDate required, no startDate)
+            self = try Milestone(from: decoder)
+        default:
+            // Decode as base Goal (all fields optional)
+            // ... base Goal decoding
+        }
+    }
+}
+```
+
+## Database Compatibility
+
+### Shared Database Format
+
+**Location**: `../python/politica/data_storage/application_data.db`
+**Schemas**: `../shared/schemas/*.sql`
+
+### Field Mappings
+
+**Naming Convention**:
+- Swift: camelCase (`friendlyName`, `logTime`, `measurements`)
+- Database: snake_case (`friendly_name`, `log_time`, `measurement_units_by_amount`)
+- Mapping: CodingKeys enum
+
+**Data Types**:
+- UUID: TEXT in database (`.uuidString` for storage)
+- Date: TEXT in database (ISO8601 via `JSONEncoder.dateEncodingStrategy`)
+- JSON: TEXT in database (automatic Codable serialization)
+
+**Example**:
+```swift
+enum CodingKeys: String, CodingKey {
+    case id
+    case friendlyName = "friendly_name"
+    case logTime = "log_time"
+    case measurements = "measurement_units_by_amount" // JSON field
+}
+```
+
+### JSON Fields
+
+GRDB automatically serializes/deserializes JSON fields with Codable:
+
+```swift
+// In Swift
+var measurements: [String: Double]? = ["km": 5.0, "minutes": 30]
+
+// In database
+measurement_units_by_amount TEXT: '{"km":5.0,"minutes":30}'
+
+// Automatic bidirectional conversion!
+```
+
+## Testing Patterns
+
+### Unit Tests (Domain Models)
+
 ```swift
 import XCTest
 @testable import Models
@@ -282,48 +370,73 @@ final class ActionTests: XCTestCase {
 
         XCTAssertEqual(action.friendlyName, "Morning run")
         XCTAssertNotNil(action.id) // UUID auto-generated
-        XCTAssertNotNil(action.logTime) // Non-optional Date
+        XCTAssertNotNil(action.logTime) // Defaults to Date()
     }
 
-    func testEqualityBasedOnUUID() {
-        let sharedID = UUID()
-        let action1 = Action(id: sharedID, friendlyName: "Run")
-        let action2 = Action(id: sharedID, friendlyName: "Sprint")
-
-        // Same UUID = equal (via Persistable), even with different names
-        XCTAssertEqual(action1, action2)
+    func testMeasurementValidation() {
+        var action = Action(friendlyName: "Run")
+        action.measurements = ["km": -5.0]
+        XCTAssertFalse(action.isValid()) // Negative values invalid
     }
 }
 ```
 
-## Database Compatibility
+### Integration Tests (Database)
 
-The Swift implementation will read/write to the same SQLite database as the Python version:
+```swift
+import XCTest
+@testable import Models
+@testable import Politica
 
-**Database Location (shared):**
-- `../shared/schemas/*.sql` - SQL schema definitions
-- When implemented, Swift will use: `../python/politica/data_storage/application_data.db`
+final class DatabaseIntegrationTests: XCTestCase {
+    var database: DatabaseManager!
 
-**Field Naming Conventions:**
-- Swift uses camelCase: `friendlyName`, `logTime`, `measurements`
-- Database uses snake_case: `friendly_name`, `log_time`, `measurement_units_by_amount`
-- Rhetorica layer will handle conversion
+    override func setUp() async throws {
+        // In-memory database for fast, isolated tests
+        database = try await DatabaseManager(configuration: .inMemory)
+    }
 
-**ID System:**
-- Swift uses UUID (Swift best practice, offline-first)
-- Database schema updated to TEXT PRIMARY KEY for UUIDs
-- UUID provides global uniqueness, SwiftUI Identifiable compatibility
+    func testActionRoundTrip() async throws {
+        // Create and save
+        var action = Action(friendlyName: "Test run")
+        action.measurements = ["km": 5.0]
+        try await database.save(&action)
+
+        let savedID = action.id
+
+        // Fetch back
+        let retrieved = try await database.fetchOne(Action.self, id: savedID)
+
+        XCTAssertNotNil(retrieved)
+        XCTAssertEqual(retrieved?.friendlyName, "Test run")
+        XCTAssertEqual(retrieved?.measurements?["km"], 5.0)
+    }
+
+    func testUpdateArchivesPreviousVersion() async throws {
+        // Save initial version
+        var action = Action(friendlyName: "Original")
+        try await database.save(&action)
+
+        // Update
+        action.friendlyName = "Updated"
+        try await database.save(&action)
+
+        // TODO: Verify old version in archive table
+    }
+}
+```
+
+**Current Status**: 14/14 tests passing (unit tests only, integration tests planned)
 
 ## Code Style Conventions
 
 ### File Headers
-All new Swift files should include:
 ```swift
 // FileName.swift
 // Brief description of purpose
 //
 // Written by Claude Code on YYYY-MM-DD
-// Refactored by Claude Code on YYYY-MM-DD
+// Refactored by Claude Code on YYYY-MM-DD for GRDB integration
 // Ported from Python implementation (path/to/python/file.py)
 ```
 
@@ -331,50 +444,40 @@ All new Swift files should include:
 - Use Swift's doc comments (`///`) for public APIs
 - Mark sections with `// MARK: -` for clarity
 - Include parameter descriptions and return values
-- Document protocol conformances and their purpose
+- Document protocol conformances
 
 ### Naming
 - Classes/Structs: PascalCase (Action, Goal, SmartGoal)
 - Properties: camelCase (friendlyName, measurementTarget)
-- Functions: camelCase (isValid, isTimeBound)
+- Functions: camelCase (isValid, fetchAll)
 - Protocols: Adjectives (Persistable, Achievable, Performed, Motivating)
-- Constants: camelCase or SCREAMING_SNAKE_CASE for globals
-
-## Testing Philosophy
-
-Follow Test-Driven Development (TDD):
-1. Write test first (it should fail)
-2. Write minimal code to pass test
-3. Refactor while tests pass
-4. Repeat
-
-**Test Structure:**
-- One test file per source file (or hierarchy)
-- Consolidated tests: 5-9 focused tests per entity
-- Use descriptive test names: `testMinimalActionCreation()`
-- Test edge cases, validation logic, polymorphism
-- Mirror Python test patterns for consistency
-
-**Current Status**: 14/14 tests passing (5 Action + 9 Goal)
 
 ## Platform Support
 
-**Minimum Versions (defined in Package.swift):**
-- macOS 14.0+ (simplified to macOS-native for rapid development)
+**Current**:
+- macOS 14.0+ (development focus)
+- Swift 6.2+ required
 
-**Future Cross-Platform:**
-- Core domain models are platform-agnostic
-- Database layer will work on all Apple platforms
-- Can add iOS support when needed
+**Future**:
+- iOS 13.0+ (all types platform-agnostic)
+- watchOS 7.0+
+- tvOS 13.0+
 
 ## Dependencies
 
-Current dependencies (managed via Swift Package Manager):
-- None yet (pure Swift for domain layer)
+```swift
+// Package.swift
+dependencies: [
+    .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.8.0")
+]
+```
 
-**Planned Dependencies:**
-- SQLite.swift: For database operations (Politica layer)
-- Potentially: swift-argument-parser (for CLI)
+**Why GRDB over raw SQLite**:
+- ✅ Built for Swift 6 concurrency
+- ✅ Codable integration (automatic serialization)
+- ✅ Connection pooling (better performance)
+- ✅ Type-safe queries
+- ✅ Migration support
 
 ## References
 
@@ -385,47 +488,66 @@ See `../python/` for the authoritative Python implementation with:
 - Flask API (27 endpoints)
 - Full layer implementation
 
-### Project Documentation
-- Project-level CLAUDE.md: `../CLAUDE.md`
-- Architecture decisions: `../.documentation/architecture_decisions.md`
-- Database schemas: `../shared/schemas/`
+### Documentation
+- **SWIFTROADMAP.md**: Complete architecture and roadmap
+- **../CLAUDE.md**: Project-level documentation
+- **../shared/schemas/**: Database schemas
+
+### External Resources
+- [GRDB Documentation](https://github.com/groue/GRDB.swift)
+- [Swift 6.2 Concurrency](https://docs.swift.org/swift-book/LanguageGuide/Concurrency.html)
+- [Codable](https://developer.apple.com/documentation/swift/codable)
 
 ## Development Notes
 
 ### Recent Changes (2025-10-18)
 
-**Protocol Refactoring Complete**:
-- Simplified from 17 protocols to 9 essential ones
-- Clear ontological focus: "ways of being" not "things to do"
-- Removed behavioral protocols (Progressable, Matchable, etc.)
-- Added temporal clarity (Achievable=future, Performed=past, Motivating=timeless)
-- Made `logTime` non-optional for type safety
-- Renamed module from "Categoriae" to "Models"
-- Updated test imports to `@testable import Models`
+**GRDB Architecture Refactoring Complete**:
+- ✅ Eliminated StorageService translation layer (GRDB provides this)
+- ✅ DatabaseManager uses generic `fetchAll<T>()`, `save<T>()` methods
+- ✅ Action conforms to FetchableRecord, PersistableRecord, TableRecord
+- ✅ All protocols made public for cross-module access
+- ✅ CodingKeys for snake_case ↔ camelCase mapping
+- ✅ Zero Swift 6 concurrency warnings
+- ✅ 14/14 tests passing
 
-**Key Insight**: Protocols should encode what data IS, not what you DO with it. Business logic (calculations, matching, progress) belongs in Ethica layer, not in domain protocols.
+**Key Architectural Insight**:
+> GRDB's Codable integration eliminates the need for a translation layer. Domain models communicate directly with the database through protocol conformance. This makes the Swift version simpler than the Python version while being safer (compile-time types) and more concurrent (actor-based).
+
+**Code Metrics**:
+- DatabaseManager: 380 lines vs Python's 527 lines
+- Net change: +782 lines (mostly documentation)
+- Files deleted: 3 (StorageService, ActionStorageService, DatabaseValue)
 
 ### Current Focus
-The Swift port has completed Phase 2 (Protocol Ontology). Currently demonstrating:
-- Protocol-oriented domain design
-- Clear separation of concerns (ontology vs behavior)
-- Class inheritance for Goal hierarchy (learning exercise)
-- Struct + protocol composition for Actions
-- Comprehensive validation patterns
-- Test-driven development approach
 
-### Next Priorities
-1. Write Values tests (5-9 tests covering hierarchy)
-2. Write Terms tests (5-9 tests covering GoalTerm and LifeTime)
-3. Refactor Terms business logic to Ethica layer
-4. Implement Politica layer with SQLite.swift
-5. Port Ethica business logic (progress calculations)
-6. Build Rhetorica translation layer
+**Foundation Complete**:
+- Protocol-oriented domain design ✅
+- GRDB database integration ✅
+- Swift 6.2 strict concurrency ✅
+- Automatic archiving ✅
+
+**Next Phase**:
+1. Database integration tests
+2. Polymorphic Goal storage
+3. Values and Terms GRDB integration
+4. Business logic layer (Ethica)
 
 ### Key Principles
-- Protocol-oriented ontology: define "ways of being"
-- Separate ontology (what things ARE) from behavior (what you DO)
-- Leverage Swift's type system for compile-time safety
-- Use modern Swift features (protocols, value types, optionals)
-- Keep database format compatible between Swift/Python implementations
-- Maintain architectural parity with Python version
+
+- **Protocol-oriented ontology**: Define "ways of being" not "things to do"
+- **Embrace GRDB**: Use native types instead of fighting the framework
+- **Actor isolation**: Thread safety without manual locking
+- **Codable everywhere**: Automatic serialization is powerful
+- **Database compatibility**: Swift/Python can share the same database
+- **Type safety**: Compile-time checking prevents runtime errors
+
+### Timeline Estimate
+
+See `SWIFTROADMAP.md` for detailed breakdown:
+- **MVP**: 18-26 hours total (4 hours complete, 14-22 remaining)
+- **Production Ready**: 24-34 hours
+
+---
+
+Last Updated: October 18, 2025

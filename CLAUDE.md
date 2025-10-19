@@ -447,6 +447,12 @@ Logs are written to `logs/` directory (configured in config.toml)
 
 ## Recent Additions
 
+**2025-10-18: Documentation Reorganization** 📚
+- ✅ README structure updated for multi-language project
+- ✅ Root README.md: General project overview (architecture philosophy, multi-language structure)
+- ✅ python/README.md: Python-specific implementation details
+- ✅ Clear documentation hierarchy referencing language-specific guides
+
 **2025-10-17: Goal Hierarchy Polymorphism + Project Reorganization** 🎨
 - ✅ Full polymorphic support for Goal → Milestone → SmartGoal hierarchy
 - ✅ Web UI for Goals management (5 templates, dynamic forms)
@@ -494,6 +500,9 @@ Logs are written to `logs/` directory (configured in config.toml)
 
 ## References
 
+- **README.md**: General project overview (multi-language structure, architecture philosophy)
+- **python/README.md**: Python-specific implementation details and usage
+- **swift/SWIFTROADMAP.md**: Swift implementation roadmap and progress
 - Architecture decisions: `.documentation/architecture_decisions.md`
 - Testing workflow: `.documentation/testing_workflow.md`
 - Initial reflections: `.documentation/initial_reflections.md`
