@@ -6,13 +6,12 @@ import PackageDescription
 let package = Package(
     name: "TenWeekGoalApp",
     platforms: [
-        .macOS(.v14),
-        .iOS(.v17)
+        .macOS(.v14)  // macOS-native for rapid development
     ],
     products: [
         .library(
             name: "TenWeekGoalApp",
-            targets: ["Categoriae"]
+            targets: ["Models"]
         ),
         .executable(
             name: "TenWeekGoalDemo",
@@ -23,20 +22,20 @@ let package = Package(
     targets: [
         // Domain layer
         .target(
-            name: "Categoriae",
+            name: "Models",
             dependencies: [],
-            path: "Sources/Categoriae"
+            path: "Sources/Models"
         ),
         // Demo app
         .executableTarget(
             name: "Demo",
-            dependencies: ["Categoriae"],
+            dependencies: ["Models"],
             path: "Sources/Demo"
         ),
         // Tests
         .testTarget(
             name: "TenWeekGoalAppTests",
-            dependencies: ["Categoriae"],
+            dependencies: ["Models"],
             path: "Tests"
         ),
     ]
