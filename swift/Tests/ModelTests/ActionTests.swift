@@ -18,7 +18,7 @@ final class ActionTests: XCTestCase {
         XCTAssertEqual(action.friendlyName, "Morning run")
         XCTAssertNotNil(action.id) // UUID auto-generated
         XCTAssertNotNil(action.logTime) // Defaults to Date()
-        XCTAssertNil(action.measurements)
+        XCTAssertNil(action.measuresByUnit)
         XCTAssertNil(action.durationMinutes)
         XCTAssertNil(action.startTime)
     }
@@ -28,7 +28,7 @@ final class ActionTests: XCTestCase {
             friendlyName: "Interval training",
             detailedDescription: "High intensity workout",
             freeformNotes: "Felt great!",
-            measurements: [
+            measuresByUnit: [
                 "distance_miles": 3.2,
                 "pace_min_per_mile": 8.5,
                 "avg_heart_rate": 145.0
@@ -38,7 +38,7 @@ final class ActionTests: XCTestCase {
         )
 
         XCTAssertTrue(action.isValid())
-        XCTAssertEqual(action.measurements?.count, 3)
+        XCTAssertEqual(action.measuresByUnit?.count, 3)
         XCTAssertEqual(action.detailedDescription, "High intensity workout")
     }
 
@@ -47,17 +47,17 @@ final class ActionTests: XCTestCase {
     func testMeasurementValidation() {
         // Valid: positive measurements
         var validAction = Action(friendlyName: "Run")
-        validAction.measurements = ["distance_km": 5.0]
+        validAction.measuresByUnit = ["distance_km": 5.0]
         XCTAssertTrue(validAction.isValid())
 
         // Invalid: negative measurement
         var negativeAction = Action(friendlyName: "Run")
-        negativeAction.measurements = ["distance_km": -5.0]
+        negativeAction.measuresByUnit = ["distance_km": -5.0]
         XCTAssertFalse(negativeAction.isValid())
 
         // Invalid: zero measurement
         var zeroAction = Action(friendlyName: "Run")
-        zeroAction.measurements = ["distance_km": 0.0]
+        zeroAction.measuresByUnit = ["distance_km": 0.0]
         XCTAssertFalse(zeroAction.isValid())
     }
 
@@ -79,18 +79,59 @@ final class ActionTests: XCTestCase {
         XCTAssertTrue(validDurationOnly.isValid())
     }
 
+    // MARK: - Throwing Validation
+
+    func testThrowingValidationSuccess() {
+        // Valid action should not throw
+        let validAction = Action(
+            friendlyName: "Run",
+            measuresByUnit: ["km": 5.0],
+            durationMinutes: 30.0,
+            startTime: Date()
+        )
+        XCTAssertNoThrow(try validAction.validate())
+    }
+
+    func testThrowingValidationNegativeMeasurement() {
+        var action = Action(friendlyName: "Run")
+        action.measuresByUnit = ["km": -5.0]
+
+        XCTAssertThrowsError(try action.validate()) { error in
+            guard case ValidationError.invalidValue(let field, let value, let reason) = error else {
+                return XCTFail("Expected ValidationError.invalidValue")
+            }
+            XCTAssertEqual(field, "measurement[km]")
+            XCTAssertEqual(value, "-5.0")
+            XCTAssertTrue(reason.contains("positive"))
+        }
+    }
+
+    func testThrowingValidationMissingDuration() {
+        var action = Action(friendlyName: "Workout")
+        action.startTime = Date()
+        // Missing durationMinutes
+
+        XCTAssertThrowsError(try action.validate()) { error in
+            guard case ValidationError.missingRequiredField(let field, let context) = error else {
+                return XCTFail("Expected ValidationError.missingRequiredField")
+            }
+            XCTAssertEqual(field, "durationMinutes")
+            XCTAssertTrue(context.contains("startTime"))
+        }
+    }
+
     // MARK: - Equality (UUID-based)
 
     func testEqualityBasedOnUUID() {
         let sharedID = UUID()
-        let action1 = Action(id: sharedID, friendlyName: "Run")
-        let action2 = Action(id: sharedID, friendlyName: "Sprint") // Different name!
+        let action1 = Action(friendlyName: "Run", id: sharedID)
+        let action2 = Action(friendlyName: "Sprint", id: sharedID)
 
         // Same UUID = equal, even with different names
         XCTAssertEqual(action1, action2)
 
         // Different UUIDs = not equal
-        let action3 = Action(id: UUID(), friendlyName: "Run")
+        let action3 = Action(friendlyName: "Run", id: UUID())
         XCTAssertNotEqual(action1, action3)
     }
 }

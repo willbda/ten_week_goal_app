@@ -18,37 +18,35 @@ let package = Package(
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.8.0")
     ],
     targets: [
-        // Domain layer
+        // Domain layer (pure, no infrastructure dependencies)
         .target(
             name: "Models",
-            dependencies: [
-                .product(name: "GRDB", package: "GRDB.swift")
-            ],
+            dependencies: [],
             path: "Sources/Models"
         ),
         // Infrastructure layer (Database operations)
         .target(
-            name: "Politica",
+            name: "Database",
             dependencies: [
                 "Models",
                 .product(name: "GRDB", package: "GRDB.swift")
             ],
-            path: "Sources/Politica"
+            path: "Sources/Database"
         ),
         // Translation layer (Storage services)
         .target(
-            name: "Rhetorica",
+            name: "Services",
             dependencies: [
                 "Models",
-                "Politica",
+                "Database",
                 .product(name: "GRDB", package: "GRDB.swift")
             ],
-            path: "Sources/Rhetorica"
+            path: "Sources/Services"
         ),
         // Tests
         .testTarget(
             name: "TenWeekGoalAppTests",
-            dependencies: ["Models", "Politica", "Rhetorica"],
+            dependencies: ["Models", "Database", "Services"],
             path: "Tests"
         ),
     ]

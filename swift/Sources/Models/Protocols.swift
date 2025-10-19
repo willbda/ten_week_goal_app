@@ -2,9 +2,6 @@
 //  Core ontological protocols for domain models
 //
 //  Created by David Williams on 10/18/25.
-//  Refactored by Claude Code on 10/18/25
-//
-//  These protocols define "ways of being" (ontology), not "things to do" (behavior).
 //  Business logic (calculations, matching, progress) belongs in separate layers.
 //
 //  Used by: Action, Goal, GoalTerm, Values, etc.
@@ -29,29 +26,27 @@ public protocol Persistable: Identifiable, Equatable {
     var detailedDescription: String? { get set }
     var freeformNotes: String? { get set }
     var logTime: Date { get set }
-}
-
-public extension Persistable {
+    
     /// Default equality: two entities are equal if they have the same UUID
     /// This represents identity (same database record), not value equality
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.id == rhs.id
-    }
 }
 
 /// Things with targets you work toward (future-oriented)
 ///
-/// Achievable entities represent aspirations, goals, milestones.
+/// Completable entities represent aspirations, goals, milestones.
 /// They have:
 /// - Target dates (when you want to achieve them)
 /// - Measurement criteria (units and target values)
 /// - Optional start dates (for time-bounded goals)
 ///
-/// Achievable things can be progressed toward, achieved, or forgone.
+/// Completable things can be progressed toward, achieved, or forgone.
 /// Progress calculation is business logic (Ethica layer), not part of this protocol.
 ///
+/// Note: This protocol is independent from Doable (past-oriented actions).
+/// Goals and Actions are temporally distinct - don't conflate future targets with past accomplishments.
+///
 /// Used by: Goal, Milestone, SmartGoal, potentially GoalTerm
-public protocol Achievable {
+public protocol Completable {
     var targetDate: Date? { get set }
     var measurementUnit: String? { get set }
     var measurementTarget: Double? { get set }
@@ -69,8 +64,8 @@ public protocol Achievable {
 /// Matching performed actions to achievable goals is business logic (Ethica layer).
 ///
 /// Used by: Action
-public protocol Performed {
-    var measurements: [String: Double]? { get set }
+public protocol Doable {
+    var measuresByUnit: [String: Double]? { get set }
     var durationMinutes: Double? { get set }
     var startTime: Date? { get set }
 }
@@ -93,6 +88,10 @@ public protocol Motivating {
 /// Things that can validate their own structural consistency
 ///
 /// Validatable entities have business rules about their internal state.
+/// Provides two validation approaches:
+/// - isValid(): Returns bool, for quick checks
+/// - validate(): Throws detailed errors, for user-facing validation
+///
 /// Examples:
 /// - Actions: measurements must be positive, startTime requires duration
 /// - Goals: targetDate must be after startDate, measurementTarget must be positive
@@ -101,7 +100,12 @@ public protocol Motivating {
 /// Note: This is structural validation, not business logic validation.
 /// Used by: Action, Goal, SmartGoal, Milestone, etc.
 public protocol Validatable {
+    /// Quick boolean validation check
     func isValid() -> Bool
+
+    /// Detailed throwing validation with error context
+    /// - Throws: ValidationError with specific field and reason
+    func validate() throws
 }
 
 /// Things with a type field for polymorphic database storage
@@ -112,8 +116,8 @@ public protocol Validatable {
 /// correct Swift type on retrieval.
 ///
 /// Used by: Goal hierarchy (Goal/SmartGoal/Milestone), Values hierarchy (Incentives/Values/MajorValues)
-public protocol TypeIdentifiable {
-    var typeIdentifier: String { get }
+public protocol Polymorphable {
+    var polymorphicSubtype: String { get }
 }
 
 /// Things that can be converted to/from dictionaries for storage/API
@@ -149,6 +153,18 @@ public protocol Archivable {
     var archivedAt: Date? { get set }
 }
 
+// MARK: - Protocol Extensions
+
+/// Default Equatable implementation for Persistable
+///
+/// Two Persistable entities are equal if they have the same UUID.
+/// This represents identity (same database record), not value equality.
+public extension Persistable {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        return lhs.id == rhs.id
+    }
+}
+
 // MARK: - Design Notes
 
 /*
@@ -168,9 +184,13 @@ public protocol Archivable {
  - Rhetorica layer: Translation/serialization implementations
  - Separate relationship entities: ActionGoalRelationship, etc.
 
- TEMPORAL ORIENTATION:
- - Achievable = FUTURE (targets, goals, what you want)
- - Performed = PAST (actions, what you did)
+ TEMPORAL ORIENTATION (Independent, not hierarchical):
+ - Completable = FUTURE (targets, goals, what you want)
+ - Doable = PAST (actions, what you did)
  - Motivating = TIMELESS (values, priorities, meaning)
  - Persistable = ONGOING (exists in the database)
+
+ Note: Completable and Doable are INDEPENDENT protocols.
+ An entity is either future-oriented (goals) OR past-oriented (actions), never both.
+ This separation maintains temporal clarity and prevents logical contradictions.
  */

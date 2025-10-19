@@ -1,7 +1,8 @@
 // GoalTests.swift
-// Tests for Goal domain entity hierarchy
+// Tests for Goal domain entity (consolidated Goal + SMART validation)
 //
 // Written by Claude Code on 2025-10-18
+// Updated by Claude Code on 2025-10-19 (consolidated Goal/SmartGoal)
 // Ported from Python implementation (python/tests/test_goals.py)
 
 import XCTest
@@ -17,13 +18,17 @@ final class GoalTests: XCTestCase {
         XCTAssertEqual(goal.friendlyName, "Run more often")
         XCTAssertNotNil(goal.id) // UUID auto-generated
         XCTAssertNotNil(goal.logTime) // Defaults to Date()
-        XCTAssertEqual(goal.goalType, "Goal")
+        XCTAssertEqual(goal.polymorphicSubtype, "goal")
 
         // All goal-specific fields should be nil
         XCTAssertNil(goal.measurementUnit)
         XCTAssertNil(goal.measurementTarget)
         XCTAssertNil(goal.startDate)
         XCTAssertNil(goal.targetDate)
+
+        // Minimal goal is valid but not SMART
+        XCTAssertTrue(goal.isValid())
+        XCTAssertFalse(goal.isSmart())
     }
 
     func testFullyPopulatedGoal() {
@@ -46,7 +51,46 @@ final class GoalTests: XCTestCase {
         XCTAssertTrue(goal.isValid())
         XCTAssertTrue(goal.isMeasurable())
         XCTAssertTrue(goal.isTimeBound())
+        XCTAssertTrue(goal.isSmart())  // All SMART fields present
         XCTAssertEqual(goal.expectedTermLength, 10)
+    }
+
+    // MARK: - SMART Validation Tests
+
+    func testSmartGoalValidation() {
+        let start = Date()
+        let end = start.addingTimeInterval(60*60*24*70) // 70 days later
+
+        // Fully SMART-compliant goal
+        let smartGoal = Goal(
+            friendlyName: "Run 120km in 10 weeks",
+            measurementUnit: "km",
+            measurementTarget: 120.0,
+            startDate: start,
+            targetDate: end,
+            howGoalIsRelevant: "Build marathon endurance",
+            howGoalIsActionable: "Run 3x per week, progressive overload"
+        )
+
+        XCTAssertTrue(smartGoal.isSmart())
+        XCTAssertTrue(smartGoal.isValid())
+        XCTAssertTrue(smartGoal.isMeasurable())
+        XCTAssertTrue(smartGoal.isTimeBound())
+    }
+
+    func testPartialGoalNotSmart() {
+        // Missing SMART fields = not SMART compliant
+        let partialGoal = Goal(
+            friendlyName: "Run more",
+            measurementUnit: "km",
+            measurementTarget: 100.0
+            // Missing: dates and SMART enhancement fields
+        )
+
+        XCTAssertTrue(partialGoal.isValid())  // Still structurally valid
+        XCTAssertTrue(partialGoal.isMeasurable())  // Has measurement
+        XCTAssertFalse(partialGoal.isTimeBound())  // No dates
+        XCTAssertFalse(partialGoal.isSmart())  // Not SMART compliant
     }
 
     // MARK: - Goal Validation Rules
@@ -94,51 +138,6 @@ final class GoalTests: XCTestCase {
         XCTAssertFalse(equalGoal.isValid())
     }
 
-    // MARK: - SmartGoal Tests
-
-    func testSmartGoalCreation() {
-        let start = Date()
-        let end = start.addingTimeInterval(60*60*24*70) // 70 days later
-
-        let smartGoal = SmartGoal(
-            friendlyName: "Run 120km in 10 weeks",
-            measurementUnit: "km",
-            measurementTarget: 120.0,
-            startDate: start,
-            targetDate: end,
-            howGoalIsRelevant: "Build marathon endurance",
-            howGoalIsActionable: "Run 3x per week, progressive overload"
-        )
-
-        XCTAssertEqual(smartGoal.goalType, "SmartGoal")
-        XCTAssertTrue(smartGoal.isValid())
-        XCTAssertTrue(smartGoal.isMeasurable())
-        XCTAssertTrue(smartGoal.isTimeBound())
-    }
-
-    func testSmartGoalInheritance() {
-        let start = Date()
-        let end = start.addingTimeInterval(60*60*24*70)
-
-        let smartGoal = SmartGoal(
-            measurementUnit: "hours",
-            measurementTarget: 40.0,
-            startDate: start,
-            targetDate: end,
-            howGoalIsRelevant: "Career development",
-            howGoalIsActionable: "Study 1 hour daily"
-        )
-
-        // SmartGoal inherits from Goal, verify type hierarchy
-        XCTAssertTrue(type(of: smartGoal) == SmartGoal.self)
-
-        // Can access parent's methods
-        XCTAssertTrue(smartGoal.isTimeBound())
-        XCTAssertTrue(smartGoal.isMeasurable())
-
-        // But has its own goalType
-        XCTAssertEqual(smartGoal.goalType, "SmartGoal")
-    }
 
     // MARK: - Milestone Tests
 
@@ -150,64 +149,42 @@ final class GoalTests: XCTestCase {
             targetDate: target
         )
 
-        XCTAssertEqual(milestone.goalType, "Milestone")
+        XCTAssertEqual(milestone.polymorphicSubtype, "milestone")
         XCTAssertNotNil(milestone.targetDate)
-        XCTAssertNil(milestone.startDate) // Milestones don't have start dates
+        XCTAssertNil(milestone.startDate) // Milestones can optionally have start dates
         XCTAssertTrue(milestone.isValid())
     }
 
     func testMilestoneValidation() {
         let target = Date().addingTimeInterval(60*60*24*35)
 
-        let milestone = Milestone(
+        // Valid: has required target date
+        let validMilestone = Milestone(
             friendlyName: "Complete chapter 3",
             targetDate: target
         )
+        XCTAssertTrue(validMilestone.isValid())
 
-        // Valid: has target date, no start date
-        XCTAssertTrue(milestone.isValid())
-
-        // Milestone is NOT time-bound (no start date)
-        XCTAssertFalse(milestone.isTimeBound())
-
-        // But has target date
-        XCTAssertNotNil(milestone.targetDate)
+        // Invalid: missing target date (required for milestones)
+        let invalidMilestone = Milestone(
+            friendlyName: "No target date"
+            // targetDate is nil
+        )
+        XCTAssertFalse(invalidMilestone.isValid())
     }
 
-    // MARK: - Polymorphism Tests
+    func testMilestoneWithMeasurement() {
+        let target = Date().addingTimeInterval(60*60*24*35)
 
-    func testGoalPolymorphism() {
-        let start = Date()
-        let end = start.addingTimeInterval(60*60*24*70)
-
-        // Create different goal types
-        let basicGoal: Goal = Goal(friendlyName: "Exercise more")
-        let smartGoal: Goal = SmartGoal(
+        let milestone = Milestone(
+            friendlyName: "Hit 50km by week 5",
             measurementUnit: "km",
-            measurementTarget: 100.0,
-            startDate: start,
-            targetDate: end,
-            howGoalIsRelevant: "Health",
-            howGoalIsActionable: "Run regularly"
-        )
-        let milestone: Goal = Milestone(
-            friendlyName: "Hit 50km",
-            targetDate: end
+            measurementTarget: 50.0,
+            targetDate: target
         )
 
-        // All are Goals
-        let goals: [Goal] = [basicGoal, smartGoal, milestone]
-        XCTAssertEqual(goals.count, 3)
-
-        // But have different goalTypes
-        XCTAssertEqual(basicGoal.goalType, "Goal")
-        XCTAssertEqual(smartGoal.goalType, "SmartGoal")
-        XCTAssertEqual(milestone.goalType, "Milestone")
-
-        // All can call parent methods
-        for goal in goals {
-            XCTAssertNotNil(goal.id)
-            _ = goal.isValid() // All can validate
-        }
+        XCTAssertTrue(milestone.isValid())
+        XCTAssertNotNil(milestone.measurementTarget)
+        XCTAssertNotNil(milestone.measurementUnit)
     }
 }
