@@ -8,7 +8,7 @@ This project maintains the same architectural principles across multiple languag
 
 ```
 ten_week_goal_app/
-├── python/         # Python implementation (production ready)
+├── python/         # Python implementation
 │   ├── categoriae/ # Domain entities
 │   ├── ethica/     # Business logic
 │   ├── rhetorica/  # Translation layer
@@ -26,8 +26,7 @@ ten_week_goal_app/
 
 ### Implementation Status
 
-**Python** (`python/`): Production ready
-- 90+ passing tests with full test coverage
+**Python** (`python/`): 
 - Flask web app with RESTful API (27 endpoints)
 - CLI interface with 25 commands
 - Polymorphic storage for class hierarchies
@@ -150,7 +149,7 @@ The storage layer (`politica/`) knows nothing about specific entities:
 
 ## Project Status
 
-- **Python**: Production ready (v1.0)
+- **Python**: On pause
 - **Swift**: Active development (protocol-oriented refactor complete)
 - **Shared**: Database schemas stable
 - **Last Updated**: 2025-10-18

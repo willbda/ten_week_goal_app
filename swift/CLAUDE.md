@@ -546,7 +546,7 @@ See `../python/` for the authoritative Python implementation with:
 
 See `SWIFTROADMAP.md` for detailed breakdown:
 - **MVP**: 18-26 hours total (4 hours complete, 14-22 remaining)
-- **Production Ready**: 24-34 hours
+- **stable**: 24-34 hours
 
 ---
 

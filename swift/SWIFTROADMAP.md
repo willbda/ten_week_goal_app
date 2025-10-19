@@ -403,7 +403,7 @@ actor DatabaseManager {
 - ✅ Zero concurrency warnings
 - 🔲 Python/Swift database compatibility verified
 
-### Production Ready
+### stable
 
 All MVP criteria plus:
 - 🔲 CLI interface (match Python's 25 commands)
@@ -430,7 +430,7 @@ All MVP criteria plus:
 | 9 | Integration Tests | 3-4 | 🔲 Todo |
 | 10 | CLI Interface (Optional) | 6-8 | 🔲 Todo |
 
-**Total**: 18-26 hours for MVP, 24-34 hours for Production Ready
+**Total**: 18-26 hours for MVP, 24-34 hours for stable
 
 ## Resources
 
