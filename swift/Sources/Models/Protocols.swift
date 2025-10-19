@@ -23,7 +23,7 @@ import Foundation
 /// - Identity-based equality (same UUID = same entity, even if fields differ)
 ///
 /// Used by: All storable entities (Action, Goal, Values, Terms, etc.)
-protocol Persistable: Identifiable, Equatable {
+public protocol Persistable: Identifiable, Equatable {
     var id: UUID { get set }
     var friendlyName: String? { get set }
     var detailedDescription: String? { get set }
@@ -31,7 +31,7 @@ protocol Persistable: Identifiable, Equatable {
     var logTime: Date { get set }
 }
 
-extension Persistable {
+public extension Persistable {
     /// Default equality: two entities are equal if they have the same UUID
     /// This represents identity (same database record), not value equality
     static func == (lhs: Self, rhs: Self) -> Bool {
@@ -51,7 +51,7 @@ extension Persistable {
 /// Progress calculation is business logic (Ethica layer), not part of this protocol.
 ///
 /// Used by: Goal, Milestone, SmartGoal, potentially GoalTerm
-protocol Achievable {
+public protocol Achievable {
     var targetDate: Date? { get set }
     var measurementUnit: String? { get set }
     var measurementTarget: Double? { get set }
@@ -69,7 +69,7 @@ protocol Achievable {
 /// Matching performed actions to achievable goals is business logic (Ethica layer).
 ///
 /// Used by: Action
-protocol Performed {
+public protocol Performed {
     var measurements: [String: Double]? { get set }
     var durationMinutes: Double? { get set }
     var startTime: Date? { get set }
@@ -83,7 +83,7 @@ protocol Performed {
 /// - Life domain categorization (Health, Career, Relationships, etc.)
 ///
 /// Used by: Incentives, Values, MajorValues, HighestOrderValues, LifeAreas
-protocol Motivating {
+public protocol Motivating {
     var priority: Int { get set }
     var lifeDomain: String? { get set }
 }
@@ -100,7 +100,7 @@ protocol Motivating {
 ///
 /// Note: This is structural validation, not business logic validation.
 /// Used by: Action, Goal, SmartGoal, Milestone, etc.
-protocol Validatable {
+public protocol Validatable {
     func isValid() -> Bool
 }
 
@@ -112,7 +112,7 @@ protocol Validatable {
 /// correct Swift type on retrieval.
 ///
 /// Used by: Goal hierarchy (Goal/SmartGoal/Milestone), Values hierarchy (Incentives/Values/MajorValues)
-protocol TypeIdentifiable {
+public protocol TypeIdentifiable {
     var typeIdentifier: String { get }
 }
 
@@ -122,7 +122,7 @@ protocol TypeIdentifiable {
 /// This is the bridge between domain layer (Models) and translation layer (Rhetorica).
 ///
 /// Used by: All Persistable entities when saving to database or sending via API
-protocol Serializable {
+public protocol Serializable {
     func toDictionary() -> [String: Any]
     static func fromDictionary(_ dict: [String: Any]) -> Self?
 }
@@ -133,7 +133,7 @@ protocol Serializable {
 /// Used for API responses, file storage, data export.
 ///
 /// Used by: Entities exposed via API endpoints
-protocol JSONSerializable: Serializable {
+public protocol JSONSerializable: Serializable {
     func toJSON() -> String?
     static func fromJSON(_ json: String) -> Self?
 }
@@ -144,7 +144,7 @@ protocol JSONSerializable: Serializable {
 /// Archived entities are hidden from normal queries but preserved for audit trails.
 ///
 /// Will be used by: All entities when archive functionality is implemented
-protocol Archivable {
+public protocol Archivable {
     var isArchived: Bool { get set }
     var archivedAt: Date? { get set }
 }

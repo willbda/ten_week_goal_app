@@ -18,7 +18,7 @@ final class ActionTests: XCTestCase {
         XCTAssertEqual(action.friendlyName, "Morning run")
         XCTAssertNotNil(action.id) // UUID auto-generated
         XCTAssertNotNil(action.logTime) // Defaults to Date()
-        XCTAssertNil(action.measurementUnitsByAmount)
+        XCTAssertNil(action.measurements)
         XCTAssertNil(action.durationMinutes)
         XCTAssertNil(action.startTime)
     }
@@ -28,7 +28,7 @@ final class ActionTests: XCTestCase {
             friendlyName: "Interval training",
             detailedDescription: "High intensity workout",
             freeformNotes: "Felt great!",
-            measurementUnitsByAmount: [
+            measurements: [
                 "distance_miles": 3.2,
                 "pace_min_per_mile": 8.5,
                 "avg_heart_rate": 145.0
@@ -38,7 +38,7 @@ final class ActionTests: XCTestCase {
         )
 
         XCTAssertTrue(action.isValid())
-        XCTAssertEqual(action.measurementUnitsByAmount?.count, 3)
+        XCTAssertEqual(action.measurements?.count, 3)
         XCTAssertEqual(action.detailedDescription, "High intensity workout")
     }
 
@@ -47,17 +47,17 @@ final class ActionTests: XCTestCase {
     func testMeasurementValidation() {
         // Valid: positive measurements
         var validAction = Action(friendlyName: "Run")
-        validAction.measurementUnitsByAmount = ["distance_km": 5.0]
+        validAction.measurements = ["distance_km": 5.0]
         XCTAssertTrue(validAction.isValid())
 
         // Invalid: negative measurement
         var negativeAction = Action(friendlyName: "Run")
-        negativeAction.measurementUnitsByAmount = ["distance_km": -5.0]
+        negativeAction.measurements = ["distance_km": -5.0]
         XCTAssertFalse(negativeAction.isValid())
 
         // Invalid: zero measurement
         var zeroAction = Action(friendlyName: "Run")
-        zeroAction.measurementUnitsByAmount = ["distance_km": 0.0]
+        zeroAction.measurements = ["distance_km": 0.0]
         XCTAssertFalse(zeroAction.isValid())
     }
 

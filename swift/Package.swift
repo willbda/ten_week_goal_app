@@ -12,30 +12,43 @@ let package = Package(
         .library(
             name: "TenWeekGoalApp",
             targets: ["Models"]
-        ),
-        .executable(
-            name: "TenWeekGoalDemo",
-            targets: ["Demo"]
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.8.0")
+    ],
     targets: [
         // Domain layer
         .target(
             name: "Models",
-            dependencies: [],
+            dependencies: [
+                .product(name: "GRDB", package: "GRDB.swift")
+            ],
             path: "Sources/Models"
         ),
-        // Demo app
-        .executableTarget(
-            name: "Demo",
-            dependencies: ["Models"],
-            path: "Sources/Demo"
+        // Infrastructure layer (Database operations)
+        .target(
+            name: "Politica",
+            dependencies: [
+                "Models",
+                .product(name: "GRDB", package: "GRDB.swift")
+            ],
+            path: "Sources/Politica"
+        ),
+        // Translation layer (Storage services)
+        .target(
+            name: "Rhetorica",
+            dependencies: [
+                "Models",
+                "Politica",
+                .product(name: "GRDB", package: "GRDB.swift")
+            ],
+            path: "Sources/Rhetorica"
         ),
         // Tests
         .testTarget(
             name: "TenWeekGoalAppTests",
-            dependencies: ["Models"],
+            dependencies: ["Models", "Politica", "Rhetorica"],
             path: "Tests"
         ),
     ]
