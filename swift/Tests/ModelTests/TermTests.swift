@@ -5,6 +5,7 @@
 // Updated 2025-10-21: Converted to modern Swift Testing framework
 // Ported from Python implementation (python/tests/test_terms.py)
 
+import Foundation
 import Testing
 @testable import Models
 
