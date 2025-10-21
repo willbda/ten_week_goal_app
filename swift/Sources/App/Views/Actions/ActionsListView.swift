@@ -25,8 +25,11 @@ public struct ActionsListView: View {
     /// View model for actions management
     @State private var viewModel: ActionsViewModel?
 
-    /// Sheet presentation for adding new action
-    @State private var showingAddAction = false
+    /// Sheet presentation for action form (create or edit)
+    @State private var showingActionForm = false
+
+    /// Action being edited (nil = create mode)
+    @State private var actionToEdit: Action?
 
     // MARK: - Body
 
@@ -43,11 +46,34 @@ public struct ActionsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    showingAddAction = true
+                    actionToEdit = nil  // Create mode
+                    showingActionForm = true
                 } label: {
                     Label("Add Action", systemImage: "plus")
                 }
                 .disabled(viewModel == nil)
+            }
+        }
+        .sheet(isPresented: $showingActionForm) {
+            if let viewModel = viewModel {
+                ActionFormView(
+                    action: actionToEdit,
+                    onSave: { action in
+                        Task {
+                            if actionToEdit != nil {
+                                // Edit mode - update existing action
+                                await viewModel.updateAction(action)
+                            } else {
+                                // Create mode - create new action
+                                await viewModel.createAction(action)
+                            }
+                        }
+                        showingActionForm = false
+                    },
+                    onCancel: {
+                        showingActionForm = false
+                    }
+                )
             }
         }
         .task {
@@ -84,7 +110,8 @@ public struct ActionsListView: View {
                 Text("Track what you've done by adding your first action")
             } actions: {
                 Button("Add Action") {
-                    showingAddAction = true
+                    actionToEdit = nil
+                    showingActionForm = true
                 }
             }
         } else {
@@ -99,6 +126,15 @@ public struct ActionsListView: View {
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                            Button {
+                                actionToEdit = action
+                                showingActionForm = true
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            .tint(.blue)
                         }
                 }
             }
