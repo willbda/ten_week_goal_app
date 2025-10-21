@@ -64,7 +64,7 @@ let package = Package(
         // Tests
         .testTarget(
             name: "GoalTrackerTests",
-            dependencies: ["Models", "Database"],
+            dependencies: ["Models", "Database", "App"],
             path: "Tests",
             exclude: [
                 "TestingStrategy.md"
