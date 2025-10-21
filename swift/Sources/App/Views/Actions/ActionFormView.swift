@@ -92,7 +92,9 @@ struct ActionFormView: View {
                 measurementsSection
             }
             .navigationTitle(title)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -144,7 +146,9 @@ struct ActionFormView: View {
             if useDuration {
                 HStack {
                     TextField("Duration", text: $durationMinutes)
+                        #if os(iOS)
                         .keyboardType(.decimalPad)
+                        #endif
                     Text("minutes")
                         .foregroundStyle(.secondary)
                 }
@@ -244,13 +248,17 @@ private struct AddMeasurementSheet: View {
                 Section {
                     TextField("Unit (e.g., km, reps, pages)", text: $unit)
                     TextField("Value", text: $value)
+                        #if os(iOS)
                         .keyboardType(.decimalPad)
+                        #endif
                 } footer: {
                     Text("Add a quantitative measurement for this action")
                 }
             }
             .navigationTitle("Add Measurement")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
