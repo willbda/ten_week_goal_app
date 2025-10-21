@@ -12,6 +12,7 @@ import Database
 /// Uses SwiftUI's modern App lifecycle (iOS 14+/macOS 11+).
 ///
 /// Note: No @main attribute - this is launched from AppRunner/main.swift
+/// The activation policy is set in main.swift to ensure proper macOS GUI behavior.
 public struct TenWeekGoalApp: App {
 
     // MARK: - Initialization
@@ -33,6 +34,13 @@ public struct TenWeekGoalApp: App {
                     // Initialize database on app launch
                     await appViewModel.initialize()
                 }
+                #if os(macOS)
+                .frame(minWidth: 800, minHeight: 600)
+                #endif
         }
+        #if os(macOS)
+        .defaultSize(width: 1000, height: 700)
+        .defaultPosition(.center)
+        #endif
     }
 }

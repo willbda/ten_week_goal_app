@@ -28,6 +28,12 @@ public struct GoalsListView: View {
     /// Sheet presentation for adding new goal
     @State private var showingAddGoal = false
 
+    /// Sheet presentation for editing existing goal
+    @State private var showingEditGoal = false
+
+    /// The goal currently being edited
+    @State private var goalToEdit: Goal?
+
     // MARK: - Body
 
     public var body: some View {
@@ -48,6 +54,40 @@ public struct GoalsListView: View {
                     Label("Add Goal", systemImage: "plus")
                 }
                 .disabled(viewModel == nil)
+            }
+        }
+        .sheet(isPresented: $showingAddGoal) {
+            if viewModel != nil {
+                GoalFormView(
+                    goal: nil,
+                    onSave: { goal in
+                        Task {
+                            await viewModel?.createGoal(goal)
+                            showingAddGoal = false
+                        }
+                    },
+                    onCancel: {
+                        showingAddGoal = false
+                    }
+                )
+            }
+        }
+        .sheet(isPresented: $showingEditGoal) {
+            if let goalToEdit = goalToEdit, viewModel != nil {
+                GoalFormView(
+                    goal: goalToEdit,
+                    onSave: { goal in
+                        Task {
+                            await viewModel?.updateGoal(goal)
+                            showingEditGoal = false
+                            self.goalToEdit = nil
+                        }
+                    },
+                    onCancel: {
+                        showingEditGoal = false
+                        self.goalToEdit = nil
+                    }
+                )
             }
         }
         .task {
@@ -94,6 +134,11 @@ public struct GoalsListView: View {
                     Section("Current Goals") {
                         ForEach(currentGoals(from: viewModel.goals)) { goal in
                             GoalRowView(goal: goal)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    goalToEdit = goal
+                                    showingEditGoal = true
+                                }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         Task {
@@ -112,6 +157,11 @@ public struct GoalsListView: View {
                     Section("Overdue Goals") {
                         ForEach(overdueGoals(from: viewModel.goals)) { goal in
                             GoalRowView(goal: goal)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    goalToEdit = goal
+                                    showingEditGoal = true
+                                }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         Task {
@@ -130,6 +180,11 @@ public struct GoalsListView: View {
                     Section("Open-ended Goals") {
                         ForEach(goalsWithoutDates(from: viewModel.goals)) { goal in
                             GoalRowView(goal: goal)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    goalToEdit = goal
+                                    showingEditGoal = true
+                                }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         Task {

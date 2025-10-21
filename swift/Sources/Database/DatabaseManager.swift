@@ -700,11 +700,11 @@ public actor DatabaseManager {
         do {
             try await dbPool.write { db in
                 let record = goal.toRecord()
-                try record.insert(db)
+                try record.save(db)  // Use save() instead of insert() to handle both create and update
             }
         } catch {
             throw DatabaseError.writeFailed(
-                operation: "INSERT",
+                operation: "SAVE",
                 table: "goals",
                 error: error
             )
