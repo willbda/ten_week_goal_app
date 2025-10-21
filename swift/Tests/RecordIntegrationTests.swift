@@ -27,22 +27,32 @@ final class RecordIntegrationTests: XCTestCase {
 
     /// Get the application database file path
     ///
-    /// Uses absolute path since relative paths fail in test environment.
+    /// Uses relative path from test file location using #filePath.
     /// This is the shared database used by both Python and Swift implementations.
     ///
-    /// - Returns: Absolute path to database file
+    /// - Returns: Path to database file
     /// - Throws: XCTestError if database not found
     private func getDatabasePath() throws -> String {
-        // Use absolute path (relative paths don't work in test build environment)
-        let absolutePath = "/Users/davidwilliams/Documents/Coding/01_ACTIVE_PROJECTS/ten_week_goal_app/shared/database/application_data.db"
+        // Use relative path from test file location
+        // #filePath = ".../ten_week_goal_app/swift/Tests/RecordIntegrationTests.swift"
+        // Go up 2 levels: Tests -> swift -> ten_week_goal_app
+        let thisFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = thisFile
+            .deletingLastPathComponent()  // Remove RecordIntegrationTests.swift
+            .deletingLastPathComponent()  // Remove Tests/
+            .deletingLastPathComponent()  // Remove swift/
 
-        guard FileManager.default.fileExists(atPath: absolutePath) else {
+        let databasePath = projectRoot
+            .appendingPathComponent("shared/database/application_data.db")
+            .path
+
+        guard FileManager.default.fileExists(atPath: databasePath) else {
             throw NSError(
                 domain: "RecordIntegrationTests",
                 code: 1,
                 userInfo: [
                     NSLocalizedDescriptionKey: """
-                    Database not found at: \(absolutePath)
+                    Database not found at: \(databasePath)
 
                     Ensure application_data.db exists at this location.
                     This is the shared database containing:
@@ -55,7 +65,7 @@ final class RecordIntegrationTests: XCTestCase {
             )
         }
 
-        return absolutePath
+        return databasePath
     }
 
     // MARK: - Setup & Teardown
@@ -63,7 +73,7 @@ final class RecordIntegrationTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        // Get database path (absolute path - relative doesn't work in test environment)
+        // Get database path (resolved from test file location using #filePath)
         let databasePath = try getDatabasePath()
 
         // Open database connection (read-only for safety)

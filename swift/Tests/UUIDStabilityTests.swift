@@ -15,8 +15,18 @@ final class UUIDStabilityTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        // Use absolute path (relative paths don't work in test environment)
-        let databasePath = "/Users/davidwilliams/Documents/Coding/01_ACTIVE_PROJECTS/ten_week_goal_app/shared/database/application_data.db"
+        // Use relative path from test file location
+        // #filePath = ".../ten_week_goal_app/swift/Tests/UUIDStabilityTests.swift"
+        // Go up 2 levels: Tests -> swift -> ten_week_goal_app
+        let thisFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = thisFile
+            .deletingLastPathComponent()  // Remove UUIDStabilityTests.swift
+            .deletingLastPathComponent()  // Remove Tests/
+            .deletingLastPathComponent()  // Remove swift/
+
+        let databasePath = projectRoot
+            .appendingPathComponent("shared/database/application_data.db")
+            .path
 
         guard FileManager.default.fileExists(atPath: databasePath) else {
             throw NSError(
@@ -39,13 +49,8 @@ final class UUIDStabilityTests: XCTestCase {
     /// Verifies that fetching the same database record multiple times
     /// returns the same UUID each time (not random).
     func testActionsHaveStableUUIDs() async throws {
-        // Create database manager with UUID mapping
-        let config = DatabaseConfiguration(
-            databasePath: URL(fileURLWithPath: "/Users/davidwilliams/Documents/Coding/01_ACTIVE_PROJECTS/ten_week_goal_app/shared/database/application_data.db"),
-            schemaDirectory: URL(fileURLWithPath: "/Users/davidwilliams/Documents/Coding/01_ACTIVE_PROJECTS/ten_week_goal_app/shared/schemas"),
-            isInMemory: false
-        )
-        let db = try await DatabaseManager(configuration: config)
+        // Use default configuration (automatically resolves to shared database)
+        let db = try await DatabaseManager(configuration: .default)
 
         // Fetch actions first time
         let actions1 = try await db.fetchActions()
@@ -77,12 +82,8 @@ final class UUIDStabilityTests: XCTestCase {
 
     /// Test: Goals have stable UUIDs across multiple fetches
     func testGoalsHaveStableUUIDs() async throws {
-        let config = DatabaseConfiguration(
-            databasePath: URL(fileURLWithPath: "/Users/davidwilliams/Documents/Coding/01_ACTIVE_PROJECTS/ten_week_goal_app/shared/database/application_data.db"),
-            schemaDirectory: URL(fileURLWithPath: "/Users/davidwilliams/Documents/Coding/01_ACTIVE_PROJECTS/ten_week_goal_app/shared/schemas"),
-            isInMemory: false
-        )
-        let db = try await DatabaseManager(configuration: config)
+        // Use default configuration (automatically resolves to shared database)
+        let db = try await DatabaseManager(configuration: .default)
 
         // Fetch goals first time
         let goals1 = try await db.fetchGoals()
