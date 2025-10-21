@@ -420,6 +420,29 @@ public actor DatabaseManager {
         )
     }
 
+    private nonisolated func archiveTermRecord(
+        db: Database,
+        record: TermRecord,
+        reason: String,
+        notes: String
+    ) throws {
+        // Serialize record to JSON using Codable
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let jsonData = try encoder.encode(record)
+        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+
+        let sql = """
+            INSERT INTO archive (source_table, source_id, record_data, reason, notes)
+            VALUES (?, ?, ?, ?, ?)
+            """
+
+        try db.execute(
+            sql: sql,
+            arguments: ["terms", record.id ?? 0, jsonString, reason, notes]
+        )
+    }
+
     // MARK: - Record-Aware Operations (Domain Models)
 
     /// Fetch all Goals from database
@@ -644,7 +667,7 @@ public actor DatabaseManager {
     public func saveAction(_ action: Action) async throws {
         do {
             try await dbPool.write { db in
-                var record = action.toRecord()
+                let record = action.toRecord()
                 try record.insert(db)
                 // Note: record.id now has database-generated INTEGER id,
                 // but we can't propagate it back to domain Action (UUID mismatch)
@@ -676,13 +699,40 @@ public actor DatabaseManager {
     public func saveGoal(_ goal: Goal) async throws {
         do {
             try await dbPool.write { db in
-                var record = goal.toRecord()
+                let record = goal.toRecord()
                 try record.insert(db)
             }
         } catch {
             throw DatabaseError.writeFailed(
                 operation: "INSERT",
                 table: "goals",
+                error: error
+            )
+        }
+    }
+
+    /// Save a Term to the database
+    ///
+    /// Creates a new term record in the database.
+    ///
+    /// - Parameter term: GoalTerm domain model to save
+    /// - Throws: DatabaseError if save fails
+    ///
+    /// Example:
+    /// ```swift
+    /// let term = GoalTerm(termNumber: 1, startDate: start, targetDate: end)
+    /// try await db.saveTerm(term)
+    /// ```
+    public func saveTerm(_ term: GoalTerm) async throws {
+        do {
+            try await dbPool.write { db in
+                let record = term.toRecord()
+                try record.insert(db)
+            }
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "INSERT",
+                table: "terms",
                 error: error
             )
         }
@@ -735,6 +785,58 @@ public actor DatabaseManager {
             throw DatabaseError.writeFailed(
                 operation: "DELETE",
                 table: "actions",
+                error: error
+            )
+        }
+    }
+
+    /// Delete a Term by UUID
+    ///
+    /// Uses UUID→Int64 mapping to find database record and delete it.
+    /// Archives the term before deletion for audit trail.
+    ///
+    /// - Parameter term: GoalTerm domain model to delete
+    /// - Throws: DatabaseError if term not found or delete fails
+    ///
+    /// Example:
+    /// ```swift
+    /// try await db.deleteTerm(term)
+    /// ```
+    public func deleteTerm(_ term: GoalTerm) async throws {
+        do {
+            try await dbPool.write { db in
+                // Look up database ID from UUID
+                guard let databaseId = try uuidMapper.databaseId(
+                    for: term.id,
+                    entityType: "terms",
+                    in: db
+                ) else {
+                    throw DatabaseError.recordNotFound(table: "terms", id: term.id)
+                }
+
+                // Fetch the record to archive
+                guard let record = try TermRecord.fetchOne(db, key: ["id": databaseId]) else {
+                    throw DatabaseError.recordNotFound(table: "terms", id: term.id)
+                }
+
+                // Archive the database record
+                try archiveTermRecord(db: db, record: record, reason: "delete", notes: "Deleted from UI")
+
+                // Then delete the database record
+                try db.execute(sql: "DELETE FROM terms WHERE id = ?", arguments: [databaseId])
+
+                // Delete UUID mapping
+                try db.execute(
+                    sql: "DELETE FROM uuid_mappings WHERE entity_type = ? AND database_id = ?",
+                    arguments: ["terms", databaseId]
+                )
+            }
+        } catch let error as DatabaseError {
+            throw error
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "DELETE",
+                table: "terms",
                 error: error
             )
         }

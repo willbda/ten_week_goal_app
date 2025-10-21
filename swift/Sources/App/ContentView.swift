@@ -25,7 +25,7 @@ public struct ContentView: View {
         NavigationStack {
             VStack(spacing: 20) {
                 // App header
-                Text("Ten Week Goal Tracker")
+                Text("Goal Tracker")
                     .font(.largeTitle)
                     .bold()
 
@@ -62,15 +62,29 @@ public struct ContentView: View {
                             }
                             .buttonStyle(.borderedProminent)
 
-                            // Placeholder for future features
-                            VStack(spacing: 8) {
-                                Text("Coming soon:")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text("Goals • Values • Terms")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
+                            NavigationLink {
+                                GoalsListView()
+                            } label: {
+                                Label("Goals", systemImage: "target")
+                                    .frame(maxWidth: .infinity)
                             }
+                            .buttonStyle(.borderedProminent)
+
+                            NavigationLink {
+                                ValuesListView()
+                            } label: {
+                                Label("Values", systemImage: "heart")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent)
+
+                            NavigationLink {
+                                TermsListView()
+                            } label: {
+                                Label("Terms", systemImage: "calendar")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent)
                         }
                         .padding(.top, 20)
                     }

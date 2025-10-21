@@ -14,8 +14,12 @@ let package = Package(
         .library(
             name: "GoalTrackerKit",
             targets: ["Models", "Database", "App"]
+        ),
+        // Command-line executable for testing
+        .executable(
+            name: "GoalTrackerCLI",
+            targets: ["AppRunner"]
         )
-        // No executable needed - iOS/macOS apps import the library
     ],
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.8.0")
@@ -36,16 +40,6 @@ let package = Package(
             ],
             path: "Sources/Database"
         ),
-        // Translation layer (Storage services)
-        .target(
-            name: "Services",
-            dependencies: [
-                "Models",
-                "Database",
-                .product(name: "GRDB", package: "GRDB.swift")
-            ],
-            path: "Sources/Services"
-        ),
         // SwiftUI App Views (iOS/macOS library)
         .target(
             name: "App",
@@ -55,6 +49,17 @@ let package = Package(
                 .product(name: "GRDB", package: "GRDB.swift")
             ],
             path: "Sources/App"
+        ),
+        // Command-line executable target
+        .executableTarget(
+            name: "AppRunner",
+            dependencies: [
+                "Models",
+                "Database",
+                "App",
+                .product(name: "GRDB", package: "GRDB.swift")
+            ],
+            path: "Sources/AppRunner"
         ),
         // Tests
         .testTarget(
