@@ -6,6 +6,7 @@
 // Ported from Python implementation (python/categoriae/actions.py)
 
 import Foundation
+import Playgrounds
 
 /// An action taken at a point in time, with optional measurements and timing
 ///
@@ -72,3 +73,4 @@ public struct Action: Persistable, Doable, Codable, Sendable {
         self.id = id
     }
 }
+

@@ -109,104 +109,102 @@ let actions: [Action] = try await db.fetchAll()
 
 ### Testing Status ✅
 
-**Current Test Coverage**: 14 tests passing
+**Current Test Coverage**: 54 tests passing
 - 5 Action tests (creation, validation, equality)
-- 9 Goal tests (Goal, SmartGoal, Milestone, polymorphism)
+- 9 Goal tests (consolidated Goal + Milestone, SMART validation)
+- 22 Term tests (GoalTerm + LifeTime with business logic)
+- 18 Value tests (all 5 types + hierarchy validation)
 
 **Build Status**:
 - ✅ Zero compilation errors
 - ✅ Zero concurrency warnings
 - ✅ Swift 6.2 strict mode enabled
 
-## In Progress
+## Completed Work (Continued)
 
-### Database Integration Tests
+### Phase 5: Domain Models Refactored (Oct 19, 2025) ✅
 
-**Goal**: Verify round-trip database operations
+**Architectural Decision: Clean Domain Models**
+- ✅ Removed GRDB dependencies from domain models
+- ✅ Validation moved to `ModelExtensions.swift`
+- ✅ Pure data structures (no database knowledge)
+- ✅ Translation layer (Rhetorica) will handle database mapping
 
-**Test Cases Needed** (~15 tests):
-1. Save Action → Fetch by ID → Verify fields
-2. Update Action → Verify old version archived
-3. Delete Action → Verify archived before deletion
-4. JSON measurements serialization/deserialization
-5. Concurrent save operations (actor safety)
-6. Schema initialization (in-memory database)
-7. UUID handling (string ↔ UUID conversion)
-8. Date serialization (ISO8601 format)
-9. Null value handling
-10. Archive table verification
+**Protocol Fixes**:
+- ✅ `Completable` and `Doable` made independent (no inheritance)
+- ✅ Fixed temporal separation: Goals (FUTURE) vs Actions (PAST)
+- ✅ All protocols made `public` for cross-module access
+- ✅ Added `Validatable` protocol with `isValid()` and `validate()` methods
 
-**File**: `Tests/DatabaseIntegrationTests.swift`
+**Goal Consolidation**:
+- ✅ Merged `Goal` and `SmartGoal` into single flexible `Goal` struct
+- ✅ `isSmart()` validation method checks SMART compliance
+- ✅ `Milestone` kept separate (semantically distinct: point-in-time vs range)
+- ✅ Removed ~100 lines of code duplication
 
-**Status**: Planned, not yet implemented
+**Values Hierarchy**:
+- ✅ Converted from classes to structs for Sendable compliance
+- ✅ Protocol composition instead of inheritance
+- ✅ All 5 types: `Incentives`, `Values`, `LifeAreas`, `MajorValues`, `HighestOrderValues`
+- ✅ Each with correct `polymorphicSubtype` and priority defaults
+
+**Terms Implementation**:
+- ✅ `GoalTerm`: Complete with all fields (termNumber, dates, goals array, reflection)
+- ✅ `LifeTime`: Complete (birthDate, estimatedDeathDate, weeks calculations)
+- ✅ Business logic in extensions (`isActive`, `daysRemaining`, `progressPercentage`)
+
+**ModelExtensions.swift Created**:
+- ✅ Validation extensions for all domain types
+- ✅ Business logic methods (separated from data)
+- ✅ Helper methods (`hasValidMeasurements`, `hasValidDateRange`, etc.)
+
+### Phase 6: Comprehensive Test Suite (Oct 19, 2025) ✅
+
+**Test Files**:
+- ✅ `ActionTests.swift`: 5 tests
+- ✅ `GoalTests.swift`: 9 tests (updated for consolidated Goal)
+- ✅ `TermTests.swift`: 22 tests (created)
+- ✅ `ValueTests.swift`: 18 tests (created)
+
+**Total**: 54 tests, all passing
+
+**Coverage**:
+- ✅ Creation & defaults
+- ✅ Validation rules
+- ✅ Business logic methods
+- ✅ Polymorphic subtypes
+- ✅ Priority hierarchies
+- ✅ Edge cases
 
 ## Future Work
 
-### Phase 5: Goal Hierarchy with Polymorphism
+### Database Integration Layer
 
-**Challenge**: Goal has three types (Goal, SmartGoal, Milestone) stored in one table
+**Goal**: Connect clean domain models to GRDB database
 
-**Approach**:
+**Approach**: Rhetorica translation layer
 ```swift
-// Custom Decodable init for polymorphic reconstruction
-extension Goal {
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let goalType = try container.decode(String.self, forKey: .goalType)
+// Domain → Database
+struct ActionRecord: FetchableRecord, PersistableRecord {
+    // Maps to database with GRDB
+    func toDomain() -> Action
+}
 
-        switch goalType {
-        case "SmartGoal":
-            // Decode as SmartGoal (requires all SMART fields)
-        case "Milestone":
-            // Decode as Milestone (targetDate required, no startDate)
-        default:
-            // Decode as base Goal (all fields optional)
-        }
-    }
+// Database → Domain
+extension Action {
+    func toRecord() -> ActionRecord
 }
 ```
 
 **Tasks**:
-- [ ] Add GRDB conformance to Goal, SmartGoal, Milestone
-- [ ] Implement polymorphic `init(from:)`
-- [ ] Add TableRecord with `databaseTableName = "goals"`
-- [ ] CodingKeys for snake_case mapping
-- [ ] Update GoalTests to verify database operations
-- [ ] Test polymorphic fetch (should return correct subclass)
+- [ ] Create Record types for each domain model
+- [ ] Implement bidirectional conversion
+- [ ] Add CodingKeys for snake_case mapping
+- [ ] Integration tests for round-trip operations
 
-**Estimated Time**: 2-3 hours
+**Estimated Time**: 4-6 hours
 
-### Phase 6: Values Hierarchy
-
-**Similar Polymorphic Pattern**:
-- `Incentives` → `Values` → `MajorValues` → `HighestOrderValues`
-- Use `incentive_type` column for type discrimination
-- Same `init(from:)` pattern as Goals
-
-**Tasks**:
-- [ ] Add GRDB conformance to Values hierarchy
-- [ ] Implement polymorphic deserialization
-- [ ] CodingKeys for `alignment_guidance` (JSON field)
-- [ ] Update database schema if needed
-- [ ] Write Values storage tests
-
-**Estimated Time**: 2-3 hours
-
-### Phase 7: Terms
-
-**Simpler Case** (no polymorphism):
-- `GoalTerm` - 10-week planning periods
-- `LifeTime` - lifetime perspective
-
-**Tasks**:
-- [ ] Add GRDB conformance
-- [ ] Handle `term_goals_by_id` (JSON array of UUIDs)
-- [ ] Move business logic methods (isActive, daysRemaining) to Ethica layer
-- [ ] Write Terms tests
-
-**Estimated Time**: 1-2 hours
-
-### Phase 8: Business Logic Layer (Ethica)
+### Business Logic Layer (Ethica)
 
 **Port from Python**:
 - Progress calculation (aggregate_goal_progress, aggregate_all_goals)
@@ -423,14 +421,16 @@ All MVP criteria plus:
 | Phase | Description | Hours | Status |
 |-------|-------------|-------|--------|
 | 1-4 | Foundation, Database, Models, Cleanup | 4 | ✅ Done |
-| 5 | Goal Hierarchy Polymorphism | 2-3 | 🔲 Todo |
-| 6 | Values Hierarchy | 2-3 | 🔲 Todo |
-| 7 | Terms | 1-2 | 🔲 Todo |
+| 5 | Domain Models Refactored | 3 | ✅ Done |
+| 6 | Comprehensive Test Suite | 2 | ✅ Done |
+| 7 | Database Integration Layer (Rhetorica) | 4-6 | 🔲 Todo |
 | 8 | Business Logic (Ethica) | 4-6 | 🔲 Todo |
 | 9 | Integration Tests | 3-4 | 🔲 Todo |
 | 10 | CLI Interface (Optional) | 6-8 | 🔲 Todo |
 
-**Total**: 18-26 hours for MVP, 24-34 hours for stable
+**Total Completed**: 9 hours
+**Remaining for MVP**: 11-16 hours
+**Total for stable**: 20-25 hours
 
 ## Resources
 
@@ -481,4 +481,4 @@ All MVP criteria plus:
 
 ---
 
-Last Updated: October 18, 2025
+Last Updated: October 19, 2025
