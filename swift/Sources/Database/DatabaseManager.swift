@@ -48,6 +48,9 @@ public actor DatabaseManager {
     /// Configuration used to initialize this manager
     public let configuration: DatabaseConfiguration
 
+    /// UUID mapper for stable ID conversion (INTEGER ↔ UUID)
+    public let uuidMapper: UUIDMapper
+
     // MARK: - Initialization
 
     /// Initialize database manager with configuration
@@ -58,9 +61,19 @@ public actor DatabaseManager {
     /// - Throws: DatabaseError if initialization fails
     public init(configuration: DatabaseConfiguration = .default) async throws {
         self.configuration = configuration
+        self.uuidMapper = UUIDMapper()  // Initialize UUID mapper
 
         // Ensure database directory exists (skip for in-memory)
-        try configuration.ensureDatabaseDirectoryExists()
+        if !configuration.isInMemory {
+            let directory = configuration.databasePath.deletingLastPathComponent()
+            if !FileManager.default.fileExists(atPath: directory.path) {
+                try FileManager.default.createDirectory(
+                    at: directory,
+                    withIntermediateDirectories: true,
+                    attributes: nil
+                )
+            }
+        }
 
         // Create database pool (not async in GRDB)
         if configuration.isInMemory {
@@ -72,8 +85,10 @@ public actor DatabaseManager {
             self.dbPool = try DatabasePool(path: configuration.databasePath.path)
         }
 
-        // Initialize schema if database is new
-        if !configuration.databaseExists || configuration.isInMemory {
+        // Initialize schema if database is new or in-memory
+        let databaseExists = !configuration.isInMemory &&
+                            FileManager.default.fileExists(atPath: configuration.databasePath.path)
+        if !databaseExists || configuration.isInMemory {
             try await initializeSchema()
         }
     }
@@ -87,7 +102,16 @@ public actor DatabaseManager {
     ///
     /// - Throws: DatabaseError.schemaInitializationFailed
     private func initializeSchema() async throws {
-        let schemaFiles = try configuration.getSchemaFiles()
+        // Get all .sql files from schema directory
+        let contents = try FileManager.default.contentsOfDirectory(
+            at: configuration.schemaDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        )
+
+        let schemaFiles = contents
+            .filter { $0.pathExtension == "sql" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
 
         guard !schemaFiles.isEmpty else {
             throw DatabaseError.schemaInitializationFailed(
@@ -361,6 +385,359 @@ public actor DatabaseManager {
             sql: sql,
             arguments: [T.databaseTableName, record.id.uuidString, jsonString, reason, notes]
         )
+    }
+
+    /// Archive an ActionRecord to archive table
+    ///
+    /// Specialized archiving for ActionRecord (uses Int64 id, not UUID).
+    ///
+    /// - Parameters:
+    ///   - db: Active database connection (within write transaction)
+    ///   - record: ActionRecord to archive
+    ///   - reason: Why archiving ('update', 'delete', 'manual')
+    ///   - notes: Optional additional context
+    /// - Throws: GRDB errors if archive insert fails
+    private nonisolated func archiveActionRecord(
+        db: Database,
+        record: ActionRecord,
+        reason: String,
+        notes: String
+    ) throws {
+        // Serialize record to JSON using Codable
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let jsonData = try encoder.encode(record)
+        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+
+        let sql = """
+            INSERT INTO archive (source_table, source_id, record_data, reason, notes)
+            VALUES (?, ?, ?, ?, ?)
+            """
+
+        try db.execute(
+            sql: sql,
+            arguments: ["actions", record.id ?? 0, jsonString, reason, notes]
+        )
+    }
+
+    // MARK: - Record-Aware Operations (Domain Models)
+
+    /// Fetch all Goals from database
+    ///
+    /// Uses GoalRecord internally to bridge database schema to domain model.
+    /// Returns clean Goal domain objects with stable UUID ids.
+    ///
+    /// **UUID Stability**: UUIDs are mapped from database INTEGER ids via uuid_mappings table.
+    /// Same database record always returns same UUID.
+    ///
+    /// - Returns: Array of Goal domain models
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let goals = try await db.fetchGoals()
+    /// for goal in goals {
+    ///     print(goal.friendlyName ?? "")  // Uses stable UUID
+    /// }
+    /// ```
+    public func fetchGoals() async throws -> [Goal] {
+        do {
+            return try await dbPool.read { db in
+                try GoalRecord.fetchAll(db).map { record in
+                    var goal = record.toDomain()
+                    // Replace random UUID with stable mapped UUID
+                    if let dbId = record.id {
+                        goal.id = try uuidMapper.uuid(for: "goals", databaseId: dbId, in: db)
+                    }
+                    return goal
+                }
+            }
+        } catch {
+            throw DatabaseError.queryFailed(
+                sql: "SELECT * FROM goals",
+                error: error
+            )
+        }
+    }
+
+    /// Fetch all Actions from database
+    ///
+    /// Uses ActionRecord internally to bridge database schema to domain model.
+    /// Returns clean Action domain objects with stable UUID ids.
+    ///
+    /// **UUID Stability**: UUIDs are mapped from database INTEGER ids via uuid_mappings table.
+    /// Same database record always returns same UUID.
+    ///
+    /// - Returns: Array of Action domain models
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let actions = try await db.fetchActions()
+    /// for action in actions {
+    ///     print(action.friendlyName ?? "")  // Uses stable UUID
+    /// }
+    /// ```
+    public func fetchActions() async throws -> [Action] {
+        do {
+            return try await dbPool.read { db in
+                try ActionRecord.fetchAll(db).map { record in
+                    var action = record.toDomain()
+                    // Replace random UUID with stable mapped UUID
+                    if let dbId = record.id {
+                        action.id = try uuidMapper.uuid(for: "actions", databaseId: dbId, in: db)
+                    }
+                    return action
+                }
+            }
+        } catch {
+            throw DatabaseError.queryFailed(
+                sql: "SELECT * FROM actions",
+                error: error
+            )
+        }
+    }
+
+    /// Fetch all MajorValues from database
+    ///
+    /// Filters to incentive_type = 'major' and converts to MajorValues domain models.
+    ///
+    /// - Returns: Array of MajorValues domain models
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let majorValues = try await db.fetchMajorValues()
+    /// ```
+    public func fetchMajorValues() async throws -> [MajorValues] {
+        do {
+            return try await dbPool.read { db in
+                let sql = "SELECT * FROM personal_values WHERE incentive_type = 'major'"
+                return try ValueRecord.fetchAll(db, sql: sql).map { $0.toMajorValues() }
+            }
+        } catch {
+            throw DatabaseError.queryFailed(
+                sql: "SELECT * FROM personal_values WHERE incentive_type = 'major'",
+                error: error
+            )
+        }
+    }
+
+    /// Fetch all HighestOrderValues from database
+    ///
+    /// Filters to incentive_type = 'highest_order' and converts to HighestOrderValues domain models.
+    ///
+    /// - Returns: Array of HighestOrderValues domain models
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let highestValues = try await db.fetchHighestOrderValues()
+    /// ```
+    public func fetchHighestOrderValues() async throws -> [HighestOrderValues] {
+        do {
+            return try await dbPool.read { db in
+                let sql = "SELECT * FROM personal_values WHERE incentive_type = 'highest_order'"
+                return try ValueRecord.fetchAll(db, sql: sql).map { $0.toHighestOrderValues() }
+            }
+        } catch {
+            throw DatabaseError.queryFailed(
+                sql: "SELECT * FROM personal_values WHERE incentive_type = 'highest_order'",
+                error: error
+            )
+        }
+    }
+
+    /// Fetch all general Values from database
+    ///
+    /// Filters to incentive_type = 'general' and converts to Values domain models.
+    ///
+    /// - Returns: Array of Values domain models
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let values = try await db.fetchGeneralValues()
+    /// ```
+    public func fetchGeneralValues() async throws -> [Values] {
+        do {
+            return try await dbPool.read { db in
+                let sql = "SELECT * FROM personal_values WHERE incentive_type = 'general'"
+                return try ValueRecord.fetchAll(db, sql: sql).map { $0.toValues() }
+            }
+        } catch {
+            throw DatabaseError.queryFailed(
+                sql: "SELECT * FROM personal_values WHERE incentive_type = 'general'",
+                error: error
+            )
+        }
+    }
+
+    /// Fetch all LifeAreas from database
+    ///
+    /// Filters to incentive_type = 'life_area' and converts to LifeAreas domain models.
+    ///
+    /// - Returns: Array of LifeAreas domain models
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let lifeAreas = try await db.fetchLifeAreas()
+    /// ```
+    public func fetchLifeAreas() async throws -> [LifeAreas] {
+        do {
+            return try await dbPool.read { db in
+                let sql = "SELECT * FROM personal_values WHERE incentive_type = 'life_area'"
+                return try ValueRecord.fetchAll(db, sql: sql).map { $0.toLifeAreas() }
+            }
+        } catch {
+            throw DatabaseError.queryFailed(
+                sql: "SELECT * FROM personal_values WHERE incentive_type = 'life_area'",
+                error: error
+            )
+        }
+    }
+
+    /// Fetch all Terms from database
+    ///
+    /// Uses TermRecord internally to bridge database schema to domain model.
+    /// Note: term_goals_by_id currently generates placeholder UUIDs.
+    ///
+    /// - Returns: Array of GoalTerm domain models
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let terms = try await db.fetchTerms()
+    /// for term in terms {
+    ///     print("Term \(term.termNumber): \(term.friendlyName ?? "")")
+    /// }
+    /// ```
+    public func fetchTerms() async throws -> [GoalTerm] {
+        do {
+            return try await dbPool.read { db in
+                try TermRecord.fetchAll(db).map { $0.toDomain() }
+            }
+        } catch {
+            throw DatabaseError.queryFailed(
+                sql: "SELECT * FROM terms",
+                error: error
+            )
+        }
+    }
+
+    /// Save a new Action to database (INSERT only)
+    ///
+    /// Converts domain Action to ActionRecord, inserts into database.
+    /// Database will auto-generate INTEGER id.
+    ///
+    /// **Limitation**: Cannot update existing actions (no UUID→Int mapping)
+    ///
+    /// - Parameter action: Action domain model to save
+    /// - Throws: DatabaseError.writeFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let action = Action(friendlyName: "Morning run", measuresByUnit: ["km": 5.0])
+    /// try await db.saveAction(action)
+    /// ```
+    public func saveAction(_ action: Action) async throws {
+        do {
+            try await dbPool.write { db in
+                var record = action.toRecord()
+                try record.insert(db)
+                // Note: record.id now has database-generated INTEGER id,
+                // but we can't propagate it back to domain Action (UUID mismatch)
+            }
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "INSERT",
+                table: "actions",
+                error: error
+            )
+        }
+    }
+
+    /// Save a new Goal to database (INSERT only)
+    ///
+    /// Converts domain Goal to GoalRecord, inserts into database.
+    /// Database will auto-generate INTEGER id.
+    ///
+    /// **Limitation**: Cannot update existing goals (no UUID→Int mapping)
+    ///
+    /// - Parameter goal: Goal domain model to save
+    /// - Throws: DatabaseError.writeFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let goal = Goal(friendlyName: "Run 120km", measurementUnit: "km", measurementTarget: 120.0)
+    /// try await db.saveGoal(goal)
+    /// ```
+    public func saveGoal(_ goal: Goal) async throws {
+        do {
+            try await dbPool.write { db in
+                var record = goal.toRecord()
+                try record.insert(db)
+            }
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "INSERT",
+                table: "goals",
+                error: error
+            )
+        }
+    }
+
+    /// Delete an Action by UUID
+    ///
+    /// Uses UUID→Int64 mapping to find database record and delete it.
+    /// Archives the action before deletion for audit trail.
+    ///
+    /// - Parameter action: Action domain model to delete
+    /// - Throws: DatabaseError if action not found or delete fails
+    ///
+    /// Example:
+    /// ```swift
+    /// try await db.deleteAction(action)
+    /// ```
+    public func deleteAction(_ action: Action) async throws {
+        do {
+            try await dbPool.write { db in
+                // Look up database ID from UUID
+                guard let databaseId = try uuidMapper.databaseId(
+                    for: action.id,
+                    entityType: "actions",
+                    in: db
+                ) else {
+                    throw DatabaseError.recordNotFound(table: "actions", id: action.id)
+                }
+
+                // Fetch the record to archive
+                guard let record = try ActionRecord.fetchOne(db, key: ["id": databaseId]) else {
+                    throw DatabaseError.recordNotFound(table: "actions", id: action.id)
+                }
+
+                // Archive the database record (not domain model)
+                try archiveActionRecord(db: db, record: record, reason: "delete", notes: "Deleted from UI")
+
+                // Then delete the database record
+                try db.execute(sql: "DELETE FROM actions WHERE id = ?", arguments: [databaseId])
+
+                // Delete UUID mapping
+                try db.execute(
+                    sql: "DELETE FROM uuid_mappings WHERE entity_type = ? AND database_id = ?",
+                    arguments: ["actions", databaseId]
+                )
+            }
+        } catch let error as DatabaseError {
+            throw error
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "DELETE",
+                table: "actions",
+                error: error
+            )
+        }
     }
 }
 
