@@ -12,3 +12,5 @@ test_data/
 # Build artifacts
 *.egg-info/
 *.pyc
+shared/database/application_data.db-shm
+shared/database/application_data.db-wal

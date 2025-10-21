@@ -48,12 +48,22 @@ public struct DatabaseConfiguration: Sendable {
 
     /// Standard shared database location
     ///
-    /// Uses absolute paths to shared directory:
-    /// - Database: `/Users/davidwilliams/.../shared/database/application_data.db`
-    /// - Schemas: `/Users/davidwilliams/.../shared/schemas/`
+    /// Uses relative paths from Swift package directory:
+    /// - Database: `../../shared/database/application_data.db`
+    /// - Schemas: `../../shared/schemas/`
+    ///
+    /// Resolves at compile time using #filePath, so works regardless of
+    /// where the project is located on the filesystem.
     public static var `default`: DatabaseConfiguration {
-        // Use absolute paths for development
-        let projectRoot = URL(fileURLWithPath: "/Users/davidwilliams/Documents/Coding/01_ACTIVE_PROJECTS/ten_week_goal_app")
+        // Get project root from this source file's location
+        // #filePath = ".../ten_week_goal_app/swift/Sources/Database/DatabaseConfiguration.swift"
+        // Go up 3 levels: Database -> Sources -> swift -> ten_week_goal_app
+        let thisFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = thisFile
+            .deletingLastPathComponent()  // Remove DatabaseConfiguration.swift
+            .deletingLastPathComponent()  // Remove Database/
+            .deletingLastPathComponent()  // Remove Sources/
+            .deletingLastPathComponent()  // Remove swift/
 
         return DatabaseConfiguration(
             databasePath: projectRoot

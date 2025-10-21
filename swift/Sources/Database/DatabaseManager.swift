@@ -453,6 +453,10 @@ public actor DatabaseManager {
     /// **UUID Stability**: UUIDs are mapped from database INTEGER ids via uuid_mappings table.
     /// Same database record always returns same UUID.
     ///
+    /// **Side Effect**: Uses write transaction to populate uuid_mappings table on first access.
+    /// This ensures UUID stability across subsequent reads. The write only affects uuid_mappings,
+    /// not the goals table itself.
+    ///
     /// - Returns: Array of Goal domain models
     /// - Throws: DatabaseError.queryFailed
     ///
@@ -465,7 +469,7 @@ public actor DatabaseManager {
     /// ```
     public func fetchGoals() async throws -> [Goal] {
         do {
-            return try await dbPool.read { db in
+            return try await dbPool.write { db in
                 try GoalRecord.fetchAll(db).map { record in
                     var goal = record.toDomain()
                     // Replace random UUID with stable mapped UUID
@@ -491,6 +495,10 @@ public actor DatabaseManager {
     /// **UUID Stability**: UUIDs are mapped from database INTEGER ids via uuid_mappings table.
     /// Same database record always returns same UUID.
     ///
+    /// **Side Effect**: Uses write transaction to populate uuid_mappings table on first access.
+    /// This ensures UUID stability across subsequent reads. The write only affects uuid_mappings,
+    /// not the actions table itself.
+    ///
     /// - Returns: Array of Action domain models
     /// - Throws: DatabaseError.queryFailed
     ///
@@ -503,7 +511,7 @@ public actor DatabaseManager {
     /// ```
     public func fetchActions() async throws -> [Action] {
         do {
-            return try await dbPool.read { db in
+            return try await dbPool.write { db in
                 try ActionRecord.fetchAll(db).map { record in
                     var action = record.toDomain()
                     // Replace random UUID with stable mapped UUID
