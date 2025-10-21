@@ -3,35 +3,42 @@
 //
 // Written by Claude Code on 2025-10-18
 // Updated by Claude Code on 2025-10-19 (consolidated Goal/SmartGoal)
+// Updated 2025-10-21: Converted to modern Swift Testing framework
 // Ported from Python implementation (python/tests/test_goals.py)
 
-import XCTest
+import Testing
 @testable import Models
 
-final class GoalTests: XCTestCase {
+/// Test suite for Goal domain entity
+///
+/// Verifies goal creation, SMART validation, and polymorphic subtypes (Goal, Milestone).
+@Suite("Goal Tests")
+struct GoalTests {
 
     // MARK: - Basic Goal Creation & Defaults
 
-    func testMinimalGoalCreation() {
+    @Test("Creates minimal goal with defaults")
+    func minimalGoalCreation() {
         let goal = Goal(friendlyName: "Run more often")
 
-        XCTAssertEqual(goal.friendlyName, "Run more often")
-        XCTAssertNotNil(goal.id) // UUID auto-generated
-        XCTAssertNotNil(goal.logTime) // Defaults to Date()
-        XCTAssertEqual(goal.polymorphicSubtype, "goal")
+        #expect(goal.friendlyName == "Run more often")
+        #expect(goal.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000"))
+        #expect(goal.logTime != nil)
+        #expect(goal.polymorphicSubtype == "goal")
 
         // All goal-specific fields should be nil
-        XCTAssertNil(goal.measurementUnit)
-        XCTAssertNil(goal.measurementTarget)
-        XCTAssertNil(goal.startDate)
-        XCTAssertNil(goal.targetDate)
+        #expect(goal.measurementUnit == nil)
+        #expect(goal.measurementTarget == nil)
+        #expect(goal.startDate == nil)
+        #expect(goal.targetDate == nil)
 
         // Minimal goal is valid but not SMART
-        XCTAssertTrue(goal.isValid())
-        XCTAssertFalse(goal.isSmart())
+        #expect(goal.isValid())
+        #expect(!goal.isSmart())
     }
 
-    func testFullyPopulatedGoal() {
+    @Test("Creates fully populated goal")
+    func fullyPopulatedGoal() {
         let start = Date()
         let end = start.addingTimeInterval(60*60*24*70) // 70 days later
 
@@ -48,16 +55,17 @@ final class GoalTests: XCTestCase {
             expectedTermLength: 10
         )
 
-        XCTAssertTrue(goal.isValid())
-        XCTAssertTrue(goal.isMeasurable())
-        XCTAssertTrue(goal.isTimeBound())
-        XCTAssertTrue(goal.isSmart())  // All SMART fields present
-        XCTAssertEqual(goal.expectedTermLength, 10)
+        #expect(goal.isValid())
+        #expect(goal.isMeasurable())
+        #expect(goal.isTimeBound())
+        #expect(goal.isSmart())  // All SMART fields present
+        #expect(goal.expectedTermLength == 10)
     }
 
     // MARK: - SMART Validation Tests
 
-    func testSmartGoalValidation() {
+    @Test("Validates SMART-compliant goal")
+    func smartGoalValidation() {
         let start = Date()
         let end = start.addingTimeInterval(60*60*24*70) // 70 days later
 
@@ -72,13 +80,14 @@ final class GoalTests: XCTestCase {
             howGoalIsActionable: "Run 3x per week, progressive overload"
         )
 
-        XCTAssertTrue(smartGoal.isSmart())
-        XCTAssertTrue(smartGoal.isValid())
-        XCTAssertTrue(smartGoal.isMeasurable())
-        XCTAssertTrue(smartGoal.isTimeBound())
+        #expect(smartGoal.isSmart())
+        #expect(smartGoal.isValid())
+        #expect(smartGoal.isMeasurable())
+        #expect(smartGoal.isTimeBound())
     }
 
-    func testPartialGoalNotSmart() {
+    @Test("Partial goal is not SMART-compliant")
+    func partialGoalNotSmart() {
         // Missing SMART fields = not SMART compliant
         let partialGoal = Goal(
             friendlyName: "Run more",
@@ -87,61 +96,72 @@ final class GoalTests: XCTestCase {
             // Missing: dates and SMART enhancement fields
         )
 
-        XCTAssertTrue(partialGoal.isValid())  // Still structurally valid
-        XCTAssertTrue(partialGoal.isMeasurable())  // Has measurement
-        XCTAssertFalse(partialGoal.isTimeBound())  // No dates
-        XCTAssertFalse(partialGoal.isSmart())  // Not SMART compliant
+        #expect(partialGoal.isValid())  // Still structurally valid
+        #expect(partialGoal.isMeasurable())  // Has measurement
+        #expect(!partialGoal.isTimeBound())  // No dates
+        #expect(!partialGoal.isSmart())  // Not SMART compliant
     }
 
     // MARK: - Goal Validation Rules
 
-    func testGoalMeasurementValidation() {
-        // Valid: positive target
+    @Test("Validates positive measurement target")
+    func goalMeasurementValidationPositive() {
         let validGoal = Goal(
             measurementUnit: "km",
             measurementTarget: 50.0
         )
-        XCTAssertTrue(validGoal.isValid())
-        XCTAssertTrue(validGoal.isMeasurable())
+        #expect(validGoal.isValid())
+        #expect(validGoal.isMeasurable())
+    }
 
-        // Invalid: negative target
+    @Test("Rejects negative measurement target")
+    func goalMeasurementValidationNegative() {
         let invalidGoal = Goal(
             measurementUnit: "km",
             measurementTarget: -10.0
         )
-        XCTAssertFalse(invalidGoal.isValid())
+        #expect(!invalidGoal.isValid())
+    }
 
-        // Invalid: zero target
+    @Test("Rejects zero measurement target")
+    func goalMeasurementValidationZero() {
         let zeroGoal = Goal(
             measurementUnit: "km",
             measurementTarget: 0.0
         )
-        XCTAssertFalse(zeroGoal.isValid())
+        #expect(!zeroGoal.isValid())
     }
 
-    func testGoalDateValidation() {
+    @Test("Validates start date before end date")
+    func goalDateValidationValid() {
         let start = Date()
         let end = start.addingTimeInterval(60*60*24*10) // 10 days later
 
-        // Valid: start before end
         let validGoal = Goal(startDate: start, targetDate: end)
-        XCTAssertTrue(validGoal.isValid())
-        XCTAssertTrue(validGoal.isTimeBound())
-
-        // Invalid: start after end
-        let invalidGoal = Goal(startDate: end, targetDate: start)
-        XCTAssertFalse(invalidGoal.isValid())
-
-        // Invalid: start equals end
-        let sameDate = Date()
-        let equalGoal = Goal(startDate: sameDate, targetDate: sameDate)
-        XCTAssertFalse(equalGoal.isValid())
+        #expect(validGoal.isValid())
+        #expect(validGoal.isTimeBound())
     }
 
+    @Test("Rejects start date after end date")
+    func goalDateValidationInvalidOrder() {
+        let start = Date()
+        let end = start.addingTimeInterval(60*60*24*10) // 10 days later
+
+        let invalidGoal = Goal(startDate: end, targetDate: start)
+        #expect(!invalidGoal.isValid())
+    }
+
+    @Test("Rejects start date equal to end date")
+    func goalDateValidationEqual() {
+        let sameDate = Date()
+        let equalGoal = Goal(startDate: sameDate, targetDate: sameDate)
+        #expect(!equalGoal.isValid())
+    }
 
     // MARK: - Milestone Tests
 
-    func testMilestoneCreation() {
+    @Test("Creates milestone with target date")
+    func milestoneCreation() {
         let target = Date().addingTimeInterval(60*60*24*35) // 5 weeks from now
 
         let milestone = Milestone(
@@ -149,31 +169,34 @@ final class GoalTests: XCTestCase {
             targetDate: target
         )
 
-        XCTAssertEqual(milestone.polymorphicSubtype, "milestone")
-        XCTAssertNotNil(milestone.targetDate)
-        XCTAssertNil(milestone.startDate) // Milestones can optionally have start dates
-        XCTAssertTrue(milestone.isValid())
+        #expect(milestone.polymorphicSubtype == "milestone")
+        #expect(milestone.targetDate != nil)
+        #expect(milestone.startDate == nil) // Milestones can optionally have start dates
+        #expect(milestone.isValid())
     }
 
-    func testMilestoneValidation() {
+    @Test("Validates milestone with target date")
+    func milestoneValidationValid() {
         let target = Date().addingTimeInterval(60*60*24*35)
 
-        // Valid: has required target date
         let validMilestone = Milestone(
             friendlyName: "Complete chapter 3",
             targetDate: target
         )
-        XCTAssertTrue(validMilestone.isValid())
+        #expect(validMilestone.isValid())
+    }
 
-        // Invalid: missing target date (required for milestones)
+    @Test("Rejects milestone without target date")
+    func milestoneValidationMissingTarget() {
         let invalidMilestone = Milestone(
             friendlyName: "No target date"
             // targetDate is nil
         )
-        XCTAssertFalse(invalidMilestone.isValid())
+        #expect(!invalidMilestone.isValid())
     }
 
-    func testMilestoneWithMeasurement() {
+    @Test("Creates milestone with measurement")
+    func milestoneWithMeasurement() {
         let target = Date().addingTimeInterval(60*60*24*35)
 
         let milestone = Milestone(
@@ -183,8 +206,8 @@ final class GoalTests: XCTestCase {
             targetDate: target
         )
 
-        XCTAssertTrue(milestone.isValid())
-        XCTAssertNotNil(milestone.measurementTarget)
-        XCTAssertNotNil(milestone.measurementUnit)
+        #expect(milestone.isValid())
+        #expect(milestone.measurementTarget != nil)
+        #expect(milestone.measurementUnit != nil)
     }
 }

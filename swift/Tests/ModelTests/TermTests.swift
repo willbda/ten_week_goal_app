@@ -2,16 +2,18 @@
 // Tests for GoalTerm and LifeTime domain entities
 //
 // Written by Claude Code on 2025-10-19
+// Updated 2025-10-21: Converted to modern Swift Testing framework
 // Ported from Python implementation (python/tests/test_terms.py)
 
-import XCTest
+import Testing
 @testable import Models
 
-final class TermTests: XCTestCase {
+@Suite("Term Tests")
+struct TermTests {
 
     // MARK: - GoalTerm Creation & Defaults
 
-    func testMinimalTermCreation() {
+    @Test func testMinimalTermCreation() {
         let start = Date()
         let end = start.addingTimeInterval(60*60*24*70) // 70 days later (10 weeks)
 
@@ -21,16 +23,16 @@ final class TermTests: XCTestCase {
             targetDate: end
         )
 
-        XCTAssertEqual(term.termNumber, 1)
-        XCTAssertEqual(term.polymorphicSubtype, "goal_term")
-        XCTAssertNotNil(term.id) // UUID auto-generated
-        XCTAssertNotNil(term.logTime) // Defaults to Date()
-        XCTAssertTrue(term.termGoalsByID.isEmpty) // Empty array by default
-        XCTAssertNil(term.theme)
-        XCTAssertNil(term.reflection)
+        #expect(term.termNumber == 1)
+        #expect(term.polymorphicSubtype == "goal_term")
+        #expect(term.id != nil) // UUID auto-generated
+        #expect(term.logTime != nil) // Defaults to Date()
+        #expect(term.termGoalsByID.isEmpty) // Empty array by default
+        #expect(term.theme == nil)
+        #expect(term.reflection == nil)
     }
 
-    func testFullyPopulatedTerm() {
+    @Test func testFullyPopulatedTerm() {
         let start = Date()
         let end = start.addingTimeInterval(60*60*24*70)
         let goalID1 = UUID()
@@ -48,17 +50,17 @@ final class TermTests: XCTestCase {
             reflection: "Made great progress on consistency"
         )
 
-        XCTAssertEqual(term.friendlyName, "Q4 2025")
-        XCTAssertEqual(term.theme, "Building sustainable habits")
-        XCTAssertEqual(term.termGoalsByID.count, 2)
-        XCTAssertTrue(term.termGoalsByID.contains(goalID1))
-        XCTAssertTrue(term.termGoalsByID.contains(goalID2))
-        XCTAssertEqual(term.reflection, "Made great progress on consistency")
+        #expect(term.friendlyName == "Q4 2025")
+        #expect(term.theme == "Building sustainable habits")
+        #expect(term.termGoalsByID.count == 2)
+        #expect(term.termGoalsByID.contains(goalID1))
+        #expect(term.termGoalsByID.contains(goalID2))
+        #expect(term.reflection == "Made great progress on consistency")
     }
 
     // MARK: - GoalTerm Validation
 
-    func testTermDateValidation() {
+    @Test func testTermDateValidation() {
         let start = Date()
         let end = start.addingTimeInterval(60*60*24*70)
 
@@ -68,7 +70,7 @@ final class TermTests: XCTestCase {
             startDate: start,
             targetDate: end
         )
-        XCTAssertTrue(validTerm.isValid())
+        #expect(validTerm.isValid())
 
         // Invalid: start after end
         let invalidTerm = GoalTerm(
@@ -76,7 +78,7 @@ final class TermTests: XCTestCase {
             startDate: end,
             targetDate: start
         )
-        XCTAssertFalse(invalidTerm.isValid())
+        #expect(!invalidTerm.isValid())
 
         // Invalid: start equals end
         let sameDate = Date()
@@ -85,10 +87,10 @@ final class TermTests: XCTestCase {
             startDate: sameDate,
             targetDate: sameDate
         )
-        XCTAssertFalse(equalTerm.isValid())
+        #expect(!equalTerm.isValid())
     }
 
-    func testTermNumberValidation() {
+    @Test func testTermNumberValidation() {
         let start = Date()
         let end = start.addingTimeInterval(60*60*24*70)
 
@@ -98,7 +100,7 @@ final class TermTests: XCTestCase {
             startDate: start,
             targetDate: end
         )
-        XCTAssertTrue(validTerm.isValid())
+        #expect(validTerm.isValid())
 
         // Valid: zero term number
         let zeroTerm = GoalTerm(
@@ -106,7 +108,7 @@ final class TermTests: XCTestCase {
             startDate: start,
             targetDate: end
         )
-        XCTAssertTrue(zeroTerm.isValid())
+        #expect(zeroTerm.isValid())
 
         // Invalid: negative term number
         let negativeTerm = GoalTerm(
@@ -114,12 +116,12 @@ final class TermTests: XCTestCase {
             startDate: start,
             targetDate: end
         )
-        XCTAssertFalse(negativeTerm.isValid())
+        #expect(!negativeTerm.isValid())
     }
 
     // MARK: - Active Status Tests
 
-    func testIsActiveCurrentTerm() {
+    @Test func testIsActiveCurrentTerm() {
         let now = Date()
         let yesterday = now.addingTimeInterval(-60*60*24) // 1 day ago
         let tomorrow = now.addingTimeInterval(60*60*24) // 1 day from now
@@ -130,11 +132,11 @@ final class TermTests: XCTestCase {
             targetDate: tomorrow
         )
 
-        XCTAssertTrue(activeTerm.isActive()) // Current date is today
-        XCTAssertTrue(activeTerm.isActive(checkDate: now))
+        #expect(activeTerm.isActive()) // Current date is today
+        #expect(activeTerm.isActive(checkDate: now))
     }
 
-    func testIsActiveFutureTerm() {
+    @Test func testIsActiveFutureTerm() {
         let now = Date()
         let nextWeek = now.addingTimeInterval(60*60*24*7) // 7 days from now
         let tenWeeksFromNow = now.addingTimeInterval(60*60*24*77) // 77 days from now
@@ -145,11 +147,11 @@ final class TermTests: XCTestCase {
             targetDate: tenWeeksFromNow
         )
 
-        XCTAssertFalse(futureTerm.isActive()) // Not started yet
-        XCTAssertFalse(futureTerm.isActive(checkDate: now))
+        #expect(!futureTerm.isActive()) // Not started yet
+        #expect(!futureTerm.isActive(checkDate: now))
     }
 
-    func testIsActivePastTerm() {
+    @Test func testIsActivePastTerm() {
         let now = Date()
         let twoMonthsAgo = now.addingTimeInterval(-60*60*24*60) // 60 days ago
         let oneMonthAgo = now.addingTimeInterval(-60*60*24*30) // 30 days ago
@@ -160,13 +162,13 @@ final class TermTests: XCTestCase {
             targetDate: oneMonthAgo
         )
 
-        XCTAssertFalse(pastTerm.isActive()) // Already completed
-        XCTAssertFalse(pastTerm.isActive(checkDate: now))
+        #expect(!pastTerm.isActive()) // Already completed
+        #expect(!pastTerm.isActive(checkDate: now))
     }
 
     // MARK: - Days Remaining Tests
 
-    func testDaysRemainingActiveTerm() {
+    @Test func testDaysRemainingActiveTerm() {
         let now = Date()
         let tomorrow = now.addingTimeInterval(60*60*24) // 1 day from now
         let tenDaysFromNow = now.addingTimeInterval(60*60*24*10) // 10 days from now
@@ -178,10 +180,10 @@ final class TermTests: XCTestCase {
         )
 
         let remaining = term.daysRemaining(fromDate: now)
-        XCTAssertEqual(remaining, 10) // 10 days until target
+        #expect(remaining == 10) // 10 days until target
     }
 
-    func testDaysRemainingPastTerm() {
+    @Test func testDaysRemainingPastTerm() {
         let now = Date()
         let oneMonthAgo = now.addingTimeInterval(-60*60*24*30) // 30 days ago
         let twoWeeksAgo = now.addingTimeInterval(-60*60*24*14) // 14 days ago
@@ -193,12 +195,12 @@ final class TermTests: XCTestCase {
         )
 
         let remaining = pastTerm.daysRemaining(fromDate: now)
-        XCTAssertEqual(remaining, 0) // Past term has 0 days remaining
+        #expect(remaining == 0) // Past term has 0 days remaining
     }
 
     // MARK: - Progress Percentage Tests
 
-    func testProgressPercentageNotStarted() {
+    @Test func testProgressPercentageNotStarted() {
         let now = Date()
         let nextWeek = now.addingTimeInterval(60*60*24*7) // 7 days from now
         let tenWeeksFromNow = now.addingTimeInterval(60*60*24*77) // 77 days from now
@@ -210,10 +212,10 @@ final class TermTests: XCTestCase {
         )
 
         let progress = futureTerm.progressPercentage(fromDate: now)
-        XCTAssertEqual(progress, 0.0, accuracy: 0.01) // Not started yet
+        #expect(abs(progress - 0.0) < 0.01) // Not started yet
     }
 
-    func testProgressPercentageHalfway() {
+    @Test func testProgressPercentageHalfway() {
         let now = Date()
         let fiveDaysAgo = now.addingTimeInterval(-60*60*24*5) // 5 days ago
         let fiveDaysFromNow = now.addingTimeInterval(60*60*24*5) // 5 days from now
@@ -225,10 +227,10 @@ final class TermTests: XCTestCase {
         )
 
         let progress = term.progressPercentage(fromDate: now)
-        XCTAssertEqual(progress, 0.5, accuracy: 0.01) // Halfway through
+        #expect(abs(progress - 0.5) < 0.01) // Halfway through
     }
 
-    func testProgressPercentageComplete() {
+    @Test func testProgressPercentageComplete() {
         let now = Date()
         let tenDaysAgo = now.addingTimeInterval(-60*60*24*10) // 10 days ago
         let fiveDaysAgo = now.addingTimeInterval(-60*60*24*5) // 5 days ago
@@ -240,12 +242,12 @@ final class TermTests: XCTestCase {
         )
 
         let progress = pastTerm.progressPercentage(fromDate: now)
-        XCTAssertEqual(progress, 1.0, accuracy: 0.01) // Complete
+        #expect(abs(progress - 1.0) < 0.01) // Complete
     }
 
     // MARK: - Goal Association Tests
 
-    func testTermWithMultipleGoals() {
+    @Test func testTermWithMultipleGoals() {
         let start = Date()
         let end = start.addingTimeInterval(60*60*24*70)
 
@@ -258,26 +260,26 @@ final class TermTests: XCTestCase {
             termGoalsByID: goalIDs
         )
 
-        XCTAssertEqual(term.termGoalsByID.count, 3)
+        #expect(term.termGoalsByID.count == 3)
         for goalID in goalIDs {
-            XCTAssertTrue(term.termGoalsByID.contains(goalID))
+            #expect(term.termGoalsByID.contains(goalID))
         }
     }
 
     // MARK: - LifeTime Tests
 
-    func testLifeTimeCreation() {
+    @Test func testLifeTimeCreation() {
         let birthDate = Date(timeIntervalSince1970: 0) // Jan 1, 1970
 
         let lifetime = LifeTime(birthDate: birthDate)
 
-        XCTAssertEqual(lifetime.polymorphicSubtype, "lifetime")
-        XCTAssertEqual(lifetime.birthDate, birthDate)
-        XCTAssertNil(lifetime.estimatedDeathDate) // Optional
-        XCTAssertNotNil(lifetime.id)
+        #expect(lifetime.polymorphicSubtype == "lifetime")
+        #expect(lifetime.birthDate == birthDate)
+        #expect(lifetime.estimatedDeathDate == nil) // Optional
+        #expect(lifetime.id != nil)
     }
 
-    func testLifeTimeWithEstimatedDeath() {
+    @Test func testLifeTimeWithEstimatedDeath() {
         let birthDate = Date(timeIntervalSince1970: 0) // Jan 1, 1970
         let deathDate = birthDate.addingTimeInterval(60*60*24*365.25*79) // 79 years later
 
@@ -286,20 +288,20 @@ final class TermTests: XCTestCase {
             estimatedDeathDate: deathDate
         )
 
-        XCTAssertEqual(lifetime.estimatedDeathDate, deathDate)
+        #expect(lifetime.estimatedDeathDate == deathDate)
     }
 
-    func testWeeksLived() {
+    @Test func testWeeksLived() {
         let birthDate = Date(timeIntervalSince1970: 0) // Jan 1, 1970
         let currentDate = birthDate.addingTimeInterval(60*60*24*7*100) // 100 weeks later
 
         let lifetime = LifeTime(birthDate: birthDate)
         let weeks = lifetime.weeksLived(currentDate: currentDate)
 
-        XCTAssertEqual(weeks, 100)
+        #expect(weeks == 100)
     }
 
-    func testWeeksRemainingWithEstimate() {
+    @Test func testWeeksRemainingWithEstimate() {
         let currentDate = Date()
         let birthDate = currentDate.addingTimeInterval(-60*60*24*365.25*30) // Born 30 years ago
         let deathDate = currentDate.addingTimeInterval(60*60*24*365.25*49) // Die in 49 years
@@ -310,17 +312,17 @@ final class TermTests: XCTestCase {
         )
 
         let remaining = lifetime.weeksRemaining(currentDate: currentDate)
-        XCTAssertNotNil(remaining)
+        #expect(remaining != nil)
         // Approximately 49 years * 52 weeks = ~2,548 weeks
-        XCTAssertGreaterThan(remaining!, 2500)
-        XCTAssertLessThan(remaining!, 2600)
+        #expect(remaining! > 2500)
+        #expect(remaining! < 2600)
     }
 
-    func testWeeksRemainingNoEstimate() {
+    @Test func testWeeksRemainingNoEstimate() {
         let birthDate = Date(timeIntervalSince1970: 0)
         let lifetime = LifeTime(birthDate: birthDate) // No death estimate
 
         let remaining = lifetime.weeksRemaining()
-        XCTAssertNil(remaining) // Can't calculate without estimate
+        #expect(remaining == nil) // Can't calculate without estimate
     }
 }

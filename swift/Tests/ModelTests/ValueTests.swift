@@ -3,27 +3,32 @@
 //
 // Created by David Williams on 10/19/25
 // Updated by Claude Code on 10/19/25 (comprehensive test coverage)
+// Updated 2025-10-21: Converted to modern Swift Testing framework
 // Ported from Python implementation (python/tests/test_values.py)
 
-import XCTest
+import Testing
 @testable import Models
 
-final class ValueTests: XCTestCase {
+/// Test suite for Values hierarchy
+///
+/// Verifies creation and polymorphic subtypes for Incentives, Values, LifeAreas, MajorValues, and HighestOrderValues.
+@Suite("Value Tests")
+struct ValueTests {
 
     // MARK: - Incentives Tests
 
-    func testMinimalIncentivesCreation() {
+    @Test("Creates minimal incentive with defaults") func testMinimalIncentivesCreation() {
         let incentive = Incentives(friendlyName: "Honesty")
 
-        XCTAssertEqual(incentive.friendlyName, "Honesty")
-        XCTAssertNotNil(incentive.id) // UUID auto-generated
-        XCTAssertNotNil(incentive.logTime) // Defaults to Date()
-        XCTAssertEqual(incentive.polymorphicSubtype, "incentive")
-        XCTAssertEqual(incentive.priority, 50) // Default priority
-        XCTAssertNil(incentive.lifeDomain) // Optional
+        #expect(incentive.friendlyName == "Honesty")
+        #expect(incentive.id != nil) // UUID auto-generated
+        #expect(incentive.logTime != nil) // Defaults to Date()
+        #expect(incentive.polymorphicSubtype == "incentive")
+        #expect(incentive.priority == 50) // Default priority
+        #expect(incentive.lifeDomain == nil) // Optional
     }
 
-    func testFullyPopulatedIncentives() {
+    @Test("Creates fully populated incentive") func testFullyPopulatedIncentives() {
         let incentive = Incentives(
             friendlyName: "Curiosity",
             detailedDescription: "Desire to learn and explore",
@@ -32,24 +37,24 @@ final class ValueTests: XCTestCase {
             lifeDomain: "Personal Development"
         )
 
-        XCTAssertEqual(incentive.friendlyName, "Curiosity")
-        XCTAssertEqual(incentive.detailedDescription, "Desire to learn and explore")
-        XCTAssertEqual(incentive.priority, 30)
-        XCTAssertEqual(incentive.lifeDomain, "Personal Development")
+        #expect(incentive.friendlyName == "Curiosity")
+        #expect(incentive.detailedDescription == "Desire to learn and explore")
+        #expect(incentive.priority == 30)
+        #expect(incentive.lifeDomain == "Personal Development")
     }
 
     // MARK: - Values Tests
 
-    func testValuesCreation() {
+    @Test("Creates general value") func testValuesCreation() {
         let value = Values(friendlyName: "Integrity")
 
-        XCTAssertEqual(value.friendlyName, "Integrity")
-        XCTAssertEqual(value.polymorphicSubtype, "general")
-        XCTAssertEqual(value.priority, 40) // Values default to 40
-        XCTAssertNotNil(value.id)
+        #expect(value.friendlyName == "Integrity")
+        #expect(value.polymorphicSubtype == "general")
+        #expect(value.priority == 40) // Values default to 40
+        #expect(value.id != nil)
     }
 
-    func testValuesWithLifeDomain() {
+    @Test("Creates value with life domain") func testValuesWithLifeDomain() {
         let value = Values(
             friendlyName: "Work-life balance",
             detailedDescription: "Maintaining boundaries between work and personal life",
@@ -57,22 +62,22 @@ final class ValueTests: XCTestCase {
             lifeDomain: "Career"
         )
 
-        XCTAssertEqual(value.lifeDomain, "Career")
-        XCTAssertEqual(value.priority, 25)
+        #expect(value.lifeDomain == "Career")
+        #expect(value.priority == 25)
     }
 
     // MARK: - LifeAreas Tests
 
-    func testLifeAreasCreation() {
+    @Test("Creates life area") func testLifeAreasCreation() {
         let lifeArea = LifeAreas(friendlyName: "Health & Fitness")
 
-        XCTAssertEqual(lifeArea.friendlyName, "Health & Fitness")
-        XCTAssertEqual(lifeArea.polymorphicSubtype, "life_area")
-        XCTAssertEqual(lifeArea.priority, 40) // LifeAreas default to 40
-        XCTAssertNotNil(lifeArea.id)
+        #expect(lifeArea.friendlyName == "Health & Fitness")
+        #expect(lifeArea.polymorphicSubtype == "life_area")
+        #expect(lifeArea.priority == 40) // LifeAreas default to 40
+        #expect(lifeArea.id != nil)
     }
 
-    func testLifeAreasCategorization() {
+    @Test("Categorizes life area") func testLifeAreasCategorization() {
         let lifeArea = LifeAreas(
             friendlyName: "Career Development",
             detailedDescription: "Professional growth and advancement",
@@ -80,24 +85,24 @@ final class ValueTests: XCTestCase {
             lifeDomain: "Career"
         )
 
-        XCTAssertEqual(lifeArea.detailedDescription, "Professional growth and advancement")
-        XCTAssertEqual(lifeArea.lifeDomain, "Career")
+        #expect(lifeArea.detailedDescription == "Professional growth and advancement")
+        #expect(lifeArea.lifeDomain == "Career")
     }
 
     // MARK: - MajorValues Tests
 
-    func testMajorValuesCreation() {
+    @Test("Creates major value") func testMajorValuesCreation() {
         let majorValue = MajorValues(
             friendlyName: "Physical health and vitality"
         )
 
-        XCTAssertEqual(majorValue.friendlyName, "Physical health and vitality")
-        XCTAssertEqual(majorValue.polymorphicSubtype, "major")
-        XCTAssertEqual(majorValue.priority, 10) // Major values default to 10 (high priority)
-        XCTAssertNil(majorValue.alignmentGuidance) // Optional
+        #expect(majorValue.friendlyName == "Physical health and vitality")
+        #expect(majorValue.polymorphicSubtype == "major")
+        #expect(majorValue.priority == 10) // Major values default to 10 (high priority)
+        #expect(majorValue.alignmentGuidance == nil) // Optional
     }
 
-    func testMajorValuesWithAlignmentGuidance() {
+    @Test("Creates major value with alignment guidance") func testMajorValuesWithAlignmentGuidance() {
         let majorValue = MajorValues(
             friendlyName: "Physical health and vitality",
             detailedDescription: "Maintaining energy and strength",
@@ -106,33 +111,33 @@ final class ValueTests: XCTestCase {
             alignmentGuidance: "Should see regular exercise, healthy meals, and adequate sleep in weekly actions"
         )
 
-        XCTAssertEqual(majorValue.alignmentGuidance, "Should see regular exercise, healthy meals, and adequate sleep in weekly actions")
-        XCTAssertEqual(majorValue.lifeDomain, "Health")
-        XCTAssertEqual(majorValue.priority, 10)
+        #expect(majorValue.alignmentGuidance == "Should see regular exercise, healthy meals, and adequate sleep in weekly actions")
+        #expect(majorValue.lifeDomain == "Health")
+        #expect(majorValue.priority == 10)
     }
 
-    func testMajorValuesHighPriority() {
+    @Test("Major values have high priority by default") func testMajorValuesHighPriority() {
         // Major values are actionable, so they should have high priority by default
         let majorValue = MajorValues(friendlyName: "Family connection")
 
-        XCTAssertEqual(majorValue.priority, 10) // High priority
-        XCTAssertLessThan(majorValue.priority, 40) // Higher than general values
+        #expect(majorValue.priority == 10) // High priority
+        #expect(majorValue.priority < 40) // Higher than general values
     }
 
     // MARK: - HighestOrderValues Tests
 
-    func testHighestOrderValuesCreation() {
+    @Test("Creates highest order value") func testHighestOrderValuesCreation() {
         let highestValue = HighestOrderValues(
             friendlyName: "Eudaimonia"
         )
 
-        XCTAssertEqual(highestValue.friendlyName, "Eudaimonia")
-        XCTAssertEqual(highestValue.polymorphicSubtype, "highest_order")
-        XCTAssertEqual(highestValue.priority, 1) // Ultimate priority
-        XCTAssertNotNil(highestValue.id)
+        #expect(highestValue.friendlyName == "Eudaimonia")
+        #expect(highestValue.polymorphicSubtype == "highest_order")
+        #expect(highestValue.priority == 1) // Ultimate priority
+        #expect(highestValue.id != nil)
     }
 
-    func testHighestOrderValuesPhilosophical() {
+    @Test("Creates philosophical highest order value") func testHighestOrderValuesPhilosophical() {
         let highestValue = HighestOrderValues(
             friendlyName: "Truth",
             detailedDescription: "Seeking and honoring truth in all forms",
@@ -141,38 +146,38 @@ final class ValueTests: XCTestCase {
             lifeDomain: "Philosophy"
         )
 
-        XCTAssertEqual(highestValue.detailedDescription, "Seeking and honoring truth in all forms")
-        XCTAssertEqual(highestValue.priority, 1) // Ultimate priority
-        XCTAssertEqual(highestValue.lifeDomain, "Philosophy")
+        #expect(highestValue.detailedDescription == "Seeking and honoring truth in all forms")
+        #expect(highestValue.priority == 1) // Ultimate priority
+        #expect(highestValue.lifeDomain == "Philosophy")
     }
 
-    func testHighestOrderValuesUltimatePriority() {
+    @Test("Highest order values have ultimate priority") func testHighestOrderValuesUltimatePriority() {
         let highestValue = HighestOrderValues(friendlyName: "Beauty")
 
-        XCTAssertEqual(highestValue.priority, 1) // Ultimate priority
-        XCTAssertLessThan(highestValue.priority, 10) // Higher than major values
-        XCTAssertLessThan(highestValue.priority, 40) // Higher than general values
+        #expect(highestValue.priority == 1) // Ultimate priority
+        #expect(highestValue.priority < 10) // Higher than major values
+        #expect(highestValue.priority < 40) // Higher than general values
     }
 
     // MARK: - Polymorphic Type Tests
 
-    func testPolymorphicSubtypes() {
+    @Test("Verifies polymorphic subtypes") func testPolymorphicSubtypes() {
         let incentive = Incentives(friendlyName: "Test")
         let value = Values(friendlyName: "Test")
         let lifeArea = LifeAreas(friendlyName: "Test")
         let majorValue = MajorValues(friendlyName: "Test")
         let highestValue = HighestOrderValues(friendlyName: "Test")
 
-        XCTAssertEqual(incentive.polymorphicSubtype, "incentive")
-        XCTAssertEqual(value.polymorphicSubtype, "general")
-        XCTAssertEqual(lifeArea.polymorphicSubtype, "life_area")
-        XCTAssertEqual(majorValue.polymorphicSubtype, "major")
-        XCTAssertEqual(highestValue.polymorphicSubtype, "highest_order")
+        #expect(incentive.polymorphicSubtype == "incentive")
+        #expect(value.polymorphicSubtype == "general")
+        #expect(lifeArea.polymorphicSubtype == "life_area")
+        #expect(majorValue.polymorphicSubtype == "major")
+        #expect(highestValue.polymorphicSubtype == "highest_order")
     }
 
     // MARK: - Priority Hierarchy Tests
 
-    func testPriorityDefaults() {
+    @Test("Verifies priority defaults form hierarchy") func testPriorityDefaults() {
         let incentive = Incentives(friendlyName: "Test")
         let value = Values(friendlyName: "Test")
         let lifeArea = LifeAreas(friendlyName: "Test")
@@ -180,15 +185,15 @@ final class ValueTests: XCTestCase {
         let highestValue = HighestOrderValues(friendlyName: "Test")
 
         // Verify hierarchy: Highest (1) > Major (10) > Value/LifeArea (40) > Incentive (50)
-        XCTAssertEqual(highestValue.priority, 1)
-        XCTAssertEqual(majorValue.priority, 10)
-        XCTAssertEqual(value.priority, 40)
-        XCTAssertEqual(lifeArea.priority, 40)
-        XCTAssertEqual(incentive.priority, 50)
+        #expect(highestValue.priority == 1)
+        #expect(majorValue.priority == 10)
+        #expect(value.priority == 40)
+        #expect(lifeArea.priority == 40)
+        #expect(incentive.priority == 50)
 
         // Verify ordering
-        XCTAssertLessThan(highestValue.priority, majorValue.priority)
-        XCTAssertLessThan(majorValue.priority, value.priority)
-        XCTAssertLessThan(value.priority, incentive.priority)
+        #expect(highestValue.priority < majorValue.priority)
+        #expect(majorValue.priority < value.priority)
+        #expect(value.priority < incentive.priority)
     }
 }

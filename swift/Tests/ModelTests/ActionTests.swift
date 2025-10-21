@@ -3,27 +3,34 @@
 //
 // Written by Claude Code on 2025-10-17
 // Updated 2025-10-18: Consolidated to essential tests
+// Updated 2025-10-21: Converted to modern Swift Testing framework
 // Ported from Python implementation (python/tests/test_actions.py)
 
-import XCTest
+import Testing
 @testable import Models
 
-final class ActionTests: XCTestCase {
+/// Test suite for Action domain entity
+///
+/// Verifies action creation, validation rules, and throwing validation.
+@Suite("Action Tests")
+struct ActionTests {
 
     // MARK: - Creation & Defaults
 
-    func testMinimalActionCreation() {
+    @Test("Creates minimal action with defaults")
+    func minimalActionCreation() {
         let action = Action(friendlyName: "Morning run")
 
-        XCTAssertEqual(action.friendlyName, "Morning run")
-        XCTAssertNotNil(action.id) // UUID auto-generated
-        XCTAssertNotNil(action.logTime) // Defaults to Date()
-        XCTAssertNil(action.measuresByUnit)
-        XCTAssertNil(action.durationMinutes)
-        XCTAssertNil(action.startTime)
+        #expect(action.friendlyName == "Morning run")
+        #expect(action.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000"))
+        #expect(action.logTime != nil)
+        #expect(action.measuresByUnit == nil)
+        #expect(action.durationMinutes == nil)
+        #expect(action.startTime == nil)
     }
 
-    func testFullyPopulatedAction() {
+    @Test("Creates fully populated action")
+    func fullyPopulatedAction() {
         let action = Action(
             friendlyName: "Interval training",
             detailedDescription: "High intensity workout",
@@ -37,101 +44,150 @@ final class ActionTests: XCTestCase {
             startTime: Date()
         )
 
-        XCTAssertTrue(action.isValid())
-        XCTAssertEqual(action.measuresByUnit?.count, 3)
-        XCTAssertEqual(action.detailedDescription, "High intensity workout")
+        #expect(action.isValid())
+        #expect(action.measuresByUnit?.count == 3)
+        #expect(action.detailedDescription == "High intensity workout")
     }
 
     // MARK: - Validation Rules
 
-    func testMeasurementValidation() {
-        // Valid: positive measurements
+    @Test("Validates positive measurements")
+    func measurementValidationPositive() {
         var validAction = Action(friendlyName: "Run")
         validAction.measuresByUnit = ["distance_km": 5.0]
-        XCTAssertTrue(validAction.isValid())
-
-        // Invalid: negative measurement
-        var negativeAction = Action(friendlyName: "Run")
-        negativeAction.measuresByUnit = ["distance_km": -5.0]
-        XCTAssertFalse(negativeAction.isValid())
-
-        // Invalid: zero measurement
-        var zeroAction = Action(friendlyName: "Run")
-        zeroAction.measuresByUnit = ["distance_km": 0.0]
-        XCTAssertFalse(zeroAction.isValid())
+        #expect(validAction.isValid())
     }
 
-    func testStartTimeDurationRule() {
-        // Invalid: startTime without duration
+    @Test("Rejects negative measurements")
+    func measurementValidationNegative() {
+        var negativeAction = Action(friendlyName: "Run")
+        negativeAction.measuresByUnit = ["distance_km": -5.0]
+        #expect(!negativeAction.isValid())
+    }
+
+    @Test("Rejects zero measurements")
+    func measurementValidationZero() {
+        var zeroAction = Action(friendlyName: "Run")
+        zeroAction.measuresByUnit = ["distance_km": 0.0]
+        #expect(!zeroAction.isValid())
+    }
+
+    @Test("Rejects start time without duration")
+    func startTimeRequiresDuration() {
         var invalid = Action(friendlyName: "Workout")
         invalid.startTime = Date()
-        XCTAssertFalse(invalid.isValid())
+        #expect(!invalid.isValid())
+    }
 
-        // Valid: startTime WITH duration
+    @Test("Accepts start time with duration")
+    func startTimeWithDuration() {
         var valid = Action(friendlyName: "Workout")
         valid.startTime = Date()
         valid.durationMinutes = 45.0
-        XCTAssertTrue(valid.isValid())
+        #expect(valid.isValid())
+    }
 
-        // Valid: duration without startTime (allowed)
+    @Test("Accepts duration without start time")
+    func durationWithoutStartTime() {
         var validDurationOnly = Action(friendlyName: "Workout")
         validDurationOnly.durationMinutes = 30.0
-        XCTAssertTrue(validDurationOnly.isValid())
+        #expect(validDurationOnly.isValid())
     }
 
     // MARK: - Throwing Validation
 
-    func testThrowingValidationSuccess() {
-        // Valid action should not throw
+    @Test("Throwing validation succeeds for valid action")
+    func throwingValidationSuccess() throws {
         let validAction = Action(
             friendlyName: "Run",
             measuresByUnit: ["km": 5.0],
             durationMinutes: 30.0,
             startTime: Date()
         )
-        XCTAssertNoThrow(try validAction.validate())
+        try validAction.validate()
+        // If we get here, validation succeeded
+        #expect(true)
     }
 
-    func testThrowingValidationNegativeMeasurement() {
+    @Test("Throwing validation fails for negative measurement")
+    func throwingValidationNegativeMeasurement() {
         var action = Action(friendlyName: "Run")
         action.measuresByUnit = ["km": -5.0]
 
-        XCTAssertThrowsError(try action.validate()) { error in
-            guard case ValidationError.invalidValue(let field, let value, let reason) = error else {
-                return XCTFail("Expected ValidationError.invalidValue")
-            }
-            XCTAssertEqual(field, "measurement[km]")
-            XCTAssertEqual(value, "-5.0")
-            XCTAssertTrue(reason.contains("positive"))
+        #expect(throws: ValidationError.self) {
+            try action.validate()
         }
     }
 
-    func testThrowingValidationMissingDuration() {
+    @Test("Throwing validation fails for missing duration with start time")
+    func throwingValidationMissingDuration() {
         var action = Action(friendlyName: "Workout")
         action.startTime = Date()
         // Missing durationMinutes
 
-        XCTAssertThrowsError(try action.validate()) { error in
-            guard case ValidationError.missingRequiredField(let field, let context) = error else {
-                return XCTFail("Expected ValidationError.missingRequiredField")
+        #expect(throws: ValidationError.self) {
+            try action.validate()
+        }
+    }
+
+    @Test("Throwing validation provides correct error for negative measurement")
+    func throwingValidationNegativeMeasurementDetails() {
+        var action = Action(friendlyName: "Run")
+        action.measuresByUnit = ["km": -5.0]
+
+        do {
+            try action.validate()
+            #expect(Bool(false), "Should have thrown ValidationError")
+        } catch let error as ValidationError {
+            if case .invalidValue(let field, let value, let reason) = error {
+                #expect(field == "measurement[km]")
+                #expect(value == "-5.0")
+                #expect(reason.contains("positive"))
+            } else {
+                #expect(Bool(false), "Wrong ValidationError case")
             }
-            XCTAssertEqual(field, "durationMinutes")
-            XCTAssertTrue(context.contains("startTime"))
+        } catch {
+            #expect(Bool(false), "Wrong error type")
+        }
+    }
+
+    @Test("Throwing validation provides correct error for missing duration")
+    func throwingValidationMissingDurationDetails() {
+        var action = Action(friendlyName: "Workout")
+        action.startTime = Date()
+
+        do {
+            try action.validate()
+            #expect(Bool(false), "Should have thrown ValidationError")
+        } catch let error as ValidationError {
+            if case .missingRequiredField(let field, let context) = error {
+                #expect(field == "durationMinutes")
+                #expect(context.contains("startTime"))
+            } else {
+                #expect(Bool(false), "Wrong ValidationError case")
+            }
+        } catch {
+            #expect(Bool(false), "Wrong error type")
         }
     }
 
     // MARK: - Equality (UUID-based)
 
-    func testEqualityBasedOnUUID() {
+    @Test("Actions are equal with same UUID")
+    func equalityBasedOnUUID() {
         let sharedID = UUID()
         let action1 = Action(friendlyName: "Run", id: sharedID)
         let action2 = Action(friendlyName: "Sprint", id: sharedID)
 
         // Same UUID = equal, even with different names
-        XCTAssertEqual(action1, action2)
+        #expect(action1 == action2)
+    }
 
-        // Different UUIDs = not equal
-        let action3 = Action(friendlyName: "Run", id: UUID())
-        XCTAssertNotEqual(action1, action3)
+    @Test("Actions are not equal with different UUIDs")
+    func inequalityDifferentUUIDs() {
+        let action1 = Action(friendlyName: "Run", id: UUID())
+        let action2 = Action(friendlyName: "Run", id: UUID())
+
+        #expect(action1 != action2)
     }
 }

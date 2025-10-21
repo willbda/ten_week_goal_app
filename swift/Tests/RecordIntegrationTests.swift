@@ -10,15 +10,18 @@
 // Uses real database at ../shared/database/application_data.db
 // Expected data: 186 actions, 8 goals, 6 values, 3 terms
 
-import XCTest
+import Testing
 import Foundation
 import GRDB
 @testable import Database
 @testable import Models
 
-final class RecordIntegrationTests: XCTestCase {
+@Suite("Record Integration Tests")
+struct RecordIntegrationTests {
 
-    // MARK: - Test Configuration
+    // MARK: - Test Setup
+
+    static let dbQueue: DatabaseQueue? = nil
 
     /// Database queue for tests
     private var dbQueue: DatabaseQueue!
@@ -95,7 +98,7 @@ final class RecordIntegrationTests: XCTestCase {
     /// - GoalRecord.toDomain() converts without errors
     /// - All goals have non-empty common_name
     /// - Domain model properties match database values
-    func testGoalRecordFetchesAndConvertsAllGoals() throws {
+    @Test func testGoalRecordFetchesAndConvertsAllGoals() throws {
         try dbQueue.read { db in
             // Fetch all goal records using GRDB
             let goalRecords = try GoalRecord.fetchAll(db)
@@ -139,8 +142,8 @@ final class RecordIntegrationTests: XCTestCase {
             let runningGoal = goals.first {
                 $0.friendlyName?.contains("120km") ?? false
             }
-            XCTAssertNotNil(runningGoal, "Should find '120km running' goal")
-            XCTAssertEqual(runningGoal?.measurementUnit, "km")
+            #expect(runningGoal, "Should find '120km running' goal" != nil)
+            #expect(runningGoal?.measurementUnit == "km")
         }
     }
 
@@ -151,7 +154,7 @@ final class RecordIntegrationTests: XCTestCase {
     /// - snake_case fields map correctly
     /// - Optional fields handle nil correctly
     /// - goal_type discriminator is preserved
-    func testGoalRecordPreservesDatabaseFields() throws {
+    @Test func testGoalRecordPreservesDatabaseFields() throws {
         try dbQueue.read { db in
             // Fetch first goal with all fields populated
             guard let record = try GoalRecord.fetchOne(db) else {
@@ -160,18 +163,18 @@ final class RecordIntegrationTests: XCTestCase {
             }
 
             // Verify database fields are populated
-            XCTAssertNotNil(record.id, "Database id should be populated")
-            XCTAssertFalse(record.common_name.isEmpty)
-            XCTAssertEqual(record.goal_type, "SmartGoal", "All existing goals are SmartGoals")
+            #expect(record.id, "Database id should be populated" != nil)
+            #expect(!record.common_name.isEmpty)
+            #expect(record.goal_type == "SmartGoal", "All existing goals are SmartGoals")
 
             // Convert to domain and verify mapping
             let goal = record.toDomain()
 
-            XCTAssertEqual(goal.friendlyName, record.common_name)
-            XCTAssertEqual(goal.detailedDescription, record.description)
-            XCTAssertEqual(goal.measurementUnit, record.measurement_unit)
-            XCTAssertEqual(goal.measurementTarget, record.measurement_target)
-            XCTAssertEqual(goal.logTime, record.log_time)
+            #expect(goal.friendlyName == record.common_name)
+            #expect(goal.detailedDescription == record.description)
+            #expect(goal.measurementUnit == record.measurement_unit)
+            #expect(goal.measurementTarget == record.measurement_target)
+            #expect(goal.logTime == record.log_time)
         }
     }
 
@@ -184,7 +187,7 @@ final class RecordIntegrationTests: XCTestCase {
     /// - JSON like {"km": 4.78} becomes Swift [String: Double] dictionary
     /// - ActionRecord.toDomain() maps to measuresByUnit correctly
     /// - All actions have valid common_name
-    func testActionRecordFetchesAndParsesJSONMeasurements() throws {
+    @Test func testActionRecordFetchesAndParsesJSONMeasurements() throws {
         try dbQueue.read { db in
             // Fetch first 5 actions
             let actionRecords = try ActionRecord
@@ -200,7 +203,7 @@ final class RecordIntegrationTests: XCTestCase {
             // Convert to domain models
             let actions = actionRecords.map { $0.toDomain() }
 
-            XCTAssertEqual(actions.count, 5)
+            #expect(actions.count == 5)
 
             // Verify each action has valid data
             for (index, action) in actions.enumerated() {
@@ -244,7 +247,7 @@ final class RecordIntegrationTests: XCTestCase {
     /// - JSON {"km": 4.78} parses correctly
     /// - measuresByUnit dictionary contains expected key
     /// - Numeric values preserve precision
-    func testActionRecordParsesSpecificMeasurement() throws {
+    @Test func testActionRecordParsesSpecificMeasurement() throws {
         try dbQueue.read { db in
             // Fetch action with known measurement: "202504-Movement" has {"km": 4.78}
             let sql = "SELECT * FROM actions WHERE common_name LIKE '%Movement%' LIMIT 1"
@@ -256,7 +259,7 @@ final class RecordIntegrationTests: XCTestCase {
             }
 
             // Verify JSON was decoded by GRDB
-            XCTAssertNotNil(record.measurement_units_by_amount)
+            #expect(record.measurement_units_by_amount != nil)
 
             // Convert to domain
             let action = record.toDomain()
@@ -268,7 +271,7 @@ final class RecordIntegrationTests: XCTestCase {
             }
 
             // Verify "km" key exists
-            XCTAssertNotNil(measures["km"], "Should have 'km' measurement")
+            #expect(measures["km"], "Should have 'km' measurement" != nil)
 
             // Verify value is approximately 4.78 (allowing for floating point precision)
             if let kmValue = measures["km"] {
@@ -288,7 +291,7 @@ final class RecordIntegrationTests: XCTestCase {
     /// - Record fetched from DB has INTEGER id
     /// - Converting to domain generates new UUID
     /// - Converting back to record resets id to nil (for inserts)
-    func testActionRecordRoundTripHandlesIDs() throws {
+    @Test func testActionRecordRoundTripHandlesIDs() throws {
         try dbQueue.read { db in
             guard let record = try ActionRecord.fetchOne(db) else {
                 XCTFail("Should fetch at least one action")
@@ -296,12 +299,12 @@ final class RecordIntegrationTests: XCTestCase {
             }
 
             // Database record should have id
-            XCTAssertNotNil(record.id, "Fetched record should have database id")
+            #expect(record.id, "Fetched record should have database id" != nil)
             let originalDBID = record.id
 
             // Convert to domain (generates new UUID)
             let action = record.toDomain()
-            XCTAssertNotNil(action.id, "Domain model should have UUID")
+            #expect(action.id, "Domain model should have UUID" != nil)
 
             // Convert back to record (resets id for insert)
             let newRecord = action.toRecord()
@@ -311,8 +314,8 @@ final class RecordIntegrationTests: XCTestCase {
             )
 
             // Fields should be preserved
-            XCTAssertEqual(newRecord.common_name, record.common_name)
-            XCTAssertEqual(newRecord.measurement_units_by_amount, record.measurement_units_by_amount)
+            #expect(newRecord.common_name == record.common_name)
+            #expect(newRecord.measurement_units_by_amount == record.measurement_units_by_amount)
         }
     }
 
@@ -325,7 +328,7 @@ final class RecordIntegrationTests: XCTestCase {
     /// - "highest_order" -> HighestOrderValues
     /// - "major" -> MajorValues
     /// - All 6 values convert successfully
-    func testValueRecordFetchesAndConvertsPolymorphicTypes() throws {
+    @Test func testValueRecordFetchesAndConvertsPolymorphicTypes() throws {
         try dbQueue.read { db in
             // Fetch all value records
             let valueRecords = try ValueRecord.fetchAll(db)
@@ -367,8 +370,8 @@ final class RecordIntegrationTests: XCTestCase {
             }
 
             // Verify expected counts based on sample data
-            XCTAssertEqual(highestOrderCount, 2, "Expected 2 highest_order values")
-            XCTAssertEqual(majorCount, 4, "Expected 4 major values")
+            #expect(highestOrderCount == 2, "Expected 2 highest_order values")
+            #expect(majorCount == 4, "Expected 4 major values")
         }
     }
 
@@ -377,7 +380,7 @@ final class RecordIntegrationTests: XCTestCase {
     /// Validates:
     /// - MajorValues have alignment_guidance populated
     /// - Other value types don't use this field
-    func testValueRecordPreservesMajorValueAlignmentGuidance() throws {
+    @Test func testValueRecordPreservesMajorValueAlignmentGuidance() throws {
         try dbQueue.read { db in
             // Fetch a major value
             let sql = "SELECT * FROM personal_values WHERE incentive_type = 'major' LIMIT 1"
@@ -396,7 +399,7 @@ final class RecordIntegrationTests: XCTestCase {
 
             // MajorValues can have alignment_guidance
             // (May be nil in database, but field should exist in domain model)
-            XCTAssertNotNil(majorValue.alignmentGuidance)
+            #expect(majorValue.alignmentGuidance != nil)
         }
     }
 
@@ -406,16 +409,16 @@ final class RecordIntegrationTests: XCTestCase {
     /// - toMajorValues() returns MajorValues
     /// - toHighestOrderValues() returns HighestOrderValues
     /// - All required fields are populated
-    func testValueRecordTypeSpecificConversions() throws {
+    @Test func testValueRecordTypeSpecificConversions() throws {
         try dbQueue.read { db in
             // Fetch highest_order value
             let highestSQL = "SELECT * FROM personal_values WHERE incentive_type = 'highest_order' LIMIT 1"
             if let record = try ValueRecord.fetchOne(db, sql: highestSQL) {
                 let value = record.toHighestOrderValues()
 
-                XCTAssertNotNil(value.friendlyName)
-                XCTAssertFalse(value.friendlyName!.isEmpty)
-                XCTAssertGreaterThan(value.priority, 0)
+                #expect(value.friendlyName != nil)
+                #expect(!value.friendlyName!.isEmpty)
+                #expect(value.priority > 0)
             }
 
             // Fetch major value
@@ -423,9 +426,9 @@ final class RecordIntegrationTests: XCTestCase {
             if let record = try ValueRecord.fetchOne(db, sql: majorSQL) {
                 let value = record.toMajorValues()
 
-                XCTAssertNotNil(value.friendlyName)
-                XCTAssertFalse(value.friendlyName!.isEmpty)
-                XCTAssertGreaterThan(value.priority, 0)
+                #expect(value.friendlyName != nil)
+                #expect(!value.friendlyName!.isEmpty)
+                #expect(value.priority > 0)
             }
         }
     }
@@ -439,7 +442,7 @@ final class RecordIntegrationTests: XCTestCase {
     /// - Empty arrays "[]" parse correctly
     /// - termGoalsByID contains UUIDs (even if placeholders)
     /// - All terms have required fields
-    func testTermRecordFetchesAndParsesGoalIDArrays() throws {
+    @Test func testTermRecordFetchesAndParsesGoalIDArrays() throws {
         try dbQueue.read { db in
             // Fetch all term records
             let termRecords = try TermRecord.fetchAll(db)
@@ -453,7 +456,7 @@ final class RecordIntegrationTests: XCTestCase {
             // Convert to domain models
             let terms = termRecords.map { $0.toDomain() }
 
-            XCTAssertEqual(terms.count, 3)
+            #expect(terms.count == 3)
 
             // Verify each term has valid data
             for (index, term) in terms.enumerated() {
@@ -466,8 +469,8 @@ final class RecordIntegrationTests: XCTestCase {
                     0,
                     "Term number should be positive"
                 )
-                XCTAssertNotNil(term.startDate, "Term should have start date")
-                XCTAssertNotNil(term.targetDate, "Term should have target date")
+                #expect(term.startDate, "Term should have start date" != nil)
+                #expect(term.targetDate, "Term should have target date" != nil)
 
                 // termGoalsByID should always be present (even if empty)
                 // Since it's a non-optional array, we just verify it exists
@@ -485,7 +488,7 @@ final class RecordIntegrationTests: XCTestCase {
     /// Validates:
     /// - JSON "[1, 2, 3]" produces array with 3 UUIDs
     /// - Each UUID is valid (non-zero)
-    func testTermRecordParsesMultipleGoalIDs() throws {
+    @Test func testTermRecordParsesMultipleGoalIDs() throws {
         try dbQueue.read { db in
             // Fetch term with goal IDs: "Term 1" has [1, 2, 3]
             let sql = "SELECT * FROM terms WHERE term_goals_by_id = '[1, 2, 3]' LIMIT 1"
@@ -519,7 +522,7 @@ final class RecordIntegrationTests: XCTestCase {
     ///
     /// Validates:
     /// - JSON "[]" produces empty array (not nil)
-    func testTermRecordParsesEmptyGoalIDArray() throws {
+    @Test func testTermRecordParsesEmptyGoalIDArray() throws {
         try dbQueue.read { db in
             // Fetch term with empty array: "Term 3: Mindfulness" has []
             let sql = "SELECT * FROM terms WHERE term_goals_by_id = '[]' LIMIT 1"
@@ -546,7 +549,7 @@ final class RecordIntegrationTests: XCTestCase {
     /// - term_number maps to termNumber
     /// - start_date and target_date are preserved
     /// - Dates are valid Date objects
-    func testTermRecordPreservesNumberAndDates() throws {
+    @Test func testTermRecordPreservesNumberAndDates() throws {
         try dbQueue.read { db in
             guard let record = try TermRecord.fetchOne(db) else {
                 XCTFail("Should fetch at least one term")
@@ -557,11 +560,11 @@ final class RecordIntegrationTests: XCTestCase {
             let term = record.toDomain()
 
             // Verify term number
-            XCTAssertEqual(term.termNumber, record.term_number)
+            #expect(term.termNumber == record.term_number)
 
             // Verify dates
-            XCTAssertEqual(term.startDate, record.start_date)
-            XCTAssertEqual(term.targetDate, record.target_date)
+            #expect(term.startDate == record.start_date)
+            #expect(term.targetDate == record.target_date)
 
             // Verify start date is before target date
             XCTAssertLessThan(
@@ -579,17 +582,17 @@ final class RecordIntegrationTests: XCTestCase {
     /// Validates:
     /// - All tables have expected record counts
     /// - No table is empty
-    func testDatabaseHasExpectedRecordCounts() throws {
+    @Test func testDatabaseHasExpectedRecordCounts() throws {
         try dbQueue.read { db in
             let actionCount = try ActionRecord.fetchCount(db)
             let goalCount = try GoalRecord.fetchCount(db)
             let valueCount = try ValueRecord.fetchCount(db)
             let termCount = try TermRecord.fetchCount(db)
 
-            XCTAssertEqual(actionCount, 186, "Expected 186 actions")
-            XCTAssertEqual(goalCount, 8, "Expected 8 goals")
-            XCTAssertEqual(valueCount, 6, "Expected 6 values")
-            XCTAssertEqual(termCount, 3, "Expected 3 terms")
+            #expect(actionCount == 186, "Expected 186 actions")
+            #expect(goalCount == 8, "Expected 8 goals")
+            #expect(valueCount == 6, "Expected 6 values")
+            #expect(termCount == 3, "Expected 3 terms")
         }
     }
 }
