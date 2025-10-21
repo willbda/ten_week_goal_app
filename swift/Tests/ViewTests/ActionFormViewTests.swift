@@ -184,8 +184,8 @@ struct ActionFormViewTests {
 
         let actionWithStartTime = Action(
             friendlyName: "Test",
-            startTime: Date(),
             durationMinutes: 30.0,
+            startTime: Date(),
             logTime: Date()
         )
 
@@ -226,8 +226,8 @@ struct ActionFormViewTests {
         // Valid: start time with duration
         var validAction = Action(
             friendlyName: "Test",
-            startTime: Date(),
             durationMinutes: 30.0,
+            startTime: Date(),
             logTime: Date()
         )
 

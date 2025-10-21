@@ -24,7 +24,6 @@ struct RecordIntegrationTests {
     static let dbQueue: DatabaseQueue? = nil
 
     /// Database queue for tests
-    private var dbQueue: DatabaseQueue!
 
     // MARK: - Database Path Resolution
 
@@ -73,21 +72,7 @@ struct RecordIntegrationTests {
 
     // MARK: - Setup & Teardown
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
 
-        // Get database path (resolved from test file location using #filePath)
-        let databasePath = try getDatabasePath()
-
-        // Open database connection (read-only for safety)
-        dbQueue = try DatabaseQueue(path: databasePath)
-    }
-
-    override func tearDownWithError() throws {
-        // Close database connection
-        dbQueue = nil
-        try super.tearDownWithError()
-    }
 
     // MARK: - GoalRecord Integration Tests
 

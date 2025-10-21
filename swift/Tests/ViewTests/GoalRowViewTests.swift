@@ -67,8 +67,8 @@ struct GoalRowViewTests {
     func displaysLifeDomain() {
         let goal = Goal(
             friendlyName: "Fitness goal",
-            lifeDomain: "Health",
-            priority: 50
+            priority: 50,
+            lifeDomain: "Health"
         )
 
         #expect(goal.lifeDomain == "Health")
@@ -314,8 +314,8 @@ struct GoalRowViewTests {
         for domain in domains {
             let goal = Goal(
                 friendlyName: "Goal in \(domain)",
-                lifeDomain: domain,
-                priority: 50
+                priority: 50,
+                lifeDomain: domain
             )
 
             #expect(goal.lifeDomain == domain)
@@ -326,8 +326,8 @@ struct GoalRowViewTests {
     func handlesCustomLifeDomain() {
         let goal = Goal(
             friendlyName: "Custom goal",
-            lifeDomain: "My Custom Domain",
-            priority: 50
+            priority: 50,
+            lifeDomain: "My Custom Domain"
         )
 
         #expect(goal.lifeDomain == "My Custom Domain")
@@ -337,8 +337,8 @@ struct GoalRowViewTests {
     func handlesEmptyLifeDomain() {
         let goal = Goal(
             friendlyName: "No domain",
-            lifeDomain: nil,
-            priority: 50
+            priority: 50,
+            lifeDomain: nil
         )
 
         #expect(goal.lifeDomain == nil)
