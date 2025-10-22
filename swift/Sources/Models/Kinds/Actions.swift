@@ -34,6 +34,20 @@ public struct Action: Persistable, Doable, Codable, Sendable {
     public var logTime: Date
     public var id: UUID
 
+    // MARK: - Codable Mapping
+
+    /// Maps Swift property names to database column names
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                                  // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case measuresByUnit = "measurement_units_by_amount"
+        case durationMinutes = "duration_minutes"
+        case startTime = "start_time"
+        case logTime = "log_time"
+    }
+
     // MARK: - Initialization
 
     /// Create a new action with required and optional fields
