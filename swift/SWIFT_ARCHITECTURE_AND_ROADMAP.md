@@ -9,8 +9,9 @@
 
 This document consolidates the Swift implementation architecture, completed work, and future refactoring plans for the Ten Week Goal App. Based on comprehensive research of Swift 6.2 patterns, GRDB documentation, and architectural analysis, we've identified opportunities to simplify the codebase while maintaining Python database compatibility.
 
-**Current State**: 54 tests passing, zero concurrency warnings, functional but with architectural inconsistencies
+**Current State**: Python 36 tests passing, Swift tests failing (actor isolation errors from recent changes), functional but with architectural inconsistencies
 **Goal**: Simplify architecture by eliminating translation layer (~700 lines), leverage GRDB's Codable integration, maintain clean separation of concerns
+**Recent Work**: Title field refactoring completed 2025-10-21 (unified `common_name`/`friendlyName` → `title` across Python, Swift, and database)
 
 ---
 
@@ -79,7 +80,7 @@ ten_week_goal_app/swift/
 │   │   │   └── Terms.swift          # GoalTerm, LifeTime
 │   │   └── ModelExtensions.swift    # Validation logic
 │   ├── Database/                    # GRDB infrastructure
-│   │   ├── DatabaseManager.swift    # Actor-based database access (850 lines)
+│   │   ├── DatabaseManager.swift    # Actor-based database access (870 lines)
 │   │   ├── DatabaseConfiguration.swift
 │   │   ├── DatabaseError.swift
 │   │   ├── Records/                 # Translation layer (TO BE REMOVED)
@@ -90,7 +91,7 @@ ten_week_goal_app/swift/
 │   │   └── UUIDMapper.swift         # ID mapping (TO BE REMOVED)
 │   ├── App/                         # SwiftUI views (prototype)
 │   └── AppRunner/                   # macOS app entry point
-├── Tests/                           # 54 tests passing
+├── Tests/                           # 10 test files (currently failing - needs MainActor fixes)
 └── shared/schemas/                  # SQL schemas (shared with Python)
 ```
 
@@ -100,19 +101,33 @@ ten_week_goal_app/swift/
 - **Swift 6.2**: Strict concurrency enabled
 - **Platform**: macOS 14+, iOS 17+ (targets set but focus is macOS)
 
-### Test Coverage (54 tests, all passing)
+### Test Status
 
-- **Action Tests**: 5 tests (creation, validation, equality)
-- **Goal Tests**: 9 tests (Goal, Milestone, SmartGoal validation)
-- **Term Tests**: 22 tests (GoalTerm, LifeTime business logic)
-- **Value Tests**: 18 tests (5 value types, hierarchy validation)
+**Python**: 36 tests passing (all green)
+- Action storage, goal storage, progress aggregation, term actions, values tests
+
+**Swift**: Currently failing (as of 2025-10-21 evening)
+- **Reason**: Actor isolation errors in ActionFormViewTests after title refactoring
+- **Error**: "sending value of non-Sendable type '() -> ()' risks causing data races"
+- **Fix needed**: Add `@MainActor` to test methods or make closures `@Sendable`
+- **Test files**: 10 files (Action, Goal, Term, Value model tests + View tests)
 
 ### Build Status
 
-✅ Zero compilation errors
-✅ Zero concurrency warnings
-✅ Swift 6.2 strict concurrency compliance
+⚠️ Swift tests failing (actor isolation in view tests)
+✅ Zero compilation errors in source code
+✅ Swift 6.2 strict concurrency enabled
 ⚠️ Architectural inconsistencies identified (see below)
+
+### Recent Changes (2025-10-21)
+
+**Title Field Unification** (committed):
+- Renamed `common_name` (Python), `friendlyName` (Swift) → `title` everywhere
+- Database schema: `common_name` column → `title` column
+- Updated all domain models, Records, views, tests, templates
+- **Impact**: 64 files changed (actions, goals, values, terms across all layers)
+- **Python**: All 36 tests passing
+- **Swift**: Build succeeds, but tests need actor isolation fixes
 
 ---
 
@@ -189,14 +204,14 @@ ten_week_goal_app/swift/
 // Domain model conforms to GRDB protocols directly
 struct Action: Codable, Sendable, FetchableRecord, PersistableRecord, TableRecord {
     var id: UUID
-    var friendlyName: String?
+    var title: String?
     var measuresByUnit: [String: Double]?
     var logTime: Date
 
     // CodingKeys for snake_case ↔ camelCase mapping
     enum CodingKeys: String, CodingKey {
         case id
-        case friendlyName = "friendly_name"
+        case title  // Column name is also 'title' in database
         case measuresByUnit = "measurement_units_by_amount"
         case logTime = "log_time"
     }
@@ -204,7 +219,7 @@ struct Action: Codable, Sendable, FetchableRecord, PersistableRecord, TableRecor
     // Columns for type-safe queries (optional but recommended)
     enum Columns {
         static let id = Column(CodingKeys.id)
-        static let friendlyName = Column(CodingKeys.friendlyName)
+        static let title = Column(CodingKeys.title)
         static let measuresByUnit = Column(CodingKeys.measuresByUnit)
         static let logTime = Column(CodingKeys.logTime)
     }
@@ -422,8 +437,8 @@ try await db.save(&mutableAction)
 
 | Swift Property | Database Column | Type | Notes |
 |----------------|-----------------|------|-------|
-| `id: UUID` | `uuid_id` | TEXT | Stored as string "E621E1F8-..." |
-| `friendlyName` | `friendly_name` | TEXT | CodingKeys mapping |
+| `id: UUID` | `uuid_id` | TEXT | Stored as string "E621E1F8-..." (future) |
+| `title` | `title` | TEXT | Renamed from common_name 2025-10-21 |
 | `measuresByUnit` | `measurement_units_by_amount` | TEXT | JSON dictionary |
 | `logTime` | `log_time` | TEXT | ISO8601 string |
 | `startTime` | `start_time` | TEXT | ISO8601 string (nullable) |
@@ -567,12 +582,13 @@ struct Action: Codable {
 
 - ✅ Domain models complete (Action, Goal, Value, Term with validation)
 - ✅ Database layer functional (DatabaseManager with CRUD operations)
-- ✅ 54+ tests passing
-- ✅ Zero concurrency warnings
-- 🔲 Translation layer eliminated (~700 lines deleted)
+- ✅ Field naming unified (`title` across Python, Swift, database) - completed 2025-10-21
+- ⚠️ Tests: Python 36/36 passing, Swift failing (actor isolation fixes needed)
+- 🔲 Swift tests passing (fix MainActor isolation in view tests)
+- 🔲 Translation layer eliminated (~700 lines to delete: Records + UUIDMapper)
 - 🔲 Generic CRUD only (no entity-specific DatabaseManager methods)
-- 🔲 UUID column in database schema
-- 🔲 Documentation accurate (this file)
+- 🔲 UUID column in database schema (add uuid_id TEXT UNIQUE)
+- 🔲 Documentation accurate (this file - updated 2025-10-21)
 
 ### Production Ready
 
