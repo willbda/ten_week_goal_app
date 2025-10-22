@@ -3,10 +3,12 @@
 //
 // Written by Claude Code on 2025-10-17
 // Updated by Claude Code on 2025-10-19 (validation moved to ModelExtensions.swift)
+// Updated by Claude Code on 2025-10-22 (added direct GRDB conformance)
 // Ported from Python implementation (python/categoriae/actions.py)
 
 import Foundation
 import Playgrounds
+import GRDB
 
 /// An action taken at a point in time, with optional measurements and timing
 ///
@@ -14,7 +16,10 @@ import Playgrounds
 /// They can include quantitative measurements (distance, duration, reps, etc.)
 /// and timing information (when started, how long it took).
 ///
-public struct Action: Persistable, Doable, Codable, Sendable {
+/// **GRDB Conformance**: This struct conforms to FetchableRecord, PersistableRecord,
+/// and TableRecord, enabling direct database operations without intermediate Record types.
+///
+public struct Action: Persistable, Doable, Codable, Sendable, FetchableRecord, PersistableRecord, TableRecord {
     // MARK: - Core Identity (Persistable)
 
     public var title: String?
@@ -33,6 +38,35 @@ public struct Action: Persistable, Doable, Codable, Sendable {
 
     public var logTime: Date
     public var id: UUID
+
+    // MARK: - GRDB Integration
+
+    /// CodingKeys for mapping Swift properties to database columns
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                                  // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case measuresByUnit = "measurement_units_by_amount"
+        case durationMinutes = "duration_minutes"
+        case startTime = "start_time"
+        case logTime = "log_time"
+    }
+
+    /// Column enum for type-safe query building
+    enum Columns {
+        static let id = Column(CodingKeys.id)
+        static let title = Column(CodingKeys.title)
+        static let detailedDescription = Column(CodingKeys.detailedDescription)
+        static let freeformNotes = Column(CodingKeys.freeformNotes)
+        static let measuresByUnit = Column(CodingKeys.measuresByUnit)
+        static let durationMinutes = Column(CodingKeys.durationMinutes)
+        static let startTime = Column(CodingKeys.startTime)
+        static let logTime = Column(CodingKeys.logTime)
+    }
+
+    /// TableRecord conformance - specify database table name
+    public static let databaseTableName = "actions"
 
     // MARK: - Initialization
 

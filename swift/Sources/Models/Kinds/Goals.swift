@@ -74,6 +74,27 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
 
     public var polymorphicSubtype: String { return "goal" }
 
+    // MARK: - Codable Mapping
+
+    /// Maps Swift property names to database column names
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                          // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case logTime = "log_time"
+        case measurementUnit = "measurement_unit"
+        case measurementTarget = "measurement_target"
+        case startDate = "start_date"
+        case targetDate = "target_date"
+        case howGoalIsRelevant = "how_goal_is_relevant"
+        case howGoalIsActionable = "how_goal_is_actionable"
+        case expectedTermLength = "expected_term_length"
+        case priority
+        case lifeDomain = "life_domain"
+        case polymorphicSubtype = "goal_type"
+    }
+
     // MARK: - Initialization
 
     /// Create a new goal with flexible field requirements
@@ -157,6 +178,24 @@ public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Co
     // MARK: - Polymorphic Type (Polymorphable)
 
     public var polymorphicSubtype: String { return "milestone" }
+
+    // MARK: - Codable Mapping
+
+    /// Maps Swift property names to database column names
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                          // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case logTime = "log_time"
+        case measurementUnit = "measurement_unit"
+        case measurementTarget = "measurement_target"
+        case startDate = "start_date"
+        case targetDate = "target_date"
+        case priority
+        case lifeDomain = "life_domain"
+        case polymorphicSubtype = "goal_type"
+    }
 
     // MARK: - Initialization
 

@@ -64,6 +64,24 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable {
 
     public var polymorphicSubtype: String { return "goal_term" }
 
+    // MARK: - Codable Mapping
+
+    /// Maps Swift property names to database column names
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                    // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case logTime = "created_at"            // Terms table uses created_at
+        case termNumber = "term_number"
+        case startDate = "start_date"
+        case targetDate = "target_date"
+        case theme
+        case termGoalsByID = "term_goals_by_id"
+        case reflection
+        case polymorphicSubtype = "term_type"  // For future polymorphism
+    }
+
     // MARK: - Initialization
 
     public init(
@@ -128,6 +146,20 @@ public struct LifeTime: Persistable, Polymorphable, Codable, Sendable {
     // MARK: - Polymorphic Type (Polymorphable)
 
     public var polymorphicSubtype: String { return "lifetime" }
+
+    // MARK: - Codable Mapping
+
+    /// Maps Swift property names to database column names
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                           // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case logTime = "created_at"
+        case birthDate = "birth_date"
+        case estimatedDeathDate = "estimated_death_date"
+        case polymorphicSubtype = "term_type"         // For future polymorphism
+    }
 
     // MARK: - Initialization
 

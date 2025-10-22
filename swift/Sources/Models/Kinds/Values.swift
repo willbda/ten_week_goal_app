@@ -57,6 +57,20 @@ public struct Incentives: Persistable, Polymorphable, Motivating, Codable, Senda
     /// Type identifier for polymorphic storage
     public var polymorphicSubtype: String { return "incentive" }
 
+    // MARK: - Codable Mapping
+
+    /// Maps Swift property names to database column names
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                    // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case logTime = "log_time"
+        case priority
+        case lifeDomain = "life_domain"
+        case polymorphicSubtype = "incentive_type"
+    }
+
     // MARK: - Initialization
 
     public init(
@@ -104,6 +118,20 @@ public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable 
     // MARK: - Polymorphic Type (Polymorphable)
 
     public var polymorphicSubtype: String { return "general" }
+
+    // MARK: - Codable Mapping
+
+    /// Maps Swift property names to database column names
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                    // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case logTime = "log_time"
+        case priority
+        case lifeDomain = "life_domain"
+        case polymorphicSubtype = "incentive_type"
+    }
 
     // MARK: - Initialization
 
@@ -156,6 +184,20 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendab
     // MARK: - Polymorphic Type (Polymorphable)
 
     public var polymorphicSubtype: String { return "life_area" }
+
+    // MARK: - Codable Mapping
+
+    /// Maps Swift property names to database column names
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                    // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case logTime = "log_time"
+        case priority
+        case lifeDomain = "life_domain"
+        case polymorphicSubtype = "incentive_type"
+    }
 
     // MARK: - Initialization
 
@@ -212,6 +254,21 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Send
 
     public var polymorphicSubtype: String { return "major" }
 
+    // MARK: - Codable Mapping
+
+    /// Maps Swift property names to database column names
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                    // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case logTime = "log_time"
+        case priority
+        case lifeDomain = "life_domain"
+        case alignmentGuidance = "alignment_guidance"
+        case polymorphicSubtype = "incentive_type"
+    }
+
     // MARK: - Initialization
 
     public init(
@@ -265,6 +322,20 @@ public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Codabl
     // MARK: - Polymorphic Type (Polymorphable)
 
     public var polymorphicSubtype: String { return "highest_order" }
+
+    // MARK: - Codable Mapping
+
+    /// Maps Swift property names to database column names
+    enum CodingKeys: String, CodingKey {
+        case id = "uuid_id"                    // UUID column (Swift-native)
+        case title
+        case detailedDescription = "description"
+        case freeformNotes = "notes"
+        case logTime = "log_time"
+        case priority
+        case lifeDomain = "life_domain"
+        case polymorphicSubtype = "incentive_type"
+    }
 
     // MARK: - Initialization
 
