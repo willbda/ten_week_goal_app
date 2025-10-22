@@ -18,6 +18,7 @@ struct ActionFormViewTests {
     // MARK: - Mode Detection Tests
 
     @Test("Create mode has correct title")
+    @MainActor
     func createModeTitle() {
         var savedAction: Action?
         let view = ActionFormView(
@@ -31,6 +32,7 @@ struct ActionFormViewTests {
     }
 
     @Test("Edit mode has correct title and preserves action")
+    @MainActor
     func editModePreservesAction() {
         let existingAction = Action(
             title: "Test Action",
@@ -53,6 +55,7 @@ struct ActionFormViewTests {
     // MARK: - Initialization Tests
 
     @Test("Initializes with empty fields in create mode")
+    @MainActor
     func initializesEmptyInCreateMode() {
         var savedAction: Action?
         let view = ActionFormView(
@@ -66,6 +69,7 @@ struct ActionFormViewTests {
     }
 
     @Test("Initializes with action data in edit mode")
+    @MainActor
     func initializesWithDataInEditMode() {
         let startTime = Date().addingTimeInterval(-3600)
         let logTime = Date()
@@ -97,6 +101,7 @@ struct ActionFormViewTests {
     }
 
     @Test("Initializes measurements as empty array when nil")
+    @MainActor
     func initializesEmptyMeasurements() {
         let action = Action(
             title: "Test",
@@ -115,6 +120,7 @@ struct ActionFormViewTests {
     }
 
     @Test("Converts measurements dict to array for editing")
+    @MainActor
     func convertsMeasurementsToArray() {
         let action = Action(
             title: "Workout",
@@ -273,6 +279,7 @@ struct ActionFormViewTests {
     // MARK: - Save Behavior Tests
 
     @Test("Save creates new action with UUID in create mode")
+    @MainActor
     func saveCreatesNewAction() {
         var savedAction: Action?
         var wasSaved = false
@@ -296,6 +303,7 @@ struct ActionFormViewTests {
     }
 
     @Test("Save preserves UUID in edit mode")
+    @MainActor
     func savePreservesUUIDInEditMode() {
         let originalID = UUID()
         let existingAction = Action(
@@ -354,6 +362,7 @@ struct ActionFormViewTests {
     // MARK: - Cancel Behavior Tests
 
     @Test("Cancel callback is provided")
+    @MainActor
     func cancelCallbackProvided() {
         var wasCancelled = false
 
