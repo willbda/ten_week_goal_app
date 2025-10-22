@@ -68,7 +68,7 @@ public struct Incentives: Persistable, Polymorphable, Motivating, Codable, Senda
         case logTime = "log_time"
         case priority
         case lifeDomain = "life_domain"
-        case polymorphicSubtype = "incentive_type"
+        // polymorphicSubtype is computed, returns type string
     }
 
     // MARK: - Initialization
@@ -130,7 +130,7 @@ public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable 
         case logTime = "log_time"
         case priority
         case lifeDomain = "life_domain"
-        case polymorphicSubtype = "incentive_type"
+        // polymorphicSubtype is computed, returns type string
     }
 
     // MARK: - Initialization
@@ -196,7 +196,7 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendab
         case logTime = "log_time"
         case priority
         case lifeDomain = "life_domain"
-        case polymorphicSubtype = "incentive_type"
+        // polymorphicSubtype is computed, returns type string
     }
 
     // MARK: - Initialization
@@ -266,7 +266,7 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Send
         case priority
         case lifeDomain = "life_domain"
         case alignmentGuidance = "alignment_guidance"
-        case polymorphicSubtype = "incentive_type"
+        // polymorphicSubtype is computed, returns type string
     }
 
     // MARK: - Initialization
@@ -334,7 +334,7 @@ public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Codabl
         case logTime = "log_time"
         case priority
         case lifeDomain = "life_domain"
-        case polymorphicSubtype = "incentive_type"
+        // polymorphicSubtype is computed, returns type string
     }
 
     // MARK: - Initialization

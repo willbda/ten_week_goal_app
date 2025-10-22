@@ -54,7 +54,7 @@ public struct Action: Persistable, Doable, Codable, Sendable, FetchableRecord, P
     }
 
     /// Column enum for type-safe query building
-    enum Columns {
+    public enum Columns {
         static let id = Column(CodingKeys.id)
         static let title = Column(CodingKeys.title)
         static let detailedDescription = Column(CodingKeys.detailedDescription)

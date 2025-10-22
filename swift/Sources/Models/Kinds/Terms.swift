@@ -79,7 +79,7 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable {
         case theme
         case termGoalsByID = "term_goals_by_id"
         case reflection
-        case polymorphicSubtype = "term_type"  // For future polymorphism
+        // polymorphicSubtype is computed, not stored  // For future polymorphism
     }
 
     // MARK: - Initialization
@@ -158,7 +158,7 @@ public struct LifeTime: Persistable, Polymorphable, Codable, Sendable {
         case logTime = "created_at"
         case birthDate = "birth_date"
         case estimatedDeathDate = "estimated_death_date"
-        case polymorphicSubtype = "term_type"         // For future polymorphism
+        // polymorphicSubtype is computed, not stored         // For future polymorphism
     }
 
     // MARK: - Initialization

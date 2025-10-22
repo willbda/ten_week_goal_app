@@ -77,6 +77,7 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
     // MARK: - Codable Mapping
 
     /// Maps Swift property names to database column names
+    /// Note: polymorphicSubtype is a computed property, not included in CodingKeys
     enum CodingKeys: String, CodingKey {
         case id = "uuid_id"                          // UUID column (Swift-native)
         case title
@@ -92,7 +93,7 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
         case expectedTermLength = "expected_term_length"
         case priority
         case lifeDomain = "life_domain"
-        case polymorphicSubtype = "goal_type"
+        // polymorphicSubtype is computed, stored as "goal" in database
     }
 
     // MARK: - Initialization
@@ -182,6 +183,7 @@ public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Co
     // MARK: - Codable Mapping
 
     /// Maps Swift property names to database column names
+    /// Note: polymorphicSubtype is a computed property, not included in CodingKeys
     enum CodingKeys: String, CodingKey {
         case id = "uuid_id"                          // UUID column (Swift-native)
         case title
@@ -194,7 +196,7 @@ public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Co
         case targetDate = "target_date"
         case priority
         case lifeDomain = "life_domain"
-        case polymorphicSubtype = "goal_type"
+        // polymorphicSubtype is computed, stored as "milestone" in database
     }
 
     // MARK: - Initialization
