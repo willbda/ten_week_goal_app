@@ -123,13 +123,21 @@ ten_week_goal_app/swift/
 
 ### Recent Changes
 
-**2025-10-22: Swift Test Actor Isolation Fixes** (committed):
-- Fixed actor isolation errors in ActionFormViewTests.swift
-- Added `@MainActor` annotations to 9 test methods that create ActionFormView with closures
-- Resolves "sending value of non-Sendable type '() -> ()' risks causing data races" error
-- **Impact**: ActionFormViewTests.swift updated with @MainActor annotations
-- **Result**: All Swift concurrency warnings resolved, tests ready to run
-- Other ViewTests (ActionRow, GoalRow, TermRow, ValueRow) did not need fixes
+**2025-10-22: GRDB Direct Conformance Pattern Established** (committed):
+- **Merged**: Proof-of-concept branch with 3 completed tasks
+- **Task 1**: Fixed actor isolation in ActionFormViewTests (9 @MainActor annotations)
+- **Task 2**: Added CodingKeys to all models (Action, Goal, Value, Term) for uuid_id mapping
+- **Task 3**: Action model now has direct GRDB conformance (FetchableRecord, PersistableRecord, TableRecord)
+- **Created**: ActionGRDBTests.swift with 13 integration tests proving the pattern works
+- **Impact**: Establishes template for migrating Goal, Value, Term to same pattern
+- **Next**: Apply GRDB conformances to remaining 3 models, then delete Records/ directory + UUIDMapper
+
+**Architecture Decision Made**:
+- Models layer now depends on GRDB (structural conformances, not behavioral)
+- GRDB protocols are metadata markers (like Codable), not infrastructure dependencies
+- Eliminates ~700 lines of translation layer code once fully applied
+- Swift-idiomatic pattern: protocol composition > class inheritance
+- See "Key Design Decisions" section for full rationale
 
 **2025-10-21: Title Field Unification** (committed):
 - Renamed `common_name` (Python), `friendlyName` (Swift) → `title` everywhere
