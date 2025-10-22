@@ -17,7 +17,7 @@ import Playgrounds
 public struct Action: Persistable, Doable, Codable, Sendable {
     // MARK: - Core Identity (Persistable)
 
-    public var friendlyName: String?
+    public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
 
@@ -38,7 +38,7 @@ public struct Action: Persistable, Doable, Codable, Sendable {
 
     /// Create a new action with required and optional fields
     /// - Parameters:
-    ///   - friendlyName: Short description of the action
+    ///   - title: Short description of the action
     ///   - detailedDescription: Optional detailed description
     ///   - freeformNotes: Optional freeform notes
     ///   - measuresByUnit: Optional measurements by unit (e.g., ["km": 5.0])
@@ -49,7 +49,7 @@ public struct Action: Persistable, Doable, Codable, Sendable {
 
     public init(
         // Core identity
-        friendlyName: String? = nil,
+        title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         // Domain-specific
@@ -61,7 +61,7 @@ public struct Action: Persistable, Doable, Codable, Sendable {
         id: UUID = UUID()
     ) {
         // Core identity
-        self.friendlyName = friendlyName
+        self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         // Domain-specific

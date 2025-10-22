@@ -23,7 +23,7 @@ struct ValueRowView: View {
             VStack(alignment: .leading, spacing: 6) {
                 // Value name with priority indicator
                 HStack {
-                    Text(item.friendlyName ?? "Untitled Value")
+                    Text(item.title ?? "Untitled Value")
                         .font(.headline)
                     
                     Spacer()
@@ -97,7 +97,7 @@ struct ValueRowView: View {
         Section("Highest Order Values") {
             ValueRowView(item: ValueDisplayItem(
                 id: UUID(),
-                friendlyName: "Eudaimonia",
+                title: "Eudaimonia",
                 detailedDescription: "Living a flourishing, meaningful life",
                 priority: 1,
                 lifeDomain: "Philosophy",
@@ -108,7 +108,7 @@ struct ValueRowView: View {
         Section("Major Values") {
             ValueRowView(item: ValueDisplayItem(
                 id: UUID(),
-                friendlyName: "Physical Health",
+                title: "Physical Health",
                 detailedDescription: "Maintaining strength, endurance, and vitality",
                 priority: 8,
                 lifeDomain: "Health",
@@ -119,7 +119,7 @@ struct ValueRowView: View {
         Section("General Values") {
             ValueRowView(item: ValueDisplayItem(
                 id: UUID(),
-                friendlyName: "Creativity",
+                title: "Creativity",
                 detailedDescription: "Expressing original ideas and making new things",
                 priority: 15,
                 lifeDomain: "Personal Growth",
@@ -128,7 +128,7 @@ struct ValueRowView: View {
             
             ValueRowView(item: ValueDisplayItem(
                 id: UUID(),
-                friendlyName: "Integrity",
+                title: "Integrity",
                 detailedDescription: "Acting in alignment with principles",
                 priority: 12,
                 lifeDomain: nil,
@@ -139,7 +139,7 @@ struct ValueRowView: View {
         Section("Life Areas") {
             ValueRowView(item: ValueDisplayItem(
                 id: UUID(),
-                friendlyName: "Career",
+                title: "Career",
                 detailedDescription: "Professional development and work life",
                 priority: 20,
                 lifeDomain: nil,

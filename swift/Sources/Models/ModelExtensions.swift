@@ -147,7 +147,7 @@ extension Goal: Validatable {
     /// - Returns: true if goal has all required SMART fields
     ///
     /// SMART criteria:
-    /// - Specific: Has friendlyName or detailedDescription
+    /// - Specific: Has title or detailedDescription
     /// - Measurable: Has measurementUnit and measurementTarget
     /// - Achievable: Has howGoalIsActionable
     /// - Relevant: Has howGoalIsRelevant

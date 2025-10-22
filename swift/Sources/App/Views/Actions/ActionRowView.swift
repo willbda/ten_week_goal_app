@@ -21,7 +21,7 @@ struct ActionRowView: View {
         HStack {
             VStack(alignment: .leading, spacing: 8) {
                 // Friendly name with fallback
-                Text(action.friendlyName ?? "Untitled Action")
+                Text(action.title ?? "Untitled Action")
                     .font(.headline)
                 
                 // Individual measurements
@@ -52,7 +52,7 @@ struct ActionRowView: View {
 #Preview {
     List {
         ActionRowView(action: Action(
-            friendlyName: "Morning run",
+            title: "Morning run",
             detailedDescription: "Easy recovery run in the park",
             measuresByUnit: ["km": 5.0, "minutes": 30],
             durationMinutes: 30,
@@ -61,13 +61,13 @@ struct ActionRowView: View {
         ))
 
         ActionRowView(action: Action(
-            friendlyName: "Meditation",
+            title: "Meditation",
             measuresByUnit: ["minutes": 10],
             logTime: Date().addingTimeInterval(-7200)
         ))
 
         ActionRowView(action: Action(
-            friendlyName: "Write journal entry",
+            title: "Write journal entry",
             logTime: Date()
         ))
     }

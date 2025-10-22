@@ -90,11 +90,11 @@ class ActionGoalProgressStorageService:
 
         if not action_id:
             raise ValueError(
-                f"Action not found in database: {rel.action.common_name[:50]}"
+                f"Action not found in database: {rel.action.title[:50]}"
             )
         if not goal_id:
             raise ValueError(
-                f"Goal not found in database: {rel.goal.common_name[:50]}"
+                f"Goal not found in database: {rel.goal.title[:50]}"
             )
 
         # Check if relationship already exists
@@ -137,7 +137,7 @@ class ActionGoalProgressStorageService:
             return action.id
 
         # Lookup by unique attributes
-        filters = {'description': action.common_name}
+        filters = {'description': action.title}
         if action.log_time:
             filters['log_time'] = action.log_time.isoformat()
 
@@ -161,7 +161,7 @@ class ActionGoalProgressStorageService:
             return goal.id
 
         # Lookup by unique attributes
-        filters = {'description': goal.common_name}
+        filters = {'description': goal.title}
         if goal.start_date:
             filters['start_date'] = goal.start_date.strftime('%Y-%m-%d')
         if goal.target_date:

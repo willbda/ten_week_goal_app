@@ -99,7 +99,7 @@ def terms_add():
 
         # Create term object
         term = GoalTerm(
-            common_name=f"Term {term_number}",
+            title=f"Term {term_number}",
             term_number=term_number,
             start_date=start_date,
             target_date=target_date,

@@ -31,8 +31,8 @@ struct TermRecord: Codable, FetchableRecord, PersistableRecord, TableRecord {
     /// Python compatibility (Python uses INTEGER id, Swift uses uuid_id)
     var uuid_id: String?
 
-    /// Short identifier (maps to GoalTerm.friendlyName)
-    var common_name: String
+    /// Short identifier (maps to GoalTerm.title)
+    var title: String
 
     /// Optional elaboration (maps to GoalTerm.detailedDescription)
     var description: String?
@@ -69,7 +69,7 @@ struct TermRecord: Codable, FetchableRecord, PersistableRecord, TableRecord {
     enum CodingKeys: String, CodingKey {
         case id
         case uuid_id
-        case common_name
+        case title
         case description
         case notes
         case term_number
@@ -110,7 +110,7 @@ extension TermRecord {
         let goalUUIDs = parseGoalIDs(from: term_goals_by_id)
 
         return GoalTerm(
-            friendlyName: common_name,
+            title: title,
             detailedDescription: description,
             freeformNotes: notes,
             termNumber: term_number,
@@ -177,7 +177,7 @@ extension GoalTerm {
         TermRecord(
             id: nil,  // Let database auto-increment (Python compatibility)
             uuid_id: id.uuidString,  // Store Swift's UUID for stable fetches
-            common_name: friendlyName ?? "",
+            title: title ?? "",
             description: detailedDescription,
             notes: freeformNotes,
             term_number: termNumber,

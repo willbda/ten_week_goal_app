@@ -21,35 +21,35 @@ struct ValueRowViewTests {
     func displaysFriendlyName() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Physical Health",
+            title: "Physical Health",
             detailedDescription: nil,
             priority: 10,
             lifeDomain: nil,
             additionalInfo: nil
         )
 
-        #expect(item.friendlyName == "Physical Health")
+        #expect(item.title == "Physical Health")
     }
 
     @Test("Shows fallback for untitled value")
     func showsUntitledFallback() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: nil,
+            title: nil,
             detailedDescription: "Some description",
             priority: 50,
             lifeDomain: nil,
             additionalInfo: nil
         )
 
-        #expect(item.friendlyName == nil)
+        #expect(item.title == nil)
     }
 
     @Test("Displays detailed description")
     func displaysDetailedDescription() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Creativity",
+            title: "Creativity",
             detailedDescription: "Expressing original ideas and making new things",
             priority: 15,
             lifeDomain: nil,
@@ -63,7 +63,7 @@ struct ValueRowViewTests {
     func displaysAdditionalInfo() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Physical Health",
+            title: "Physical Health",
             detailedDescription: "Maintaining strength and vitality",
             priority: 8,
             lifeDomain: "Health",
@@ -77,7 +77,7 @@ struct ValueRowViewTests {
     func displaysLifeDomainTag() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Career Growth",
+            title: "Career Growth",
             detailedDescription: "Professional development",
             priority: 12,
             lifeDomain: "Career",
@@ -93,7 +93,7 @@ struct ValueRowViewTests {
     func showsThreeStarsBadge() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Eudaimonia",
+            title: "Eudaimonia",
             detailedDescription: "Ultimate flourishing",
             priority: 1,
             lifeDomain: nil,
@@ -107,7 +107,7 @@ struct ValueRowViewTests {
     func showsTwoStarsBadge() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Physical Health",
+            title: "Physical Health",
             detailedDescription: "Maintaining vitality",
             priority: 8,
             lifeDomain: "Health",
@@ -122,7 +122,7 @@ struct ValueRowViewTests {
     func showsOneStarBadge() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Creativity",
+            title: "Creativity",
             detailedDescription: "Expressing ideas",
             priority: 15,
             lifeDomain: nil,
@@ -137,7 +137,7 @@ struct ValueRowViewTests {
     func showsNoBadgeForLowPriority() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Low priority value",
+            title: "Low priority value",
             detailedDescription: "Less important",
             priority: 50,
             lifeDomain: nil,
@@ -151,7 +151,7 @@ struct ValueRowViewTests {
     func priority5ShowsThreeStars() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Boundary test",
+            title: "Boundary test",
             detailedDescription: nil,
             priority: 5,
             lifeDomain: nil,
@@ -165,7 +165,7 @@ struct ValueRowViewTests {
     func priority6ShowsTwoStars() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Boundary test",
+            title: "Boundary test",
             detailedDescription: nil,
             priority: 6,
             lifeDomain: nil,
@@ -180,7 +180,7 @@ struct ValueRowViewTests {
     func priority10ShowsTwoStars() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Boundary test",
+            title: "Boundary test",
             detailedDescription: nil,
             priority: 10,
             lifeDomain: nil,
@@ -194,7 +194,7 @@ struct ValueRowViewTests {
     func priority11ShowsOneStar() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Boundary test",
+            title: "Boundary test",
             detailedDescription: nil,
             priority: 11,
             lifeDomain: nil,
@@ -209,7 +209,7 @@ struct ValueRowViewTests {
     func priority25ShowsOneStar() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Boundary test",
+            title: "Boundary test",
             detailedDescription: nil,
             priority: 25,
             lifeDomain: nil,
@@ -223,7 +223,7 @@ struct ValueRowViewTests {
     func priority26ShowsNoBadge() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Boundary test",
+            title: "Boundary test",
             detailedDescription: nil,
             priority: 26,
             lifeDomain: nil,
@@ -239,14 +239,14 @@ struct ValueRowViewTests {
     func displaysHighestOrderValue() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Eudaimonia",
+            title: "Eudaimonia",
             detailedDescription: "Living a flourishing, meaningful life",
             priority: 1,
             lifeDomain: "Philosophy",
             additionalInfo: nil
         )
 
-        #expect(item.friendlyName == "Eudaimonia")
+        #expect(item.title == "Eudaimonia")
         #expect(item.priority == 1)
         #expect(item.lifeDomain == "Philosophy")
         #expect(item.additionalInfo == nil)
@@ -256,14 +256,14 @@ struct ValueRowViewTests {
     func displaysMajorValueWithGuidance() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Physical Health",
+            title: "Physical Health",
             detailedDescription: "Maintaining strength, endurance, and vitality",
             priority: 8,
             lifeDomain: "Health",
             additionalInfo: "Exercising regularly, eating well, getting adequate sleep"
         )
 
-        #expect(item.friendlyName == "Physical Health")
+        #expect(item.title == "Physical Health")
         #expect(item.priority == 8)
         #expect(item.lifeDomain == "Health")
         #expect(item.additionalInfo != nil)
@@ -273,14 +273,14 @@ struct ValueRowViewTests {
     func displaysGeneralValue() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Creativity",
+            title: "Creativity",
             detailedDescription: "Expressing original ideas and making new things",
             priority: 15,
             lifeDomain: "Personal Growth",
             additionalInfo: nil
         )
 
-        #expect(item.friendlyName == "Creativity")
+        #expect(item.title == "Creativity")
         #expect(item.priority == 15)
         #expect(item.lifeDomain == "Personal Growth")
         #expect(item.additionalInfo == nil)
@@ -290,14 +290,14 @@ struct ValueRowViewTests {
     func displaysLifeArea() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Career",
+            title: "Career",
             detailedDescription: "Professional development and work life",
             priority: 20,
             lifeDomain: nil,
             additionalInfo: nil
         )
 
-        #expect(item.friendlyName == "Career")
+        #expect(item.title == "Career")
         #expect(item.priority == 20)
         #expect(item.lifeDomain == nil)
     }
@@ -311,7 +311,7 @@ struct ValueRowViewTests {
         for domain in domains {
             let item = ValueDisplayItem(
                 id: UUID(),
-                friendlyName: "Value in \(domain)",
+                title: "Value in \(domain)",
                 detailedDescription: nil,
                 priority: 10,
                 lifeDomain: domain,
@@ -326,7 +326,7 @@ struct ValueRowViewTests {
     func handlesCustomLifeDomain() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Custom value",
+            title: "Custom value",
             detailedDescription: nil,
             priority: 15,
             lifeDomain: "My Custom Domain",
@@ -340,7 +340,7 @@ struct ValueRowViewTests {
     func handlesNilLifeDomain() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "No domain",
+            title: "No domain",
             detailedDescription: nil,
             priority: 20,
             lifeDomain: nil,
@@ -356,7 +356,7 @@ struct ValueRowViewTests {
     func handlesNilDescription() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Value",
+            title: "Value",
             detailedDescription: nil,
             priority: 10,
             lifeDomain: nil,
@@ -370,7 +370,7 @@ struct ValueRowViewTests {
     func handlesNilAdditionalInfo() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Value",
+            title: "Value",
             detailedDescription: "Description",
             priority: 10,
             lifeDomain: "Health",
@@ -384,14 +384,14 @@ struct ValueRowViewTests {
     func handlesAllOptionalFieldsNil() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: nil,
+            title: nil,
             detailedDescription: nil,
             priority: 50,
             lifeDomain: nil,
             additionalInfo: nil
         )
 
-        #expect(item.friendlyName == nil)
+        #expect(item.title == nil)
         #expect(item.detailedDescription == nil)
         #expect(item.lifeDomain == nil)
         #expect(item.additionalInfo == nil)
@@ -401,14 +401,14 @@ struct ValueRowViewTests {
     func handlesAllFieldsPopulated() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Complete Value",
+            title: "Complete Value",
             detailedDescription: "Full description here",
             priority: 5,
             lifeDomain: "Health",
             additionalInfo: "Additional guidance information"
         )
 
-        #expect(item.friendlyName == "Complete Value")
+        #expect(item.title == "Complete Value")
         #expect(item.detailedDescription == "Full description here")
         #expect(item.priority == 5)
         #expect(item.lifeDomain == "Health")
@@ -422,15 +422,15 @@ struct ValueRowViewTests {
         let longName = String(repeating: "Very long value name ", count: 10)
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: longName,
+            title: longName,
             detailedDescription: nil,
             priority: 10,
             lifeDomain: nil,
             additionalInfo: nil
         )
 
-        #expect(item.friendlyName == longName)
-        #expect(item.friendlyName!.count > 100)
+        #expect(item.title == longName)
+        #expect(item.title!.count > 100)
     }
 
     @Test("Handles very long description")
@@ -438,7 +438,7 @@ struct ValueRowViewTests {
         let longDescription = String(repeating: "Very detailed description with lots of content. ", count: 20)
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Value",
+            title: "Value",
             detailedDescription: longDescription,
             priority: 10,
             lifeDomain: nil,
@@ -454,7 +454,7 @@ struct ValueRowViewTests {
         let longInfo = String(repeating: "Additional guidance information. ", count: 20)
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Value",
+            title: "Value",
             detailedDescription: "Description",
             priority: 8,
             lifeDomain: "Health",
@@ -469,7 +469,7 @@ struct ValueRowViewTests {
     func handlesMinimumPriority() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Top priority",
+            title: "Top priority",
             detailedDescription: nil,
             priority: 1,
             lifeDomain: nil,
@@ -483,7 +483,7 @@ struct ValueRowViewTests {
     func handlesMaximumPriority() {
         let item = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Low priority",
+            title: "Low priority",
             detailedDescription: nil,
             priority: 100,
             lifeDomain: nil,
@@ -497,7 +497,7 @@ struct ValueRowViewTests {
     func uniqueIDsForDifferentValues() {
         let item1 = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Value 1",
+            title: "Value 1",
             detailedDescription: nil,
             priority: 10,
             lifeDomain: nil,
@@ -506,7 +506,7 @@ struct ValueRowViewTests {
 
         let item2 = ValueDisplayItem(
             id: UUID(),
-            friendlyName: "Value 2",
+            title: "Value 2",
             detailedDescription: nil,
             priority: 20,
             lifeDomain: nil,
@@ -521,7 +521,7 @@ struct ValueRowViewTests {
         let id = UUID()
         let item = ValueDisplayItem(
             id: id,
-            friendlyName: "Value",
+            title: "Value",
             detailedDescription: nil,
             priority: 10,
             lifeDomain: nil,

@@ -19,9 +19,9 @@ struct ValueTests {
     // MARK: - Incentives Tests
 
     @Test("Creates minimal incentive with defaults") func testMinimalIncentivesCreation() {
-        let incentive = Incentives(friendlyName: "Honesty")
+        let incentive = Incentives(title: "Honesty")
 
-        #expect(incentive.friendlyName == "Honesty")
+        #expect(incentive.title == "Honesty")
         #expect(incentive.id != nil) // UUID auto-generated
         #expect(incentive.logTime != nil) // Defaults to Date()
         #expect(incentive.polymorphicSubtype == "incentive")
@@ -31,14 +31,14 @@ struct ValueTests {
 
     @Test("Creates fully populated incentive") func testFullyPopulatedIncentives() {
         let incentive = Incentives(
-            friendlyName: "Curiosity",
+            title: "Curiosity",
             detailedDescription: "Desire to learn and explore",
             freeformNotes: "Foundation of growth",
             priority: 30,
             lifeDomain: "Personal Development"
         )
 
-        #expect(incentive.friendlyName == "Curiosity")
+        #expect(incentive.title == "Curiosity")
         #expect(incentive.detailedDescription == "Desire to learn and explore")
         #expect(incentive.priority == 30)
         #expect(incentive.lifeDomain == "Personal Development")
@@ -47,9 +47,9 @@ struct ValueTests {
     // MARK: - Values Tests
 
     @Test("Creates general value") func testValuesCreation() {
-        let value = Values(friendlyName: "Integrity")
+        let value = Values(title: "Integrity")
 
-        #expect(value.friendlyName == "Integrity")
+        #expect(value.title == "Integrity")
         #expect(value.polymorphicSubtype == "general")
         #expect(value.priority == 40) // Values default to 40
         #expect(value.id != nil)
@@ -57,7 +57,7 @@ struct ValueTests {
 
     @Test("Creates value with life domain") func testValuesWithLifeDomain() {
         let value = Values(
-            friendlyName: "Work-life balance",
+            title: "Work-life balance",
             detailedDescription: "Maintaining boundaries between work and personal life",
             priority: 25,
             lifeDomain: "Career"
@@ -70,9 +70,9 @@ struct ValueTests {
     // MARK: - LifeAreas Tests
 
     @Test("Creates life area") func testLifeAreasCreation() {
-        let lifeArea = LifeAreas(friendlyName: "Health & Fitness")
+        let lifeArea = LifeAreas(title: "Health & Fitness")
 
-        #expect(lifeArea.friendlyName == "Health & Fitness")
+        #expect(lifeArea.title == "Health & Fitness")
         #expect(lifeArea.polymorphicSubtype == "life_area")
         #expect(lifeArea.priority == 40) // LifeAreas default to 40
         #expect(lifeArea.id != nil)
@@ -80,7 +80,7 @@ struct ValueTests {
 
     @Test("Categorizes life area") func testLifeAreasCategorization() {
         let lifeArea = LifeAreas(
-            friendlyName: "Career Development",
+            title: "Career Development",
             detailedDescription: "Professional growth and advancement",
             priority: 20,
             lifeDomain: "Career"
@@ -94,10 +94,10 @@ struct ValueTests {
 
     @Test("Creates major value") func testMajorValuesCreation() {
         let majorValue = MajorValues(
-            friendlyName: "Physical health and vitality"
+            title: "Physical health and vitality"
         )
 
-        #expect(majorValue.friendlyName == "Physical health and vitality")
+        #expect(majorValue.title == "Physical health and vitality")
         #expect(majorValue.polymorphicSubtype == "major")
         #expect(majorValue.priority == 10) // Major values default to 10 (high priority)
         #expect(majorValue.alignmentGuidance == nil) // Optional
@@ -105,7 +105,7 @@ struct ValueTests {
 
     @Test("Creates major value with alignment guidance") func testMajorValuesWithAlignmentGuidance() {
         let majorValue = MajorValues(
-            friendlyName: "Physical health and vitality",
+            title: "Physical health and vitality",
             detailedDescription: "Maintaining energy and strength",
             priority: 10,
             lifeDomain: "Health",
@@ -119,7 +119,7 @@ struct ValueTests {
 
     @Test("Major values have high priority by default") func testMajorValuesHighPriority() {
         // Major values are actionable, so they should have high priority by default
-        let majorValue = MajorValues(friendlyName: "Family connection")
+        let majorValue = MajorValues(title: "Family connection")
 
         #expect(majorValue.priority == 10) // High priority
         #expect(majorValue.priority < 40) // Higher than general values
@@ -129,10 +129,10 @@ struct ValueTests {
 
     @Test("Creates highest order value") func testHighestOrderValuesCreation() {
         let highestValue = HighestOrderValues(
-            friendlyName: "Eudaimonia"
+            title: "Eudaimonia"
         )
 
-        #expect(highestValue.friendlyName == "Eudaimonia")
+        #expect(highestValue.title == "Eudaimonia")
         #expect(highestValue.polymorphicSubtype == "highest_order")
         #expect(highestValue.priority == 1) // Ultimate priority
         #expect(highestValue.id != nil)
@@ -140,7 +140,7 @@ struct ValueTests {
 
     @Test("Creates philosophical highest order value") func testHighestOrderValuesPhilosophical() {
         let highestValue = HighestOrderValues(
-            friendlyName: "Truth",
+            title: "Truth",
             detailedDescription: "Seeking and honoring truth in all forms",
             freeformNotes: "Abstract ideal that guides decision-making",
             priority: 1,
@@ -153,7 +153,7 @@ struct ValueTests {
     }
 
     @Test("Highest order values have ultimate priority") func testHighestOrderValuesUltimatePriority() {
-        let highestValue = HighestOrderValues(friendlyName: "Beauty")
+        let highestValue = HighestOrderValues(title: "Beauty")
 
         #expect(highestValue.priority == 1) // Ultimate priority
         #expect(highestValue.priority < 10) // Higher than major values
@@ -163,11 +163,11 @@ struct ValueTests {
     // MARK: - Polymorphic Type Tests
 
     @Test("Verifies polymorphic subtypes") func testPolymorphicSubtypes() {
-        let incentive = Incentives(friendlyName: "Test")
-        let value = Values(friendlyName: "Test")
-        let lifeArea = LifeAreas(friendlyName: "Test")
-        let majorValue = MajorValues(friendlyName: "Test")
-        let highestValue = HighestOrderValues(friendlyName: "Test")
+        let incentive = Incentives(title: "Test")
+        let value = Values(title: "Test")
+        let lifeArea = LifeAreas(title: "Test")
+        let majorValue = MajorValues(title: "Test")
+        let highestValue = HighestOrderValues(title: "Test")
 
         #expect(incentive.polymorphicSubtype == "incentive")
         #expect(value.polymorphicSubtype == "general")
@@ -179,11 +179,11 @@ struct ValueTests {
     // MARK: - Priority Hierarchy Tests
 
     @Test("Verifies priority defaults form hierarchy") func testPriorityDefaults() {
-        let incentive = Incentives(friendlyName: "Test")
-        let value = Values(friendlyName: "Test")
-        let lifeArea = LifeAreas(friendlyName: "Test")
-        let majorValue = MajorValues(friendlyName: "Test")
-        let highestValue = HighestOrderValues(friendlyName: "Test")
+        let incentive = Incentives(title: "Test")
+        let value = Values(title: "Test")
+        let lifeArea = LifeAreas(title: "Test")
+        let majorValue = MajorValues(title: "Test")
+        let highestValue = HighestOrderValues(title: "Test")
 
         // Verify hierarchy: Highest (1) > Major (10) > Value/LifeArea (40) > Incentive (50)
         #expect(highestValue.priority == 1)

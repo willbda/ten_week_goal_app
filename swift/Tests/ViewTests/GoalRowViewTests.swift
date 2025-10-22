@@ -20,28 +20,28 @@ struct GoalRowViewTests {
     @Test("Displays friendly name correctly")
     func displaysFriendlyName() {
         let goal = Goal(
-            friendlyName: "Run 100km",
+            title: "Run 100km",
             priority: 50
         )
 
-        #expect(goal.friendlyName == "Run 100km")
+        #expect(goal.title == "Run 100km")
     }
 
     @Test("Shows fallback for untitled goal")
     func showsUntitledFallback() {
         let goal = Goal(
-            friendlyName: nil,
+            title: nil,
             detailedDescription: "Some description",
             priority: 50
         )
 
-        #expect(goal.friendlyName == nil)
+        #expect(goal.title == nil)
     }
 
     @Test("Displays measurement target with unit")
     func displaysMeasurementTarget() {
         let goal = Goal(
-            friendlyName: "Running goal",
+            title: "Running goal",
             measurementUnit: "km",
             measurementTarget: 100.0,
             priority: 50
@@ -55,7 +55,7 @@ struct GoalRowViewTests {
     func displaysTargetDate() {
         let targetDate = Calendar.current.date(byAdding: .weekOfYear, value: 10, to: Date())!
         let goal = Goal(
-            friendlyName: "Complete by deadline",
+            title: "Complete by deadline",
             targetDate: targetDate,
             priority: 50
         )
@@ -66,7 +66,7 @@ struct GoalRowViewTests {
     @Test("Displays life domain tag")
     func displaysLifeDomain() {
         let goal = Goal(
-            friendlyName: "Fitness goal",
+            title: "Fitness goal",
             priority: 50,
             lifeDomain: "Health"
         )
@@ -79,7 +79,7 @@ struct GoalRowViewTests {
     @Test("Shows HIGH priority badge for priority <= 10")
     func showsHighPriorityBadge() {
         let highPriorityGoal = Goal(
-            friendlyName: "Critical goal",
+            title: "Critical goal",
             priority: 5
         )
 
@@ -89,7 +89,7 @@ struct GoalRowViewTests {
     @Test("Shows MED priority badge for priority 11-30")
     func showsMediumPriorityBadge() {
         let mediumPriorityGoal = Goal(
-            friendlyName: "Important goal",
+            title: "Important goal",
             priority: 20
         )
 
@@ -100,7 +100,7 @@ struct GoalRowViewTests {
     @Test("Shows no badge for priority > 30")
     func showsNoBadgeForLowPriority() {
         let lowPriorityGoal = Goal(
-            friendlyName: "Low priority goal",
+            title: "Low priority goal",
             priority: 50
         )
 
@@ -110,7 +110,7 @@ struct GoalRowViewTests {
     @Test("Priority 10 boundary shows HIGH badge")
     func priority10ShowsHighBadge() {
         let goal = Goal(
-            friendlyName: "Boundary test",
+            title: "Boundary test",
             priority: 10
         )
 
@@ -120,7 +120,7 @@ struct GoalRowViewTests {
     @Test("Priority 11 shows MED badge")
     func priority11ShowsMediumBadge() {
         let goal = Goal(
-            friendlyName: "Boundary test",
+            title: "Boundary test",
             priority: 11
         )
 
@@ -131,7 +131,7 @@ struct GoalRowViewTests {
     @Test("Priority 30 boundary shows MED badge")
     func priority30ShowsMediumBadge() {
         let goal = Goal(
-            friendlyName: "Boundary test",
+            title: "Boundary test",
             priority: 30
         )
 
@@ -141,7 +141,7 @@ struct GoalRowViewTests {
     @Test("Priority 31 shows no badge")
     func priority31ShowsNoBadge() {
         let goal = Goal(
-            friendlyName: "Boundary test",
+            title: "Boundary test",
             priority: 31
         )
 
@@ -154,7 +154,7 @@ struct GoalRowViewTests {
     func showsClockForFutureDate() {
         let futureDate = Calendar.current.date(byAdding: .day, value: 30, to: Date())!
         let goal = Goal(
-            friendlyName: "Future goal",
+            title: "Future goal",
             targetDate: futureDate,
             priority: 50
         )
@@ -166,7 +166,7 @@ struct GoalRowViewTests {
     func showsWarningForOverdueDate() {
         let pastDate = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
         let goal = Goal(
-            friendlyName: "Overdue goal",
+            title: "Overdue goal",
             targetDate: pastDate,
             priority: 50
         )
@@ -177,7 +177,7 @@ struct GoalRowViewTests {
     @Test("Handles goal without target date")
     func handlesNoTargetDate() {
         let goal = Goal(
-            friendlyName: "Open-ended goal",
+            title: "Open-ended goal",
             targetDate: nil,
             priority: 50
         )
@@ -189,7 +189,7 @@ struct GoalRowViewTests {
     func handlesTodayAsTargetDate() {
         let today = Date()
         let goal = Goal(
-            friendlyName: "Due today",
+            title: "Due today",
             targetDate: today,
             priority: 50
         )
@@ -204,7 +204,7 @@ struct GoalRowViewTests {
         let targetDate = Calendar.current.date(byAdding: .weekOfYear, value: 10, to: Date())!
 
         let goal = Goal(
-            friendlyName: "Complete marathon training",
+            title: "Complete marathon training",
             detailedDescription: "Train for upcoming marathon",
             measurementUnit: "km",
             measurementTarget: 500.0,
@@ -213,7 +213,7 @@ struct GoalRowViewTests {
             lifeDomain: "Health"
         )
 
-        #expect(goal.friendlyName == "Complete marathon training")
+        #expect(goal.title == "Complete marathon training")
         #expect(goal.measurementUnit == "km")
         #expect(goal.measurementTarget == 500.0)
         #expect(goal.targetDate == targetDate)
@@ -224,14 +224,14 @@ struct GoalRowViewTests {
     @Test("Displays medium priority goal with partial features")
     func displaysMediumPriorityGoalPartialFeatures() {
         let goal = Goal(
-            friendlyName: "Learn Swift",
+            title: "Learn Swift",
             measurementUnit: "hours",
             measurementTarget: 100.0,
             priority: 20,
             lifeDomain: "Career"
         )
 
-        #expect(goal.friendlyName == "Learn Swift")
+        #expect(goal.title == "Learn Swift")
         #expect(goal.measurementUnit == "hours")
         #expect(goal.measurementTarget == 100.0)
         #expect(goal.priority == 20)
@@ -242,11 +242,11 @@ struct GoalRowViewTests {
     @Test("Displays minimal goal with only name")
     func displaysMinimalGoal() {
         let goal = Goal(
-            friendlyName: "Simple goal",
+            title: "Simple goal",
             priority: 50
         )
 
-        #expect(goal.friendlyName == "Simple goal")
+        #expect(goal.title == "Simple goal")
         #expect(goal.measurementUnit == nil)
         #expect(goal.measurementTarget == nil)
         #expect(goal.targetDate == nil)
@@ -258,7 +258,7 @@ struct GoalRowViewTests {
     @Test("Displays measurement with decimal precision")
     func displaysDecimalMeasurement() {
         let goal = Goal(
-            friendlyName: "Running goal",
+            title: "Running goal",
             measurementUnit: "km",
             measurementTarget: 123.45,
             priority: 50
@@ -270,7 +270,7 @@ struct GoalRowViewTests {
     @Test("Handles whole number measurements")
     func handlesWholeNumberMeasurement() {
         let goal = Goal(
-            friendlyName: "Reading goal",
+            title: "Reading goal",
             measurementUnit: "books",
             measurementTarget: 12.0,
             priority: 50
@@ -282,7 +282,7 @@ struct GoalRowViewTests {
     @Test("Handles unit without target")
     func handlesUnitWithoutTarget() {
         let goal = Goal(
-            friendlyName: "Goal",
+            title: "Goal",
             measurementUnit: "km",
             measurementTarget: nil,
             priority: 50
@@ -295,7 +295,7 @@ struct GoalRowViewTests {
     @Test("Handles target without unit")
     func handlesTargetWithoutUnit() {
         let goal = Goal(
-            friendlyName: "Goal",
+            title: "Goal",
             measurementUnit: nil,
             measurementTarget: 100.0,
             priority: 50
@@ -313,7 +313,7 @@ struct GoalRowViewTests {
 
         for domain in domains {
             let goal = Goal(
-                friendlyName: "Goal in \(domain)",
+                title: "Goal in \(domain)",
                 priority: 50,
                 lifeDomain: domain
             )
@@ -325,7 +325,7 @@ struct GoalRowViewTests {
     @Test("Handles custom life domain")
     func handlesCustomLifeDomain() {
         let goal = Goal(
-            friendlyName: "Custom goal",
+            title: "Custom goal",
             priority: 50,
             lifeDomain: "My Custom Domain"
         )
@@ -336,7 +336,7 @@ struct GoalRowViewTests {
     @Test("Handles empty life domain")
     func handlesEmptyLifeDomain() {
         let goal = Goal(
-            friendlyName: "No domain",
+            title: "No domain",
             priority: 50,
             lifeDomain: nil
         )
@@ -350,18 +350,18 @@ struct GoalRowViewTests {
     func handlesLongGoalName() {
         let longName = String(repeating: "Very long goal name ", count: 10)
         let goal = Goal(
-            friendlyName: longName,
+            title: longName,
             priority: 50
         )
 
-        #expect(goal.friendlyName == longName)
-        #expect(goal.friendlyName!.count > 100)
+        #expect(goal.title == longName)
+        #expect(goal.title!.count > 100)
     }
 
     @Test("Handles very large target value")
     func handlesLargeTargetValue() {
         let goal = Goal(
-            friendlyName: "Huge goal",
+            title: "Huge goal",
             measurementUnit: "steps",
             measurementTarget: 1_000_000.0,
             priority: 50
@@ -373,7 +373,7 @@ struct GoalRowViewTests {
     @Test("Handles very small target value")
     func handlesSmallTargetValue() {
         let goal = Goal(
-            friendlyName: "Small goal",
+            title: "Small goal",
             measurementUnit: "kg",
             measurementTarget: 0.5,
             priority: 50
@@ -386,7 +386,7 @@ struct GoalRowViewTests {
     func handlesFarFutureDate() {
         let farFuture = Calendar.current.date(byAdding: .year, value: 10, to: Date())!
         let goal = Goal(
-            friendlyName: "Long-term goal",
+            title: "Long-term goal",
             targetDate: farFuture,
             priority: 50
         )
@@ -398,7 +398,7 @@ struct GoalRowViewTests {
     func handlesLongOverdueDate() {
         let longPast = Calendar.current.date(byAdding: .year, value: -2, to: Date())!
         let goal = Goal(
-            friendlyName: "Very overdue goal",
+            title: "Very overdue goal",
             targetDate: longPast,
             priority: 50
         )

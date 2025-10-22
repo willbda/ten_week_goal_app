@@ -39,7 +39,7 @@ public struct Incentives: Persistable, Polymorphable, Motivating, Codable, Senda
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
-    public var friendlyName: String?
+    public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
     public var logTime: Date
@@ -61,7 +61,7 @@ public struct Incentives: Persistable, Polymorphable, Motivating, Codable, Senda
 
     public init(
         // Core identity
-        friendlyName: String? = nil,
+        title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         // Domain-specific
@@ -72,7 +72,7 @@ public struct Incentives: Persistable, Polymorphable, Motivating, Codable, Senda
         id: UUID = UUID()
     ) {
         self.id = id
-        self.friendlyName = friendlyName
+        self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         self.logTime = logTime
@@ -91,7 +91,7 @@ public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable 
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
-    public var friendlyName: String?
+    public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
     public var logTime: Date
@@ -109,7 +109,7 @@ public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable 
 
     public init(
         // Core identity
-        friendlyName: String? = nil,
+        title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         // Domain-specific
@@ -120,7 +120,7 @@ public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable 
         id: UUID = UUID()
     ) {
         self.id = id
-        self.friendlyName = friendlyName
+        self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         self.logTime = logTime
@@ -143,7 +143,7 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendab
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
-    public var friendlyName: String?
+    public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
     public var logTime: Date
@@ -161,7 +161,7 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendab
 
     public init(
         // Core identity
-        friendlyName: String? = nil,
+        title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         // Domain-specific
@@ -172,7 +172,7 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendab
         id: UUID = UUID()
     ) {
         self.id = id
-        self.friendlyName = friendlyName
+        self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         self.logTime = logTime
@@ -195,7 +195,7 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Send
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
-    public var friendlyName: String?
+    public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
     public var logTime: Date
@@ -216,7 +216,7 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Send
 
     public init(
         // Core identity
-        friendlyName: String? = nil,
+        title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         // Domain-specific
@@ -228,7 +228,7 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Send
         id: UUID = UUID()
     ) {
         self.id = id
-        self.friendlyName = friendlyName
+        self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         self.logTime = logTime
@@ -252,7 +252,7 @@ public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Codabl
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
-    public var friendlyName: String?
+    public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
     public var logTime: Date
@@ -270,7 +270,7 @@ public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Codabl
 
     public init(
         // Core identity
-        friendlyName: String? = nil,
+        title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         // Domain-specific
@@ -281,7 +281,7 @@ public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Codabl
         id: UUID = UUID()
     ) {
         self.id = id
-        self.friendlyName = friendlyName
+        self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         self.logTime = logTime

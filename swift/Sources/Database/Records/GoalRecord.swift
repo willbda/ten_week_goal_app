@@ -33,8 +33,8 @@ struct GoalRecord: Codable, FetchableRecord, PersistableRecord, TableRecord {
     /// Python compatibility (Python uses INTEGER id, Swift uses uuid_id)
     var uuid_id: String?
 
-    /// Short identifier (maps to Goal.friendlyName)
-    var common_name: String
+    /// Short identifier (maps to Goal.title)
+    var title: String
 
     /// Optional elaboration (maps to Goal.detailedDescription)
     var description: String?
@@ -77,7 +77,7 @@ struct GoalRecord: Codable, FetchableRecord, PersistableRecord, TableRecord {
     enum CodingKeys: String, CodingKey {
         case id
         case uuid_id
-        case common_name
+        case title
         case description
         case notes
         case log_time
@@ -116,7 +116,7 @@ extension GoalRecord {
         let uuid = UUID(uuidString: uuid_id ?? "") ?? UUID()
 
         return Goal(
-            friendlyName: common_name,
+            title: title,
             detailedDescription: description,
             freeformNotes: notes,
             measurementUnit: measurement_unit,
@@ -144,7 +144,7 @@ extension GoalRecord {
         let uuid = UUID(uuidString: uuid_id ?? "") ?? UUID()
 
         return Milestone(
-            friendlyName: common_name,
+            title: title,
             detailedDescription: description,
             freeformNotes: notes,
             measurementUnit: measurement_unit,
@@ -176,7 +176,7 @@ extension Goal {
         GoalRecord(
             id: nil,  // Let database auto-increment (Python compatibility)
             uuid_id: id.uuidString,  // Store Swift's UUID for stable fetches
-            common_name: friendlyName ?? "",
+            title: title ?? "",
             description: detailedDescription,
             notes: freeformNotes,
             log_time: logTime,
@@ -198,7 +198,7 @@ extension Milestone {
         GoalRecord(
             id: nil,  // Let database auto-increment (Python compatibility)
             uuid_id: id.uuidString,  // Store Swift's UUID for stable fetches
-            common_name: friendlyName ?? "",
+            title: title ?? "",
             description: detailedDescription,
             notes: freeformNotes,
             log_time: logTime,

@@ -80,7 +80,7 @@ def goals_add():
 
         # Extract form data
         goal_type = request.form.get('goal_type', 'Goal')
-        common_name = request.form.get('common_name')
+        title = request.form.get('title')
         description = request.form.get('description')
         notes = request.form.get('notes')
 
@@ -108,7 +108,7 @@ def goals_add():
 
         # Build kwargs for goal construction
         goal_kwargs = {
-            'common_name': common_name,
+            'title': title,
             'description': description,
             'notes': notes,
             'measurement_unit': measurement_unit,
@@ -138,8 +138,8 @@ def goals_add():
         # Save to database
         service.store_single_instance(goal)
 
-        logger.info(f"Created {goal_type} {goal.id}: {goal.common_name}")
-        flash(f"Successfully created {goal_type}: {goal.common_name}", "success")
+        logger.info(f"Created {goal_type} {goal.id}: {goal.title}")
+        flash(f"Successfully created {goal_type}: {goal.title}", "success")
 
         return redirect(url_for('ui_goals.goals_list'))
 
@@ -185,7 +185,7 @@ def goals_edit(goal_id: int):
             return redirect(url_for('ui_goals.goals_list'))
 
         # Update fields from form
-        goal.common_name = request.form.get('common_name', goal.common_name)
+        goal.title = request.form.get('title', goal.title)
         goal.description = request.form.get('description', goal.description)
         goal.notes = request.form.get('notes', goal.notes)
 
@@ -224,8 +224,8 @@ def goals_edit(goal_id: int):
         # Save updated goal
         service.save(goal, notes=f'Updated via web UI at {datetime.now().isoformat()}')
 
-        logger.info(f"Updated goal {goal_id}: {goal.common_name}")
-        flash(f"Successfully updated goal: {goal.common_name}", "success")
+        logger.info(f"Updated goal {goal_id}: {goal.title}")
+        flash(f"Successfully updated goal: {goal.title}", "success")
 
         return redirect(url_for('ui_goals.goals_list'))
 

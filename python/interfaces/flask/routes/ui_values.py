@@ -70,7 +70,7 @@ def values_add():
 
         # Extract form data
         incentive_type = request.form.get('incentive_type')
-        common_name = request.form.get('common_name')
+        title = request.form.get('title')
         description = request.form.get('description')
         life_domain = request.form.get('life_domain', 'General')
         alignment_guidance = request.form.get('alignment_guidance')
@@ -82,7 +82,7 @@ def values_add():
         # Create value (rhetorica handles type conversion, defaults, and class selection)
         value = service.create_value(
             incentive_type=incentive_type,
-            common_name=common_name,
+            title=title,
             description=description,
             priority=priority,  # Pass None or int - rhetorica handles it
             life_domain=life_domain,
@@ -92,7 +92,7 @@ def values_add():
         # Save to database
         service.store_single_instance(value)
 
-        logger.info(f"Created {incentive_type} value {value.id}: {value.common_name}")
+        logger.info(f"Created {incentive_type} value {value.id}: {value.title}")
 
         return redirect(url_for('ui_values.values_list'))
 
@@ -130,7 +130,7 @@ def values_edit(value_id: int):
             return f"Value {value_id} not found", 404
 
         # Update fields from form
-        value.common_name = request.form.get('common_name')
+        value.title = request.form.get('title')
         value.description = request.form.get('description')
         value.life_domain = request.form.get('life_domain', 'General')
 

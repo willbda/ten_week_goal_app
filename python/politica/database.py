@@ -441,6 +441,72 @@ class Database:
             'updated': rows_updated > 0
         }
 
+    def update_by_uuid(self, table: str, record_uuid: str, updates: dict,
+                       archive_old: bool = True, notes: str = '') -> dict:
+        """
+        Update a record by UUID, optionally archiving the old version.
+
+        Args:
+            table: Table name
+            record_uuid: The UUID of the record to update (as string)
+            updates: Dict of column:value pairs to update
+            archive_old: If True, archive the old version before updating (default: True)
+            notes: Optional notes for the archive entry
+
+        Returns:
+            {
+                'uuid_id': str,         # The updated record UUID
+                'archived': bool,       # Whether old version was archived
+                'updated': bool         # Whether update succeeded
+            }
+
+        Raises:
+            ValueError: If updates dict is empty or record_uuid not found
+        """
+        if not updates:
+            logger.error("Cannot update with empty updates dict")
+            raise ValueError("updates dict cannot be empty")
+
+        # Fetch the current record for archiving
+        current_records = self.query(table, filters={'uuid_id': record_uuid})
+
+        if not current_records:
+            logger.error(f"Record with uuid_id={record_uuid} not found in {table}")
+            raise ValueError(f"No record found with uuid_id={record_uuid} in {table}")
+
+        current_record = current_records[0]
+
+        # Build UPDATE SQL (using uuid_id instead of id)
+        set_sql, values = self._build_set_clause(updates)
+        sql = f"UPDATE {table} SET {set_sql} WHERE uuid_id = ?"
+        values.append(record_uuid)
+
+        logger.info(f"Updating record uuid_id={record_uuid} in {table}")
+        logger.debug(f"SQL: {sql}")
+        logger.debug(f"Values: {values}")
+
+        with self._get_connection() as conn:
+            # Archive old version first if requested
+            if archive_old:
+                _archive_records(conn, table, [current_record],
+                               reason='update', notes=notes)
+
+            # Execute update
+            cursor = conn.cursor()
+            cursor.execute(sql, values)
+            rows_updated = cursor.rowcount
+
+            if rows_updated == 0:
+                logger.warning(f"Update affected 0 rows for uuid_id={record_uuid}")
+
+        logger.info(f"✓ Updated record uuid_id={record_uuid} in {table}")
+
+        return {
+            'uuid_id': record_uuid,
+            'archived': archive_old,
+            'updated': rows_updated > 0
+        }
+
     def archive_and_delete(self, table: str, filters: dict,
                           reason: str = 'delete',
                           confirm: bool = False,

@@ -25,7 +25,7 @@ struct ActionFormView: View {
 
     // MARK: - State
 
-    @State private var friendlyName: String
+    @State private var title: String
     @State private var detailedDescription: String
     @State private var freeformNotes: String
     @State private var logTime: Date
@@ -50,7 +50,7 @@ struct ActionFormView: View {
         self.onCancel = onCancel
 
         // Initialize state from action or defaults
-        _friendlyName = State(initialValue: action?.friendlyName ?? "")
+        _title = State(initialValue: action?.title ?? "")
         _detailedDescription = State(initialValue: action?.detailedDescription ?? "")
         _freeformNotes = State(initialValue: action?.freeformNotes ?? "")
         _logTime = State(initialValue: action?.logTime ?? Date())
@@ -72,13 +72,13 @@ struct ActionFormView: View {
         actionToEdit != nil
     }
 
-    private var title: String {
+    private var viewTitle: String {
         isEditing ? "Edit Action" : "New Action"
     }
 
     private var canSave: Bool {
         // At minimum, need either a friendly name or a description
-        !friendlyName.trimmingCharacters(in: .whitespaces).isEmpty ||
+        !title.trimmingCharacters(in: .whitespaces).isEmpty ||
         !detailedDescription.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
@@ -91,7 +91,7 @@ struct ActionFormView: View {
                 timingSection
                 measurementsSection
             }
-            .navigationTitle(title)
+            .navigationTitle(viewTitle)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -116,7 +116,7 @@ struct ActionFormView: View {
 
     private var basicInfoSection: some View {
         Section {
-            TextField("Name", text: $friendlyName, axis: .vertical)
+            TextField("Name", text: $title, axis: .vertical)
                 .lineLimit(2...4)
 
             TextField("Description", text: $detailedDescription, axis: .vertical)
@@ -206,7 +206,7 @@ struct ActionFormView: View {
 
         // Create or update action
         let action = Action(
-            friendlyName: friendlyName.isEmpty ? nil : friendlyName,
+            title: title.isEmpty ? nil : title,
             detailedDescription: detailedDescription.isEmpty ? nil : detailedDescription,
             freeformNotes: freeformNotes.isEmpty ? nil : freeformNotes,
             measuresByUnit: measuresByUnit,
@@ -297,7 +297,7 @@ private struct AddMeasurementSheet: View {
 #Preview("Edit Mode") {
     ActionFormView(
         action: Action(
-            friendlyName: "Morning run",
+            title: "Morning run",
             detailedDescription: "Easy recovery run in the park",
             measuresByUnit: ["km": 5.0, "minutes": 30],
             durationMinutes: 30,

@@ -29,8 +29,8 @@ struct ValueRecord: Codable, FetchableRecord, PersistableRecord, TableRecord {
     /// Python compatibility (Python uses INTEGER id, Swift uses uuid_id)
     var uuid_id: String?
 
-    /// Short identifier (maps to domain friendlyName)
-    var common_name: String
+    /// Short identifier (maps to domain title)
+    var title: String
 
     /// Optional elaboration (maps to domain detailedDescription)
     var description: String?
@@ -61,7 +61,7 @@ struct ValueRecord: Codable, FetchableRecord, PersistableRecord, TableRecord {
     enum CodingKeys: String, CodingKey {
         case id
         case uuid_id
-        case common_name
+        case title
         case description
         case notes
         case log_time
@@ -113,7 +113,7 @@ extension ValueRecord {
         let uuid = UUID(uuidString: uuid_id ?? "") ?? UUID()
 
         return Incentives(
-            friendlyName: common_name,
+            title: title,
             detailedDescription: description,
             freeformNotes: notes,
             priority: priority,
@@ -129,7 +129,7 @@ extension ValueRecord {
         let uuid = UUID(uuidString: uuid_id ?? "") ?? UUID()
 
         return Values(
-            friendlyName: common_name,
+            title: title,
             detailedDescription: description,
             freeformNotes: notes,
             priority: priority,
@@ -145,7 +145,7 @@ extension ValueRecord {
         let uuid = UUID(uuidString: uuid_id ?? "") ?? UUID()
 
         return LifeAreas(
-            friendlyName: common_name,
+            title: title,
             detailedDescription: description,
             freeformNotes: notes,
             priority: priority,
@@ -161,7 +161,7 @@ extension ValueRecord {
         let uuid = UUID(uuidString: uuid_id ?? "") ?? UUID()
 
         return MajorValues(
-            friendlyName: common_name,
+            title: title,
             detailedDescription: description,
             freeformNotes: notes,
             priority: priority,
@@ -178,7 +178,7 @@ extension ValueRecord {
         let uuid = UUID(uuidString: uuid_id ?? "") ?? UUID()
 
         return HighestOrderValues(
-            friendlyName: common_name,
+            title: title,
             detailedDescription: description,
             freeformNotes: notes,
             priority: priority,
@@ -197,7 +197,7 @@ extension Incentives {
         ValueRecord(
             id: nil,  // Let database auto-increment (Python compatibility)
             uuid_id: id.uuidString,  // Store Swift's UUID for stable fetches
-            common_name: friendlyName ?? "",
+            title: title ?? "",
             description: detailedDescription,
             notes: freeformNotes,
             log_time: logTime,
@@ -215,7 +215,7 @@ extension Values {
         ValueRecord(
             id: nil,  // Let database auto-increment (Python compatibility)
             uuid_id: id.uuidString,  // Store Swift's UUID for stable fetches
-            common_name: friendlyName ?? "",
+            title: title ?? "",
             description: detailedDescription,
             notes: freeformNotes,
             log_time: logTime,
@@ -233,7 +233,7 @@ extension LifeAreas {
         ValueRecord(
             id: nil,  // Let database auto-increment (Python compatibility)
             uuid_id: id.uuidString,  // Store Swift's UUID for stable fetches
-            common_name: friendlyName ?? "",
+            title: title ?? "",
             description: detailedDescription,
             notes: freeformNotes,
             log_time: logTime,
@@ -251,7 +251,7 @@ extension MajorValues {
         ValueRecord(
             id: nil,  // Let database auto-increment (Python compatibility)
             uuid_id: id.uuidString,  // Store Swift's UUID for stable fetches
-            common_name: friendlyName ?? "",
+            title: title ?? "",
             description: detailedDescription,
             notes: freeformNotes,
             log_time: logTime,
@@ -269,7 +269,7 @@ extension HighestOrderValues {
         ValueRecord(
             id: nil,  // Let database auto-increment (Python compatibility)
             uuid_id: id.uuidString,  // Store Swift's UUID for stable fetches
-            common_name: friendlyName ?? "",
+            title: title ?? "",
             description: detailedDescription,
             notes: freeformNotes,
             log_time: logTime,

@@ -33,7 +33,7 @@ struct ActionFormViewTests {
     @Test("Edit mode has correct title and preserves action")
     func editModePreservesAction() {
         let existingAction = Action(
-            friendlyName: "Test Action",
+            title: "Test Action",
             measuresByUnit: ["km": 5.0],
             logTime: Date()
         )
@@ -46,7 +46,7 @@ struct ActionFormViewTests {
         )
 
         #expect(view.actionToEdit != nil)
-        #expect(view.actionToEdit?.friendlyName == "Test Action")
+        #expect(view.actionToEdit?.title == "Test Action")
         #expect(view.actionToEdit?.measuresByUnit?["km"] == 5.0)
     }
 
@@ -71,7 +71,7 @@ struct ActionFormViewTests {
         let logTime = Date()
 
         let existingAction = Action(
-            friendlyName: "Morning run",
+            title: "Morning run",
             detailedDescription: "Easy recovery",
             freeformNotes: "Felt good",
             measuresByUnit: ["km": 5.0],
@@ -87,7 +87,7 @@ struct ActionFormViewTests {
             onCancel: {}
         )
 
-        #expect(view.actionToEdit?.friendlyName == "Morning run")
+        #expect(view.actionToEdit?.title == "Morning run")
         #expect(view.actionToEdit?.detailedDescription == "Easy recovery")
         #expect(view.actionToEdit?.freeformNotes == "Felt good")
         #expect(view.actionToEdit?.measuresByUnit?["km"] == 5.0)
@@ -99,7 +99,7 @@ struct ActionFormViewTests {
     @Test("Initializes measurements as empty array when nil")
     func initializesEmptyMeasurements() {
         let action = Action(
-            friendlyName: "Test",
+            title: "Test",
             measuresByUnit: nil,
             logTime: Date()
         )
@@ -117,7 +117,7 @@ struct ActionFormViewTests {
     @Test("Converts measurements dict to array for editing")
     func convertsMeasurementsToArray() {
         let action = Action(
-            friendlyName: "Workout",
+            title: "Workout",
             measuresByUnit: [
                 "reps": 100.0,
                 "sets": 5.0
@@ -142,18 +142,18 @@ struct ActionFormViewTests {
     @Test("Form is valid with friendly name only")
     func validWithFriendlyNameOnly() {
         let action = Action(
-            friendlyName: "Test",
+            title: "Test",
             logTime: Date()
         )
 
-        #expect(action.friendlyName != nil)
-        #expect(!action.friendlyName!.isEmpty)
+        #expect(action.title != nil)
+        #expect(!action.title!.isEmpty)
     }
 
     @Test("Form is valid with description only")
     func validWithDescriptionOnly() {
         let action = Action(
-            friendlyName: nil,
+            title: nil,
             detailedDescription: "Some description",
             logTime: Date()
         )
@@ -175,7 +175,7 @@ struct ActionFormViewTests {
     @Test("Toggles enable/disable start time field")
     func togglesStartTimeField() {
         let action = Action(
-            friendlyName: "Test",
+            title: "Test",
             startTime: nil,
             logTime: Date()
         )
@@ -183,7 +183,7 @@ struct ActionFormViewTests {
         #expect(action.startTime == nil)
 
         let actionWithStartTime = Action(
-            friendlyName: "Test",
+            title: "Test",
             durationMinutes: 30.0,
             startTime: Date(),
             logTime: Date()
@@ -195,7 +195,7 @@ struct ActionFormViewTests {
     @Test("Toggles enable/disable duration field")
     func togglesDurationField() {
         let action = Action(
-            friendlyName: "Test",
+            title: "Test",
             durationMinutes: nil,
             logTime: Date()
         )
@@ -203,7 +203,7 @@ struct ActionFormViewTests {
         #expect(action.durationMinutes == nil)
 
         let actionWithDuration = Action(
-            friendlyName: "Test",
+            title: "Test",
             durationMinutes: 45.0,
             logTime: Date()
         )
@@ -215,7 +215,7 @@ struct ActionFormViewTests {
     func startTimeRequiresDuration() {
         // Invalid: start time without duration
         var invalidAction = Action(
-            friendlyName: "Test",
+            title: "Test",
             startTime: Date(),
             logTime: Date()
         )
@@ -225,7 +225,7 @@ struct ActionFormViewTests {
 
         // Valid: start time with duration
         var validAction = Action(
-            friendlyName: "Test",
+            title: "Test",
             durationMinutes: 30.0,
             startTime: Date(),
             logTime: Date()
@@ -239,7 +239,7 @@ struct ActionFormViewTests {
     @Test("Can add measurements to action")
     func canAddMeasurements() {
         let action = Action(
-            friendlyName: "Run",
+            title: "Run",
             measuresByUnit: ["km": 5.0],
             logTime: Date()
         )
@@ -251,7 +251,7 @@ struct ActionFormViewTests {
     @Test("Can handle empty measurements")
     func canHandleEmptyMeasurements() {
         let action = Action(
-            friendlyName: "Meditation",
+            title: "Meditation",
             measuresByUnit: nil,
             logTime: Date()
         )
@@ -262,7 +262,7 @@ struct ActionFormViewTests {
     @Test("Preserves measurement precision")
     func preservesMeasurementPrecision() {
         let action = Action(
-            friendlyName: "Run",
+            title: "Run",
             measuresByUnit: ["km": 5.234],
             logTime: Date()
         )
@@ -288,7 +288,7 @@ struct ActionFormViewTests {
 
         // Simulate would-be save
         let newAction = Action(
-            friendlyName: "New Action",
+            title: "New Action",
             logTime: Date()
         )
 
@@ -299,7 +299,7 @@ struct ActionFormViewTests {
     func savePreservesUUIDInEditMode() {
         let originalID = UUID()
         let existingAction = Action(
-            friendlyName: "Original",
+            title: "Original",
             id: originalID
         )
 
@@ -312,7 +312,7 @@ struct ActionFormViewTests {
 
         // Edited action should preserve the same ID
         let editedAction = Action(
-            friendlyName: "Edited",
+            title: "Edited",
             id: originalID
         )
 
@@ -322,14 +322,14 @@ struct ActionFormViewTests {
     @Test("Save converts empty strings to nil")
     func saveConvertsEmptyStringsToNil() {
         let action = Action(
-            friendlyName: "",
+            title: "",
             detailedDescription: "",
             freeformNotes: "",
             logTime: Date()
         )
 
         // Empty strings should be treated as nil
-        let trimmedName = action.friendlyName?.trimmingCharacters(in: .whitespaces)
+        let trimmedName = action.title?.trimmingCharacters(in: .whitespaces)
         #expect(trimmedName?.isEmpty ?? true)
     }
 
@@ -341,7 +341,7 @@ struct ActionFormViewTests {
         ]
 
         let action = Action(
-            friendlyName: "Run",
+            title: "Run",
             measuresByUnit: measurements,
             logTime: Date()
         )
@@ -372,7 +372,7 @@ struct ActionFormViewTests {
     @Test("Handles nil values for optional fields")
     func handlesNilOptionalFields() {
         let action = Action(
-            friendlyName: "Test",
+            title: "Test",
             detailedDescription: nil,
             freeformNotes: nil,
             measuresByUnit: nil,
@@ -391,7 +391,7 @@ struct ActionFormViewTests {
     @Test("Handles action with all fields populated")
     func handlesFullyPopulatedAction() {
         let action = Action(
-            friendlyName: "Complete Action",
+            title: "Complete Action",
             detailedDescription: "Full description",
             freeformNotes: "Detailed notes",
             measuresByUnit: [
@@ -404,7 +404,7 @@ struct ActionFormViewTests {
             logTime: Date()
         )
 
-        #expect(action.friendlyName == "Complete Action")
+        #expect(action.title == "Complete Action")
         #expect(action.detailedDescription == "Full description")
         #expect(action.freeformNotes == "Detailed notes")
         #expect(action.measuresByUnit?.count == 3)

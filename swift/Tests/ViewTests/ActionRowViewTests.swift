@@ -20,31 +20,31 @@ struct ActionRowViewTests {
     @Test("Displays friendly name correctly")
     func displaysFriendlyName() {
         let action = Action(
-            friendlyName: "Morning run",
+            title: "Morning run",
             logTime: Date()
         )
 
         // View should display the friendly name
         let view = ActionRowView(action: action)
-        #expect(action.friendlyName == "Morning run")
+        #expect(action.title == "Morning run")
     }
 
     @Test("Shows fallback for untitled action")
     func showsUntitledFallback() {
         let action = Action(
-            friendlyName: nil,
+            title: nil,
             detailedDescription: "Some description",
             logTime: Date()
         )
 
         // Friendly name is nil, view should show "Untitled Action"
-        #expect(action.friendlyName == nil)
+        #expect(action.title == nil)
     }
 
     @Test("Displays single measurement")
     func displaysSingleMeasurement() {
         let action = Action(
-            friendlyName: "Run",
+            title: "Run",
             measuresByUnit: ["km": 5.0],
             logTime: Date()
         )
@@ -56,7 +56,7 @@ struct ActionRowViewTests {
     @Test("Displays multiple measurements sorted by unit")
     func displaysMultipleMeasurements() {
         let action = Action(
-            friendlyName: "Workout",
+            title: "Workout",
             measuresByUnit: [
                 "reps": 100.0,
                 "sets": 5.0,
@@ -79,7 +79,7 @@ struct ActionRowViewTests {
     func displaysLogTime() {
         let logTime = Date()
         let action = Action(
-            friendlyName: "Morning routine",
+            title: "Morning routine",
             logTime: logTime
         )
 
@@ -89,7 +89,7 @@ struct ActionRowViewTests {
     @Test("Handles action without measurements")
     func handlesNoMeasurements() {
         let action = Action(
-            friendlyName: "Meditation",
+            title: "Meditation",
             measuresByUnit: nil,
             logTime: Date()
         )
@@ -103,7 +103,7 @@ struct ActionRowViewTests {
         let logTime = Date()
 
         let action = Action(
-            friendlyName: "Interval training",
+            title: "Interval training",
             detailedDescription: "High intensity workout",
             freeformNotes: "Felt great!",
             measuresByUnit: [
@@ -116,7 +116,7 @@ struct ActionRowViewTests {
             logTime: logTime
         )
 
-        #expect(action.friendlyName == "Interval training")
+        #expect(action.title == "Interval training")
         #expect(action.measuresByUnit?.count == 3)
         #expect(action.durationMinutes == 45.0)
         #expect(action.startTime == startTime)
@@ -128,7 +128,7 @@ struct ActionRowViewTests {
     @Test("Handles empty measurements dictionary")
     func handlesEmptyMeasurements() {
         let action = Action(
-            friendlyName: "Test",
+            title: "Test",
             measuresByUnit: [:],
             logTime: Date()
         )
@@ -140,18 +140,18 @@ struct ActionRowViewTests {
     func handlesLongName() {
         let longName = String(repeating: "Very long action name ", count: 10)
         let action = Action(
-            friendlyName: longName,
+            title: longName,
             logTime: Date()
         )
 
-        #expect(action.friendlyName == longName)
-        #expect(action.friendlyName?.count ?? 0 > 100)
+        #expect(action.title == longName)
+        #expect(action.title?.count ?? 0 > 100)
     }
 
     @Test("Handles measurement with decimal values")
     func handlesDecimalMeasurements() {
         let action = Action(
-            friendlyName: "Run",
+            title: "Run",
             measuresByUnit: [
                 "km": 5.234,
                 "minutes": 27.58
@@ -167,7 +167,7 @@ struct ActionRowViewTests {
     func displaysPastLogTime() {
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
         let action = Action(
-            friendlyName: "Yesterday's workout",
+            title: "Yesterday's workout",
             logTime: yesterday
         )
 
@@ -179,7 +179,7 @@ struct ActionRowViewTests {
     func displaysFutureLogTime() {
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
         let action = Action(
-            friendlyName: "Scheduled workout",
+            title: "Scheduled workout",
             logTime: tomorrow
         )
 

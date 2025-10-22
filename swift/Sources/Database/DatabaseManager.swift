@@ -30,12 +30,12 @@ import Models
 /// let actions: [Action] = try await db.fetchAll()
 ///
 /// // Save an action
-/// var action = Action(friendlyName: "Run")
+/// var action = Action(title: "Run")
 /// try await db.save(&action)
 ///
 /// // Fetch by ID
 /// if let action = try await db.fetchOne(Action.self, id: someUUID) {
-///     print(action.friendlyName ?? "")
+///     print(action.title ?? "")
 /// }
 /// ```
 public actor DatabaseManager {
@@ -203,7 +203,7 @@ public actor DatabaseManager {
     /// Example:
     /// ```swift
     /// if let action = try await db.fetchOne(Action.self, id: someUUID) {
-    ///     print(action.friendlyName ?? "")
+    ///     print(action.title ?? "")
     /// }
     /// ```
     public func fetchOne<T: FetchableRecord & TableRecord & Sendable>(
@@ -234,7 +234,7 @@ public actor DatabaseManager {
     ///
     /// Example:
     /// ```swift
-    /// var action = Action(friendlyName: "Run")
+    /// var action = Action(title: "Run")
     /// try await db.save(&action)
     /// print(action.id) // Now has UUID
     /// ```
@@ -464,7 +464,7 @@ public actor DatabaseManager {
     /// ```swift
     /// let goals = try await db.fetchGoals()
     /// for goal in goals {
-    ///     print(goal.friendlyName ?? "")  // Uses stable UUID
+    ///     print(goal.title ?? "")  // Uses stable UUID
     /// }
     /// ```
     public func fetchGoals() async throws -> [Goal] {
@@ -506,7 +506,7 @@ public actor DatabaseManager {
     /// ```swift
     /// let actions = try await db.fetchActions()
     /// for action in actions {
-    ///     print(action.friendlyName ?? "")  // Uses stable UUID
+    ///     print(action.title ?? "")  // Uses stable UUID
     /// }
     /// ```
     public func fetchActions() async throws -> [Action] {
@@ -641,7 +641,7 @@ public actor DatabaseManager {
     /// ```swift
     /// let terms = try await db.fetchTerms()
     /// for term in terms {
-    ///     print("Term \(term.termNumber): \(term.friendlyName ?? "")")
+    ///     print("Term \(term.termNumber): \(term.title ?? "")")
     /// }
     /// ```
     public func fetchTerms() async throws -> [GoalTerm] {
@@ -669,7 +669,7 @@ public actor DatabaseManager {
     ///
     /// Example:
     /// ```swift
-    /// let action = Action(friendlyName: "Morning run", measuresByUnit: ["km": 5.0])
+    /// let action = Action(title: "Morning run", measuresByUnit: ["km": 5.0])
     /// try await db.saveAction(action)
     /// ```
     public func saveAction(_ action: Action) async throws {
@@ -701,7 +701,7 @@ public actor DatabaseManager {
     ///
     /// Example:
     /// ```swift
-    /// let goal = Goal(friendlyName: "Run 120km", measurementUnit: "km", measurementTarget: 120.0)
+    /// let goal = Goal(title: "Run 120km", measurementUnit: "km", measurementTarget: 120.0)
     /// try await db.saveGoal(goal)
     /// ```
     public func saveGoal(_ goal: Goal) async throws {

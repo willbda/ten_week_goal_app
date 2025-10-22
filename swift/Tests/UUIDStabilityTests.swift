@@ -33,8 +33,8 @@ struct UUIDStabilityTests {
         // Fetch actions second time
         let actions2 = try await db.fetchActions()
 
-        // Find same action (by friendlyName since that's what identifies it)
-        let matchingAction = actions2.first { $0.friendlyName == firstAction.friendlyName }
+        // Find same action (by title since that's what identifies it)
+        let matchingAction = actions2.first { $0.title == firstAction.title }
         #expect(matchingAction != nil, "Should find same action on second fetch")
 
         // Verify UUID is identical
@@ -64,7 +64,7 @@ struct UUIDStabilityTests {
         // Fetch goals second time
         let goals2 = try await db.fetchGoals()
 
-        let matchingGoal = goals2.first { $0.friendlyName == firstGoal.friendlyName }
+        let matchingGoal = goals2.first { $0.title == firstGoal.title }
         #expect(matchingGoal != nil, "Should find same goal on second fetch")
 
         // Verify UUID is identical

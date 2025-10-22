@@ -20,7 +20,7 @@ def test_action_creation_with_description():
     """Action should be created with just a description"""
     action = Action("Did pushups")
 
-    assert action.common_name == "Did pushups"
+    assert action.title == "Did pushups"
     assert action.log_time is not None
     assert isinstance(action.log_time, datetime)
 
@@ -84,7 +84,7 @@ def test_action_with_empty_description():
     """Should allow empty description (validation could catch this)"""
     action = Action("")
 
-    assert action.common_name == ""
+    assert action.title == ""
     # Note: is_valid() currently doesn't check this - design decision
 
 

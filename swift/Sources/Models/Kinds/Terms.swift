@@ -35,7 +35,7 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
-    public var friendlyName: String?
+    public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
     public var logTime: Date
@@ -68,7 +68,7 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable {
 
     public init(
         // Core identity
-        friendlyName: String? = nil,
+        title: String? = nil,
         detailedDescription: String? = "A focused 10-week period for achieving specific goals",
         freeformNotes: String? = nil,
         // Domain-specific
@@ -83,7 +83,7 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable {
         id: UUID = UUID()
     ) {
         self.id = id
-        self.friendlyName = friendlyName
+        self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         self.logTime = logTime
@@ -112,7 +112,7 @@ public struct LifeTime: Persistable, Polymorphable, Codable, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
-    public var friendlyName: String?
+    public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
     public var logTime: Date
@@ -133,7 +133,7 @@ public struct LifeTime: Persistable, Polymorphable, Codable, Sendable {
 
     public init(
         // Core identity
-        friendlyName: String? = nil,
+        title: String? = nil,
         detailedDescription: String? = "The arc of a human life - memento mori",
         freeformNotes: String? = nil,
         // Domain-specific
@@ -144,7 +144,7 @@ public struct LifeTime: Persistable, Polymorphable, Codable, Sendable {
         id: UUID = UUID()
     ) {
         self.id = id
-        self.friendlyName = friendlyName
+        self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         self.logTime = logTime

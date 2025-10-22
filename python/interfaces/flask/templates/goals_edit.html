@@ -9,14 +9,14 @@
 {% endblock %}
 
 {% block content %}
-<h2>Edit Goal: {{ goal.common_name }}</h2>
+<h2>Edit Goal: {{ goal.title }}</h2>
 
 <p><strong>Type:</strong> {{ goal.goal_type }}</p>
 
 <form method="POST" action="/goals/edit/{{ goal.id }}">
     <h3>Basic Information</h3>
-    <label for="common_name">Name:</label>
-    <input type="text" id="common_name" name="common_name" value="{{ goal.common_name }}" required>
+    <label for="title">Name:</label>
+    <input type="text" id="title" name="title" value="{{ goal.title }}" required>
     <br>
 
     <label for="description">Description:</label>

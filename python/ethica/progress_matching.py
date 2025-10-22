@@ -157,7 +157,7 @@ def matches_with_how_goal_is_actionable(action: Action, goal: Goal) -> Tuple[boo
     except (json.JSONDecodeError, AttributeError, TypeError) as e:
         # Malformed JSON - log warning and fall back to unit matching
         logger.warning(
-            f"Malformed how_goal_is_actionable JSON for goal '{goal.common_name[:50]}...': {e}. "
+            f"Malformed how_goal_is_actionable JSON for goal '{goal.title[:50]}...': {e}. "
             f"Value was: {goal.how_goal_is_actionable!r}. Falling back to simple unit matching."
         )
         unit_match, _, contribution = matches_on_unit(action, goal)
@@ -166,7 +166,7 @@ def matches_with_how_goal_is_actionable(action: Action, goal: Goal) -> Tuple[boo
     if not allowed_units or not required_keywords:
         # Empty how_goal_is_actionable hints - log and fall back to unit matching
         logger.debug(
-            f"Empty how_goal_is_actionable hints for goal '{goal.common_name[:50]}...'. "
+            f"Empty how_goal_is_actionable hints for goal '{goal.title[:50]}...'. "
             f"Units: {allowed_units}, Keywords: {required_keywords}. "
             f"Falling back to simple unit matching."
         )
@@ -188,11 +188,11 @@ def matches_with_how_goal_is_actionable(action: Action, goal: Goal) -> Tuple[boo
         return (False, None)
 
     # Check 2: Does action description contain required keywords?
-    if not action.common_name:
+    if not action.title:
         return (False, None)
 
     # Check if any keyword appears in description (substring, case-insensitive)
-    action_lower = action.common_name.lower()
+    action_lower = action.title.lower()
     keyword_matched = any(kw in action_lower for kw in required_keywords)
 
     if not keyword_matched:

@@ -17,7 +17,7 @@ def test_get_actions_in_term_basic():
     """Test that actions within term boundaries are matched."""
     term_start = datetime(2025, 10, 1, 0, 0, 0)
     term_end = datetime(2025, 10, 31, 23, 59, 59)
-    term = GoalTerm(common_name="Term 1", term_number=1, start_date=term_start, target_date=term_end)
+    term = GoalTerm(title="Term 1", term_number=1, start_date=term_start, target_date=term_end)
 
     # Action inside term
     action_inside = Action("Did something")

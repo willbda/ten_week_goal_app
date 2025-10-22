@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content %}
-<h2>Edit Value: {{ value.common_name }}</h2>
+<h2>Edit Value: {{ value.title }}</h2>
 
 <form method="POST" action="/values/edit/{{ value.id }}">
     <div>
@@ -24,8 +24,8 @@
     </div>
 
     <div>
-        <label for="common_name">Name:</label>
-        <input type="text" id="common_name" name="common_name" required value="{{ value.common_name }}">
+        <label for="title">Name:</label>
+        <input type="text" id="title" name="title" required value="{{ value.title }}">
     </div>
 
     <div>

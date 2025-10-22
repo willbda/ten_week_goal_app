@@ -20,9 +20,9 @@ struct GoalTests {
 
     @Test("Creates minimal goal with defaults")
     func minimalGoalCreation() {
-        let goal = Goal(friendlyName: "Run more often")
+        let goal = Goal(title: "Run more often")
 
-        #expect(goal.friendlyName == "Run more often")
+        #expect(goal.title == "Run more often")
         #expect(goal.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000"))
         #expect(goal.logTime != nil)
         #expect(goal.polymorphicSubtype == "goal")
@@ -44,7 +44,7 @@ struct GoalTests {
         let end = start.addingTimeInterval(60*60*24*70) // 70 days later
 
         let goal = Goal(
-            friendlyName: "Complete training program",
+            title: "Complete training program",
             detailedDescription: "Build endurance for marathon",
             freeformNotes: "Focus on consistency",
             measurementUnit: "km",
@@ -72,7 +72,7 @@ struct GoalTests {
 
         // Fully SMART-compliant goal
         let smartGoal = Goal(
-            friendlyName: "Run 120km in 10 weeks",
+            title: "Run 120km in 10 weeks",
             measurementUnit: "km",
             measurementTarget: 120.0,
             startDate: start,
@@ -91,7 +91,7 @@ struct GoalTests {
     func partialGoalNotSmart() {
         // Missing SMART fields = not SMART compliant
         let partialGoal = Goal(
-            friendlyName: "Run more",
+            title: "Run more",
             measurementUnit: "km",
             measurementTarget: 100.0
             // Missing: dates and SMART enhancement fields
@@ -166,7 +166,7 @@ struct GoalTests {
         let target = Date().addingTimeInterval(60*60*24*35) // 5 weeks from now
 
         let milestone = Milestone(
-            friendlyName: "Reach 50km by week 5",
+            title: "Reach 50km by week 5",
             targetDate: target
         )
 
@@ -181,7 +181,7 @@ struct GoalTests {
         let target = Date().addingTimeInterval(60*60*24*35)
 
         let validMilestone = Milestone(
-            friendlyName: "Complete chapter 3",
+            title: "Complete chapter 3",
             targetDate: target
         )
         #expect(validMilestone.isValid())
@@ -190,7 +190,7 @@ struct GoalTests {
     @Test("Rejects milestone without target date")
     func milestoneValidationMissingTarget() {
         let invalidMilestone = Milestone(
-            friendlyName: "No target date"
+            title: "No target date"
             // targetDate is nil
         )
         #expect(!invalidMilestone.isValid())
@@ -201,7 +201,7 @@ struct GoalTests {
         let target = Date().addingTimeInterval(60*60*24*35)
 
         let milestone = Milestone(
-            friendlyName: "Hit 50km by week 5",
+            title: "Hit 50km by week 5",
             measurementUnit: "km",
             measurementTarget: 50.0,
             targetDate: target

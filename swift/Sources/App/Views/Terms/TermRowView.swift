@@ -127,7 +127,7 @@ struct TermRowView: View {
     List {
         // Active term
         TermRowView(term: GoalTerm(
-            friendlyName: "Fall Focus",
+            title: "Fall Focus",
             termNumber: 3,
             startDate: Date().addingTimeInterval(-7 * 24 * 3600), // 7 days ago
             targetDate: Date().addingTimeInterval(63 * 24 * 3600), // 63 days from now
@@ -137,7 +137,7 @@ struct TermRowView: View {
 
         // Upcoming term
         TermRowView(term: GoalTerm(
-            friendlyName: "Winter Planning",
+            title: "Winter Planning",
             termNumber: 4,
             startDate: Date().addingTimeInterval(70 * 24 * 3600), // 70 days from now
             targetDate: Date().addingTimeInterval(140 * 24 * 3600),
@@ -147,7 +147,7 @@ struct TermRowView: View {
 
         // Past term
         TermRowView(term: GoalTerm(
-            friendlyName: "Summer Growth",
+            title: "Summer Growth",
             termNumber: 2,
             startDate: Date().addingTimeInterval(-80 * 24 * 3600),
             targetDate: Date().addingTimeInterval(-10 * 24 * 3600),

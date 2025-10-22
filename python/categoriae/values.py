@@ -45,9 +45,9 @@ class Values(Incentives):
     Personal incentives that align with beliefs about what is worthwhile.
 
     Note: To maintain API compatibility where Values(name, description) works,
-    we need common_name before description in initialization order. Since dataclasses
+    we need title before description in initialization order. Since dataclasses
     use field definition order, we can't easily reorder inherited fields.
-    The original __init__ signature was: Values(common_name, description, ...)
+    The original __init__ signature was: Values(title, description, ...)
     """
     incentive_type: str = 'general'  # Override base class default
     priority: PriorityLevel = PriorityLevel(40)  # Values default to priority 40

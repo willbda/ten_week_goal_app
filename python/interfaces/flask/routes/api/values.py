@@ -111,7 +111,7 @@ def create_value():
 
     Request body (JSON):
         incentive_type: str (required) - Type of value ('major', 'highest_order', 'life_area', 'general')
-        common_name: str (required) - Name of the value
+        title: str (required) - Name of the value
         description: str (required) - Description of what this value means
         priority: int (optional) - Priority level 1-100 (default varies by type)
         life_domain: str (optional) - Life domain (default: 'General')
@@ -126,7 +126,7 @@ def create_value():
         POST /api/values
         {
             "incentive_type": "major",
-            "common_name": "Health",
+            "title": "Health",
             "description": "Physical and mental wellbeing",
             "priority": 5,
             "life_domain": "Personal",
@@ -142,8 +142,8 @@ def create_value():
         # Validate required fields
         if 'incentive_type' not in data:
             return jsonify({'error': 'Field "incentive_type" is required'}), 400
-        if 'common_name' not in data or not data['common_name']:
-            return jsonify({'error': 'Field "common_name" is required'}), 400
+        if 'title' not in data or not data['title']:
+            return jsonify({'error': 'Field "title" is required'}), 400
         if 'description' not in data or not data['description']:
             return jsonify({'error': 'Field "description" is required'}), 400
 
@@ -168,7 +168,7 @@ def create_value():
 
         value = service.create_value(
             incentive_type=incentive_type,
-            common_name=data['common_name'],
+            title=data['title'],
             description=data['description'],
             priority=priority,  # Pass None or int - rhetorica handles it
             life_domain=data.get('life_domain', 'General'),
@@ -178,7 +178,7 @@ def create_value():
         # Save to database
         service.store_single_instance(value)
 
-        logger.info(f"Created {incentive_type} value {value.id}: {value.common_name}")
+        logger.info(f"Created {incentive_type} value {value.id}: {value.title}")
 
         return jsonify(serialize(value, include_type=True)), 201
 
@@ -196,7 +196,7 @@ def update_value(value_id: int):
         value_id: Value database ID
 
     Request body (JSON):
-        Any value field to update (common_name, description, priority, life_domain, alignment_guidance)
+        Any value field to update (title, description, priority, life_domain, alignment_guidance)
 
     Returns:
         200: Updated value

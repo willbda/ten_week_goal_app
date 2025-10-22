@@ -5,17 +5,22 @@ Provides shared infrastructure (id, timestamps) that all entities inherit.
 Children differentiate by adding required fields that define their essence.
 
 Written by Claude Code on 2025-10-16
+Updated by Claude Code on 2025-10-21 to add UUID support
 """
 
 from abc import ABC
 from dataclasses import dataclass, field
 from typing import Optional
 from datetime import datetime
+from uuid import UUID, uuid4
 
 @dataclass
 class IndependentEntity(ABC):
-    common_name: str
-    id: Optional[int] = None
+    title: str
+    # UUID and database fields use kw_only to maintain backward compatibility
+    # with existing constructors like Values(name, description)
+    uuid_id: UUID = field(default_factory=uuid4, kw_only=True)
+    id: Optional[int] = field(default=None, kw_only=True)
     description: Optional[str] = None  # Optional elaboration
     notes: Optional[str] = None  # Freeform notes about the goal
 

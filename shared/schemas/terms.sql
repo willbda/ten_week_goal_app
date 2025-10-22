@@ -13,7 +13,7 @@
 --   - uuid_id: TEXT UNIQUE (Swift uses this, UUID string)
 --
 -- Inherits from IndependentEntity (not PersistableEntity):
---   - common_name: Short identifier (required)
+--   - title: Short identifier (required)
 --   - description: Optional elaboration
 --   - notes: Freeform notes
 --
@@ -26,7 +26,7 @@
 CREATE TABLE IF NOT EXISTS terms (
   id INTEGER PRIMARY KEY AUTOINCREMENT,           -- Python uses this
   uuid_id TEXT UNIQUE,                            -- Swift uses this
-  common_name TEXT NOT NULL,                      -- Short identifier (e.g., "Term 1: Health Focus")
+  title TEXT NOT NULL,                      -- Short identifier (e.g., "Term 1: Health Focus")
   description TEXT,                               -- Optional elaboration
   notes TEXT,                                     -- Freeform notes
   term_number INTEGER NOT NULL,                   -- Sequential identifier (1, 2, 3, etc.)

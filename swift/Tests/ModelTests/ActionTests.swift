@@ -20,9 +20,9 @@ struct ActionTests {
 
     @Test("Creates minimal action with defaults")
     func minimalActionCreation() {
-        let action = Action(friendlyName: "Morning run")
+        let action = Action(title: "Morning run")
 
-        #expect(action.friendlyName == "Morning run")
+        #expect(action.title == "Morning run")
         #expect(action.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000"))
         #expect(action.logTime != nil)
         #expect(action.measuresByUnit == nil)
@@ -33,7 +33,7 @@ struct ActionTests {
     @Test("Creates fully populated action")
     func fullyPopulatedAction() {
         let action = Action(
-            friendlyName: "Interval training",
+            title: "Interval training",
             detailedDescription: "High intensity workout",
             freeformNotes: "Felt great!",
             measuresByUnit: [
@@ -54,35 +54,35 @@ struct ActionTests {
 
     @Test("Validates positive measurements")
     func measurementValidationPositive() {
-        var validAction = Action(friendlyName: "Run")
+        var validAction = Action(title: "Run")
         validAction.measuresByUnit = ["distance_km": 5.0]
         #expect(validAction.isValid())
     }
 
     @Test("Rejects negative measurements")
     func measurementValidationNegative() {
-        var negativeAction = Action(friendlyName: "Run")
+        var negativeAction = Action(title: "Run")
         negativeAction.measuresByUnit = ["distance_km": -5.0]
         #expect(!negativeAction.isValid())
     }
 
     @Test("Rejects zero measurements")
     func measurementValidationZero() {
-        var zeroAction = Action(friendlyName: "Run")
+        var zeroAction = Action(title: "Run")
         zeroAction.measuresByUnit = ["distance_km": 0.0]
         #expect(!zeroAction.isValid())
     }
 
     @Test("Rejects start time without duration")
     func startTimeRequiresDuration() {
-        var invalid = Action(friendlyName: "Workout")
+        var invalid = Action(title: "Workout")
         invalid.startTime = Date()
         #expect(!invalid.isValid())
     }
 
     @Test("Accepts start time with duration")
     func startTimeWithDuration() {
-        var valid = Action(friendlyName: "Workout")
+        var valid = Action(title: "Workout")
         valid.startTime = Date()
         valid.durationMinutes = 45.0
         #expect(valid.isValid())
@@ -90,7 +90,7 @@ struct ActionTests {
 
     @Test("Accepts duration without start time")
     func durationWithoutStartTime() {
-        var validDurationOnly = Action(friendlyName: "Workout")
+        var validDurationOnly = Action(title: "Workout")
         validDurationOnly.durationMinutes = 30.0
         #expect(validDurationOnly.isValid())
     }
@@ -100,7 +100,7 @@ struct ActionTests {
     @Test("Throwing validation succeeds for valid action")
     func throwingValidationSuccess() throws {
         let validAction = Action(
-            friendlyName: "Run",
+            title: "Run",
             measuresByUnit: ["km": 5.0],
             durationMinutes: 30.0,
             startTime: Date()
@@ -112,7 +112,7 @@ struct ActionTests {
 
     @Test("Throwing validation fails for negative measurement")
     func throwingValidationNegativeMeasurement() {
-        var action = Action(friendlyName: "Run")
+        var action = Action(title: "Run")
         action.measuresByUnit = ["km": -5.0]
 
         #expect(throws: ValidationError.self) {
@@ -122,7 +122,7 @@ struct ActionTests {
 
     @Test("Throwing validation fails for missing duration with start time")
     func throwingValidationMissingDuration() {
-        var action = Action(friendlyName: "Workout")
+        var action = Action(title: "Workout")
         action.startTime = Date()
         // Missing durationMinutes
 
@@ -133,7 +133,7 @@ struct ActionTests {
 
     @Test("Throwing validation provides correct error for negative measurement")
     func throwingValidationNegativeMeasurementDetails() {
-        var action = Action(friendlyName: "Run")
+        var action = Action(title: "Run")
         action.measuresByUnit = ["km": -5.0]
 
         do {
@@ -154,7 +154,7 @@ struct ActionTests {
 
     @Test("Throwing validation provides correct error for missing duration")
     func throwingValidationMissingDurationDetails() {
-        var action = Action(friendlyName: "Workout")
+        var action = Action(title: "Workout")
         action.startTime = Date()
 
         do {
@@ -177,8 +177,8 @@ struct ActionTests {
     @Test("Actions are equal with same UUID")
     func equalityBasedOnUUID() {
         let sharedID = UUID()
-        let action1 = Action(friendlyName: "Run", id: sharedID)
-        let action2 = Action(friendlyName: "Sprint", id: sharedID)
+        let action1 = Action(title: "Run", id: sharedID)
+        let action2 = Action(title: "Sprint", id: sharedID)
 
         // Same UUID = equal, even with different names
         #expect(action1 == action2)
@@ -186,8 +186,8 @@ struct ActionTests {
 
     @Test("Actions are not equal with different UUIDs")
     func inequalityDifferentUUIDs() {
-        let action1 = Action(friendlyName: "Run", id: UUID())
-        let action2 = Action(friendlyName: "Run", id: UUID())
+        let action1 = Action(title: "Run", id: UUID())
+        let action2 = Action(title: "Run", id: UUID())
 
         #expect(action1 != action2)
     }

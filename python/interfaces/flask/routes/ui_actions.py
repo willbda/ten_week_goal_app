@@ -111,7 +111,7 @@ def actions_add():
 
         # Create action
         action = Action(
-            common_name=description,
+            title=description,
             log_time=log_time
         )
 
@@ -194,7 +194,7 @@ def actions_edit(action_id: int):
             return f"Action {action_id} not found", 404
 
         # Update fields from form
-        action.common_name = request.form.get('description')
+        action.title = request.form.get('description')
 
         # Update log_time
         log_time_str = request.form.get('log_time')

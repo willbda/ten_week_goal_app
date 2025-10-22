@@ -40,7 +40,7 @@ struct TermTests {
         let goalID2 = UUID()
 
         let term = GoalTerm(
-            friendlyName: "Q4 2025",
+            title: "Q4 2025",
             detailedDescription: "Final term of the year",
             freeformNotes: "Focus on momentum",
             termNumber: 4,
@@ -51,7 +51,7 @@ struct TermTests {
             reflection: "Made great progress on consistency"
         )
 
-        #expect(term.friendlyName == "Q4 2025")
+        #expect(term.title == "Q4 2025")
         #expect(term.theme == "Building sustainable habits")
         #expect(term.termGoalsByID.count == 2)
         #expect(term.termGoalsByID.contains(goalID1))

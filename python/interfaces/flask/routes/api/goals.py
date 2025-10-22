@@ -335,7 +335,7 @@ def get_goal_progress(goal_id: int):
         for match in all_matches:
             matches_data.append({
                 'action_id': match.action.id,
-                'action_description': match.action.common_name,
+                'action_description': match.action.title,
                 'contribution': match.contribution,
                 'assignment_method': match.assignment_method,
                 'confidence': match.confidence

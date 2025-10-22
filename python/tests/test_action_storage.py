@@ -31,7 +31,7 @@ def test_action_roundtrip(test_db):
 
     # Verify the retrieved action matches the original
     retrieved = retrieved_actions[0]
-    assert retrieved.common_name == original_action.common_name
+    assert retrieved.title == original_action.title
     assert retrieved.measurement_units_by_amount == original_action.measurement_units_by_amount
     assert retrieved.duration_minutes == original_action.duration_minutes
 
@@ -59,7 +59,7 @@ def test_action_id_roundtrip(test_db):
 
 
 def test_action_update(test_db):
-    """Test updating an existing action"""
+    """Test updating an existing action using UUID"""
     db, db_path = test_db
 
     # Create and save an action
@@ -69,30 +69,30 @@ def test_action_update(test_db):
     service = ActionStorageService(database=db)
     service.store_single_instance(action)
 
-    # Retrieve the action (will have ID)
+    # Retrieve the action (will have UUID and ID)
     stored_actions = service.get_all()
     assert len(stored_actions) == 1
 
     stored_action = stored_actions[0]
-    original_id = stored_action.id
-    assert original_id is not None
+    original_uuid = stored_action.uuid_id
+    assert original_uuid is not None
 
     # Modify the action
-    stored_action.common_name = 'Updated description'
+    stored_action.title = 'Updated description'
     stored_action.measurement_units_by_amount = {'distance_km': 10.0}
 
-    # Update it
+    # Update it (now uses UUID)
     result = service.update_instance(stored_action)
     assert result['updated'] is True
-    assert result['id'] == original_id
+    assert result['uuid_id'] == str(original_uuid)  # Result contains UUID string
 
     # Retrieve again and verify changes persisted
     updated_actions = service.get_all()
     assert len(updated_actions) == 1
 
     updated = updated_actions[0]
-    assert updated.id == original_id  # Same ID
-    assert updated.common_name == 'Updated description'  # Updated field
+    assert updated.uuid_id == original_uuid  # Same UUID
+    assert updated.title == 'Updated description'  # Updated field
     assert updated.measurement_units_by_amount == {'distance_km': 10.0}  # Updated field
 
 

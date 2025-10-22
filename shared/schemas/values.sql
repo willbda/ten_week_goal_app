@@ -9,7 +9,7 @@
 --   - uuid_id: TEXT UNIQUE (Swift uses this, UUID string)
 --
 -- Inherits from PersistableEntity:
---   - common_name: Short identifier (required)
+--   - title: Short identifier (required)
 --   - description: Optional elaboration
 --   - notes: Freeform notes
 --   - log_time: When value was created
@@ -23,7 +23,7 @@
 CREATE TABLE IF NOT EXISTS personal_values (
   id INTEGER PRIMARY KEY AUTOINCREMENT,           -- Python uses this
   uuid_id TEXT UNIQUE,                            -- Swift uses this
-  common_name TEXT NOT NULL,                      -- Short identifier (e.g., "Companionship with Solène")
+  title TEXT NOT NULL,                      -- Short identifier (e.g., "Companionship with Solène")
   description TEXT,                               -- Optional elaboration
   notes TEXT,                                     -- Freeform notes
   log_time TEXT NOT NULL,                         -- When created (ISO format)

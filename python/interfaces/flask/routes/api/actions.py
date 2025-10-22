@@ -312,7 +312,7 @@ def get_action_goals(action_id: int):
         for match in matches:
             matches_data.append({
                 'goal_id': match.goal.id,
-                'goal_description': match.goal.common_name,
+                'goal_description': match.goal.title,
                 'contribution': match.contribution,
                 'assignment_method': match.assignment_method,
                 'confidence': match.confidence

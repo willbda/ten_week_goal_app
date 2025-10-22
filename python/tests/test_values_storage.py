@@ -18,20 +18,20 @@ def test_values_polymorphic_roundtrip(test_db):
 
     # Create one of each type
     general_value = Values(
-        common_name="Continuous Learning",
+        title="Continuous Learning",
         description="Regular pursuit of knowledge",
         priority=PriorityLevel(30)
     )
 
     major_value = MajorValues(
-        common_name="Mental Health",
+        title="Mental Health",
         description="Brain maintenance",
         priority=PriorityLevel(1),
         alignment_guidance="go to therapy, sleep regularly"
     )
 
     highest_value = HighestOrderValues(
-        common_name="Truth",
+        title="Truth",
         description="Seek understanding",
         priority=PriorityLevel(1)
     )
@@ -45,13 +45,13 @@ def test_values_polymorphic_roundtrip(test_db):
 
     # Find each by name and verify type
     for value in stored:
-        if value.common_name == "Continuous Learning":
+        if value.title == "Continuous Learning":
             assert type(value) == Values  # Base class, not subclass
             assert value.incentive_type == 'general'
-        elif value.common_name == "Mental Health":
+        elif value.title == "Mental Health":
             assert isinstance(value, MajorValues)
             assert value.incentive_type == 'major'
             assert value.alignment_guidance is not None
-        elif value.common_name == "Truth":
+        elif value.title == "Truth":
             assert isinstance(value, HighestOrderValues)
             assert value.incentive_type == 'highest_order'

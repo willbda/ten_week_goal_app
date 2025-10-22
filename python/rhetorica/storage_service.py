@@ -18,9 +18,12 @@ from categoriae.terms import GoalTerm
 from categoriae.values import Values, MajorValues, HighestOrderValues, LifeAreas, PriorityLevel
 from politica.database import Database
 
-# Protocol for entities that can be persisted (have optional id)
+# Protocol for entities that can be persisted (have UUID)
+from uuid import UUID
+
 class Persistable(Protocol):
-    id: Optional[int]
+    uuid_id: UUID
+    id: Optional[int]  # Kept for backward compatibility, but not used by Python
 
 # Generic type variable for entities that can be persisted
 T = TypeVar('T', bound=Persistable)
@@ -103,25 +106,42 @@ class StorageService(ABC, Generic[T]):
 
     def get_by_id(self, entity_id: int) -> Optional[T]:
         """
-        Retrieve a single entity by its database ID.
+        DEPRECATED: Retrieve entity by INTEGER id (backward compatibility only).
+        Use get_by_uuid() instead.
 
         Args:
-            entity_id: Database ID of the entity
+            entity_id: Database INTEGER ID (legacy)
 
         Returns:
-            Domain entity with ID populated, or None if not found
+            Domain entity, or None if not found
         """
         records = self.db.query(self.table_name, filters={'id': entity_id})
         if not records:
             return None
         return self._from_dict(records[0])
 
+    def get_by_uuid(self, entity_uuid: UUID) -> Optional[T]:
+        """
+        Retrieve a single entity by its UUID.
+
+        Args:
+            entity_uuid: UUID of the entity
+
+        Returns:
+            Domain entity, or None if not found
+        """
+        records = self.db.query(self.table_name, filters={'uuid_id': str(entity_uuid)})
+        if not records:
+            return None
+        return self._from_dict(records[0])
+
     def save(self, entity: T, notes: str = '') -> T:
         """
-        Intelligently save or update entity based on ID presence.
+        Intelligently save or update entity based on UUID existence in database.
 
-        If entity has no ID (new entity): Inserts and populates ID
-        If entity has ID (existing entity): Updates with archiving
+        Checks if UUID exists in database:
+        - If not found: Inserts as new entity
+        - If found: Updates existing entity with archiving
 
         This is a convenience method that combines store_single_instance()
         and update_instance() into a single "save" operation.
@@ -131,19 +151,20 @@ class StorageService(ABC, Generic[T]):
             notes: Optional notes for archive (only used if updating)
 
         Returns:
-            T: The entity with ID populated
+            T: The entity (UUID always populated, INTEGER id from database)
 
         Example:
             # Create new
-            action = service.save(Action("Run 5km"))  # Inserts, returns with ID
+            action = service.save(Action("Run 5km"))  # Inserts, populates id
 
             # Modify and update
             action.description = "Run 10km"
             service.save(action)  # Updates existing record
         """
-        entity_id = getattr(entity, 'id', None)
+        # Check if entity UUID exists in database
+        existing = self.get_by_uuid(entity.uuid_id)
 
-        if entity_id is None:
+        if existing is None:
             # New entity - insert
             return self.store_single_instance(entity)
         else:
@@ -153,48 +174,43 @@ class StorageService(ABC, Generic[T]):
 
     def update_instance(self, entity: T, notes: str = '') -> dict:
         """
-        Update an existing entity in the database.
+        Update an existing entity in the database using UUID.
 
-        The entity must have an ID (i.e., must have been retrieved from storage).
-        Archives the old version before updating.
+        The entity must have a UUID. Archives the old version before updating.
 
         Args:
-            entity: Domain entity with ID to update
+            entity: Domain entity with UUID to update
             notes: Optional notes for archive entry
 
         Returns:
-            Result dict from Database.update()
-
-        Raises:
-            ValueError: If entity has no ID (not stored yet)
+            Result dict from Database.update_by_uuid()
 
         Example:
             # Retrieve, modify, update
-            action = service.get_all(filters={'description': 'Run 5km'})[0]
+            action = service.get_by_uuid(some_uuid)
             action.description = 'Run 10km'
             service.update_instance(action)
         """
-        # Check if entity has an ID
-        entity_id = getattr(entity, 'id', None)
-        if entity_id is None:
-            raise ValueError(
-                f"Cannot update entity without ID. Use store_single_instance() for new entities."
-            )
-
-        # Convert entity to dict (will include ID)
+        # Convert entity to dict
         entity_dict = self._to_dict(entity)
-        entity_dict.pop('id')  # Remove ID from updates dict
 
-        # Call database update
-        return self.db.update(
+        # Remove id and uuid_id from updates dict (these shouldn't be updated)
+        entity_dict.pop('id', None)
+        entity_dict.pop('uuid_id', None)
+
+        # Call database update using UUID
+        return self.db.update_by_uuid(
             table=self.table_name,
-            record_id=entity_id,
+            record_uuid=str(entity.uuid_id),
             updates=entity_dict,
             notes=notes
         )
 
     def delete(self, entity_id: int, notes: str = '') -> dict:
         """
+        DEPRECATED: Delete entity by INTEGER id (backward compatibility only).
+        Use delete_by_uuid() instead.
+
         Delete an entity by ID with archiving.
 
         Archives the record before deletion for audit trail.
@@ -226,6 +242,39 @@ class StorageService(ABC, Generic[T]):
             filters={'id': entity_id},
             confirm=True,  # Bypass preview mode - entity already verified
             notes=notes or f'Deleted {self.table_name} ID {entity_id}'
+        )
+
+        return result
+
+    def delete_by_uuid(self, entity_uuid: UUID, notes: str = '') -> dict:
+        """
+        Delete an entity by UUID with archiving.
+
+        Archives the record before deletion for audit trail.
+
+        Args:
+            entity_uuid: UUID of entity to delete
+            notes: Optional notes for archive
+
+        Returns:
+            Result dict from Database.archive_and_delete()
+
+        Example:
+            service.delete_by_uuid(action.uuid_id, notes='No longer needed')
+        """
+        # Verify entity exists first
+        entity = self.get_by_uuid(entity_uuid)
+        if not entity:
+            raise ValueError(
+                f"Cannot delete: {self.table_name} with UUID {entity_uuid} not found"
+            )
+
+        # Archive and delete through database layer
+        result = self.db.archive_and_delete(
+            table=self.table_name,
+            filters={'uuid_id': str(entity_uuid)},
+            confirm=True,
+            notes=notes or f'Deleted {self.table_name} UUID {entity_uuid}'
         )
 
         return result
@@ -376,7 +425,7 @@ class ValuesStorageService(PolymorphicStorageService):
     def create_value(
         self,
         incentive_type: str,
-        common_name: str,
+        title: str,
         description: str,
         priority: Optional[int] = None,
         life_domain: str = 'General',
@@ -391,7 +440,7 @@ class ValuesStorageService(PolymorphicStorageService):
 
         # Build kwargs conditionally (using Any to avoid type checker issues with Union types)
         kwargs: dict[str, Any] = {
-            'common_name': common_name,
+            'title': title,
             'description': description,
             'life_domain': life_domain
         }

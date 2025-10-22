@@ -44,21 +44,30 @@ class GoalTerm(TimeFrame):
     A typical term is 10 weeks (70 days), but this can be adjusted based on personal preference or context. The key is to have a clear start and end date, along with defined goals and a theme or focus area if desired.
 
     Attributes:
+        title: Term name (e.g., "Term 1", "Q1 2025")
         term_number: Sequential identifier (e.g., Term 1, Term 2)
         start_date: First day of term
         target_date: Last day of term (70 days later)
         theme: Optional focus area (e.g., "Health & Learning", "Relationships")
-        term_goals_by_id: List of goal IDs associated with this term
+        term_goals_by_id: List of goal IDs associated with this term (deprecated - use term_goal_uuids)
+        term_goal_uuids: List of goal UUIDs associated with this term
         reflection: Post-term reflection notes
     """
     TEN_WEEKS_IN_DAYS = 70  # 10 weeks × 7 days/week
 
+    # Override title to have default based on term_number
+    title: str = ""  # Will be auto-generated in __post_init__ if empty
     term_number: int = 0
-    start_date: datetime = datetime.today()
-    target_date: datetime = datetime.today() + timedelta(days=TEN_WEEKS_IN_DAYS)
-    description = "A focused 10-week period for achieving specific goals related to ..."
-    term_goals_by_id: List[int] = field(default_factory=list)
+    start_date: datetime = field(default_factory=datetime.today)
+    target_date: datetime = field(default_factory=lambda: datetime.today() + timedelta(days=70))
+    description: str = field(default="A focused 10-week period for achieving specific goals")
+    term_goals_by_id: List[int] = field(default_factory=list)  # Deprecated - for backward compatibility
     reflection: str = ''
+
+    def __post_init__(self):
+        """Auto-generate title from term_number if not provided."""
+        if not self.title or self.title == "":
+            self.title = f"Term {self.term_number}"
 
 # refactor is_active, days_remaining, progress_percentage to ethica or rhetorica
     def is_active(self, check_date: Optional[datetime] = None) -> bool:

@@ -134,7 +134,7 @@ protocol ValueDisplayable {
 /// Individual value item for display
 struct ValueDisplayItem: Identifiable {
     let id: UUID
-    let friendlyName: String?
+    let title: String?
     let detailedDescription: String?
     let priority: Int
     let lifeDomain: String?
@@ -149,7 +149,7 @@ struct HighestOrderValuesWrapper: ValueDisplayable {
         values.map { value in
             ValueDisplayItem(
                 id: value.id,
-                friendlyName: value.friendlyName,
+                title: value.title,
                 detailedDescription: value.detailedDescription,
                 priority: value.priority,
                 lifeDomain: value.lifeDomain,
@@ -167,7 +167,7 @@ struct MajorValuesWrapper: ValueDisplayable {
         values.map { value in
             ValueDisplayItem(
                 id: value.id,
-                friendlyName: value.friendlyName,
+                title: value.title,
                 detailedDescription: value.detailedDescription,
                 priority: value.priority,
                 lifeDomain: value.lifeDomain,
@@ -185,7 +185,7 @@ struct GeneralValuesWrapper: ValueDisplayable {
         values.map { value in
             ValueDisplayItem(
                 id: value.id,
-                friendlyName: value.friendlyName,
+                title: value.title,
                 detailedDescription: value.detailedDescription,
                 priority: value.priority,
                 lifeDomain: value.lifeDomain,
@@ -203,7 +203,7 @@ struct LifeAreasWrapper: ValueDisplayable {
         values.map { value in
             ValueDisplayItem(
                 id: value.id,
-                friendlyName: value.friendlyName,
+                title: value.title,
                 detailedDescription: value.detailedDescription,
                 priority: value.priority,
                 lifeDomain: value.lifeDomain,

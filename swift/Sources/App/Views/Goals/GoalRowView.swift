@@ -22,7 +22,7 @@ struct GoalRowView: View {
             VStack(alignment: .leading, spacing: 8) {
                 // Goal name with priority indicator
                 HStack {
-                    Text(goal.friendlyName ?? "Untitled Goal")
+                    Text(goal.title ?? "Untitled Goal")
                         .font(.headline)
                     
                     Spacer()
@@ -93,7 +93,7 @@ struct GoalRowView: View {
 #Preview {
     List {
         GoalRowView(goal: Goal(
-            friendlyName: "Run 120km in 10 weeks",
+            title: "Run 120km in 10 weeks",
             detailedDescription: "Complete running goal for fitness",
             measurementUnit: "km",
             measurementTarget: 120.0,
@@ -107,7 +107,7 @@ struct GoalRowView: View {
         ))
 
         GoalRowView(goal: Goal(
-            friendlyName: "Learn Swift",
+            title: "Learn Swift",
             detailedDescription: "Master iOS development",
             measurementUnit: "hours",
             measurementTarget: 100.0,
@@ -117,14 +117,14 @@ struct GoalRowView: View {
         ))
 
         GoalRowView(goal: Goal(
-            friendlyName: "Get healthier",
+            title: "Get healthier",
             detailedDescription: "General wellness improvement",
             priority: 25
         ))
 
         // Overdue goal
         GoalRowView(goal: Goal(
-            friendlyName: "Overdue goal",
+            title: "Overdue goal",
             measurementUnit: "tasks",
             measurementTarget: 5.0,
             targetDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),

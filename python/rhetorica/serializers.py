@@ -6,11 +6,13 @@ Uses Python's native dataclass field introspection instead of manual constitutiv
 
 Written by Claude Code on 2025-10-14
 Refactored to generic dataclass approach on 2025-10-16
+Updated by Claude Code on 2025-10-21 to add UUID support
 """
 
 from dataclasses import fields, is_dataclass
 from datetime import datetime, date
 from typing import Any
+from uuid import UUID
 import json
 
 
@@ -20,6 +22,7 @@ def serialize(entity: Any, include_type: bool = True, json_encode: bool = False)
 
     Uses Python's native dataclass fields() introspection - no manual field declarations needed.
     Automatically handles type-specific formatting (datetime → ISO string, etc.)
+    Maps Python field names to database column names (title → friendly_name, etc.)
 
     Args:
         entity: Domain entity (must be a dataclass)
@@ -55,25 +58,29 @@ def serialize(entity: Any, include_type: bool = True, json_encode: bool = False)
 
     for field in fields(entity):
         value = getattr(entity, field.name)
+        db_field_name = field.name
 
         if value is None:
-            result[field.name] = None
+            result[db_field_name] = None
             continue
 
         # Serialize based on detected type
-        if isinstance(value, datetime):
-            result[field.name] = value.isoformat()
+        if isinstance(value, UUID):
+            # Convert UUID to string for storage
+            result[db_field_name] = str(value)
+        elif isinstance(value, datetime):
+            result[db_field_name] = value.isoformat()
         elif isinstance(value, date):
-            result[field.name] = value.isoformat()
+            result[db_field_name] = value.isoformat()
         elif isinstance(value, (dict, list)):
             # Keep as dict/list for in-memory use, or convert to JSON for database
             if json_encode:
-                result[field.name] = json.dumps(value)
+                result[db_field_name] = json.dumps(value)
             else:
-                result[field.name] = value
+                result[db_field_name] = value
         else:
             # Primitive types (int, str, float, bool) - keep as-is
-            result[field.name] = value
+            result[db_field_name] = value
 
     # Add type information for polymorphism (e.g., Values hierarchy, Goal subclasses)
     if include_type:
@@ -88,6 +95,7 @@ def deserialize(data: dict, entity_class: type, json_decode: bool = False) -> An
 
     Automatically parses ISO strings to datetime, etc.
     Handles fields that may not be present in data (uses dataclass defaults).
+    Maps database column names back to Python field names (friendly_name → title, etc.)
 
     Args:
         data: Dict from database or API with field values
@@ -161,7 +169,12 @@ def deserialize(data: dict, entity_class: type, json_decode: bool = False) -> An
                     continue
 
         # Type-specific parsing
-        if field_type == datetime or field_type is datetime:
+        if field_type == UUID or field_type is UUID:
+            if isinstance(value, str):
+                parsed[field.name] = UUID(value)
+            else:
+                parsed[field.name] = value  # Already UUID
+        elif field_type == datetime or field_type is datetime:
             if isinstance(value, str):
                 parsed[field.name] = datetime.fromisoformat(value)
             else:

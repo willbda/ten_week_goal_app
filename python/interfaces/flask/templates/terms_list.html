@@ -44,7 +44,7 @@
     <tbody>
         {% for term in terms %}
         <tr>
-            <td>{{ term.common_name if term.common_name else '-' }}</td>
+            <td>{{ term.title if term.title else '-' }}</td>
             <td>{{ term.start_date.strftime('%b %d') }} - {{ term.target_date.strftime('%b %d, %Y') }}</td>
             <td>{{ term.term_goals_by_id|length }}</td>
             <td>

@@ -32,7 +32,7 @@ struct TermRowViewTests {
     @Test("Displays term with theme")
     func displaysTermTheme() {
         let term = GoalTerm(
-            friendlyName: "Fall Focus",
+            title: "Fall Focus",
             termNumber: 1,
             startDate: Date(),
             targetDate: Date().addingTimeInterval(70 * 24 * 3600),
@@ -303,7 +303,7 @@ struct TermRowViewTests {
         let targetDate = Calendar.current.date(byAdding: .day, value: 63, to: now)!
 
         let term = GoalTerm(
-            friendlyName: "Fall Focus",
+            title: "Fall Focus",
             termNumber: 3,
             startDate: startDate,
             targetDate: targetDate,
@@ -326,7 +326,7 @@ struct TermRowViewTests {
         let targetDate = Calendar.current.date(byAdding: .day, value: 140, to: now)!
 
         let term = GoalTerm(
-            friendlyName: "Winter Planning",
+            title: "Winter Planning",
             termNumber: 4,
             startDate: startDate,
             targetDate: targetDate,
@@ -486,9 +486,9 @@ struct TermRowViewTests {
     }
 
     @Test("Friendly name is independent of display")
-    func friendlyNameIsIndependent() {
+    func titleIsIndependent() {
         let term = GoalTerm(
-            friendlyName: "Custom Name",
+            title: "Custom Name",
             termNumber: 1,
             startDate: Date(),
             targetDate: Date().addingTimeInterval(70 * 24 * 3600),
@@ -496,7 +496,7 @@ struct TermRowViewTests {
             termGoalsByID: []
         )
 
-        #expect(term.friendlyName == "Custom Name")
+        #expect(term.title == "Custom Name")
         #expect(term.theme == "Different Theme")
     }
 }

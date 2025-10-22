@@ -22,7 +22,7 @@ import Foundation
 /// Used by: All storable entities (Action, Goal, Values, Terms, etc.)
 public protocol Persistable: Identifiable, Equatable {
     var id: UUID { get set }
-    var friendlyName: String? { get set }
+    var title: String? { get set }
     var detailedDescription: String? { get set }
     var freeformNotes: String? { get set }
     var logTime: Date { get set }

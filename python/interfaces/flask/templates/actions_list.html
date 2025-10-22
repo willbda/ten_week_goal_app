@@ -61,7 +61,7 @@
         {% for action in actions %}
         <tr>
             <td>{{ action.id }}</td>
-            <td><strong>{{ action.description[:40] }}{% if action.description|length > 40 %}...{% endif %}</strong></td>
+            <td><strong>{% if action.description %}{{ action.description[:40] }}{% if action.description|length > 40 %}...{% endif %}{% else %}<em>No description</em>{% endif %}</strong></td>
             <td>{{ action.log_time.strftime('%-m/%d/%y') }}</td>
             <td>
                 {% if action.measurement_units_by_amount %}

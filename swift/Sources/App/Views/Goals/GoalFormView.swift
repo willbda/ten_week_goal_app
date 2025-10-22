@@ -26,7 +26,7 @@ struct GoalFormView: View {
     // MARK: - State
 
     // Core identity
-    @State private var friendlyName: String
+    @State private var title: String
     @State private var detailedDescription: String
     @State private var freeformNotes: String
     @State private var logTime: Date
@@ -66,7 +66,7 @@ struct GoalFormView: View {
         self.onCancel = onCancel
 
         // Initialize state from goal or defaults
-        _friendlyName = State(initialValue: goal?.friendlyName ?? "")
+        _title = State(initialValue: goal?.title ?? "")
         _detailedDescription = State(initialValue: goal?.detailedDescription ?? "")
         _freeformNotes = State(initialValue: goal?.freeformNotes ?? "")
         _logTime = State(initialValue: goal?.logTime ?? Date())
@@ -100,13 +100,13 @@ struct GoalFormView: View {
         goalToEdit != nil
     }
 
-    private var title: String {
+    private var viewTitle: String {
         isEditing ? "Edit Goal" : "New Goal"
     }
 
     private var canSave: Bool {
         // At minimum, need either a friendly name or a description
-        !friendlyName.trimmingCharacters(in: .whitespaces).isEmpty ||
+        !title.trimmingCharacters(in: .whitespaces).isEmpty ||
         !detailedDescription.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
@@ -141,7 +141,7 @@ struct GoalFormView: View {
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle(title)
+            .navigationTitle(viewTitle)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -170,7 +170,7 @@ struct GoalFormView: View {
 
     private var basicInfoSection: some View {
         Section {
-            TextField("Name", text: $friendlyName, axis: .vertical)
+            TextField("Name", text: $title, axis: .vertical)
                 .lineLimit(1...3)
 
             TextField("Description", text: $detailedDescription, axis: .vertical)
@@ -310,7 +310,7 @@ struct GoalFormView: View {
 
         // Create or update goal
         let goal = Goal(
-            friendlyName: friendlyName.isEmpty ? nil : friendlyName,
+            title: title.isEmpty ? nil : title,
             detailedDescription: detailedDescription.isEmpty ? nil : detailedDescription,
             freeformNotes: freeformNotes.isEmpty ? nil : freeformNotes,
             measurementUnit: useMeasurement && !measurementUnit.isEmpty ? measurementUnit : nil,
@@ -406,7 +406,7 @@ private struct SmartInfoSheet: View {
 #Preview("Edit Mode - Minimal Goal") {
     GoalFormView(
         goal: Goal(
-            friendlyName: "Get healthier",
+            title: "Get healthier",
             detailedDescription: "Focus on overall wellness"
         ),
         onSave: { goal in
@@ -421,7 +421,7 @@ private struct SmartInfoSheet: View {
 #Preview("Edit Mode - SMART Goal") {
     GoalFormView(
         goal: Goal(
-            friendlyName: "10-week running goal",
+            title: "10-week running goal",
             detailedDescription: "Build running endurance",
             measurementUnit: "km",
             measurementTarget: 120.0,

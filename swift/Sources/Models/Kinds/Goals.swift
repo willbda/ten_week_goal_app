@@ -21,7 +21,7 @@ import Foundation
 /// Use `isSmart()` validation method to check if goal meets all SMART criteria.
 ///
 /// Conforms to:
-/// - Persistable: id, friendlyName, detailedDescription, freeformNotes, logTime
+/// - Persistable: id, title, detailedDescription, freeformNotes, logTime
 /// - Completable: targetDate, measurementUnit, measurementTarget, startDate
 /// - Polymorphable: polymorphicSubtype
 /// - Motivating: priority, lifeDomain
@@ -29,7 +29,7 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
-    public var friendlyName: String?
+    public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
     public var logTime: Date
@@ -78,11 +78,11 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
 
     /// Create a new goal with flexible field requirements
     ///
-    /// For minimal goals: Provide just friendlyName or detailedDescription
+    /// For minimal goals: Provide just title or detailedDescription
     /// For SMART goals: Provide all measurement, date, and SMART fields
     public init(
         // Core identity
-        friendlyName: String? = nil,
+        title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         // Completable
@@ -102,7 +102,7 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
         id: UUID = UUID()
     ) {
         self.id = id
-        self.friendlyName = friendlyName
+        self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         self.logTime = logTime
@@ -130,7 +130,7 @@ public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Co
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
-    public var friendlyName: String?
+    public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
     public var logTime: Date
@@ -163,7 +163,7 @@ public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Co
     /// Create a milestone checkpoint
     public init(
         // Core identity
-        friendlyName: String? = nil,
+        title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         // Completable
@@ -179,7 +179,7 @@ public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Co
         id: UUID = UUID()
     ) {
         self.id = id
-        self.friendlyName = friendlyName
+        self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         self.logTime = logTime

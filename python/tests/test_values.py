@@ -43,7 +43,7 @@ def test_incentives_has_sensible_defaults():
     """Incentives provides description, priority, life_domain, and incentive_type"""
     incentive = Incentives("Be a good person")
 
-    assert incentive.common_name == "Be a good person"
+    assert incentive.title == "Be a good person"
     assert incentive.priority == 50  # Default middle priority
     assert incentive.life_domain == "General"
     assert incentive.incentive_type == 'incentive'  # Base type
@@ -52,10 +52,10 @@ def test_incentives_has_sensible_defaults():
 # ===== VALUES - Adds name and value flags =====
 
 def test_values_adds_name_and_type():
-    """Values has common_name and has incentive_type 'general'"""
+    """Values has title and has incentive_type 'general'"""
     value = Values("Compassion")
 
-    assert value.common_name == "Compassion"
+    assert value.title == "Compassion"
     assert value.description is None  # Optional - not provided
     assert value.priority == 40  # Values default to 40
     assert value.incentive_type == 'general'  # General value type
@@ -67,7 +67,7 @@ def test_life_areas_not_a_value():
     """LifeAreas inherit from Incentives but are NOT Values"""
     life_area = LifeAreas("Career")
 
-    assert life_area.common_name == "Career"
+    assert life_area.title == "Career"
     assert life_area.incentive_type == 'life_area'  # Life area type
     assert isinstance(life_area, Incentives)
     assert not isinstance(life_area, Values)  # LifeAreas are NOT Values
@@ -82,7 +82,7 @@ def test_major_values_distinctive_features():
         alignment_guidance={"weekly_check": "Review goals vs values"}
     )
 
-    assert major.common_name == "Integrity"
+    assert major.title == "Integrity"
     assert major.priority == 10  # Defaults to priority 10 (high priority)
     assert major.incentive_type == 'major'  # Major value type
     assert isinstance(major, Values)  # Still a Value
@@ -93,7 +93,7 @@ def test_major_values_alignment_guidance_optional():
     """MajorValues work without alignment_guidance (flexible design)"""
     major = MajorValues("Courage")
 
-    assert major.common_name == "Courage"
+    assert major.title == "Courage"
     assert major.alignment_guidance is None
 
 
@@ -103,7 +103,7 @@ def test_highest_order_values_distinctive_features():
     """HighestOrderValues: priority 1, incentive_type='highest_order'"""
     highest = HighestOrderValues("Truth")
 
-    assert highest.common_name == "Truth"
+    assert highest.title == "Truth"
     assert highest.priority == 1
     assert highest.incentive_type == 'highest_order'  # Highest order type
     assert isinstance(highest, Values)  # Is a Value
