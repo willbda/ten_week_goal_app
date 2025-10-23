@@ -2,6 +2,7 @@
 //  Integration tests for Action with direct GRDB conformance
 //
 //  Written by Claude Code on 2025-10-22
+//  Updated by Claude Code on 2025-10-22 (use .temporary config for WAL mode)
 //  Proof-of-concept: Tests that Action can be used directly with GRDB
 //  without intermediate Record types (ActionRecord).
 //
@@ -10,6 +11,9 @@
 //  2. Can save/fetch actions using generic GRDB methods
 //  3. Proper column mapping via CodingKeys
 //  4. No need for entity-specific database methods
+//
+//  Note: Uses .temporary configuration (not .inMemory) because WAL mode
+//  doesn't work with in-memory databases.
 
 import Testing
 import GRDB
@@ -29,8 +33,8 @@ struct ActionGRDBTests {
     @Test("Action can be saved and fetched using GRDB directly")
     @MainActor
     func actionRoundTrip() async throws {
-        // Setup in-memory database
-        let db = try await DatabaseManager(configuration: .inMemory)
+        // Setup temporary database (WAL mode compatible)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         // Create action with various properties
         var action = Action(
@@ -57,7 +61,7 @@ struct ActionGRDBTests {
     @Test("Action UUID is preserved after save")
     @MainActor
     func actionUUIDPreservation() async throws {
-        let db = try await DatabaseManager(configuration: .inMemory)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         // Create action (gets UUID in init)
         var action = Action(
@@ -78,7 +82,7 @@ struct ActionGRDBTests {
     @Test("Action can be fetched by ID")
     @MainActor
     func actionFetchById() async throws {
-        let db = try await DatabaseManager(configuration: .inMemory)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         // Create and save action
         var action = Action(
@@ -101,7 +105,7 @@ struct ActionGRDBTests {
     @Test("Action with minimal fields can be saved")
     @MainActor
     func actionMinimalFields() async throws {
-        let db = try await DatabaseManager(configuration: .inMemory)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         // Create action with only required field (logTime has default)
         var action = Action(title: "Minimal")
@@ -118,7 +122,7 @@ struct ActionGRDBTests {
     @Test("Action with all optional fields can be saved")
     @MainActor
     func actionAllFields() async throws {
-        let db = try await DatabaseManager(configuration: .inMemory)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         let startTime = Date().addingTimeInterval(-3600)  // 1 hour ago
         let logTime = Date()
@@ -153,7 +157,7 @@ struct ActionGRDBTests {
     @Test("Multiple actions can be saved and retrieved")
     @MainActor
     func multipleActions() async throws {
-        let db = try await DatabaseManager(configuration: .inMemory)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         // Create multiple actions
         var action1 = Action(title: "First", measuresByUnit: ["km": 5.0])
@@ -180,7 +184,7 @@ struct ActionGRDBTests {
     @Test("Action can be updated")
     @MainActor
     func actionUpdate() async throws {
-        let db = try await DatabaseManager(configuration: .inMemory)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         // Create and save initial action
         var action = Action(
@@ -205,7 +209,7 @@ struct ActionGRDBTests {
     @Test("Action can be deleted")
     @MainActor
     func actionDelete() async throws {
-        let db = try await DatabaseManager(configuration: .inMemory)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         // Create and save action
         var action = Action(title: "To Delete")
@@ -228,7 +232,7 @@ struct ActionGRDBTests {
     @Test("Action with empty measurements dictionary")
     @MainActor
     func actionEmptyMeasurements() async throws {
-        let db = try await DatabaseManager(configuration: .inMemory)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         var action = Action(
             title: "Empty Measures",
@@ -245,7 +249,7 @@ struct ActionGRDBTests {
     @Test("Action with zero duration")
     @MainActor
     func actionZeroDuration() async throws {
-        let db = try await DatabaseManager(configuration: .inMemory)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         var action = Action(
             title: "Zero Duration",
@@ -261,7 +265,7 @@ struct ActionGRDBTests {
     @Test("Action with very large measurements")
     @MainActor
     func actionLargeMeasurements() async throws {
-        let db = try await DatabaseManager(configuration: .inMemory)
+        let db = try await DatabaseManager(configuration: .temporary)
 
         var action = Action(
             title: "Large Values",

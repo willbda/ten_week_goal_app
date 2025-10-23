@@ -208,17 +208,21 @@ public struct GoalsListView: View {
     
     /// Goals that are current (not overdue and have target dates)
     private func currentGoals(from goals: [Goal]) -> [Goal] {
-        goals.filter { goal in
+        let today = Calendar.current.startOfDay(for: Date())
+        return goals.filter { goal in
             guard let targetDate = goal.targetDate else { return false }
-            return targetDate >= Date()
+            let goalDay = Calendar.current.startOfDay(for: targetDate)
+            return goalDay >= today
         }
     }
-    
+
     /// Goals that are overdue (have target dates in the past)
     private func overdueGoals(from goals: [Goal]) -> [Goal] {
-        goals.filter { goal in
+        let today = Calendar.current.startOfDay(for: Date())
+        return goals.filter { goal in
             guard let targetDate = goal.targetDate else { return false }
-            return targetDate < Date()
+            let goalDay = Calendar.current.startOfDay(for: targetDate)
+            return goalDay < today
         }
     }
     

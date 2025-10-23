@@ -76,6 +76,9 @@ public struct DatabaseConfiguration: Sendable {
 
     /// In-memory database for testing
     ///
+    /// **Note**: WAL mode doesn't work with `:memory:` databases.
+    /// Use `.temporary` instead for tests that need full database features.
+    ///
     /// Uses in-memory SQLite database (`:memory:`).
     /// Still loads schemas from shared/schemas/ directory.
     public static var inMemory: DatabaseConfiguration {
@@ -87,6 +90,31 @@ public struct DatabaseConfiguration: Sendable {
                 .appendingPathComponent("../shared/schemas")
                 .standardized,
             isInMemory: true
+        )
+    }
+
+    /// Temporary file-based database for testing
+    ///
+    /// Creates a temporary SQLite database file that will be cleaned up
+    /// automatically by the system. Supports all database features including
+    /// WAL mode.
+    ///
+    /// Each call creates a new unique temporary database file.
+    public static var temporary: DatabaseConfiguration {
+        // Get project root from FileManager
+        let projectRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+
+        // Create unique temporary database file
+        let tempDir = FileManager.default.temporaryDirectory
+        let uniqueName = "test_\(UUID().uuidString).db"
+        let tempDB = tempDir.appendingPathComponent(uniqueName)
+
+        return DatabaseConfiguration(
+            databasePath: tempDB,
+            schemaDirectory: projectRoot
+                .appendingPathComponent("../shared/schemas")
+                .standardized,
+            isInMemory: false  // File-based, not in-memory
         )
     }
 }

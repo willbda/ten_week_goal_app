@@ -75,6 +75,10 @@ public actor DatabaseManager {
             }
         }
 
+        // Check if database exists BEFORE creating pool (pool creates empty file)
+        let databaseExists = !configuration.isInMemory &&
+                            FileManager.default.fileExists(atPath: configuration.databasePath.path)
+
         // Create database pool (not async in GRDB)
         if configuration.isInMemory {
             // In-memory database for testing
@@ -86,8 +90,6 @@ public actor DatabaseManager {
         }
 
         // Initialize schema if database is new or in-memory
-        let databaseExists = !configuration.isInMemory &&
-                            FileManager.default.fileExists(atPath: configuration.databasePath.path)
         if !databaseExists || configuration.isInMemory {
             try await initializeSchema()
         }
@@ -212,11 +214,11 @@ public actor DatabaseManager {
     ) async throws -> T? {
         do {
             return try await dbPool.read { db in
-                try T.fetchOne(db, sql: "SELECT * FROM \(T.databaseTableName) WHERE id = ?", arguments: [id.uuidString])
+                try T.fetchOne(db, sql: "SELECT * FROM \(T.databaseTableName) WHERE uuid_id = ?", arguments: [id.uuidString])
             }
         } catch {
             throw DatabaseError.queryFailed(
-                sql: "SELECT * FROM \(T.databaseTableName) WHERE id = ?",
+                sql: "SELECT * FROM \(T.databaseTableName) WHERE uuid_id = ?",
                 error: error
             )
         }
@@ -239,14 +241,17 @@ public actor DatabaseManager {
     /// print(action.id) // Now has UUID
     /// ```
     public func save<T: PersistableRecord & TableRecord & Persistable & FetchableRecord & Encodable & Sendable>(_ record: inout T) async throws {
-        // Check if this is a new record (id is default UUID())
-        let isNew = record.id == UUID()
+        // Capture ID before async closure (Swift 6 concurrency requirement)
+        let recordId = record.id
 
-        if isNew {
-            // Generate new ID for new record
-            record.id = UUID()
+        // Check if record exists in database by querying for it
+        let exists = try await dbPool.read { db in
+            let sql = "SELECT COUNT(*) FROM \(T.databaseTableName) WHERE uuid_id = ?"
+            return try Int.fetchOne(db, sql: sql, arguments: [recordId.uuidString]) ?? 0 > 0
+        }
 
-            // Make a copy to capture in async context
+        if !exists {
+            // New record - insert it
             let recordToInsert = record
 
             do {
@@ -261,7 +266,7 @@ public actor DatabaseManager {
                 )
             }
         } else {
-            // Update existing record with archiving
+            // Existing record - update with archiving
             try await update(record, archiveOld: true)
         }
     }
@@ -288,7 +293,8 @@ public actor DatabaseManager {
             try await dbPool.write { db in
                 // Archive old version if requested
                 if archiveOld {
-                    if let oldRecord = try T.fetchOne(db, key: ["id": record.id.uuidString]) {
+                    let sql = "SELECT * FROM \(T.databaseTableName) WHERE uuid_id = ?"
+                    if let oldRecord = try T.fetchOne(db, sql: sql, arguments: [record.id.uuidString]) {
                         try self.archiveRecord(db: db, record: oldRecord, reason: "update", notes: notes)
                     }
                 }
@@ -303,6 +309,40 @@ public actor DatabaseManager {
                 error: error
             )
         }
+    }
+
+    /// Insert or update a record (simplified for immutable types like enums)
+    ///
+    /// This method works with any GRDB-compatible record without requiring
+    /// the Persistable protocol. Useful for enum types with associated values.
+    ///
+    /// - Parameter record: The record to save
+    /// - Throws: DatabaseError if save fails
+    ///
+    /// Example:
+    /// ```swift
+    /// let goal = try Expectation.goal(...)
+    /// try await db.insert(goal)
+    /// ```
+    public func insert<T: PersistableRecord & Sendable>(_ record: T) async throws {
+        try await dbPool.write { db in
+            try record.insert(db)
+        }
+    }
+
+    /// Perform a read-only database operation
+    ///
+    /// Use this to access the database for queries that don't require
+    /// the full DatabaseManager API.
+    ///
+    /// Example:
+    /// ```swift
+    /// let goals = try await db.read { db in
+    ///     try Expectation.fetchByType(db, type: "goal")
+    /// }
+    /// ```
+    public func read<T: Sendable>(_ operation: @Sendable @escaping (Database) throws -> T) async throws -> T {
+        try await dbPool.read(operation)
     }
 
     // MARK: - Delete Operations
@@ -326,8 +366,9 @@ public actor DatabaseManager {
     ) async throws {
         do {
             try await dbPool.write { db in
-                // Fetch record to archive
-                guard let record = try T.fetchOne(db, key: ["id": id.uuidString]) else {
+                // Fetch record to archive using SQL
+                let sql = "SELECT * FROM \(T.databaseTableName) WHERE uuid_id = ?"
+                guard let record = try T.fetchOne(db, sql: sql, arguments: [id.uuidString]) else {
                     throw DatabaseError.recordNotFound(table: T.databaseTableName, id: id)
                 }
 

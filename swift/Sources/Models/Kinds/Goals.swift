@@ -9,6 +9,7 @@
 // Two types: Goal (flexible, can be minimal or SMART) and Milestone (point-in-time checkpoint)
 
 import Foundation
+import GRDB
 
 // MARK: - Goal Struct
 
@@ -25,7 +26,8 @@ import Foundation
 /// - Completable: targetDate, measurementUnit, measurementTarget, startDate
 /// - Polymorphable: polymorphicSubtype
 /// - Motivating: priority, lifeDomain
-public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable, Sendable {
+public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable, Sendable,
+                    FetchableRecord, PersistableRecord, TableRecord {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -73,6 +75,15 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
     // MARK: - Polymorphic Type (Polymorphable)
 
     public var polymorphicSubtype: String { return "goal" }
+
+    // MARK: - GRDB TableRecord
+
+    public static let databaseTableName = "goals"
+
+    /// Configure UUID storage as uppercase string
+    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
+        .uppercaseString
+    }
 
     // MARK: - Codable Mapping
 

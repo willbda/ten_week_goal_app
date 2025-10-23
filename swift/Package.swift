@@ -13,7 +13,7 @@ let package = Package(
         // Shared library for iOS/macOS apps
         .library(
             name: "GoalTrackerKit",
-            targets: ["Models", "Database", "App"]
+            targets: ["Models", "BusinessLogic", "Database", "App"]
         ),
         // Command-line executable for testing
         .executable(
@@ -32,6 +32,12 @@ let package = Package(
                 .product(name: "GRDB", package: "GRDB.swift")
             ],
             path: "Sources/Models"
+        ),
+        // Business logic layer (matching, inference, progress calculations)
+        .target(
+            name: "BusinessLogic",
+            dependencies: ["Models"],
+            path: "Sources/BusinessLogic"
         ),
         // Infrastructure layer (Database operations)
         .target(
@@ -66,7 +72,7 @@ let package = Package(
         // Tests
         .testTarget(
             name: "GoalTrackerTests",
-            dependencies: ["Models", "Database", "App"],
+            dependencies: ["Models", "BusinessLogic", "Database", "App"],
             path: "Tests",
             exclude: [
                 "TestingStrategy.md"

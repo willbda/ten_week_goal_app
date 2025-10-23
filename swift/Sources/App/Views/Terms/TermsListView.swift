@@ -25,8 +25,11 @@ public struct TermsListView: View {
     /// View model for terms management
     @State private var viewModel: TermsViewModel?
 
-    /// Sheet presentation for adding new term
-    @State private var showingAddTerm = false
+    /// Sheet presentation for term form (create or edit)
+    @State private var showingTermForm = false
+
+    /// The term currently being edited (nil = create mode)
+    @State private var termToEdit: GoalTerm?
 
     // MARK: - Body
 
@@ -43,11 +46,39 @@ public struct TermsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    showingAddTerm = true
+                    termToEdit = nil  // Create mode
+                    showingTermForm = true
                 } label: {
                     Label("Add Term", systemImage: "plus")
                 }
                 .disabled(viewModel == nil)
+            }
+        }
+        .sheet(isPresented: $showingTermForm) {
+            if viewModel != nil {
+                TermFormView(
+                    term: termToEdit,
+                    onSave: { term in
+                        Task {
+                            if termToEdit != nil {
+                                // Edit mode - update existing term
+                                await viewModel?.updateTerm(term)
+                            } else {
+                                // Create mode - create new term
+                                await viewModel?.createTerm(term)
+                            }
+                        }
+                        showingTermForm = false
+                        termToEdit = nil
+                    },
+                    onCancel: {
+                        showingTermForm = false
+                        termToEdit = nil
+                    }
+                )
+                #if os(macOS)
+                .frame(minWidth: 600, minHeight: 700)
+                #endif
             }
         }
         .task {
@@ -84,13 +115,19 @@ public struct TermsListView: View {
                 Text("Organize your goals by creating your first 10-week term")
             } actions: {
                 Button("Add Term") {
-                    showingAddTerm = true
+                    termToEdit = nil
+                    showingTermForm = true
                 }
             }
         } else {
             List {
                 ForEach(viewModel.terms) { term in
                     TermRowView(term: term)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            termToEdit = term
+                            showingTermForm = true
+                        }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 Task {
@@ -99,6 +136,15 @@ public struct TermsListView: View {
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                            Button {
+                                termToEdit = term
+                                showingTermForm = true
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            .tint(.blue)
                         }
                 }
             }

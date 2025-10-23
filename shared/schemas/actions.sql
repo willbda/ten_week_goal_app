@@ -3,18 +3,15 @@
 -- Updated 2025-10-18 to use UUID primary key for Swift compatibility
 -- Updated 2025-10-19 to support dual ID system (Python INTEGER + Swift UUID)
 -- Updated 2025-10-21 to migrate Python to use UUID as primary identifier
+-- Updated 2025-10-22 to make uuid_id the PRIMARY KEY for GRDB compatibility
 --
--- Dual ID System (for backward compatibility):
---   - id: INTEGER PRIMARY KEY (auto-increments, legacy, deprecated for Python)
---   - uuid_id: TEXT UNIQUE (PRIMARY IDENTIFIER - both Python and Swift use this now)
---
--- Python now uses uuid_id for all CRUD operations (get_by_uuid, update_by_uuid, delete_by_uuid)
--- INTEGER id column maintained for backward compatibility with legacy code only
+-- Primary Key: uuid_id TEXT (both Python and Swift use this)
+-- Legacy id INTEGER removed - no longer needed for backward compatibility
 --
 -- Inherits from Persistable protocol:
---   - friendly_name: Short identifier (maps to Swift friendlyName)
---   - detailed_description: Optional elaboration (maps to Swift detailedDescription)
---   - freeform_notes: Freeform notes (maps to Swift freeformNotes)
+--   - title: Short identifier (maps to Swift title, Python title)
+--   - description: Optional elaboration (maps to Swift detailedDescription)
+--   - notes: Freeform notes (maps to Swift freeformNotes)
 --   - log_time: When action was logged (maps to Swift logTime)
 --
 -- Action-specific fields:
@@ -22,10 +19,9 @@
 --   - duration_minutes: How long the action took
 --   - start_time: When action started (if tracked)
 
-CREATE TABLE actions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,           -- Python uses this
-    uuid_id TEXT UNIQUE,                            -- Swift uses this (e.g., "550e8400-e29b-41d4-a716-446655440000")
-    title TEXT NOT NULL,                      -- Short identifier (e.g., "Morning run")
+CREATE TABLE IF NOT EXISTS actions (
+    uuid_id TEXT PRIMARY KEY,                       -- PRIMARY KEY (e.g., "550e8400-e29b-41d4-a716-446655440000")
+    title TEXT,                                     -- Short identifier (e.g., "Morning run")
     description TEXT,                               -- Optional elaboration
     notes TEXT,                                     -- Freeform notes
     log_time TEXT NOT NULL,                         -- When logged (ISO format)
@@ -33,6 +29,3 @@ CREATE TABLE actions (
     start_time TEXT,                                -- When action started (ISO format)
     duration_minutes REAL                           -- Duration in minutes
 );
-
--- Index for Swift UUID lookups
-CREATE INDEX idx_actions_uuid ON actions(uuid_id);

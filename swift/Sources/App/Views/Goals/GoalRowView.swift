@@ -59,14 +59,16 @@ struct GoalRowView: View {
                 // Target date and progress
                 HStack {
                     if let targetDate = goal.targetDate {
+                        let isOverdue = Calendar.current.startOfDay(for: targetDate) < Calendar.current.startOfDay(for: Date())
+
                         Label {
                             Text(targetDate, style: .date)
                         } icon: {
-                            Image(systemName: targetDate < Date() ? "clock.badge.exclamationmark" : "clock")
-                                .foregroundStyle(targetDate < Date() ? .red : .secondary)
+                            Image(systemName: isOverdue ? "clock.badge.exclamationmark" : "clock")
+                                .foregroundStyle(isOverdue ? .red : .secondary)
                         }
                         .font(.caption)
-                        .foregroundStyle(targetDate < Date() ? .red : .secondary)
+                        .foregroundStyle(isOverdue ? .red : .secondary)
                     }
                     
                     Spacer()

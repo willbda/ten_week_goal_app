@@ -68,6 +68,15 @@ public struct Action: Persistable, Doable, Codable, Sendable, FetchableRecord, P
     /// TableRecord conformance - specify database table name
     public static let databaseTableName = "actions"
 
+    /// Configure UUID storage as uppercase string (matches TEXT column in database)
+    ///
+    /// By default, GRDB stores UUIDs as 16-byte blobs. Our schema uses TEXT PRIMARY KEY,
+    /// so we need to store UUIDs as strings. This makes update(), delete(), and fetchOne()
+    /// operations work correctly.
+    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
+        .uppercaseString
+    }
+
     // MARK: - Initialization
 
     /// Create a new action with required and optional fields
