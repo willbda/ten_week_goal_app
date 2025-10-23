@@ -30,8 +30,8 @@ import SwiftUI
 /// `@MainActor` can be removed as it will be inferred automatically.
 ///
 /// See: https://www.donnywals.com/exploring-concurrency-changes-in-swift-6-2/
-@MainActor
 @Observable
+@MainActor
 final class ZoomManager {
     static let shared = ZoomManager()
 
