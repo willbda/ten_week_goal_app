@@ -36,6 +36,12 @@ public struct ActionsListView: View {
     /// Active goals for quick add section
     @State private var activeGoals: [Goal] = []
 
+    /// Mapping of action ID → contributing goals
+    @State private var actionGoals: [UUID: [Goal]] = [:]
+
+    /// Sheet presentation for bulk matching view
+    @State private var showingBulkMatching = false
+
     // MARK: - Form State Wrapper
 
     /// Wrapper for action form presentation state
@@ -58,6 +64,15 @@ public struct ActionsListView: View {
         }
         .navigationTitle("Actions")
         .toolbar {
+            ToolbarItem(placement: .secondaryAction) {
+                Button {
+                    showingBulkMatching = true
+                } label: {
+                    Label("Match to Goals", systemImage: "link.circle")
+                }
+                .disabled(viewModel == nil)
+            }
+
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     actionFormState = ActionFormState(action: nil, mode: .create)
@@ -81,6 +96,8 @@ public struct ActionsListView: View {
                                 // Create mode - create new action
                                 await viewModel.createAction(action)
                             }
+                            // Reload action-goal mappings after save
+                            await loadActionGoals()
                         }
                         actionFormState = nil
                     },
@@ -90,12 +107,21 @@ public struct ActionsListView: View {
                 )
             }
         }
+        .sheet(isPresented: $showingBulkMatching, onDismiss: {
+            // Reload action-goal mappings when bulk matching is dismissed
+            Task {
+                await loadActionGoals()
+            }
+        }) {
+            BulkMatchingView()
+        }
         .task {
             // Initialize view model when view appears
             if let database = appViewModel.databaseManager {
                 viewModel = ActionsViewModel(database: database)
                 await viewModel?.loadActions()
                 await loadActiveGoals()
+                await loadActionGoals()
             }
         }
     }
@@ -145,7 +171,7 @@ public struct ActionsListView: View {
                 // All Actions section
                 Section("All Actions") {
                 ForEach(viewModel.actions) { action in
-                    ActionRowView(action: action)
+                    ActionRowView(action: action, goals: actionGoals[action.id] ?? [])
                         .contentShape(Rectangle())
                         .onTapGesture {
                             // Click to edit (works with mouse on macOS)
@@ -205,6 +231,7 @@ public struct ActionsListView: View {
             .refreshable {
                 await viewModel.loadActions()
                 await loadActiveGoals()
+                await loadActionGoals()
             }
         }
     }
@@ -232,6 +259,35 @@ public struct ActionsListView: View {
             .map { $0 }
         } catch {
             print("❌ Failed to load active goals: \(error)")
+        }
+    }
+
+    /// Load action-goal mappings for display
+    ///
+    /// For each action, fetches its relationships and resolves them to Goal objects.
+    /// Populates actionGoals dictionary for display in ActionRowView.
+    private func loadActionGoals() async {
+        guard let database = appViewModel.databaseManager,
+              let viewModel = viewModel else { return }
+
+        do {
+            // Fetch all goals once
+            let allGoals = try await database.fetchGoals()
+            let goalsById = Dictionary(uniqueKeysWithValues: allGoals.map { ($0.id, $0) })
+
+            // Clear previous mappings
+            actionGoals.removeAll()
+
+            // For each action, fetch its relationships and resolve to goals
+            for action in viewModel.actions {
+                let relationships = try await database.fetchRelationships(forAction: action.id)
+                let goals = relationships.compactMap { goalsById[$0.goalId] }
+                if !goals.isEmpty {
+                    actionGoals[action.id] = goals
+                }
+            }
+        } catch {
+            print("❌ Failed to load action-goal mappings: \(error)")
         }
     }
 

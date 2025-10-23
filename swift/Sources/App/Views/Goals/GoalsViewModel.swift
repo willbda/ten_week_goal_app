@@ -109,16 +109,16 @@ final class GoalsViewModel {
 
     /// Delete goal
     /// - Parameter goal: Goal to delete
-    ///
-    /// Note: This may need to be implemented when delete functionality
-    /// is added to DatabaseManager for goals.
     func deleteGoal(_ goal: Goal) async {
-        // TODO: Implement when database delete method is available
-        print("⚠️ Delete goal not yet implemented in database")
-        self.error = NSError(
-            domain: "GoalsViewModel",
-            code: 1001,
-            userInfo: [NSLocalizedDescriptionKey: "Delete goal functionality not yet implemented"]
-        )
+        do {
+            // Delete goal from database
+            try await database.deleteGoal(goal)
+
+            // Reload to get updated list
+            await loadGoals()
+        } catch {
+            self.error = error
+            print("❌ Failed to delete goal: \(error)")
+        }
     }
 }

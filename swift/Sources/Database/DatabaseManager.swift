@@ -79,14 +79,18 @@ public actor DatabaseManager {
         let databaseExists = !configuration.isInMemory &&
                             FileManager.default.fileExists(atPath: configuration.databasePath.path)
 
+        // Create database pool configuration with foreign keys enabled
+        var dbConfig = Configuration()
+        dbConfig.foreignKeysEnabled = true  // CRITICAL: Enable foreign key constraints
+
         // Create database pool (not async in GRDB)
         if configuration.isInMemory {
             // In-memory database for testing
             // GRDB uses ":memory:" special path for in-memory databases
-            self.dbPool = try DatabasePool(path: ":memory:")
+            self.dbPool = try DatabasePool(path: ":memory:", configuration: dbConfig)
         } else {
             // File-based database for production
-            self.dbPool = try DatabasePool(path: configuration.databasePath.path)
+            self.dbPool = try DatabasePool(path: configuration.databasePath.path, configuration: dbConfig)
         }
 
         // Initialize schema if database is new or in-memory
@@ -698,12 +702,11 @@ public actor DatabaseManager {
         }
     }
 
-    /// Save a new Action to database (INSERT only)
+    /// Save an Action to database (INSERT or UPDATE)
     ///
-    /// Converts domain Action to ActionRecord, inserts into database.
-    /// Database will auto-generate INTEGER id.
-    ///
-    /// **Limitation**: Cannot update existing actions (no UUID→Int mapping)
+    /// Uses Action's direct GRDB conformance to save. GRDB will:
+    /// - INSERT if uuid_id doesn't exist
+    /// - UPDATE if uuid_id already exists
     ///
     /// - Parameter action: Action domain model to save
     /// - Throws: DatabaseError.writeFailed
@@ -716,14 +719,11 @@ public actor DatabaseManager {
     public func saveAction(_ action: Action) async throws {
         do {
             try await dbPool.write { db in
-                let record = action.toRecord()
-                try record.insert(db)
-                // Note: record.id now has database-generated INTEGER id,
-                // but we can't propagate it back to domain Action (UUID mismatch)
+                try action.save(db)
             }
         } catch {
             throw DatabaseError.writeFailed(
-                operation: "INSERT",
+                operation: "SAVE",
                 table: "actions",
                 error: error
             )
@@ -839,6 +839,36 @@ public actor DatabaseManager {
         }
     }
 
+    /// Delete a Goal by UUID
+    ///
+    /// Deletes goal directly using its uuid_id PRIMARY KEY.
+    /// Archiving is not yet implemented for goals.
+    ///
+    /// - Parameter goal: Goal domain model to delete
+    /// - Throws: DatabaseError if goal not found or delete fails
+    ///
+    /// Example:
+    /// ```swift
+    /// try await db.deleteGoal(goal)
+    /// ```
+    public func deleteGoal(_ goal: Goal) async throws {
+        do {
+            try await dbPool.write { db in
+                // Delete using uuid_id (PRIMARY KEY)
+                try db.execute(
+                    sql: "DELETE FROM goals WHERE uuid_id = ?",
+                    arguments: [goal.id.uuidString.uppercased()]
+                )
+            }
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "DELETE",
+                table: "goals",
+                error: error
+            )
+        }
+    }
+
     /// Delete a Term by UUID
     ///
     /// Uses UUID→Int64 mapping to find database record and delete it.
@@ -886,6 +916,143 @@ public actor DatabaseManager {
             throw DatabaseError.writeFailed(
                 operation: "DELETE",
                 table: "terms",
+                error: error
+            )
+        }
+    }
+
+    // MARK: - Action-Goal Relationship Operations
+
+    /// Fetch all action-goal relationships for a specific action
+    ///
+    /// Returns all goals that this action contributes to, along with contribution
+    /// amount, match method, and confidence scores.
+    ///
+    /// - Parameter actionId: UUID of the action
+    /// - Returns: Array of ActionGoalRelationship objects
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let relationships = try await db.fetchRelationships(forAction: action.id)
+    /// for rel in relationships {
+    ///     print("Contributes \(rel.contribution) to goal \(rel.goalId)")
+    /// }
+    /// ```
+    public func fetchRelationships(forAction actionId: UUID) async throws -> [ActionGoalRelationship] {
+        try await fetch(
+            ActionGoalRelationship.self,
+            sql: "SELECT * FROM action_goal_progress WHERE action_id = ?",
+            arguments: [actionId.uuidString]
+        )
+    }
+
+    /// Fetch all action-goal relationships for a specific goal
+    ///
+    /// Returns all actions that contribute to this goal.
+    ///
+    /// - Parameter goalId: UUID of the goal
+    /// - Returns: Array of ActionGoalRelationship objects
+    /// - Throws: DatabaseError.queryFailed
+    public func fetchRelationships(forGoal goalId: UUID) async throws -> [ActionGoalRelationship] {
+        try await fetch(
+            ActionGoalRelationship.self,
+            sql: "SELECT * FROM action_goal_progress WHERE goal_id = ?",
+            arguments: [goalId.uuidString]
+        )
+    }
+
+    /// Fetch all action-goal relationships
+    ///
+    /// - Returns: Array of all ActionGoalRelationship objects
+    /// - Throws: DatabaseError.queryFailed
+    public func fetchAllRelationships() async throws -> [ActionGoalRelationship] {
+        try await fetchAll()
+    }
+
+    /// Save an action-goal relationship
+    ///
+    /// Creates a new relationship between an action and a goal, or updates existing.
+    /// Uses the UNIQUE(action_id, goal_id) constraint to prevent duplicates.
+    ///
+    /// - Parameter relationship: ActionGoalRelationship to save
+    /// - Throws: DatabaseError.writeFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let relationship = ActionGoalRelationship(
+    ///     actionId: action.id,
+    ///     goalId: goal.id,
+    ///     contribution: 5.0,
+    ///     matchMethod: .manual,
+    ///     confidence: 1.0,
+    ///     matchedOn: []
+    /// )
+    /// try await db.saveRelationship(relationship)
+    /// ```
+    public func saveRelationship(_ relationship: ActionGoalRelationship) async throws {
+        do {
+            try await dbPool.write { db in
+                // Use insert(onConflict: .replace) to handle UNIQUE constraint
+                try relationship.insert(db, onConflict: .replace)
+            }
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "SAVE",
+                table: "action_goal_progress",
+                error: error
+            )
+        }
+    }
+
+    /// Delete an action-goal relationship
+    ///
+    /// Removes the link between an action and a goal.
+    ///
+    /// - Parameters:
+    ///   - actionId: UUID of the action
+    ///   - goalId: UUID of the goal
+    /// - Throws: DatabaseError.writeFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// try await db.deleteRelationship(actionId: action.id, goalId: goal.id)
+    /// ```
+    public func deleteRelationship(actionId: UUID, goalId: UUID) async throws {
+        do {
+            try await dbPool.write { db in
+                try db.execute(
+                    sql: "DELETE FROM action_goal_progress WHERE action_id = ? AND goal_id = ?",
+                    arguments: [actionId.uuidString, goalId.uuidString]
+                )
+            }
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "DELETE",
+                table: "action_goal_progress",
+                error: error
+            )
+        }
+    }
+
+    /// Delete all relationships for an action
+    ///
+    /// Removes all goal associations for the specified action.
+    ///
+    /// - Parameter actionId: UUID of the action
+    /// - Throws: DatabaseError.writeFailed
+    public func deleteAllRelationships(forAction actionId: UUID) async throws {
+        do {
+            try await dbPool.write { db in
+                try db.execute(
+                    sql: "DELETE FROM action_goal_progress WHERE action_id = ?",
+                    arguments: [actionId.uuidString]
+                )
+            }
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "DELETE",
+                table: "action_goal_progress",
                 error: error
             )
         }

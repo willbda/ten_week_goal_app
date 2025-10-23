@@ -135,6 +135,9 @@ struct ActionFormView: View {
             }
         }
         .presentationBackground(DesignSystem.Materials.modal)
+        .task {
+            await loadGoals()
+        }
     }
 
     // MARK: - Sections
@@ -218,7 +221,86 @@ struct ActionFormView: View {
         }
     }
 
+    private var goalsSection: some View {
+        Section {
+            if isLoadingGoals {
+                HStack {
+                    ProgressView()
+                    Text("Loading goals...")
+                        .foregroundStyle(.secondary)
+                }
+            } else if availableGoals.isEmpty {
+                Text("No goals available")
+                    .foregroundStyle(.secondary)
+                    .italic()
+            } else {
+                ForEach(availableGoals) { goal in
+                    Button {
+                        toggleGoalSelection(goal.id)
+                    } label: {
+                        HStack {
+                            Image(systemName: selectedGoalIds.contains(goal.id) ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(selectedGoalIds.contains(goal.id) ? DesignSystem.Colors.goals : .secondary)
+
+                            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxs) {
+                                Text(goal.title ?? "Untitled Goal")
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+
+                                if let unit = goal.measurementUnit, let target = goal.measurementTarget {
+                                    Text("\(Int(target)) \(unit)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        } header: {
+            Text("Contributing To")
+        } footer: {
+            if !selectedGoalIds.isEmpty {
+                Text("This action contributes to \(selectedGoalIds.count) goal(s)")
+            } else {
+                Text("Select which goals this action contributes to")
+            }
+        }
+    }
+
     // MARK: - Actions
+
+    private func toggleGoalSelection(_ goalId: UUID) {
+        if selectedGoalIds.contains(goalId) {
+            selectedGoalIds.remove(goalId)
+        } else {
+            selectedGoalIds.insert(goalId)
+        }
+    }
+
+    private func loadGoals() async {
+        guard let database = appViewModel.databaseManager else { return }
+
+        isLoadingGoals = true
+        defer { isLoadingGoals = false }
+
+        do {
+            // Load all available goals
+            availableGoals = try await database.fetchGoals()
+
+            // If editing, load existing relationships
+            if let action = actionToEdit {
+                let relationships = try await database.fetchRelationships(forAction: action.id)
+                selectedGoalIds = Set(relationships.map { $0.goalId })
+            }
+        } catch {
+            print("❌ Failed to load goals: \(error)")
+        }
+    }
 
     private func saveAction() {
         // Build measurements dictionary
@@ -241,7 +323,41 @@ struct ActionFormView: View {
             id: actionToEdit?.id ?? UUID()  // Preserve ID when editing
         )
 
+        // Save action-goal relationships
+        Task {
+            await saveRelationships(for: action)
+        }
+
         onSave(action)
+    }
+
+    private func saveRelationships(for action: Action) async {
+        guard let database = appViewModel.databaseManager else { return }
+
+        do {
+            // First, delete all existing relationships for this action
+            try await database.deleteAllRelationships(forAction: action.id)
+
+            // Then create new relationships for selected goals
+            for goalId in selectedGoalIds {
+                // TODO: Calculate actual contribution based on measurements and goal unit
+                // For now, use 1.0 as default contribution
+                let relationship = ActionGoalRelationship(
+                    id: UUID(),
+                    actionId: action.id,
+                    goalId: goalId,
+                    contribution: 1.0,  // TODO: Calculate from measurements
+                    matchMethod: .manual,
+                    confidence: 1.0,
+                    matchedOn: [],
+                    createdAt: Date()
+                )
+
+                try await database.saveRelationship(relationship)
+            }
+        } catch {
+            print("❌ Failed to save relationships: \(error)")
+        }
     }
 }
 
