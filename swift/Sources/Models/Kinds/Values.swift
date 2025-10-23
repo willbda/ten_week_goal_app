@@ -9,6 +9,7 @@
 // They provide context for evaluating alignment between actions and what matters.
 
 import Foundation
+import GRDB
 
 // MARK: - PriorityLevel Value Type
 
@@ -101,7 +102,8 @@ public struct Incentives: Persistable, Polymorphable, Motivating, Codable, Senda
 ///
 /// Values are general incentives - things you affirm as important without
 /// necessarily tracking them daily. Example: "Creativity", "Integrity"
-public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable {
+public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable,
+                      TableRecord, FetchableRecord, PersistableRecord {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -132,6 +134,21 @@ public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable 
         case lifeDomain = "life_domain"
         // polymorphicSubtype is computed, returns type string
     }
+
+    // MARK: - GRDB TableRecord
+
+    public static let databaseTableName = "personal_values"
+
+    /// Use centralized UUID encoding strategy (UPPERCASE)
+    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
+        EntityUUIDEncoding.strategy
+    }
+
+    /// Handle INSERT conflicts by replacing the existing record
+    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
+        insert: .replace,
+        update: .replace
+    )
 
     // MARK: - Initialization
 

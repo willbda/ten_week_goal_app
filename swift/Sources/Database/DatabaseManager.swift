@@ -48,9 +48,6 @@ public actor DatabaseManager {
     /// Configuration used to initialize this manager
     public let configuration: DatabaseConfiguration
 
-    /// UUID mapper for stable ID conversion (INTEGER ↔ UUID)
-    public let uuidMapper: UUIDMapper
-
     // MARK: - Initialization
 
     /// Initialize database manager with configuration
@@ -61,7 +58,6 @@ public actor DatabaseManager {
     /// - Throws: DatabaseError if initialization fails
     public init(configuration: DatabaseConfiguration = .default) async throws {
         self.configuration = configuration
-        self.uuidMapper = UUIDMapper()  // Initialize UUID mapper
 
         // Ensure database directory exists (skip for in-memory)
         if !configuration.isInMemory {
@@ -147,6 +143,56 @@ public actor DatabaseManager {
                     )
                 }
             }
+        }
+    }
+
+    /// Ensure conversation_history table exists (migration for existing databases)
+    ///
+    /// This method checks if the conversation_history table exists and creates it
+    /// if missing. Safe to call multiple times (idempotent).
+    ///
+    /// This is used for migrating existing databases that don't have the AI
+    /// assistant feature yet. New databases get this table through normal
+    /// schema initialization.
+    ///
+    /// - Throws: DatabaseError if table creation fails
+    public func ensureConversationHistoryTable() async throws {
+        try await dbPool.write { db in
+            // Check if table already exists
+            let tableExists = try db.tableExists("conversation_history")
+
+            if !tableExists {
+                // Load conversation_history.sql schema
+                let schemaPath = configuration.schemaDirectory
+                    .appendingPathComponent("conversation_history.sql")
+
+                guard FileManager.default.fileExists(atPath: schemaPath.path) else {
+                    throw DatabaseError.schemaInitializationFailed(
+                        schemaFile: "conversation_history.sql",
+                        error: NSError(domain: "DatabaseManager", code: 2,
+                                     userInfo: [NSLocalizedDescriptionKey: "Schema file not found"])
+                    )
+                }
+
+                let sql = try String(contentsOf: schemaPath, encoding: .utf8)
+                try db.execute(sql: sql)
+            }
+        }
+    }
+
+    /// Save any GRDB PersistableRecord (generic version)
+    ///
+    /// This works with any type conforming to GRDB's PersistableRecord,
+    /// not just types conforming to our domain Persistable protocol.
+    ///
+    /// - Parameter record: The record to save (insert or update)
+    /// - Returns: The saved record (with any database-generated values)
+    /// - Throws: DatabaseError.writeFailed
+    public func saveRecord<T: PersistableRecord & Sendable>(_ record: T) async throws -> T {
+        return try await dbPool.write { db in
+            var mutableRecord = record
+            try mutableRecord.save(db)
+            return mutableRecord
         }
     }
 
@@ -452,7 +498,7 @@ public actor DatabaseManager {
     /// - Throws: GRDB errors if archive insert fails
     private nonisolated func archiveActionRecord(
         db: Database,
-        record: ActionRecord,
+        record: Action,
         reason: String,
         notes: String
     ) throws {
@@ -475,7 +521,7 @@ public actor DatabaseManager {
 
     private nonisolated func archiveTermRecord(
         db: Database,
-        record: TermRecord,
+        record: GoalTerm,
         reason: String,
         notes: String
     ) throws {
@@ -522,15 +568,8 @@ public actor DatabaseManager {
     /// ```
     public func fetchGoals() async throws -> [Goal] {
         do {
-            return try await dbPool.write { db in
-                try GoalRecord.fetchAll(db).map { record in
-                    var goal = record.toDomain()
-                    // Replace random UUID with stable mapped UUID
-                    if let dbId = record.id {
-                        goal.id = try uuidMapper.uuid(for: "goals", databaseId: dbId, in: db)
-                    }
-                    return goal
-                }
+            return try await dbPool.read { db in
+                try Goal.fetchAll(db)
             }
         } catch {
             throw DatabaseError.queryFailed(
@@ -564,15 +603,8 @@ public actor DatabaseManager {
     /// ```
     public func fetchActions() async throws -> [Action] {
         do {
-            return try await dbPool.write { db in
-                try ActionRecord.fetchAll(db).map { record in
-                    var action = record.toDomain()
-                    // Replace random UUID with stable mapped UUID
-                    if let dbId = record.id {
-                        action.id = try uuidMapper.uuid(for: "actions", databaseId: dbId, in: db)
-                    }
-                    return action
-                }
+            return try await dbPool.read { db in
+                try Action.fetchAll(db)
             }
         } catch {
             throw DatabaseError.queryFailed(
@@ -597,7 +629,8 @@ public actor DatabaseManager {
         do {
             return try await dbPool.read { db in
                 let sql = "SELECT * FROM personal_values WHERE incentive_type = 'major'"
-                return try ValueRecord.fetchAll(db, sql: sql).map { $0.toMajorValues() }
+                // TODO: Add direct GRDB conformance to Values
+                return []  // Temporarily return empty array
             }
         } catch {
             throw DatabaseError.queryFailed(
@@ -622,7 +655,8 @@ public actor DatabaseManager {
         do {
             return try await dbPool.read { db in
                 let sql = "SELECT * FROM personal_values WHERE incentive_type = 'highest_order'"
-                return try ValueRecord.fetchAll(db, sql: sql).map { $0.toHighestOrderValues() }
+                // TODO: Add direct GRDB conformance to Values
+                return []  // Temporarily return empty array
             }
         } catch {
             throw DatabaseError.queryFailed(
@@ -646,8 +680,7 @@ public actor DatabaseManager {
     public func fetchGeneralValues() async throws -> [Values] {
         do {
             return try await dbPool.read { db in
-                let sql = "SELECT * FROM personal_values WHERE incentive_type = 'general'"
-                return try ValueRecord.fetchAll(db, sql: sql).map { $0.toValues() }
+                try Values.filter(sql: "incentive_type = 'general'").fetchAll(db)
             }
         } catch {
             throw DatabaseError.queryFailed(
@@ -672,7 +705,8 @@ public actor DatabaseManager {
         do {
             return try await dbPool.read { db in
                 let sql = "SELECT * FROM personal_values WHERE incentive_type = 'life_area'"
-                return try ValueRecord.fetchAll(db, sql: sql).map { $0.toLifeAreas() }
+                // TODO: Add direct GRDB conformance to Values
+                return []  // Temporarily return empty array
             }
         } catch {
             throw DatabaseError.queryFailed(
@@ -700,7 +734,7 @@ public actor DatabaseManager {
     public func fetchTerms() async throws -> [GoalTerm] {
         do {
             return try await dbPool.read { db in
-                try TermRecord.fetchAll(db).map { $0.toDomain() }
+                try GoalTerm.fetchAll(db)
             }
         } catch {
             throw DatabaseError.queryFailed(
@@ -738,12 +772,10 @@ public actor DatabaseManager {
         }
     }
 
-    /// Save a new Goal to database (INSERT only)
+    /// Save a Goal to the database
     ///
-    /// Converts domain Goal to GoalRecord, inserts into database.
-    /// Database will auto-generate INTEGER id.
-    ///
-    /// **Limitation**: Cannot update existing goals (no UUID→Int mapping)
+    /// Uses direct GRDB conformance - Goal conforms to PersistableRecord.
+    /// GRDB's persistenceConflictPolicy handles INSERT OR REPLACE automatically.
     ///
     /// - Parameter goal: Goal domain model to save
     /// - Throws: DatabaseError.writeFailed
@@ -756,8 +788,7 @@ public actor DatabaseManager {
     public func saveGoal(_ goal: Goal) async throws {
         do {
             try await dbPool.write { db in
-                let record = goal.toRecord()
-                try record.save(db)  // Use save() instead of insert() to handle both create and update
+                try goal.save(db)  // Direct GRDB save - handles INSERT/UPDATE via persistenceConflictPolicy
             }
         } catch {
             throw DatabaseError.writeFailed(
@@ -783,12 +814,11 @@ public actor DatabaseManager {
     public func saveTerm(_ term: GoalTerm) async throws {
         do {
             try await dbPool.write { db in
-                let record = term.toRecord()
-                try record.insert(db)
+                try term.save(db)  // Direct GRDB save - handles INSERT/UPDATE via persistenceConflictPolicy
             }
         } catch {
             throw DatabaseError.writeFailed(
-                operation: "INSERT",
+                operation: "SAVE",
                 table: "terms",
                 error: error
             )
@@ -810,34 +840,8 @@ public actor DatabaseManager {
     public func deleteAction(_ action: Action) async throws {
         do {
             try await dbPool.write { db in
-                // Look up database ID from UUID
-                guard let databaseId = try uuidMapper.databaseId(
-                    for: action.id,
-                    entityType: "actions",
-                    in: db
-                ) else {
-                    throw DatabaseError.recordNotFound(table: "actions", id: action.id)
-                }
-
-                // Fetch the record to archive
-                guard let record = try ActionRecord.fetchOne(db, key: ["id": databaseId]) else {
-                    throw DatabaseError.recordNotFound(table: "actions", id: action.id)
-                }
-
-                // Archive the database record (not domain model)
-                try archiveActionRecord(db: db, record: record, reason: "delete", notes: "Deleted from UI")
-
-                // Then delete the database record
-                try db.execute(sql: "DELETE FROM actions WHERE id = ?", arguments: [databaseId])
-
-                // Delete UUID mapping
-                try db.execute(
-                    sql: "DELETE FROM uuid_mappings WHERE entity_type = ? AND database_id = ?",
-                    arguments: ["actions", databaseId]
-                )
+                try action.delete(db)  // Direct GRDB delete using uuid_id PRIMARY KEY
             }
-        } catch let error as DatabaseError {
-            throw error
         } catch {
             throw DatabaseError.writeFailed(
                 operation: "DELETE",
@@ -849,7 +853,7 @@ public actor DatabaseManager {
 
     /// Delete a Goal by UUID
     ///
-    /// Deletes goal directly using its uuid_id PRIMARY KEY.
+    /// Uses direct GRDB conformance - Goal.delete(db) uses uuid_id PRIMARY KEY.
     /// Archiving is not yet implemented for goals.
     ///
     /// - Parameter goal: Goal domain model to delete
@@ -862,11 +866,7 @@ public actor DatabaseManager {
     public func deleteGoal(_ goal: Goal) async throws {
         do {
             try await dbPool.write { db in
-                // Delete using uuid_id (PRIMARY KEY)
-                try db.execute(
-                    sql: "DELETE FROM goals WHERE uuid_id = ?",
-                    arguments: [goal.id.uuidString.uppercased()]
-                )
+                try goal.delete(db)  // Direct GRDB delete using uuid_id PRIMARY KEY
             }
         } catch {
             throw DatabaseError.writeFailed(
@@ -892,34 +892,8 @@ public actor DatabaseManager {
     public func deleteTerm(_ term: GoalTerm) async throws {
         do {
             try await dbPool.write { db in
-                // Look up database ID from UUID
-                guard let databaseId = try uuidMapper.databaseId(
-                    for: term.id,
-                    entityType: "terms",
-                    in: db
-                ) else {
-                    throw DatabaseError.recordNotFound(table: "terms", id: term.id)
-                }
-
-                // Fetch the record to archive
-                guard let record = try TermRecord.fetchOne(db, key: ["id": databaseId]) else {
-                    throw DatabaseError.recordNotFound(table: "terms", id: term.id)
-                }
-
-                // Archive the database record
-                try archiveTermRecord(db: db, record: record, reason: "delete", notes: "Deleted from UI")
-
-                // Then delete the database record
-                try db.execute(sql: "DELETE FROM terms WHERE id = ?", arguments: [databaseId])
-
-                // Delete UUID mapping
-                try db.execute(
-                    sql: "DELETE FROM uuid_mappings WHERE entity_type = ? AND database_id = ?",
-                    arguments: ["terms", databaseId]
-                )
+                try term.delete(db)  // Direct GRDB delete using uuid_id PRIMARY KEY
             }
-        } catch let error as DatabaseError {
-            throw error
         } catch {
             throw DatabaseError.writeFailed(
                 operation: "DELETE",

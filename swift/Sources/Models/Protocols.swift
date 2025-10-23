@@ -7,6 +7,7 @@
 //  Used by: Action, Goal, GoalTerm, Values, etc.
 
 import Foundation
+import GRDB
 
 // MARK: - Core Ontology: "Ways of Being"
 
@@ -163,6 +164,32 @@ public extension Persistable {
     static func == (lhs: Self, rhs: Self) -> Bool {
         return lhs.id == rhs.id
     }
+}
+
+// MARK: - GRDB UUID Configuration
+
+/// Universal UUID encoding strategy for all entities
+///
+/// **Centralized Configuration:** Single source of truth for UUID encoding.
+/// All entities should use this constant in their `databaseUUIDEncodingStrategy` implementation.
+///
+/// **Why UPPERCASE:**
+/// - Matches Swift's UUID().uuidString default format
+/// - Ensures case-consistent foreign key relationships
+/// - Prevents "duplicate UUID" errors from case mismatches
+/// - SQLite is case-sensitive for TEXT columns in WHERE clauses
+///
+/// **Usage:**
+/// ```swift
+/// public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
+///     EntityUUIDEncoding.strategy
+/// }
+/// ```
+///
+/// Written by Claude Code on 2025-10-23
+public enum EntityUUIDEncoding {
+    /// Universal UUID encoding strategy: UPPERCASE strings
+    public static let strategy: DatabaseUUIDEncodingStrategy = .uppercaseString
 }
 
 // MARK: - Design Notes

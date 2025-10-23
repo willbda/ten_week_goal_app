@@ -3,8 +3,10 @@
 //
 // Written by Claude Code on 2025-10-19
 // Refactored by Claude Code on 2025-10-20 for macOS NavigationSplitView
+// Updated by Claude Code on 2025-10-23 for AI Assistant integration
 
 import SwiftUI
+import BusinessLogic
 
 /// Root application view
 /// Uses NavigationSplitView for persistent sidebar access.
@@ -14,12 +16,15 @@ public struct ContentView: View {
 
     /// Main navigation sections
     enum Section: String, CaseIterable, Identifiable {
-        case actions, goals, values, terms
+        case actions, goals, values, terms, assistant
 
         var id: String { rawValue }
 
         var title: String {
-            rawValue.capitalized
+            switch self {
+            case .assistant: return "AI Assistant"
+            default: return rawValue.capitalized
+            }
         }
 
         var subtitle: String {
@@ -28,6 +33,7 @@ public struct ContentView: View {
             case .goals: return "10-week objectives and milestones"
             case .values: return "Stable principles"
             case .terms: return "Goal-setting periods"
+            case .assistant: return "Reflect on your journey"
             }
         }
 
@@ -37,6 +43,7 @@ public struct ContentView: View {
             case .goals: return "pencil.and.scribble"
             case .values: return "heart"
             case .terms: return "calendar"
+            case .assistant: return "wand.and.stars"
             }
         }
 
@@ -46,6 +53,7 @@ public struct ContentView: View {
             case .goals: return .orange.opacity(0.8)
             case .values: return .blue.opacity(0.8)
             case .terms: return .purple.opacity(0.8)
+            case .assistant: return .indigo.opacity(0.8)
             }
         }
     }
@@ -55,6 +63,7 @@ public struct ContentView: View {
     @State private var selectedSection: Section? = .actions
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     @Namespace private var sidebarAnimation
+    @State private var aiAvailability = AIAssistantAvailability.shared
 
     // MARK: - Initialization
 
@@ -97,6 +106,11 @@ public struct ContentView: View {
 
                 Button("Terms") { selectedSection = .terms }
                     .keyboardShortcut("4", modifiers: .command)
+
+                if aiAvailability.isAvailable {
+                    Button("AI Assistant") { selectedSection = .assistant }
+                        .keyboardShortcut("5", modifiers: .command)
+                }
             }
             .hidden()
         }
@@ -133,7 +147,12 @@ public struct ContentView: View {
                 // Show text only when there's enough room (threshold scales with zoom)
                 let showText = width > 100 * zoom
 
-                List(Section.allCases, selection: $selectedSection) { section in
+                // Filter sections based on AI availability
+                let visibleSections = Section.allCases.filter { section in
+                    section != .assistant || aiAvailability.isAvailable
+                }
+
+                List(visibleSections, selection: $selectedSection) { section in
                     NavigationLink(value: section) {
                         HStack(spacing: spacing) {
                             // Icon with morphing container (matched geometry effect)
@@ -221,6 +240,7 @@ public struct ContentView: View {
         case .goals: return nil
         case .values: return nil
         case .terms: return nil
+        case .assistant: return nil
         }
     }
 
@@ -238,6 +258,8 @@ public struct ContentView: View {
                 ValuesListView()
             case .terms:
                 TermsListView()
+            case .assistant:
+                AssistantChatView()
             }
         } else {
             welcomeView

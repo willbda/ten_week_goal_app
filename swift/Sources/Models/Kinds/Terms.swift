@@ -9,6 +9,7 @@
 // Terms provide temporal scaffolding for goals and rhythmic reflection points.
 
 import Foundation
+import GRDB
 
 // MARK: - Constants
 
@@ -27,7 +28,8 @@ public let DAYS_PER_YEAR = 365.25
 ///
 /// Business logic methods (isActive, daysRemaining, progressPercentage)
 /// are provided via extensions in ModelExtensions.swift
-public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable {
+public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable,
+                        TableRecord, FetchableRecord, PersistableRecord {
     // MARK: - Constants
 
     public static let TEN_WEEKS_IN_DAYS = 70 // 10 weeks × 7 days/week
@@ -81,6 +83,24 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable {
         case reflection
         // polymorphicSubtype is computed, not stored  // For future polymorphism
     }
+
+    // MARK: - GRDB TableRecord
+
+    public static let databaseTableName = "terms"
+
+    /// Use centralized UUID encoding strategy (UPPERCASE)
+    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
+        EntityUUIDEncoding.strategy
+    }
+
+    /// Handle INSERT conflicts by replacing the existing record
+    ///
+    /// Since uuid_id is our PRIMARY KEY, this tells GRDB to use INSERT OR REPLACE
+    /// which effectively does UPDATE when the uuid_id already exists.
+    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
+        insert: .replace,
+        update: .replace
+    )
 
     // MARK: - Initialization
 

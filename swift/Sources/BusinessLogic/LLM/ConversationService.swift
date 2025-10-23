@@ -77,6 +77,9 @@ public actor ConversationService {
     public init(database: DatabaseManager) async throws {
         self.database = database
 
+        // Ensure conversation_history table exists (migration for existing DBs)
+        try await database.ensureConversationHistoryTable()
+
         // Get the next session ID
         self.sessionId = try await Self.getNextSessionId(database: database)
 
@@ -106,16 +109,20 @@ public actor ConversationService {
             // Send prompt to model (may trigger tool calls)
             let response = try await session.respond(to: prompt)
 
+            // Extract the string content from the response
+            let responseText = response.content
+
             // Save to conversation history
             var history = ConversationHistory(
                 sessionId: sessionId,
                 prompt: prompt,
-                response: response
+                response: responseText
             )
 
-            try await database.save(&history)
+            // Save and get back the record (in case DB generated values)
+            let _ = try await database.saveRecord(history)
 
-            return response
+            return responseText
 
         } catch {
             // Handle specific Foundation Models errors
@@ -142,7 +149,7 @@ public actor ConversationService {
         return try await database.fetch(
             ConversationHistory.self,
             sql: sql,
-            arguments: [.integer(Int64(sessionId))]
+            arguments: [Int64(sessionId)]
         )
     }
 
@@ -162,15 +169,15 @@ public actor ConversationService {
             let termsTool = GetTermsTool(database: database)
             let valuesTool = GetValuesTool(database: database)
 
-            // Create session with instructions and tools
+            // Create session with tools and instructions
             self.session = LanguageModelSession(
-                instructions: systemInstructions,
                 tools: [
                     goalsTool,
                     actionsTool,
                     termsTool,
                     valuesTool
-                ]
+                ],
+                instructions: systemInstructions
             )
         } catch {
             throw ConversationError.sessionCreationFailed(
@@ -220,13 +227,9 @@ public actor ConversationService {
         case .unsupportedLanguageOrLocale(let locale):
             return .modelUnavailable(reason: "Unsupported language: \(locale)")
 
-        case .refusal(let refusal, _):
-            // Try to get explanation from refusal
-            if let message = try? await refusal.explanation {
-                return .guardrailViolation(message: message)
-            } else {
-                return .guardrailViolation(message: nil)
-            }
+        case .refusal(_, _):
+            // Refusals don't have async explanation in current API
+            return .guardrailViolation(message: "The model refused to generate a response")
 
         @unknown default:
             return .systemError(underlying: error)

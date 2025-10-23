@@ -132,7 +132,8 @@ struct GetGoalsTool: Tool {
 
         // Title and type
         let title = goal.title ?? "Untitled Goal"
-        let goalType = goal.goalType ?? "Goal"
+        // Goal type would need to be determined by checking which subtype this is
+        let goalType = "Goal" // For now, just use base type
         lines.append("• \(title) [\(goalType)]")
 
         // Description if present

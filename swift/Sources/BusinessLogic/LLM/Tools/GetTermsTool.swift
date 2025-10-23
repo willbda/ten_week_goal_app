@@ -166,15 +166,16 @@ struct GetTermsTool: Tool {
         }
 
         // Goals assigned to this term
-        if let goalIds = term.termGoalsByID, !goalIds.isEmpty {
+        let goalIds = term.termGoalsByID
+        if !goalIds.isEmpty {
             lines.append("  Assigned Goals (\(goalIds.count)):")
 
             // Fetch goal names for better readability
             do {
                 for goalId in goalIds.prefix(5) {  // Show first 5 goals
-                    if let uuid = UUID(uuidString: goalId),
-                       let goal = try await database.fetchOne(Goal.self, id: uuid) {
-                        let goalName = goal.friendlyName ?? "Untitled"
+                    // goalId is already a UUID, no need to convert from string
+                    if let goal = try await database.fetchOne(Goal.self, id: goalId) {
+                        let goalName = goal.title ?? "Untitled"
                         lines.append("    - \(goalName)")
                     }
                 }

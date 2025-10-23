@@ -157,19 +157,27 @@ public final class AIAssistantAvailability {
     public static let shared = AIAssistantAvailability()
 
     public var isAvailable: Bool {
+        #if canImport(FoundationModels)
         if #available(macOS 26.0, *) {
             return ModelAvailability.shared.isAvailable
         } else {
             return false
         }
+        #else
+        return false
+        #endif
     }
 
     public var statusMessage: String {
+        #if canImport(FoundationModels)
         if #available(macOS 26.0, *) {
             return ModelAvailability.shared.availabilityStatus
         } else {
             return "Requires macOS 26.0+"
         }
+        #else
+        return "Foundation Models framework not available"
+        #endif
     }
 
     private init() {}

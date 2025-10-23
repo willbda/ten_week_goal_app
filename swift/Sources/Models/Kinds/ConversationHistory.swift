@@ -50,6 +50,9 @@ public struct ConversationHistory: Codable, Sendable,
     /// Timestamp of this interaction
     public var createdAt: Date
 
+    /// Optional user notes about this conversation
+    public var freeformNotes: String?
+
     // MARK: - TableRecord
 
     public static let databaseTableName = "conversation_history"
@@ -63,6 +66,7 @@ public struct ConversationHistory: Codable, Sendable,
         case prompt
         case response
         case createdAt = "created_at"
+        case freeformNotes = "freeform_notes"
     }
 
     // MARK: - Initialization
@@ -75,18 +79,21 @@ public struct ConversationHistory: Codable, Sendable,
     ///   - prompt: User's input text
     ///   - response: AI's output text
     ///   - createdAt: Timestamp (defaults to now)
+    ///   - freeformNotes: Optional notes (not typically used)
     public init(
         id: UUID = UUID(),
         sessionId: Int,
         prompt: String,
         response: String,
-        createdAt: Date = Date()
+        createdAt: Date = Date(),
+        freeformNotes: String? = nil
     ) {
         self.id = id
         self.sessionId = sessionId
         self.prompt = prompt
         self.response = response
         self.createdAt = createdAt
+        self.freeformNotes = freeformNotes
     }
 
     // MARK: - Validation

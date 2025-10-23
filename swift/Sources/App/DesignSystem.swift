@@ -182,6 +182,7 @@ enum DesignSystem {
         static let goals = Color.orange.opacity(0.8)
         static let values = Color.blue.opacity(0.8)
         static let terms = Color.purple.opacity(0.8)
+        static let assistant = Color.indigo.opacity(0.8)
 
         static let success = Color.green
         static let warning = Color.orange

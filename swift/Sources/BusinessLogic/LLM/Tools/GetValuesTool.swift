@@ -98,8 +98,8 @@ struct GetValuesTool: Tool {
             queryArguments.append(Int64(arguments.limit))
 
             // Fetch values from database
-            let values: [Value] = try await database.fetch(
-                Value.self,
+            let values: [Values] = try await database.fetch(
+                Values.self,
                 sql: sql,
                 arguments: queryArguments
             )
@@ -110,8 +110,9 @@ struct GetValuesTool: Tool {
             }
 
             // Group values by type for better organization
-            let groupedValues = Dictionary(grouping: values) { value in
-                value.incentiveType ?? "Value"
+            let groupedValues = Swift.Dictionary(grouping: values) { value in
+                // For now, all values are the same type
+                "Values"
             }
 
             var result = "Found \(values.count) value(s):\n\n"
@@ -140,11 +141,11 @@ struct GetValuesTool: Tool {
     // MARK: - Private Methods
 
     /// Format a value into a human-readable string
-    private func formatValue(_ value: Value) -> String {
+    private func formatValue(_ value: Values) -> String {
         var lines: [String] = []
 
         // Name and priority
-        let name = value.friendlyName ?? "Unnamed Value"
+        let name = value.title ?? "Unnamed Value"
         lines.append("• \(name) [Priority: \(value.priority)]")
 
         // Description if present
@@ -157,14 +158,9 @@ struct GetValuesTool: Tool {
             lines.append("  Life Domain: \(domain)")
         }
 
-        // Type (if not base Value)
-        if let type = value.incentiveType, type != "Value" {
-            lines.append("  Type: \(formatValueType(type))")
-        }
-
-        // Alignment guidance if present
-        if let guidance = value.alignmentGuidance {
-            lines.append("  Guidance: \(guidance)")
+        // Free-form notes if present
+        if let notes = value.freeformNotes {
+            lines.append("  Notes: \(notes)")
         }
 
         return lines.joined(separator: "\n")

@@ -54,6 +54,7 @@ let package = Package(
             dependencies: [
                 "Models",
                 "Database",
+                "BusinessLogic",
                 .product(name: "GRDB", package: "GRDB.swift")
             ],
             path: "Sources/App"

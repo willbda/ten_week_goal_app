@@ -68,13 +68,9 @@ public struct Action: Persistable, Doable, Codable, Sendable, FetchableRecord, P
     /// TableRecord conformance - specify database table name
     public static let databaseTableName = "actions"
 
-    /// Configure UUID storage as UPPERCASE string (matches Swift's UUID() default)
-    ///
-    /// By default, GRDB stores UUIDs as 16-byte blobs. Our schema uses TEXT PRIMARY KEY,
-    /// so we need to store UUIDs as strings. Using UPPERCASE to match Swift's UUID() default.
-    /// This makes update(), delete(), and fetchOne() operations work correctly.
+    /// Use centralized UUID encoding strategy (UPPERCASE)
     public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
-        .uppercaseString
+        EntityUUIDEncoding.strategy
     }
 
     /// Handle INSERT conflicts by replacing the existing record

@@ -117,9 +117,9 @@ public struct GoalValueAlignment: Codable, Sendable, Identifiable, Equatable,
     /// TableRecord conformance - specify database table name
     public static let databaseTableName = "goal_value_alignment"
 
-    /// Configure UUID storage as uppercase string (matches TEXT column in database)
+    /// Use centralized UUID encoding strategy (UPPERCASE)
     public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
-        .uppercaseString
+        EntityUUIDEncoding.strategy
     }
 
     // MARK: - Nested Types

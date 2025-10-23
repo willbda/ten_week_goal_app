@@ -110,9 +110,9 @@ public struct ActionGoalRelationship: Codable, Sendable, Identifiable, Equatable
     /// TableRecord conformance - specify database table name
     public static let databaseTableName = "action_goal_progress"
 
-    /// Configure UUID storage as uppercase string (Swift's UUID default format)
+    /// Use centralized UUID encoding strategy (UPPERCASE)
     public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
-        .uppercaseString
+        EntityUUIDEncoding.strategy
     }
 
     // MARK: - Nested Types

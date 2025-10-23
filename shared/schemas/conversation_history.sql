@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS conversation_history (
     -- Timestamp of this interaction (ISO8601 format)
     created_at TEXT NOT NULL,
 
+    -- Optional user notes about this conversation
+    freeform_notes TEXT,
+
     -- Future fields for analytics:
     -- tokens_used INTEGER,
     -- user_rating INTEGER,

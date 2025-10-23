@@ -80,10 +80,20 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
 
     public static let databaseTableName = "goals"
 
-    /// Configure UUID storage as uppercase string
+    /// Use centralized UUID encoding strategy (UPPERCASE)
     public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
-        .uppercaseString
+        EntityUUIDEncoding.strategy
     }
+
+    /// Handle INSERT conflicts by replacing the existing record
+    ///
+    /// Since uuid_id is our PRIMARY KEY, this tells GRDB to use INSERT OR REPLACE
+    /// which effectively does UPDATE when the uuid_id already exists.
+    /// This fixes the "UNIQUE constraint failed" error when editing goals.
+    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
+        insert: .replace,
+        update: .replace
+    )
 
     // MARK: - Codable Mapping
 
