@@ -9,7 +9,10 @@ import Models
 /// List view displaying all actions
 ///
 /// Shows actions sorted by log time (most recent first).
-/// Supports navigation to detail view and swipe-to-delete.
+/// Supports multiple interaction modes:
+/// - Click/tap to edit (mouse and touch)
+/// - Right-click/long-press for context menu (Edit/Delete)
+/// - Swipe gestures for quick actions (touch devices)
 public struct ActionsListView: View {
 
     // MARK: - Initialization
@@ -118,6 +121,31 @@ public struct ActionsListView: View {
             List {
                 ForEach(viewModel.actions) { action in
                     ActionRowView(action: action)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            // Click to edit (works with mouse on macOS)
+                            actionToEdit = action
+                            showingActionForm = true
+                        }
+                        .contextMenu {
+                            // Right-click menu (macOS) / long-press menu (iOS)
+                            Button {
+                                actionToEdit = action
+                                showingActionForm = true
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+
+                            Divider()
+
+                            Button(role: .destructive) {
+                                Task {
+                                    await viewModel.deleteAction(action)
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 Task {
