@@ -5,6 +5,7 @@
 
 import SwiftUI
 import Models
+import Database
 
 /// Form view for creating or editing an action
 ///
@@ -12,10 +13,21 @@ import Models
 /// When creating, pass nil and a new action will be created.
 struct ActionFormView: View {
 
+    // MARK: - Mode Definition
+
+    /// Form mode determining behavior and title
+    enum Mode {
+        case create
+        case edit
+    }
+
     // MARK: - Properties
 
     /// The action being edited (nil for create mode)
     let actionToEdit: Action?
+
+    /// Explicit form mode (overrides automatic detection)
+    let mode: Mode
 
     /// Callback when save button is tapped
     let onSave: (Action) -> Void
@@ -38,14 +50,23 @@ struct ActionFormView: View {
     @State private var measurements: [MeasurementItem]
     @State private var showingAddMeasurement = false
 
+    // Goal selection
+    @Environment(AppViewModel.self) private var appViewModel
+    @State private var availableGoals: [Goal] = []
+    @State private var selectedGoalIds: Set<UUID> = []
+    @State private var isLoadingGoals = false
+
     // MARK: - Initialization
 
     init(
         action: Action? = nil,
+        mode: Mode? = nil,
         onSave: @escaping (Action) -> Void,
         onCancel: @escaping () -> Void
     ) {
         self.actionToEdit = action
+        // Auto-detect mode if not specified
+        self.mode = mode ?? (action != nil ? .edit : .create)
         self.onSave = onSave
         self.onCancel = onCancel
 
@@ -68,12 +89,8 @@ struct ActionFormView: View {
 
     // MARK: - Computed Properties
 
-    private var isEditing: Bool {
-        actionToEdit != nil
-    }
-
     private var viewTitle: String {
-        isEditing ? "Edit Action" : "New Action"
+        mode == .edit ? "Edit Action" : "New Action"
     }
 
     private var canSave: Bool {
@@ -90,6 +107,7 @@ struct ActionFormView: View {
                 basicInfoSection
                 timingSection
                 measurementsSection
+                goalsSection
             }
             .formStyle(.grouped)
             #if os(macOS)

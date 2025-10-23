@@ -102,6 +102,7 @@ public struct GoalsListView: View {
             if let actionToCreate = actionToCreate, let database = appViewModel.databaseManager {
                 ActionFormView(
                     action: actionToCreate,
+                    mode: .create,  // Always creating from goals
                     onSave: { action in
                         Task {
                             // Save action directly to database
@@ -311,7 +312,7 @@ public struct GoalsListView: View {
             title: suggestedTitle,
             detailedDescription: nil,  // User will fill if needed
             freeformNotes: nil,
-            measuresByUnit: measurements,
+            measuresByUnit: nil,       // User will add via form
             durationMinutes: nil,
             startTime: nil,
             logTime: Date(),           // Current time

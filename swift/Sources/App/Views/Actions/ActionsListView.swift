@@ -2,9 +2,11 @@
 // Main list view for displaying all actions
 //
 // Written by Claude Code on 2025-10-19
+// Updated by Claude Code on 2025-10-22 for quick add section
 
 import SwiftUI
 import Models
+import Database
 
 /// List view displaying all actions
 ///
@@ -28,11 +30,20 @@ public struct ActionsListView: View {
     /// View model for actions management
     @State private var viewModel: ActionsViewModel?
 
-    /// Sheet presentation for action form (create or edit)
-    @State private var showingActionForm = false
+    /// Form presentation state (combines action + mode)
+    @State private var actionFormState: ActionFormState?
 
-    /// Action being edited (nil = create mode)
-    @State private var actionToEdit: Action?
+    /// Active goals for quick add section
+    @State private var activeGoals: [Goal] = []
+
+    // MARK: - Form State Wrapper
+
+    /// Wrapper for action form presentation state
+    struct ActionFormState: Identifiable {
+        let id = UUID()
+        let action: Action?
+        let mode: ActionFormView.Mode
+    }
 
     // MARK: - Body
 
@@ -49,21 +60,21 @@ public struct ActionsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    actionToEdit = nil  // Create mode
-                    showingActionForm = true
+                    actionFormState = ActionFormState(action: nil, mode: .create)
                 } label: {
                     Label("Add Action", systemImage: "plus")
                 }
                 .disabled(viewModel == nil)
             }
         }
-        .sheet(isPresented: $showingActionForm) {
+        .sheet(item: $actionFormState) { formState in
             if let viewModel = viewModel {
                 ActionFormView(
-                    action: actionToEdit,
+                    action: formState.action,
+                    mode: formState.mode,
                     onSave: { action in
                         Task {
-                            if actionToEdit != nil {
+                            if formState.mode == .edit {
                                 // Edit mode - update existing action
                                 await viewModel.updateAction(action)
                             } else {
@@ -71,10 +82,10 @@ public struct ActionsListView: View {
                                 await viewModel.createAction(action)
                             }
                         }
-                        showingActionForm = false
+                        actionFormState = nil
                     },
                     onCancel: {
-                        showingActionForm = false
+                        actionFormState = nil
                     }
                 )
             }
@@ -84,6 +95,7 @@ public struct ActionsListView: View {
             if let database = appViewModel.databaseManager {
                 viewModel = ActionsViewModel(database: database)
                 await viewModel?.loadActions()
+                await loadActiveGoals()
             }
         }
     }
@@ -113,19 +125,31 @@ public struct ActionsListView: View {
                 Text("Track what you've done by adding your first action")
             } actions: {
                 Button("Add Action") {
-                    actionToEdit = nil
-                    showingActionForm = true
+                    actionFormState = ActionFormState(action: nil, mode: .create)
                 }
             }
         } else {
             List {
+                // Quick Add section (recent actions + active goals)
+                QuickAddSectionView(
+                    recentActions: Array(viewModel.actions.prefix(5)),
+                    activeGoals: activeGoals,
+                    onDuplicateAction: { action in
+                        duplicateAction(action)
+                    },
+                    onLogActionForGoal: { goal in
+                        createActionForGoal(goal)
+                    }
+                )
+
+                // All Actions section
+                Section("All Actions") {
                 ForEach(viewModel.actions) { action in
                     ActionRowView(action: action)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             // Click to edit (works with mouse on macOS)
-                            actionToEdit = action
-                            showingActionForm = true
+                            actionFormState = ActionFormState(action: action, mode: .edit)
                         }
                         .contextMenu {
                             // Right-click menu (macOS) / long-press menu (iOS)
@@ -136,8 +160,7 @@ public struct ActionsListView: View {
                             }
 
                             Button {
-                                actionToEdit = action
-                                showingActionForm = true
+                                actionFormState = ActionFormState(action: action, mode: .edit)
                             } label: {
                                 Label("Edit", systemImage: "pencil")
                             }
@@ -170,22 +193,81 @@ public struct ActionsListView: View {
                             .tint(.green)
 
                             Button {
-                                actionToEdit = action
-                                showingActionForm = true
+                                actionFormState = ActionFormState(action: action, mode: .edit)
                             } label: {
                                 Label("Edit", systemImage: "pencil")
                             }
                             .tint(.blue)
                         }
+                    }
                 }
             }
             .refreshable {
                 await viewModel.loadActions()
+                await loadActiveGoals()
             }
         }
     }
 
     // MARK: - Helper Methods
+
+    /// Load active goals for quick add section
+    ///
+    /// Fetches goals with target dates in the future for the quick add section.
+    private func loadActiveGoals() async {
+        guard let database = appViewModel.databaseManager else { return }
+
+        do {
+            // Fetch all goals and filter to active ones
+            let allGoals: [Goal] = try await database.fetchGoals()
+            let today = Calendar.current.startOfDay(for: Date())
+
+            activeGoals = allGoals.filter { goal in
+                guard let targetDate = goal.targetDate else { return false }
+                let goalDay = Calendar.current.startOfDay(for: targetDate)
+                return goalDay >= today
+            }
+            .sorted { ($0.priority) < ($1.priority) }  // Sort by priority
+            .prefix(5)
+            .map { $0 }
+        } catch {
+            print("❌ Failed to load active goals: \(error)")
+        }
+    }
+
+    /// Create a new action pre-filled from goal context
+    ///
+    /// Creates an action with:
+    /// - Title suggested from goal description
+    /// - Current timestamp
+    ///
+    /// Opens ActionFormView pre-filled with the generated data.
+    private func createActionForGoal(_ goal: Goal) {
+        // Build suggested title from goal
+        let suggestedTitle: String?
+        if let goalTitle = goal.title {
+            suggestedTitle = "Progress on: \(goalTitle)"
+        } else if let description = goal.detailedDescription {
+            let truncated = description.prefix(40)
+            suggestedTitle = "Progress on: \(truncated)\(description.count > 40 ? "..." : "")"
+        } else {
+            suggestedTitle = nil
+        }
+
+        // Create new action with pre-filled data
+        let action = Action(
+            title: suggestedTitle,
+            detailedDescription: nil,  // User will fill if needed
+            freeformNotes: nil,
+            measuresByUnit: nil,       // User will add via form
+            durationMinutes: nil,
+            startTime: nil,
+            logTime: Date(),           // Current time
+            id: UUID()                 // New ID
+        )
+
+        actionFormState = ActionFormState(action: action, mode: .create)
+    }
 
     /// Duplicate an existing action
     ///
@@ -207,8 +289,7 @@ public struct ActionsListView: View {
             id: UUID()             // New ID
         )
 
-        actionToEdit = duplicate
-        showingActionForm = true
+        actionFormState = ActionFormState(action: duplicate, mode: .create)
     }
 }
 
