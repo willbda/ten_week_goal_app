@@ -11,10 +11,11 @@ import SwiftUI
 /// Observable zoom manager for app-wide zoom state
 ///
 /// Thread-safe singleton that manages zoom level across the app.
-/// The zoomLevel property is accessed synchronously but updates trigger
-/// SwiftUI view invalidation through @Observable.
+/// All properties and methods are isolated to the main actor for UI safety.
+/// The zoomLevel property triggers SwiftUI view invalidation through @Observable.
 @Observable
-final class ZoomManager: @unchecked Sendable {
+@MainActor
+final class ZoomManager {
     static let shared = ZoomManager()
 
     private(set) var zoomLevel: CGFloat = 1.0
@@ -22,19 +23,16 @@ final class ZoomManager: @unchecked Sendable {
     private init() {}
 
     /// Increase zoom by 10%
-    @MainActor
     func zoomIn() {
         zoomLevel = min(2.0, zoomLevel + 0.1)
     }
 
     /// Decrease zoom by 10%
-    @MainActor
     func zoomOut() {
         zoomLevel = max(0.5, zoomLevel - 0.1)
     }
 
     /// Reset to 100%
-    @MainActor
     func resetZoom() {
         zoomLevel = 1.0
     }
