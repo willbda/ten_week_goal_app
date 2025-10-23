@@ -20,18 +20,18 @@ struct ValueRowView: View {
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs - 2) {
                 // Value name with priority indicator
                 HStack {
                     Text(item.title ?? "Untitled Value")
                         .font(.headline)
-                    
+
                     Spacer()
-                    
+
                     // Priority indicator
                     priorityBadge
                 }
-                
+
                 // Detailed description
                 if let description = item.detailedDescription {
                     Text(description)
@@ -39,7 +39,7 @@ struct ValueRowView: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
-                
+
                 // Additional info (like alignment guidance for Major Values)
                 if let additionalInfo = item.additionalInfo {
                     Text(additionalInfo)
@@ -48,23 +48,23 @@ struct ValueRowView: View {
                         .italic()
                         .lineLimit(2)
                 }
-                
+
                 // Life domain tag
                 if let domain = item.lifeDomain {
                     HStack {
                         Spacer()
                         Text(domain)
                             .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.green.opacity(0.1))
-                            .foregroundStyle(.green)
+                            .padding(.horizontal, DesignSystem.Spacing.xs - 2)
+                            .padding(.vertical, DesignSystem.Spacing.xxs - 2)
+                            .background(DesignSystem.Colors.values.opacity(0.15))
+                            .foregroundStyle(DesignSystem.Colors.values)
                             .clipShape(Capsule())
                     }
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, DesignSystem.Spacing.xxs)
     }
     
     // MARK: - Priority Badge

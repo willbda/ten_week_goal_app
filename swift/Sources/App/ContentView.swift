@@ -33,8 +33,8 @@ public struct ContentView: View {
 
         var icon: String {
             switch self {
-            case .actions: return "bolt.fill"
-            case .goals: return "target"
+            case .actions: return "text.rectangle"
+            case .goals: return "pencil.and.scribble"
             case .values: return "heart"
             case .terms: return "calendar"
             }
@@ -54,6 +54,7 @@ public struct ContentView: View {
 
     @State private var selectedSection: Section? = .actions
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @Namespace private var sidebarAnimation
 
     // MARK: - Initialization
 
@@ -106,61 +107,86 @@ public struct ContentView: View {
     @ViewBuilder
     private var sidebarContent: some View {
             GeometryReader { geometry in
-                let isCompact = geometry.size.width < 150
+                let width = geometry.size.width
+
+                // Progressive scaling with no hard stops
+                let fullThreshold: CGFloat = 200   // Full size at 200px
+                let textThreshold: CGFloat = 120   // Text starts fading at 120px
+
+                // Text opacity: fades between 120-200px
+                let textProgress = min(max((width - textThreshold) / (fullThreshold - textThreshold), 0), 1)
+                let textOpacity = easeInOut(textProgress)
+
+                // Icon scaling: continuous shrinking with reasonable minimum
+                let minIconSize: CGFloat = 20
+                let maxIconSize: CGFloat = 48
+                let iconSize = max(minIconSize, min(maxIconSize, width * 0.24)) // 24% of sidebar width
+
+                // Corner radius: becomes circular as icons shrink
+                let cornerRadius = iconSize / 2 // Always proportional to icon size
+
+                // Spacing and font scale with width
+                let spacing = max(0, min(12, (width - 80) * 0.15)) // Shrinks to 0 smoothly
+                let iconFontSize = max(12, iconSize * 0.42) // Font scales with container
+
+                // Show text only when there's enough room
+                let showText = width > 100
 
                 List(Section.allCases, selection: $selectedSection) { section in
                     NavigationLink(value: section) {
-                        if isCompact {
-                            // Icon-only layout for narrow sidebar
+                        HStack(spacing: spacing) {
+                            // Icon with morphing container (matched geometry effect)
                             ZStack {
-                                Circle()
+                                // Background shape morphs continuously
+                                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                                     .fill(section.accentColor.opacity(0.15))
-                                    .frame(width: 44, height: 44)
+                                    .frame(width: iconSize, height: iconSize)
+                                    .matchedGeometryEffect(
+                                        id: "icon-\(section.rawValue)",
+                                        in: sidebarAnimation,
+                                        properties: .frame
+                                    )
 
                                 Image(systemName: section.icon)
-                                    .font(.title2)
+                                    .font(.system(size: iconFontSize, weight: .medium))
                                     .foregroundStyle(section.accentColor)
+                                    .symbolEffect(.scale.up, isActive: selectedSection == section)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                        } else {
-                            // Full layout with enhanced materials
-                            HStack(spacing: 14) {
-                                // Material-backed icon container
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(section.accentColor.opacity(0.15))
-                                        .frame(width: 38, height: 38)
+                            .layoutPriority(1) // Icon always visible
+                            .frame(maxWidth: .infinity) // Center icon when text is hidden
 
-                                    Image(systemName: section.icon)
-                                        .font(.system(size: 20, weight: .medium))
-                                        .foregroundStyle(section.accentColor)
-                                        .symbolEffect(.scale.up, isActive: selectedSection == section)
+                            // Text compresses naturally with layout priority
+                            if showText {
+                                HStack(spacing: 8 * textOpacity) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(section.title)
+                                            .font(.headline)
+                                        Text(section.subtitle)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .opacity(textOpacity)
+                                    .layoutPriority(0) // Compresses first
+
+                                    Spacer(minLength: 0)
+
+                                    // Activity indicator
+                                    if let count = activityCount(for: section) {
+                                        Text("\(count)")
+                                            .font(.caption.monospacedDigit())
+                                            .foregroundStyle(.white)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Capsule().fill(section.accentColor.opacity(0.8)))
+                                            .opacity(textOpacity)
+                                    }
                                 }
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(section.title)
-                                        .font(.headline)
-                                    Text(section.subtitle)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-
-                                // Activity indicator
-                                if let count = activityCount(for: section) {
-                                    Text("\(count)")
-                                        .font(.caption.monospacedDigit())
-                                        .foregroundStyle(.white)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 2)
-                                        .background(Capsule().fill(section.accentColor.opacity(0.8)))
-                                }
+                                .frame(minWidth: 0) // Allows compression to zero
                             }
-                            .padding(.vertical, 6)
-                            .contentShape(Rectangle())
                         }
+                        .padding(.vertical, 6)
+                        .contentShape(Rectangle())
+                        .animation(.smooth(duration: 0.25), value: width)
                     }
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -168,9 +194,16 @@ public struct ContentView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .background(.ultraThinMaterial)
-                .navigationTitle(isCompact ? "" : "Quests")
+                .navigationTitle(width > textThreshold ? "Quests" : "")
             }
-            .navigationSplitViewColumnWidth(min: 60, ideal: 300)
+            .navigationSplitViewColumnWidth(min: 60, ideal: 300, max: 400)
+    }
+
+    // MARK: - Easing Functions
+
+    /// Cubic ease-in-out for smooth transitions
+    private func easeInOut(_ t: Double) -> Double {
+        t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2
     }
 
     // MARK: - Activity Tracking

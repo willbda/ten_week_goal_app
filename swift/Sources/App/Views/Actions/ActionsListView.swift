@@ -130,6 +130,12 @@ public struct ActionsListView: View {
                         .contextMenu {
                             // Right-click menu (macOS) / long-press menu (iOS)
                             Button {
+                                duplicateAction(action)
+                            } label: {
+                                Label("Duplicate", systemImage: "plus.square.on.square")
+                            }
+
+                            Button {
                                 actionToEdit = action
                                 showingActionForm = true
                             } label: {
@@ -157,6 +163,13 @@ public struct ActionsListView: View {
                         }
                         .swipeActions(edge: .leading, allowsFullSwipe: false) {
                             Button {
+                                duplicateAction(action)
+                            } label: {
+                                Label("Duplicate", systemImage: "plus.square.on.square")
+                            }
+                            .tint(.green)
+
+                            Button {
                                 actionToEdit = action
                                 showingActionForm = true
                             } label: {
@@ -170,6 +183,32 @@ public struct ActionsListView: View {
                 await viewModel.loadActions()
             }
         }
+    }
+
+    // MARK: - Helper Methods
+
+    /// Duplicate an existing action
+    ///
+    /// Creates a new action with all fields copied from the source except:
+    /// - `id`: New UUID generated
+    /// - `logTime`: Set to current time
+    /// - `startTime`: Cleared (user can set if needed)
+    ///
+    /// Opens the ActionFormView pre-filled with the duplicated data.
+    private func duplicateAction(_ action: Action) {
+        let duplicate = Action(
+            title: action.title,
+            detailedDescription: action.detailedDescription,
+            freeformNotes: action.freeformNotes,
+            measuresByUnit: action.measuresByUnit,
+            durationMinutes: action.durationMinutes,
+            startTime: nil,        // User will set if needed
+            logTime: Date(),       // Current time
+            id: UUID()             // New ID
+        )
+
+        actionToEdit = duplicate
+        showingActionForm = true
     }
 }
 

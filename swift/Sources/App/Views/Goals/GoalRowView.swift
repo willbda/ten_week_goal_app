@@ -19,43 +19,43 @@ struct GoalRowView: View {
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                 // Goal name with priority indicator
                 HStack {
                     Text(goal.title ?? "Untitled Goal")
                         .font(.headline)
-                    
+
                     Spacer()
-                    
+
                     // Priority badge
                     if goal.priority <= 10 {
                         Text("HIGH")
                             .font(.caption2)
                             .fontWeight(.semibold)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.red)
+                            .padding(.horizontal, DesignSystem.Spacing.xs - 2)
+                            .padding(.vertical, DesignSystem.Spacing.xxs - 2)
+                            .background(DesignSystem.Colors.error)
                             .foregroundStyle(.white)
                             .clipShape(Capsule())
                     } else if goal.priority <= 30 {
                         Text("MED")
                             .font(.caption2)
                             .fontWeight(.semibold)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.orange)
+                            .padding(.horizontal, DesignSystem.Spacing.xs - 2)
+                            .padding(.vertical, DesignSystem.Spacing.xxs - 2)
+                            .background(DesignSystem.Colors.warning)
                             .foregroundStyle(.white)
                             .clipShape(Capsule())
                     }
                 }
-                
+
                 // Measurement target
                 if let unit = goal.measurementUnit, let target = goal.measurementTarget {
                     Text("Target: \(target, specifier: "%.1f") \(unit)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                
+
                 // Target date and progress
                 HStack {
                     if let targetDate = goal.targetDate {
@@ -65,28 +65,28 @@ struct GoalRowView: View {
                             Text(targetDate, style: .date)
                         } icon: {
                             Image(systemName: isOverdue ? "clock.badge.exclamationmark" : "clock")
-                                .foregroundStyle(isOverdue ? .red : .secondary)
+                                .foregroundStyle(isOverdue ? DesignSystem.Colors.error : .secondary)
                         }
                         .font(.caption)
-                        .foregroundStyle(isOverdue ? .red : .secondary)
+                        .foregroundStyle(isOverdue ? DesignSystem.Colors.error : .secondary)
                     }
-                    
+
                     Spacer()
-                    
+
                     // Life domain tag
                     if let domain = goal.lifeDomain {
                         Text(domain)
                             .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.blue.opacity(0.1))
-                            .foregroundStyle(.blue)
+                            .padding(.horizontal, DesignSystem.Spacing.xs - 2)
+                            .padding(.vertical, DesignSystem.Spacing.xxs - 2)
+                            .background(DesignSystem.Colors.goals.opacity(0.15))
+                            .foregroundStyle(DesignSystem.Colors.goals)
                             .clipShape(Capsule())
                     }
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, DesignSystem.Spacing.xxs)
     }
 }
 

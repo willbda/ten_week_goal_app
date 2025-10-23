@@ -19,7 +19,7 @@ struct TermRowView: View {
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                 // Term number and name
                 HStack {
                     Text("Term \(term.termNumber)")
@@ -62,7 +62,7 @@ struct TermRowView: View {
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, DesignSystem.Spacing.xxs)
     }
 
     // MARK: - Helpers
@@ -73,26 +73,26 @@ struct TermRowView: View {
                 Text("ACTIVE")
                     .font(.caption2)
                     .fontWeight(.semibold)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.green)
+                    .padding(.horizontal, DesignSystem.Spacing.xs - 2)
+                    .padding(.vertical, DesignSystem.Spacing.xxs - 2)
+                    .background(DesignSystem.Colors.success)
                     .foregroundStyle(.white)
                     .clipShape(Capsule())
             } else if isUpcoming {
                 Text("UPCOMING")
                     .font(.caption2)
                     .fontWeight(.semibold)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.blue)
+                    .padding(.horizontal, DesignSystem.Spacing.xs - 2)
+                    .padding(.vertical, DesignSystem.Spacing.xxs - 2)
+                    .background(DesignSystem.Colors.info)
                     .foregroundStyle(.white)
                     .clipShape(Capsule())
             } else {
                 Text("PAST")
                     .font(.caption2)
                     .fontWeight(.semibold)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, DesignSystem.Spacing.xs - 2)
+                    .padding(.vertical, DesignSystem.Spacing.xxs - 2)
                     .background(Color.gray)
                     .foregroundStyle(.white)
                     .clipShape(Capsule())

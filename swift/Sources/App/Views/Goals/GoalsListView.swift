@@ -2,9 +2,11 @@
 // Main list view for displaying all goals
 //
 // Written by Claude Code on 2025-10-20
+// Updated by Claude Code on 2025-10-22 for goal-based quick add
 
 import SwiftUI
 import Models
+import Database
 
 /// List view displaying all goals
 ///
@@ -33,6 +35,12 @@ public struct GoalsListView: View {
 
     /// The goal currently being edited
     @State private var goalToEdit: Goal?
+
+    /// Sheet presentation for creating action from goal
+    @State private var showingActionForm = false
+
+    /// The action being created (pre-filled from goal)
+    @State private var actionToCreate: Action?
 
     // MARK: - Body
 
@@ -90,6 +98,25 @@ public struct GoalsListView: View {
                 )
             }
         }
+        .sheet(isPresented: $showingActionForm) {
+            if let actionToCreate = actionToCreate, let database = appViewModel.databaseManager {
+                ActionFormView(
+                    action: actionToCreate,
+                    onSave: { action in
+                        Task {
+                            // Save action directly to database
+                            try? await database.saveAction(action)
+                            showingActionForm = false
+                            self.actionToCreate = nil
+                        }
+                    },
+                    onCancel: {
+                        showingActionForm = false
+                        self.actionToCreate = nil
+                    }
+                )
+            }
+        }
         .task {
             // Initialize view model when view appears
             if let database = appViewModel.databaseManager {
@@ -139,6 +166,14 @@ public struct GoalsListView: View {
                                     goalToEdit = goal
                                     showingEditGoal = true
                                 }
+                                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                    Button {
+                                        createActionForGoal(goal)
+                                    } label: {
+                                        Label("Log Action", systemImage: "plus.circle")
+                                    }
+                                    .tint(.green)
+                                }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         Task {
@@ -162,6 +197,14 @@ public struct GoalsListView: View {
                                     goalToEdit = goal
                                     showingEditGoal = true
                                 }
+                                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                    Button {
+                                        createActionForGoal(goal)
+                                    } label: {
+                                        Label("Log Action", systemImage: "plus.circle")
+                                    }
+                                    .tint(.green)
+                                }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         Task {
@@ -184,6 +227,14 @@ public struct GoalsListView: View {
                                 .onTapGesture {
                                     goalToEdit = goal
                                     showingEditGoal = true
+                                }
+                                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                    Button {
+                                        createActionForGoal(goal)
+                                    } label: {
+                                        Label("Log Action", systemImage: "plus.circle")
+                                    }
+                                    .tint(.green)
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
@@ -229,6 +280,46 @@ public struct GoalsListView: View {
     /// Goals that don't have target dates
     private func goalsWithoutDates(from goals: [Goal]) -> [Goal] {
         goals.filter { $0.targetDate == nil }
+    }
+
+    /// Create a new action pre-filled from goal context
+    ///
+    /// Creates an action with:
+    /// - Title suggested from goal description
+    /// - Measurement unit from goal (if available)
+    /// - Current timestamp
+    ///
+    /// Opens ActionFormView pre-filled with the generated data.
+    private func createActionForGoal(_ goal: Goal) {
+        // Build suggested title from goal
+        let suggestedTitle: String?
+        if let goalTitle = goal.title {
+            suggestedTitle = "Progress on: \(goalTitle)"
+        } else if let description = goal.detailedDescription {
+            let truncated = description.prefix(40)
+            suggestedTitle = "Progress on: \(truncated)\(description.count > 40 ? "..." : "")"
+        } else {
+            suggestedTitle = nil
+        }
+
+        // Note: We don't pre-fill measurements because the user needs to enter
+        // the actual value. The ActionFormView's AddMeasurementSheet will guide them
+        // to add measurements with the appropriate unit.
+
+        // Create new action with pre-filled data
+        let action = Action(
+            title: suggestedTitle,
+            detailedDescription: nil,  // User will fill if needed
+            freeformNotes: nil,
+            measuresByUnit: measurements,
+            durationMinutes: nil,
+            startTime: nil,
+            logTime: Date(),           // Current time
+            id: UUID()                 // New ID
+        )
+
+        actionToCreate = action
+        showingActionForm = true
     }
 }
 

@@ -50,24 +50,33 @@ swift package generate-xcodeproj
 ```
 swift/
 ├── Sources/
+│   ├── App/                  # SwiftUI views and UI layer
+│   │   ├── DesignSystem.swift      # ✅ Central design tokens
+│   │   ├── ContentView.swift       # ✅ Root navigation
+│   │   ├── Views/                  # Feature views
+│   │   │   ├── Actions/            # Actions list/forms
+│   │   │   ├── Goals/              # Goals list/forms
+│   │   │   ├── Values/             # Values list/forms
+│   │   │   └── Terms/              # Terms list/forms
+│   │   └── GoalDocument.swift      # Document-based architecture
 │   ├── Models/              # Domain entities (protocol-oriented)
 │   │   ├── Protocols.swift  # Core ontological protocols (public)
-│   │   └── Categoriae/      # Entity implementations
+│   │   └── Kinds/           # Entity implementations
 │   │       ├── Actions.swift      # ✅ GRDB integrated
-│   │       ├── Goals.swift        # Has GRDB in domain models
+│   │       ├── Goals.swift        # ✅ GRDB integrated
 │   │       ├── Values.swift       # Needs GRDB integration
 │   │       └── Terms.swift        # Needs GRDB integration
-│   ├── Politica/            # Infrastructure (Database operations)
+│   ├── Database/            # Infrastructure (Database operations)
 │   │   ├── DatabaseManager.swift      # ✅ Actor with generic CRUD
 │   │   ├── DatabaseConfiguration.swift # ✅ Path management
 │   │   └── DatabaseError.swift        # ✅ Typed errors
-│   ├── Ethica/              # Business logic (planned)
-│   └── Rhetorica/           # Translation layer (NOT NEEDED!)
+│   └── BusinessLogic/       # Business logic (planned)
 ├── Tests/
 │   ├── ActionTests.swift    # 5 tests passing
 │   └── GoalTests.swift      # 9 tests passing
 ├── Package.swift            # SPM configuration
 ├── SWIFTROADMAP.md          # Complete project roadmap
+├── DESIGN_SYSTEM.md         # ✅ UI design system guide
 └── CLAUDE.md                # This file
 ```
 
@@ -452,6 +461,67 @@ final class DatabaseIntegrationTests: XCTestCase {
 - Functions: camelCase (isValid, fetchAll)
 - Protocols: Adjectives (Persistable, Achievable, Performed, Motivating)
 
+### Design System (CRITICAL)
+
+**All UI code MUST use the centralized design system (`DesignSystem.swift`).**
+
+See `DESIGN_SYSTEM.md` for complete guide. Quick reference:
+
+**Never hard-code spacing or colors:**
+```swift
+// ❌ DON'T
+.padding(16)
+.background(Color.red)
+
+// ✅ DO
+.padding(DesignSystem.Spacing.md)
+.background(DesignSystem.Colors.error)
+```
+
+**Common tokens:**
+```swift
+// Spacing
+DesignSystem.Spacing.xxs          // 4pt - Badges
+DesignSystem.Spacing.xs           // 8pt - Row spacing
+DesignSystem.Spacing.md           // 16pt - Section padding
+DesignSystem.Spacing.formPadding  // 20pt - Forms (macOS)
+
+// Colors
+DesignSystem.Colors.actions       // Red
+DesignSystem.Colors.goals         // Orange
+DesignSystem.Colors.values        // Blue
+DesignSystem.Colors.terms         // Purple
+DesignSystem.Colors.error         // Error states
+DesignSystem.Colors.success       // Success states
+
+// Materials
+DesignSystem.Materials.sidebar    // .ultraThinMaterial
+DesignSystem.Materials.modal      // .regularMaterial
+```
+
+**Form views pattern:**
+```swift
+NavigationStack {
+    Form { }
+        .formStyle(.grouped)
+        #if os(macOS)
+        .padding(DesignSystem.Spacing.formPadding)
+        .frame(minWidth: 500, minHeight: 400)
+        #endif
+        .toolbar { }
+}
+.presentationBackground(DesignSystem.Materials.modal)
+```
+
+**Row views pattern:**
+```swift
+VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+    Text("Title").font(.headline)
+    Text("Subtitle").foregroundStyle(.secondary)
+}
+.padding(.vertical, DesignSystem.Spacing.xxs)
+```
+
 ## Platform Support
 
 **Current**:
@@ -500,7 +570,35 @@ See `../python/` for the authoritative Python implementation with:
 
 ## Development Notes
 
-### Recent Changes (2025-10-18)
+### Recent Changes (2025-10-23)
+
+**Design System & UI Architecture Complete**:
+- ✅ Centralized design system (`DesignSystem.swift`) with semantic tokens
+- ✅ Spacing tokens (xxs→xxl) replace all hard-coded padding values
+- ✅ Semantic color system (actions/goals/values/terms + error/success/info)
+- ✅ Material constants for consistent Liquid Glass usage
+- ✅ ViewModifiers for reusable styling patterns
+- ✅ All row views updated (GoalRowView, ActionRowView, ValueRowView, TermRowView)
+- ✅ All form views updated with proper padding (ActionFormView, GoalFormView)
+- ✅ Document-based architecture (GoalDocument.swift) for file-based workflows
+- ✅ Infinite sidebar smoothness with continuous icon scaling
+- ✅ Comprehensive design documentation (DESIGN_SYSTEM.md)
+
+**Key UI Patterns**:
+> SwiftUI uses ViewModifiers (not inheritance) for reusable styling. The design system provides semantic tokens that make the entire app's spacing/colors changeable from one file. This follows Apple HIG principles: semantic over literal, consistent over custom, maintainable over perfect.
+
+**Code Metrics**:
+- DesignSystem.swift: 200+ lines of reusable design infrastructure
+- 6 view files updated with design tokens
+- Net change: ~400 lines (design system + documentation)
+
+**Files Created**:
+- `DesignSystem.swift` - Central design tokens and modifiers
+- `GoalDocument.swift` - Document-based architecture
+- `DESIGN_SYSTEM.md` - Complete usage guide
+- `LIQUID_GLASS_NOTES.md` - Material design patterns
+
+### Previous Changes (2025-10-18)
 
 **GRDB Architecture Refactoring Complete**:
 - ✅ Eliminated StorageService translation layer (GRDB provides this)

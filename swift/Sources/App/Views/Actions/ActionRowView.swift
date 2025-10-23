@@ -19,11 +19,11 @@ struct ActionRowView: View {
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                 // Friendly name with fallback
                 Text(action.title ?? "Untitled Action")
                     .font(.headline)
-                
+
                 // Individual measurements
                 if let measuresByUnit = action.measuresByUnit {
                     ForEach(Array(measuresByUnit.keys.sorted()), id: \.self) { unit in
@@ -35,15 +35,15 @@ struct ActionRowView: View {
                     }
                 }
             }
-            
+
             Spacer()
-            
+
             // Log time as date in right corner
             Text(action.logTime, style: .date)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, DesignSystem.Spacing.xxs)
     }
 }
 

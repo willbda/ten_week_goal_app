@@ -91,6 +91,11 @@ struct ActionFormView: View {
                 timingSection
                 measurementsSection
             }
+            .formStyle(.grouped)
+            #if os(macOS)
+            .padding(DesignSystem.Spacing.formPadding)
+            .frame(minWidth: 500, minHeight: 450)
+            #endif
             .navigationTitle(viewTitle)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -107,9 +112,11 @@ struct ActionFormView: View {
                         saveAction()
                     }
                     .disabled(!canSave)
+                    .buttonStyle(.borderedProminent)
                 }
             }
         }
+        .presentationBackground(DesignSystem.Materials.modal)
     }
 
     // MARK: - Sections
@@ -255,6 +262,11 @@ private struct AddMeasurementSheet: View {
                     Text("Add a quantitative measurement for this action")
                 }
             }
+            .formStyle(.grouped)
+            #if os(macOS)
+            .padding(DesignSystem.Spacing.formPadding)
+            .frame(minWidth: 400, minHeight: 200)
+            #endif
             .navigationTitle("Add Measurement")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -274,9 +286,11 @@ private struct AddMeasurementSheet: View {
                         }
                     }
                     .disabled(!canAdd)
+                    .buttonStyle(.borderedProminent)
                 }
             }
         }
+        .presentationBackground(DesignSystem.Materials.modal)
     }
 }
 

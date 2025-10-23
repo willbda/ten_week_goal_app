@@ -141,6 +141,10 @@ struct GoalFormView: View {
                 }
             }
             .formStyle(.grouped)
+            #if os(macOS)
+            .padding(DesignSystem.Spacing.formPadding)
+            .frame(minWidth: 600, minHeight: 700)
+            #endif
             .navigationTitle(viewTitle)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -157,13 +161,14 @@ struct GoalFormView: View {
                         saveGoal()
                     }
                     .disabled(!canSave)
+                    .buttonStyle(.borderedProminent)
                 }
             }
             .sheet(isPresented: $showingSmartInfo) {
                 SmartInfoSheet()
             }
         }
-        .frame(minWidth: 600, minHeight: 700)
+        .presentationBackground(DesignSystem.Materials.modal)
     }
 
     // MARK: - Sections

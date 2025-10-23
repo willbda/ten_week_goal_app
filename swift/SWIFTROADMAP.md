@@ -160,3 +160,25 @@ Last Updated: October 22, 2025
 - `Package.swift` (added BusinessLogic target)
 
 **Total Lines Added**: ~2,531 lines of production code + tests
+
+---
+
+## Deferred Features
+
+### Calendar & Reminders Integration (Explored Oct 22, 2025)
+**Status**: Deferred for future consideration
+
+**Explored Approaches**:
+- **Option A**: One-way export to Apple Reminders.app (simpler, leverages native UI)
+- **Option B**: Custom in-app calendar with two-way EventKit sync (complex, fully integrated)
+- **Option C**: Hybrid read-only calendar view with editing in Reminders.app
+
+**Key Insights**:
+- EventKit provides read/write API, not automatic sync engine
+- iCloud syncs Calendar/Reminders across devices, but NOT between apps
+- Identity mapping (Goal UUID ↔ EKCalendarItem identifier) requires custom tracking
+- Conflict resolution logic needed for bidirectional sync
+
+**Decision**: Deferred until core functionality is complete. If implemented, recommend starting with Option A (export to Reminders) for simplicity.
+
+**Resources**: See calendar sync schema draft (deleted Oct 22) for potential database structure
