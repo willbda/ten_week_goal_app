@@ -379,6 +379,104 @@ The design system follows these principles:
 3. **Maintainable over perfect**: Easy to change > perfectly custom
 4. **Platform-aware**: macOS gets extra form padding, iOS doesn't
 
+## Swift 6.2 Concurrency Patterns (WWDC 2025)
+
+### ZoomManager Thread Safety
+
+The `ZoomManager` singleton uses **Swift 6.2 best practices** for UI-related state:
+
+**Pattern**: `@MainActor` class with `MainActor.assumeIsolated` reads
+
+```swift
+@MainActor
+@Observable
+class ZoomManager {
+    var zoomLevel: CGFloat = 1.0
+    func zoomIn() { /* mutations on MainActor */ }
+}
+
+// In design tokens:
+private static var zoom: CGFloat {
+    MainActor.assumeIsolated {
+        ZoomManager.shared.zoomLevel  // Safe synchronous access
+    }
+}
+```
+
+**Why This Is Safe**:
+1. ✅ All **writes** happen on `@MainActor` (zoom functions)
+2. ✅ CGFloat **reads** are atomic (no partial reads)
+3. ✅ Worst case: one frame uses stale zoom value (acceptable)
+4. ✅ Alternative (making everything `async`) breaks SwiftUI's synchronous view body
+
+**What NOT To Do**:
+```swift
+// ❌ NEVER use @unchecked Sendable
+class ZoomManager: @unchecked Sendable {  // Disables ALL safety checks
+    var zoomLevel: CGFloat  // Mutable state with no protection
+}
+```
+
+**Why `@unchecked Sendable` Is Dangerous**:
+- Disables compiler enforcement of thread safety
+- Creates data races (concurrent reads during writes)
+- No compile-time or runtime protection
+- Only use for custom synchronization primitives (locks, atomics)
+
+### Swift 6.2 Upgrade Path
+
+**Current** (explicit annotations):
+```swift
+@MainActor
+@Observable
+class ZoomManager { }
+```
+
+**Future** (module-wide default isolation):
+```swift
+// In Package.swift:
+swiftSettings: [.unsafeFlags(["-default-isolation", "MainActor"])]
+
+// Then remove explicit @MainActor (inferred):
+@Observable
+class ZoomManager { }  // Implicitly @MainActor
+```
+
+This reduces annotation noise for SwiftUI apps where most code runs on main thread.
+
+### When To Use Each Pattern
+
+| Pattern | Use When | Example |
+|---------|----------|---------|
+| `@MainActor` class | UI state, singletons, SwiftUI models | ZoomManager, ViewModels |
+| `actor` | Background work, independent tasks | DatabaseSync, ImageCache |
+| `MainActor.assumeIsolated` | Synchronous access to main-actor state | Design token zoom access |
+| `@unchecked Sendable` | **Almost never** - only for custom locks | OSAtomic, pthread_mutex |
+
+### Auditing For Concurrency Issues
+
+To find potential concurrency problems:
+
+```bash
+# Search for unsafe patterns
+grep -r "@unchecked" Sources/
+grep -r "nonisolated(unsafe)" Sources/
+
+# Check for @MainActor coverage
+grep -r "@Observable" Sources/ | grep -v "@MainActor"
+```
+
+**Red Flags**:
+- `@Observable` without `@MainActor` (unless actor-based)
+- `@unchecked Sendable` in application code
+- Mutable state in non-isolated classes
+
+### Further Reading
+
+- [Swift 6.2 Concurrency Changes](https://www.donnywals.com/exploring-concurrency-changes-in-swift-6-2/)
+- [Default Actor Isolation (SE-0466)](https://github.com/apple/swift-evolution/blob/main/proposals/0466-default-actor-isolation.md)
+- [SwiftUI Views and @MainActor](https://fatbobman.com/en/posts/swiftui-views-and-mainactor/)
+
 ## Related Documentation
 
 - `/swift/Sources/App/DesignSystem.swift` - Implementation

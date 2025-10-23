@@ -461,6 +461,59 @@ final class DatabaseIntegrationTests: XCTestCase {
 - Functions: camelCase (isValid, fetchAll)
 - Protocols: Adjectives (Persistable, Achievable, Performed, Motivating)
 
+### Swift 6.2 Concurrency Patterns (CRITICAL)
+
+**All `@Observable` UI state MUST use `@MainActor` for thread safety.**
+
+**Correct Pattern** (UI-related singletons):
+```swift
+@MainActor
+@Observable
+class ZoomManager {
+    var zoomLevel: CGFloat = 1.0
+    func zoomIn() { /* mutations on main thread */ }
+}
+```
+
+**Access from synchronous contexts**:
+```swift
+// In computed properties that can't be async (e.g., design tokens):
+private static var zoom: CGFloat {
+    MainActor.assumeIsolated {
+        ZoomManager.shared.zoomLevel  // Safe: SwiftUI runs on main thread
+    }
+}
+```
+
+**What NOT To Do**:
+```swift
+// ❌ NEVER use @unchecked Sendable - disables ALL safety checks
+@Observable
+class BadManager: @unchecked Sendable {
+    var state: Int  // Data race! No protection!
+}
+
+// ❌ NEVER put @MainActor on methods only
+@Observable
+class PartiallyWrong {
+    @MainActor func update() { }  // Class should be @MainActor
+}
+```
+
+**When To Use Each**:
+- `@MainActor` on class: UI state, ViewModels, singletons (ZoomManager, AppViewModel)
+- `actor`: Background work, database operations (InferenceService, ImageCache)
+- `MainActor.assumeIsolated`: Synchronous access to main-actor state (design tokens)
+- `@unchecked Sendable`: **Almost never** - only for custom synchronization primitives
+
+**Audit Command** (find unsafe patterns):
+```bash
+grep -r "@unchecked Sendable" Sources/  # Should return ZERO results
+grep -r "@Observable" Sources/ | grep -v "@MainActor"  # Check coverage
+```
+
+See `DESIGN_SYSTEM.md` "Swift 6.2 Concurrency Patterns" section for full explanation.
+
 ### Design System (CRITICAL)
 
 **All UI code MUST use the centralized design system (`DesignSystem.swift`).**

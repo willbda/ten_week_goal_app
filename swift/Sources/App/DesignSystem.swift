@@ -10,31 +10,46 @@ import SwiftUI
 
 /// Observable zoom manager for app-wide zoom state
 ///
-/// Thread-safe singleton that manages zoom level across the app.
-/// The zoomLevel property is accessed synchronously but updates trigger
-/// SwiftUI view invalidation through @Observable.
+/// **Swift 6.2 Concurrency Pattern (WWDC 2025)**:
+/// This class is marked `@MainActor` to ensure all zoom state mutations happen on the main thread.
+/// This is the recommended pattern for UI-related singletons in Swift 6.2.
+///
+/// **Why @MainActor instead of @unchecked Sendable:**
+/// - `@MainActor` provides **compiler-enforced** thread safety
+/// - Marking the class (not just methods) makes isolation explicit
+/// - SwiftUI `@Observable` types should run on main thread (UI updates)
+/// - Avoids data races from concurrent reads/writes to `zoomLevel`
+///
+/// **Thread Safety:**
+/// - All mutations isolated to MainActor (zoom changes)
+/// - Synchronous reads via `nonisolated(unsafe)` in design tokens (see Spacing.zoom)
+/// - Safe because: CGFloat reads are atomic, writes only on main thread
+///
+/// **Future Migration Path:**
+/// When adopting `-default-isolation MainActor` module-wide, the explicit
+/// `@MainActor` can be removed as it will be inferred automatically.
+///
+/// See: https://www.donnywals.com/exploring-concurrency-changes-in-swift-6-2/
+@MainActor
 @Observable
-final class ZoomManager: @unchecked Sendable {
+final class ZoomManager {
     static let shared = ZoomManager()
 
     private(set) var zoomLevel: CGFloat = 1.0
 
     private init() {}
 
-    /// Increase zoom by 10%
-    @MainActor
+    /// Increase zoom by 10% (clamped to 200%)
     func zoomIn() {
         zoomLevel = min(2.0, zoomLevel + 0.1)
     }
 
-    /// Decrease zoom by 10%
-    @MainActor
+    /// Decrease zoom by 10% (clamped to 50%)
     func zoomOut() {
         zoomLevel = max(0.5, zoomLevel - 0.1)
     }
 
     /// Reset to 100%
-    @MainActor
     func resetZoom() {
         zoomLevel = 1.0
     }
@@ -60,8 +75,21 @@ enum DesignSystem {
         private static let baseSheetPadding: CGFloat = 24
 
         // Computed properties that scale with zoom
+        /// Access ZoomManager.zoomLevel synchronously
+        ///
+        /// **Swift 6.2 Pattern**: Uses `MainActor.assumeIsolated` to access main-actor state
+        /// synchronously. This is safe because:
+        /// 1. SwiftUI view body calculations happen on main thread
+        /// 2. Design token access only happens during view rendering (main thread)
+        /// 3. CGFloat reads are atomic - worst case: one frame uses stale zoom value
+        ///
+        /// **Why not nonisolated(unsafe) alone**: Swift 6.2 requires explicit acknowledgment
+        /// that we're bypassing isolation checks. `assumeIsolated` provides runtime verification
+        /// in debug builds that we're actually on the main thread.
         private static var zoom: CGFloat {
-            ZoomManager.shared.zoomLevel
+            MainActor.assumeIsolated {
+                ZoomManager.shared.zoomLevel
+            }
         }
 
         static var xxs: CGFloat { baseXXS * zoom }
@@ -90,8 +118,11 @@ enum DesignSystem {
         private static let baseXL: CGFloat = 20
 
         // Computed properties that scale with zoom
+        /// Synchronous access to @MainActor zoom state (see Spacing.zoom for pattern explanation)
         private static var zoom: CGFloat {
-            ZoomManager.shared.zoomLevel
+            MainActor.assumeIsolated {
+                ZoomManager.shared.zoomLevel
+            }
         }
 
         static var xs: CGFloat { baseXS * zoom }
@@ -118,8 +149,11 @@ enum DesignSystem {
         private static let baseCaption2: CGFloat = 11
 
         // Computed properties that scale with zoom
+        /// Synchronous access to @MainActor zoom state (see Spacing.zoom for pattern explanation)
         private static var zoom: CGFloat {
-            ZoomManager.shared.zoomLevel
+            MainActor.assumeIsolated {
+                ZoomManager.shared.zoomLevel
+            }
         }
 
         static var title: Font { .system(size: baseTitle * zoom) }
