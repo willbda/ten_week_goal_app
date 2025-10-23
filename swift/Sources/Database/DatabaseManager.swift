@@ -79,9 +79,17 @@ public actor DatabaseManager {
         let databaseExists = !configuration.isInMemory &&
                             FileManager.default.fileExists(atPath: configuration.databasePath.path)
 
-        // Create database pool configuration with foreign keys enabled
+        // Create database pool configuration with foreign keys and WAL mode
         var dbConfig = Configuration()
         dbConfig.foreignKeysEnabled = true  // CRITICAL: Enable foreign key constraints
+
+        // Configure Write-Ahead Logging (WAL) for better concurrency
+        // WAL allows multiple readers while a writer is active
+        dbConfig.prepareDatabase { db in
+            try db.execute(sql: "PRAGMA journal_mode = WAL")
+            // Set synchronous mode for better performance while maintaining safety
+            try db.execute(sql: "PRAGMA synchronous = NORMAL")
+        }
 
         // Create database pool (not async in GRDB)
         if configuration.isInMemory {
