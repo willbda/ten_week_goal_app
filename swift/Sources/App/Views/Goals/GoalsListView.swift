@@ -65,12 +65,12 @@ public struct GoalsListView: View {
             }
         }
         .sheet(isPresented: $showingAddGoal) {
-            if viewModel != nil {
+            if let viewModel = viewModel {
                 GoalFormView(
                     goal: nil,
                     onSave: { goal in
                         Task {
-                            await viewModel?.createGoal(goal)
+                            await viewModel.createGoal(goal)
                             showingAddGoal = false
                         }
                     },
@@ -78,15 +78,26 @@ public struct GoalsListView: View {
                         showingAddGoal = false
                     }
                 )
+            } else {
+                // Show loading state while database initializes
+                VStack(spacing: DesignSystem.Spacing.md) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading...")
+                        .font(DesignSystem.Typography.body)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(minWidth: 400, minHeight: 300)
+                .presentationBackground(DesignSystem.Materials.modal)
             }
         }
         .sheet(isPresented: $showingEditGoal) {
-            if let goalToEdit = goalToEdit, viewModel != nil {
+            if let goalToEdit = goalToEdit, let viewModel = viewModel {
                 GoalFormView(
                     goal: goalToEdit,
                     onSave: { goal in
                         Task {
-                            await viewModel?.updateGoal(goal)
+                            await viewModel.updateGoal(goal)
                             showingEditGoal = false
                             self.goalToEdit = nil
                         }
@@ -96,6 +107,17 @@ public struct GoalsListView: View {
                         self.goalToEdit = nil
                     }
                 )
+            } else {
+                // Show loading state while database initializes
+                VStack(spacing: DesignSystem.Spacing.md) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading...")
+                        .font(DesignSystem.Typography.body)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(minWidth: 400, minHeight: 300)
+                .presentationBackground(DesignSystem.Materials.modal)
             }
         }
         .sheet(isPresented: $showingActionForm) {
@@ -116,6 +138,17 @@ public struct GoalsListView: View {
                         self.actionToCreate = nil
                     }
                 )
+            } else {
+                // Show loading state while database initializes
+                VStack(spacing: DesignSystem.Spacing.md) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading...")
+                        .font(DesignSystem.Typography.body)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(minWidth: 400, minHeight: 300)
+                .presentationBackground(DesignSystem.Materials.modal)
             }
         }
         .task {

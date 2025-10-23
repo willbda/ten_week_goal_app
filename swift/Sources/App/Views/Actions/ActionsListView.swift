@@ -105,6 +105,17 @@ public struct ActionsListView: View {
                         actionFormState = nil
                     }
                 )
+            } else {
+                // Show loading state while database initializes
+                VStack(spacing: DesignSystem.Spacing.md) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading...")
+                        .font(DesignSystem.Typography.body)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(minWidth: 400, minHeight: 300)
+                .presentationBackground(DesignSystem.Materials.modal)
             }
         }
         .sheet(isPresented: $showingBulkMatching, onDismiss: {
