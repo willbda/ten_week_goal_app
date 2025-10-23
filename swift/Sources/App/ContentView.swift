@@ -108,29 +108,30 @@ public struct ContentView: View {
     private var sidebarContent: some View {
             GeometryReader { geometry in
                 let width = geometry.size.width
+                let zoom = ZoomManager.shared.zoomLevel
 
-                // Progressive scaling with no hard stops
-                let fullThreshold: CGFloat = 200   // Full size at 200px
-                let textThreshold: CGFloat = 120   // Text starts fading at 120px
+                // Progressive scaling with no hard stops (base values at 100% zoom)
+                let fullThreshold: CGFloat = 200 * zoom   // Full size at 200px
+                let textThreshold: CGFloat = 120 * zoom   // Text starts fading at 120px
 
                 // Text opacity: fades between 120-200px
                 let textProgress = min(max((width - textThreshold) / (fullThreshold - textThreshold), 0), 1)
                 let textOpacity = easeInOut(textProgress)
 
-                // Icon scaling: continuous shrinking with reasonable minimum
-                let minIconSize: CGFloat = 20
-                let maxIconSize: CGFloat = 48
+                // Icon scaling: continuous shrinking with reasonable minimum (scaled by zoom)
+                let minIconSize: CGFloat = 20 * zoom
+                let maxIconSize: CGFloat = 48 * zoom
                 let iconSize = max(minIconSize, min(maxIconSize, width * 0.24)) // 24% of sidebar width
 
                 // Corner radius: becomes circular as icons shrink
                 let cornerRadius = iconSize / 2 // Always proportional to icon size
 
-                // Spacing and font scale with width
-                let spacing = max(0, min(12, (width - 80) * 0.15)) // Shrinks to 0 smoothly
-                let iconFontSize = max(12, iconSize * 0.42) // Font scales with container
+                // Spacing and font scale with width (scaled by zoom)
+                let spacing = max(0, min(12 * zoom, (width - 80 * zoom) * 0.15)) // Shrinks to 0 smoothly
+                let iconFontSize = max(12 * zoom, iconSize * 0.42) // Font scales with container
 
-                // Show text only when there's enough room
-                let showText = width > 100
+                // Show text only when there's enough room (threshold scales with zoom)
+                let showText = width > 100 * zoom
 
                 List(Section.allCases, selection: $selectedSection) { section in
                     NavigationLink(value: section) {
@@ -157,12 +158,12 @@ public struct ContentView: View {
 
                             // Text compresses naturally with layout priority
                             if showText {
-                                HStack(spacing: 8 * textOpacity) {
-                                    VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 8 * zoom * textOpacity) {
+                                    VStack(alignment: .leading, spacing: 2 * zoom) {
                                         Text(section.title)
-                                            .font(.headline)
+                                            .font(DesignSystem.Typography.headline)
                                         Text(section.subtitle)
-                                            .font(.caption)
+                                            .font(DesignSystem.Typography.caption)
                                             .foregroundStyle(.secondary)
                                     }
                                     .opacity(textOpacity)
@@ -173,10 +174,10 @@ public struct ContentView: View {
                                     // Activity indicator
                                     if let count = activityCount(for: section) {
                                         Text("\(count)")
-                                            .font(.caption.monospacedDigit())
+                                            .font(DesignSystem.Typography.caption.monospacedDigit())
                                             .foregroundStyle(.white)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
+                                            .padding(.horizontal, 6 * zoom)
+                                            .padding(.vertical, 2 * zoom)
                                             .background(Capsule().fill(section.accentColor.opacity(0.8)))
                                             .opacity(textOpacity)
                                     }

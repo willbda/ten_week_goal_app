@@ -69,10 +69,10 @@ struct FieldHelpModifier: ViewModifier {
             HStack(spacing: 4) {
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.caption2)
+                        .font(DesignSystem.Typography.caption2)
                 }
                 Text(helpText)
-                    .font(.caption)
+                    .font(DesignSystem.Typography.caption)
                     .foregroundStyle(.secondary)
             }
         }
@@ -107,7 +107,7 @@ struct RequiredFieldModifier: ViewModifier {
             content
             Text("*")
                 .foregroundStyle(.red)
-                .font(.callout)
+                .font(DesignSystem.Typography.callout)
         }
     }
 }
@@ -134,7 +134,7 @@ extension View {
 struct FormSectionHeaderModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .font(.headline)
+            .font(DesignSystem.Typography.headline)
             .foregroundStyle(.primary)
             .textCase(nil) // Override default uppercase in Form
     }
@@ -183,7 +183,7 @@ struct CharacterCountModifier: ViewModifier {
             content
 
             Text(countText)
-                .font(.caption2)
+                .font(DesignSystem.Typography.caption2)
                 .foregroundStyle(isOverLimit ? .red : .secondary)
         }
     }

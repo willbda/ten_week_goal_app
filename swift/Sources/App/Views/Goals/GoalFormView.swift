@@ -251,7 +251,7 @@ struct GoalFormView: View {
             if useSmartFields {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Why is this goal relevant?")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.caption)
                         .foregroundStyle(.secondary)
                     TextField("How does this align with your values?", text: $howGoalIsRelevant, axis: .vertical)
                         .lineLimit(2...4)
@@ -259,7 +259,7 @@ struct GoalFormView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("How is this goal actionable?")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.caption)
                         .foregroundStyle(.secondary)
                     TextField("What specific actions will you take?", text: $howGoalIsActionable, axis: .vertical)
                         .lineLimit(2...4)
@@ -291,10 +291,10 @@ struct GoalFormView: View {
                     Text("\(Int(priority))")
                         .foregroundStyle(.secondary)
                 }
-                .font(.subheadline)
+                .font(DesignSystem.Typography.subheadline)
                 Slider(value: $priority, in: 1...100, step: 1)
                 Text("Lower numbers = higher priority")
-                    .font(.caption2)
+                    .font(DesignSystem.Typography.caption2)
                     .foregroundStyle(.tertiary)
             }
 
@@ -347,35 +347,35 @@ private struct SmartInfoSheet: View {
                 Section {
                     Label("Specific", systemImage: "target")
                     Text("Clear and well-defined. \"Run 120km\" not \"exercise more\"")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
                 Section {
                     Label("Measurable", systemImage: "chart.line.uptrend.xyaxis")
                     Text("Quantifiable progress. Use units like km, hours, pages, etc.")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
                 Section {
                     Label("Achievable", systemImage: "hand.thumbsup")
                     Text("Realistic given your resources and constraints")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
                 Section {
                     Label("Relevant", systemImage: "heart")
                     Text("Aligns with your values and long-term objectives")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
                 Section {
                     Label("Time-bound", systemImage: "calendar")
                     Text("Has a clear deadline. Typically 10 weeks for a term")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
             }

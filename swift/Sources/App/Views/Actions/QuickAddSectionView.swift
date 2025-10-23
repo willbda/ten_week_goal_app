@@ -41,7 +41,7 @@ struct QuickAddSectionView: View {
                 if !recentActions.isEmpty {
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                         Text("Recent Actions")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.caption)
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
                             .padding(.horizontal, DesignSystem.Spacing.sm)
@@ -70,7 +70,7 @@ struct QuickAddSectionView: View {
                 if !activeGoals.isEmpty {
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                         Text("Active Goals")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.caption)
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
                             .padding(.horizontal, DesignSystem.Spacing.sm)
@@ -97,7 +97,7 @@ struct QuickAddSectionView: View {
 
                 if recentActions.isEmpty && activeGoals.isEmpty {
                     Text("No recent actions or active goals")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.subheadline)
                         .foregroundStyle(.secondary)
                         .italic()
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -115,7 +115,7 @@ struct QuickAddSectionView: View {
                         .foregroundStyle(.yellow)
 
                     Text("Quick Add")
-                        .font(.headline)
+                        .font(DesignSystem.Typography.headline)
 
                     Spacer()
 
@@ -181,41 +181,43 @@ private struct QuickActionCard: View {
     let onTap: () -> Void
 
     var body: some View {
+        let zoom = ZoomManager.shared.zoomLevel
+
         Button {
             onTap()
         } label: {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                 HStack {
                     Image(systemName: icon)
-                        .font(.title3)
+                        .font(DesignSystem.Typography.title3)
                         .foregroundStyle(iconColor)
 
                     Spacer()
 
                     Image(systemName: actionIcon)
-                        .font(.caption)
+                        .font(DesignSystem.Typography.caption)
                         .foregroundStyle(.white)
-                        .frame(width: 22, height: 22)
+                        .frame(width: 22 * zoom, height: 22 * zoom)
                         .background(iconColor)
                         .clipShape(Circle())
                 }
 
                 Text(title)
-                    .font(.subheadline)
+                    .font(DesignSystem.Typography.subheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
 
                 Text(subtitle)
-                    .font(.caption2)
+                    .font(DesignSystem.Typography.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             .padding(DesignSystem.Spacing.sm)
-            .frame(width: 160, height: 100, alignment: .topLeading)
+            .frame(width: 160 * zoom, height: 100 * zoom, alignment: .topLeading)
             .background(.quaternary.opacity(0.3))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.md, style: .continuous))
         }
         .buttonStyle(.plain)
     }

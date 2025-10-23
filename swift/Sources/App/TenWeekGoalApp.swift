@@ -30,6 +30,7 @@ public struct TenWeekGoalApp: App {
         WindowGroup {
             ContentView()
                 .environment(appViewModel)
+                .environment(ZoomManager.shared)
                 .task {
                     // Initialize database on app launch
                     await appViewModel.initialize()
@@ -41,6 +42,24 @@ public struct TenWeekGoalApp: App {
         #if os(macOS)
         .defaultSize(width: 1000, height: 700)
         .defaultPosition(.center)
+        .commands {
+            CommandGroup(replacing: .textFormatting) {
+                Button("Zoom In") {
+                    ZoomManager.shared.zoomIn()
+                }
+                .keyboardShortcut("+", modifiers: .command)
+
+                Button("Zoom Out") {
+                    ZoomManager.shared.zoomOut()
+                }
+                .keyboardShortcut("-", modifiers: .command)
+
+                Button("Actual Size") {
+                    ZoomManager.shared.resetZoom()
+                }
+                .keyboardShortcut("0", modifiers: .command)
+            }
+        }
         #endif
     }
 }

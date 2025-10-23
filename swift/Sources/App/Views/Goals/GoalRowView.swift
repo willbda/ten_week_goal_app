@@ -23,14 +23,14 @@ struct GoalRowView: View {
                 // Goal name with priority indicator
                 HStack {
                     Text(goal.title ?? "Untitled Goal")
-                        .font(.headline)
+                        .font(DesignSystem.Typography.headline)
 
                     Spacer()
 
                     // Priority badge
                     if goal.priority <= 10 {
                         Text("HIGH")
-                            .font(.caption2)
+                            .font(DesignSystem.Typography.caption2)
                             .fontWeight(.semibold)
                             .padding(.horizontal, DesignSystem.Spacing.xs - 2)
                             .padding(.vertical, DesignSystem.Spacing.xxs - 2)
@@ -39,7 +39,7 @@ struct GoalRowView: View {
                             .clipShape(Capsule())
                     } else if goal.priority <= 30 {
                         Text("MED")
-                            .font(.caption2)
+                            .font(DesignSystem.Typography.caption2)
                             .fontWeight(.semibold)
                             .padding(.horizontal, DesignSystem.Spacing.xs - 2)
                             .padding(.vertical, DesignSystem.Spacing.xxs - 2)
@@ -52,7 +52,7 @@ struct GoalRowView: View {
                 // Measurement target
                 if let unit = goal.measurementUnit, let target = goal.measurementTarget {
                     Text("Target: \(target, specifier: "%.1f") \(unit)")
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
@@ -67,7 +67,7 @@ struct GoalRowView: View {
                             Image(systemName: isOverdue ? "clock.badge.exclamationmark" : "clock")
                                 .foregroundStyle(isOverdue ? DesignSystem.Colors.error : .secondary)
                         }
-                        .font(.caption)
+                        .font(DesignSystem.Typography.caption)
                         .foregroundStyle(isOverdue ? DesignSystem.Colors.error : .secondary)
                     }
 
@@ -76,7 +76,7 @@ struct GoalRowView: View {
                     // Life domain tag
                     if let domain = goal.lifeDomain {
                         Text(domain)
-                            .font(.caption2)
+                            .font(DesignSystem.Typography.caption2)
                             .padding(.horizontal, DesignSystem.Spacing.xs - 2)
                             .padding(.vertical, DesignSystem.Spacing.xxs - 2)
                             .background(DesignSystem.Colors.goals.opacity(0.15))

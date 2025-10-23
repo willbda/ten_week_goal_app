@@ -2,8 +2,43 @@
 // Centralized design tokens and reusable components
 //
 // Written by Claude Code on 2025-10-23
+// Updated 2025-10-23: Added zoom support for accessibility
 
 import SwiftUI
+
+// MARK: - Zoom Manager
+
+/// Observable zoom manager for app-wide zoom state
+///
+/// Thread-safe singleton that manages zoom level across the app.
+/// The zoomLevel property is accessed synchronously but updates trigger
+/// SwiftUI view invalidation through @Observable.
+@Observable
+final class ZoomManager: @unchecked Sendable {
+    static let shared = ZoomManager()
+
+    private(set) var zoomLevel: CGFloat = 1.0
+
+    private init() {}
+
+    /// Increase zoom by 10%
+    @MainActor
+    func zoomIn() {
+        zoomLevel = min(2.0, zoomLevel + 0.1)
+    }
+
+    /// Decrease zoom by 10%
+    @MainActor
+    func zoomOut() {
+        zoomLevel = max(0.5, zoomLevel - 0.1)
+    }
+
+    /// Reset to 100%
+    @MainActor
+    func resetZoom() {
+        zoomLevel = 1.0
+    }
+}
 
 // MARK: - Design Tokens
 
@@ -13,39 +48,96 @@ enum DesignSystem {
     // MARK: - Spacing
 
     enum Spacing {
-        static let xxs: CGFloat = 4
-        static let xs: CGFloat = 8
-        static let sm: CGFloat = 12
-        static let md: CGFloat = 16
-        static let lg: CGFloat = 24
-        static let xl: CGFloat = 32
-        static let xxl: CGFloat = 48
+        // Base values (at 100% zoom)
+        private static let baseXXS: CGFloat = 4
+        private static let baseXS: CGFloat = 8
+        private static let baseSM: CGFloat = 12
+        private static let baseMD: CGFloat = 16
+        private static let baseLG: CGFloat = 24
+        private static let baseXL: CGFloat = 32
+        private static let baseXXL: CGFloat = 48
+        private static let baseFormPadding: CGFloat = 20
+        private static let baseSheetPadding: CGFloat = 24
+
+        // Computed properties that scale with zoom
+        private static var zoom: CGFloat {
+            ZoomManager.shared.zoomLevel
+        }
+
+        static var xxs: CGFloat { baseXXS * zoom }
+        static var xs: CGFloat { baseXS * zoom }
+        static var sm: CGFloat { baseSM * zoom }
+        static var md: CGFloat { baseMD * zoom }
+        static var lg: CGFloat { baseLG * zoom }
+        static var xl: CGFloat { baseXL * zoom }
+        static var xxl: CGFloat { baseXXL * zoom }
 
         /// Form padding (comfortable breathing room)
-        static let formPadding: CGFloat = 20
+        static var formPadding: CGFloat { baseFormPadding * zoom }
 
         /// Sheet padding (extra space for modals)
-        static let sheetPadding: CGFloat = 24
+        static var sheetPadding: CGFloat { baseSheetPadding * zoom }
     }
 
     // MARK: - Corner Radius
 
     enum CornerRadius {
-        static let xs: CGFloat = 4
-        static let sm: CGFloat = 8
-        static let md: CGFloat = 12
-        static let lg: CGFloat = 16
-        static let xl: CGFloat = 20
-        static let round: CGFloat = .infinity
+        // Base values (at 100% zoom)
+        private static let baseXS: CGFloat = 4
+        private static let baseSM: CGFloat = 8
+        private static let baseMD: CGFloat = 12
+        private static let baseLG: CGFloat = 16
+        private static let baseXL: CGFloat = 20
+
+        // Computed properties that scale with zoom
+        private static var zoom: CGFloat {
+            ZoomManager.shared.zoomLevel
+        }
+
+        static var xs: CGFloat { baseXS * zoom }
+        static var sm: CGFloat { baseSM * zoom }
+        static var md: CGFloat { baseMD * zoom }
+        static var lg: CGFloat { baseLG * zoom }
+        static var xl: CGFloat { baseXL * zoom }
+        static let round: CGFloat = .infinity // Never scales
     }
 
     // MARK: - Typography
 
     enum Typography {
-        static let sectionHeader = Font.headline
-        static let sectionFooter = Font.caption
-        static let formLabel = Font.body
-        static let formValue = Font.body.monospacedDigit()
+        // Base font sizes (at 100% zoom)
+        private static let baseTitle: CGFloat = 28
+        private static let baseTitle2: CGFloat = 22
+        private static let baseTitle3: CGFloat = 20
+        private static let baseHeadline: CGFloat = 17
+        private static let baseBody: CGFloat = 17
+        private static let baseCallout: CGFloat = 16
+        private static let baseSubheadline: CGFloat = 15
+        private static let baseFootnote: CGFloat = 13
+        private static let baseCaption: CGFloat = 12
+        private static let baseCaption2: CGFloat = 11
+
+        // Computed properties that scale with zoom
+        private static var zoom: CGFloat {
+            ZoomManager.shared.zoomLevel
+        }
+
+        static var title: Font { .system(size: baseTitle * zoom) }
+        static var title2: Font { .system(size: baseTitle2 * zoom) }
+        static var title3: Font { .system(size: baseTitle3 * zoom) }
+        static var headline: Font { .system(size: baseHeadline * zoom, weight: .semibold) }
+        static var body: Font { .system(size: baseBody * zoom) }
+        static var callout: Font { .system(size: baseCallout * zoom) }
+        static var subheadline: Font { .system(size: baseSubheadline * zoom) }
+        static var footnote: Font { .system(size: baseFootnote * zoom) }
+        static var caption: Font { .system(size: baseCaption * zoom) }
+        static var caption2: Font { .system(size: baseCaption2 * zoom, weight: .medium) }
+
+        // Semantic aliases for backwards compatibility
+        static var sectionHeader: Font { headline }
+        static var sectionFooter: Font { caption }
+        static var formLabel: Font { body }
+        static var formValue: Font { .system(size: baseBody * zoom).monospacedDigit() }
     }
 
     // MARK: - Colors

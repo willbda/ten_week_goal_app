@@ -24,7 +24,7 @@ struct ValueRowView: View {
                 // Value name with priority indicator
                 HStack {
                     Text(item.title ?? "Untitled Value")
-                        .font(.headline)
+                        .font(DesignSystem.Typography.headline)
 
                     Spacer()
 
@@ -35,7 +35,7 @@ struct ValueRowView: View {
                 // Detailed description
                 if let description = item.detailedDescription {
                     Text(description)
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
@@ -43,7 +43,7 @@ struct ValueRowView: View {
                 // Additional info (like alignment guidance for Major Values)
                 if let additionalInfo = item.additionalInfo {
                     Text(additionalInfo)
-                        .font(.caption)
+                        .font(DesignSystem.Typography.caption)
                         .foregroundStyle(.tertiary)
                         .italic()
                         .lineLimit(2)
@@ -54,7 +54,7 @@ struct ValueRowView: View {
                     HStack {
                         Spacer()
                         Text(domain)
-                            .font(.caption2)
+                            .font(DesignSystem.Typography.caption2)
                             .padding(.horizontal, DesignSystem.Spacing.xs - 2)
                             .padding(.vertical, DesignSystem.Spacing.xxs - 2)
                             .background(DesignSystem.Colors.values.opacity(0.15))
@@ -73,17 +73,17 @@ struct ValueRowView: View {
     private var priorityBadge: some View {
         if item.priority <= 5 {
             Text("★★★")
-                .font(.caption2)
+                .font(DesignSystem.Typography.caption2)
                 .fontWeight(.bold)
                 .foregroundStyle(.yellow)
         } else if item.priority <= 10 {
             Text("★★")
-                .font(.caption2)
+                .font(DesignSystem.Typography.caption2)
                 .fontWeight(.bold)
                 .foregroundStyle(.orange)
         } else if item.priority <= 25 {
             Text("★")
-                .font(.caption2)
+                .font(DesignSystem.Typography.caption2)
                 .fontWeight(.bold)
                 .foregroundStyle(.blue)
         }

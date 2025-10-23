@@ -8,12 +8,20 @@ import Models
 
 /// Row view for displaying a single action
 ///
-/// Displays action details including name, measurements, timing, and metadata.
+/// Displays action details including name, measurements, timing, metadata, and goal badges.
 struct ActionRowView: View {
 
     // MARK: - Properties
 
     let action: Action
+    let goals: [Goal]  // Goals this action contributes to
+
+    // MARK: - Initialization
+
+    init(action: Action, goals: [Goal] = []) {
+        self.action = action
+        self.goals = goals
+    }
 
     // MARK: - Body
 
@@ -22,14 +30,19 @@ struct ActionRowView: View {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                 // Friendly name with fallback
                 Text(action.title ?? "Untitled Action")
-                    .font(.headline)
+                    .font(DesignSystem.Typography.headline)
+
+                // Goal badges
+                if !goals.isEmpty {
+                    goalBadges
+                }
 
                 // Individual measurements
                 if let measuresByUnit = action.measuresByUnit {
                     ForEach(Array(measuresByUnit.keys.sorted()), id: \.self) { unit in
                         if let value = measuresByUnit[unit] {
                             Text("\(value, specifier: "%.1f") \(unit)")
-                                .font(.subheadline)
+                                .font(DesignSystem.Typography.subheadline)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -40,10 +53,34 @@ struct ActionRowView: View {
 
             // Log time as date in right corner
             Text(action.logTime, style: .date)
-                .font(.caption)
+                .font(DesignSystem.Typography.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, DesignSystem.Spacing.xxs)
+    }
+
+    // MARK: - Subviews
+
+    private var goalBadges: some View {
+        HStack(spacing: DesignSystem.Spacing.xxs) {
+            ForEach(goals.prefix(2)) { goal in
+                Text(goal.title ?? "Goal")
+                    .font(DesignSystem.Typography.caption2)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, DesignSystem.Spacing.xs)
+                    .padding(.vertical, 2)
+                    .background(
+                        Capsule()
+                            .fill(DesignSystem.Colors.goals.opacity(0.8))
+                    )
+            }
+
+            if goals.count > 2 {
+                Text("+\(goals.count - 2)")
+                    .font(DesignSystem.Typography.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 

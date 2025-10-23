@@ -23,11 +23,11 @@ struct TermRowView: View {
                 // Term number and name
                 HStack {
                     Text("Term \(term.termNumber)")
-                        .font(.headline)
+                        .font(DesignSystem.Typography.headline)
 
                     if let theme = term.theme {
                         Text("• \(theme)")
-                            .font(.headline)
+                            .font(DesignSystem.Typography.headline)
                             .foregroundStyle(.secondary)
                     }
 
@@ -40,11 +40,11 @@ struct TermRowView: View {
                 // Date range
                 HStack {
                     Image(systemName: "calendar")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.caption)
                         .foregroundStyle(.secondary)
 
                     Text(dateRangeText)
-                        .font(.subheadline)
+                        .font(DesignSystem.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
@@ -52,11 +52,11 @@ struct TermRowView: View {
                 if !term.termGoalsByID.isEmpty {
                     HStack {
                         Image(systemName: "target")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.caption)
                             .foregroundStyle(.secondary)
 
                         Text("\(term.termGoalsByID.count) goal\(term.termGoalsByID.count == 1 ? "" : "s")")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -71,7 +71,7 @@ struct TermRowView: View {
         Group {
             if isActive {
                 Text("ACTIVE")
-                    .font(.caption2)
+                    .font(DesignSystem.Typography.caption2)
                     .fontWeight(.semibold)
                     .padding(.horizontal, DesignSystem.Spacing.xs - 2)
                     .padding(.vertical, DesignSystem.Spacing.xxs - 2)
@@ -80,7 +80,7 @@ struct TermRowView: View {
                     .clipShape(Capsule())
             } else if isUpcoming {
                 Text("UPCOMING")
-                    .font(.caption2)
+                    .font(DesignSystem.Typography.caption2)
                     .fontWeight(.semibold)
                     .padding(.horizontal, DesignSystem.Spacing.xs - 2)
                     .padding(.vertical, DesignSystem.Spacing.xxs - 2)
@@ -89,7 +89,7 @@ struct TermRowView: View {
                     .clipShape(Capsule())
             } else {
                 Text("PAST")
-                    .font(.caption2)
+                    .font(DesignSystem.Typography.caption2)
                     .fontWeight(.semibold)
                     .padding(.horizontal, DesignSystem.Spacing.xs - 2)
                     .padding(.vertical, DesignSystem.Spacing.xxs - 2)

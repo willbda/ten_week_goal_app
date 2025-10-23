@@ -84,7 +84,7 @@ public struct ExpandableFormSection<Content: View>: View {
 
                     if let subtitle = subtitle {
                         Text(subtitle)
-                            .font(.caption)
+                            .font(DesignSystem.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
                 }

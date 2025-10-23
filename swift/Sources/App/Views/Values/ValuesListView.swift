@@ -101,7 +101,7 @@ public struct ValuesListView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("About Value Types")
-                            .font(.headline)
+                            .font(DesignSystem.Typography.headline)
                             .foregroundStyle(.secondary)
                         
                         VStack(alignment: .leading, spacing: 4) {
@@ -110,7 +110,7 @@ public struct ValuesListView: View {
                             valueTypeDescription("General Values:", "Things you believe are worthwhile")
                             valueTypeDescription("Life Areas:", "Domains that structure your life")
                         }
-                        .font(.caption)
+                        .font(DesignSystem.Typography.caption)
                         .foregroundStyle(.tertiary)
                     }
                     .padding(.vertical, 8)

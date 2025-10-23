@@ -186,13 +186,13 @@ public struct TermFormView: View {
                         Text("\(durationInDays) days (\(durationInDays / 7) weeks)")
                             .foregroundStyle(durationInDays == 70 ? Color.primary : Color.orange)
                     }
-                    .font(.callout)
+                    .font(DesignSystem.Typography.callout)
                 } header: {
                     Text("Basic Information")
                         .formSectionHeader()
                 } footer: {
                     Text("Standard term length is 70 days (10 weeks)")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.caption)
                 }
 
                 // MARK: Theme
@@ -205,7 +205,7 @@ public struct TermFormView: View {
                         .formSectionHeader()
                 } footer: {
                     Text("Optional: What's the main focus? (e.g., \"Health & Fitness\", \"Career Growth\")")
-                        .font(.caption)
+                        .font(DesignSystem.Typography.caption)
                 }
 
                 // MARK: Goal Selection
@@ -218,7 +218,7 @@ public struct TermFormView: View {
                     if availableGoals.isEmpty {
                         Text("No goals available")
                             .foregroundStyle(.secondary)
-                            .font(.callout)
+                            .font(DesignSystem.Typography.callout)
                     } else {
                         ForEach(availableGoals) { goal in
                             GoalSelectionRow(
@@ -355,7 +355,7 @@ private struct GoalSelectionRow: View {
             HStack {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(isSelected ? .blue : .secondary)
-                    .font(.title3)
+                    .font(DesignSystem.Typography.title3)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(goal.title ?? "Untitled Goal")
@@ -363,13 +363,13 @@ private struct GoalSelectionRow: View {
 
                     if let target = goal.measurementTarget, let unit = goal.measurementUnit {
                         Text("\(target, format: .number) \(unit)")
-                            .font(.caption)
+                            .font(DesignSystem.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
 
                     if let targetDate = goal.targetDate {
                         Text("Due: \(targetDate, format: .dateTime.month().day().year())")
-                            .font(.caption2)
+                            .font(DesignSystem.Typography.caption2)
                             .foregroundStyle(.orange)
                     }
                 }
