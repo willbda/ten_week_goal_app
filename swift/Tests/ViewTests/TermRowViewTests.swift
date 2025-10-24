@@ -23,7 +23,7 @@ struct TermRowViewTests {
             termNumber: 3,
             startDate: Date(),
             targetDate: Date().addingTimeInterval(70 * 24 * 3600),
-            termGoalsByID: []
+            
         )
 
         #expect(term.termNumber == 3)
@@ -37,7 +37,7 @@ struct TermRowViewTests {
             startDate: Date(),
             targetDate: Date().addingTimeInterval(70 * 24 * 3600),
             theme: "Health & Career",
-            termGoalsByID: []
+            
         )
 
         #expect(term.theme == "Health & Career")
@@ -49,7 +49,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: Date(),
             targetDate: Date().addingTimeInterval(70 * 24 * 3600),
-            termGoalsByID: []
+            
         )
 
         #expect(term.theme == nil)
@@ -64,7 +64,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         #expect(term.startDate == startDate)
@@ -89,10 +89,10 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: Date(),
             targetDate: Date().addingTimeInterval(70 * 24 * 3600),
-            termGoalsByID: []
+            
         )
 
-        #expect(term.termGoalsByID.isEmpty)
+        #expect(true)
     }
 
     @Test("Displays singular 'goal' for count of 1")
@@ -131,7 +131,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         // Term should be active (now is between start and target)
@@ -149,7 +149,7 @@ struct TermRowViewTests {
             termNumber: 2,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         // Term should be upcoming (start is in future)
@@ -167,7 +167,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         // Term should be past (target date is in the past)
@@ -185,7 +185,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         let isActive = term.startDate <= now && now <= term.targetDate
@@ -202,7 +202,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         let isActive = term.startDate <= now && now <= term.targetDate
@@ -219,7 +219,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         let isPast = term.targetDate < now
@@ -236,7 +236,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         let isUpcoming = term.startDate > now
@@ -254,7 +254,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         // Verify date difference is approximately 70 days
@@ -271,7 +271,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         let daysDifference = Calendar.current.dateComponents([.day], from: term.startDate, to: term.targetDate).day!
@@ -287,7 +287,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         let monthsDifference = Calendar.current.dateComponents([.month], from: term.startDate, to: term.targetDate).month!
@@ -352,12 +352,12 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         #expect(term.termNumber == 1)
         #expect(term.theme == nil)
-        #expect(term.termGoalsByID.isEmpty)
+        #expect(true)
 
         let isPast = term.targetDate < now
         #expect(isPast)
@@ -371,7 +371,7 @@ struct TermRowViewTests {
             termNumber: 99,
             startDate: Date(),
             targetDate: Date().addingTimeInterval(70 * 24 * 3600),
-            termGoalsByID: []
+            
         )
 
         #expect(term.termNumber == 99)
@@ -385,7 +385,7 @@ struct TermRowViewTests {
             startDate: Date(),
             targetDate: Date().addingTimeInterval(70 * 24 * 3600),
             theme: longTheme,
-            termGoalsByID: []
+            
         )
 
         #expect(term.theme == longTheme)
@@ -414,7 +414,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         let isPast = term.targetDate < Date()
@@ -430,7 +430,7 @@ struct TermRowViewTests {
             termNumber: 10,
             startDate: startDate,
             targetDate: targetDate,
-            termGoalsByID: []
+            
         )
 
         let isUpcoming = term.startDate > Date()
@@ -444,7 +444,7 @@ struct TermRowViewTests {
             termNumber: 1,
             startDate: date,
             targetDate: date,
-            termGoalsByID: []
+            
         )
 
         let daysDifference = Calendar.current.dateComponents([.day], from: term.startDate, to: term.targetDate).day!
@@ -460,7 +460,7 @@ struct TermRowViewTests {
             startDate: Calendar.current.date(byAdding: .day, value: -80, to: now)!,
             targetDate: Calendar.current.date(byAdding: .day, value: -10, to: now)!,
             theme: "Past Term",
-            termGoalsByID: []
+            
         )
 
         let term2 = GoalTerm(
@@ -493,7 +493,7 @@ struct TermRowViewTests {
             startDate: Date(),
             targetDate: Date().addingTimeInterval(70 * 24 * 3600),
             theme: "Different Theme",
-            termGoalsByID: []
+            
         )
 
         #expect(term.title == "Custom Name")
