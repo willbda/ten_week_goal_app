@@ -28,7 +28,6 @@ struct TermTests {
         #expect(term.polymorphicSubtype == "goal_term")
         #expect(term.id != nil) // UUID auto-generated
         #expect(term.logTime != nil) // Defaults to Date()
-        #expect(term.termGoalsByID.isEmpty) // Empty array by default
         #expect(term.theme == nil)
         #expect(term.reflection == nil)
     }
@@ -36,8 +35,6 @@ struct TermTests {
     @Test func testFullyPopulatedTerm() {
         let start = Date()
         let end = start.addingTimeInterval(60*60*24*70)
-        let goalID1 = UUID()
-        let goalID2 = UUID()
 
         let term = GoalTerm(
             title: "Q4 2025",
@@ -47,15 +44,11 @@ struct TermTests {
             startDate: start,
             targetDate: end,
             theme: "Building sustainable habits",
-            termGoalsByID: [goalID1, goalID2],
             reflection: "Made great progress on consistency"
         )
 
         #expect(term.title == "Q4 2025")
         #expect(term.theme == "Building sustainable habits")
-        #expect(term.termGoalsByID.count == 2)
-        #expect(term.termGoalsByID.contains(goalID1))
-        #expect(term.termGoalsByID.contains(goalID2))
         #expect(term.reflection == "Made great progress on consistency")
     }
 
@@ -247,25 +240,8 @@ struct TermTests {
     }
 
     // MARK: - Goal Association Tests
-
-    @Test func testTermWithMultipleGoals() {
-        let start = Date()
-        let end = start.addingTimeInterval(60*60*24*70)
-
-        let goalIDs = [UUID(), UUID(), UUID()]
-
-        let term = GoalTerm(
-            termNumber: 1,
-            startDate: start,
-            targetDate: end,
-            termGoalsByID: goalIDs
-        )
-
-        #expect(term.termGoalsByID.count == 3)
-        for goalID in goalIDs {
-            #expect(term.termGoalsByID.contains(goalID))
-        }
-    }
+    // NOTE: Goal associations now stored in term_goal_assignments junction table
+    // These tests moved to integration tests where database access is available
 
     // MARK: - LifeTime Tests
 

@@ -31,6 +31,9 @@ swift test --filter ActionTests
 
 # Clean build artifacts
 swift package clean
+
+# Run LLM Playground (requires macOS 26+)
+swift run LLMPlayground
 ```
 
 ### Development Workflow
@@ -52,13 +55,23 @@ swift/
 ├── Sources/
 │   ├── App/                  # SwiftUI views and UI layer
 │   │   ├── DesignSystem.swift      # ✅ Central design tokens
-│   │   ├── ContentView.swift       # ✅ Root navigation
+│   │   ├── ContentView.swift       # ✅ Root navigation (macOS)
+│   │   ├── iOS/                    # ✅ iOS-specific UI (planning phase)
+│   │   │   ├── ContentView_iOS.swift       # TabView navigation
+│   │   │   ├── GoalProgressActivity.swift  # Live Activities
+│   │   │   ├── LiquidGlassDesignSystem.swift # iOS design tokens
+│   │   │   └── LiquidGlassFormView.swift   # Adaptive forms
 │   │   ├── Views/                  # Feature views
 │   │   │   ├── Actions/            # Actions list/forms
 │   │   │   ├── Goals/              # Goals list/forms
 │   │   │   ├── Values/             # Values list/forms
 │   │   │   └── Terms/              # Terms list/forms
 │   │   └── GoalDocument.swift      # Document-based architecture
+│   ├── LLMPlayground/       # ✅ Interactive prompt testing CLI
+│   │   ├── Playground.swift        # Main CLI (macOS 26+)
+│   │   ├── PlaygroundHelpers.swift # Prompt engineering utilities
+│   │   ├── PromptLibrary.swift     # Example prompt collection
+│   │   └── README.md               # Usage guide
 │   ├── Models/              # Domain entities (protocol-oriented)
 │   │   ├── Protocols.swift  # Core ontological protocols (public)
 │   │   └── Kinds/           # Entity implementations
@@ -71,6 +84,10 @@ swift/
 │   │   ├── DatabaseConfiguration.swift # ✅ Path management
 │   │   └── DatabaseError.swift        # ✅ Typed errors
 │   └── BusinessLogic/       # Business logic (planned)
+├── iOS-docs/                # ✅ iOS implementation planning docs
+│   ├── iOS_IMPLEMENTATION_PLAN.md  # Complete iOS migration strategy
+│   ├── LIQUID_GLASS_DESIGN.md      # iOS design philosophy
+│   └── LIQUID_GLASS_IMPLEMENTATION.md # Technical implementation guide
 ├── Tests/
 │   ├── ActionTests.swift    # 5 tests passing
 │   └── GoalTests.swift      # 9 tests passing
@@ -699,6 +716,94 @@ See `SWIFTROADMAP.md` for detailed breakdown:
 - **MVP**: 18-26 hours total (4 hours complete, 14-22 remaining)
 - **stable**: 24-34 hours
 
+## LLM Playground (Oct 24, 2025)
+
+**Interactive CLI for Foundation Models prompt engineering and experimentation.**
+
+### Overview
+
+The LLM Playground provides a command-line interface for testing Foundation Models integration before building UI. It enables rapid prompt iteration with immediate feedback.
+
+### Running the Playground
+
+```bash
+# Build and run (requires macOS 26+ with Foundation Models)
+swift run LLMPlayground
+
+# Interactive menu with options:
+# 1. Send custom prompt
+# 2. Use example prompts (20 curated examples)
+# 3. View conversation history
+# 4. Test tool calling (GetGoals, GetActions, GetTerms, GetValues)
+# 5. Clear session
+# 6. Benchmark prompts
+```
+
+### Features
+
+- **Custom Prompts**: Test arbitrary prompts with tool calling
+- **Example Library**: 20 pre-built prompts across 5 categories:
+  - Reflective: Patterns and themes
+  - Analytical: Metrics and breakdowns
+  - Exploratory: Relationship discovery
+  - Specific: Direct data queries
+  - Creative: Narratives and unconventional approaches
+- **Conversation History**: Session-based tracking with database persistence
+- **Tool Testing**: Verify individual tool responses
+- **Benchmarking**: Measure response times across multiple prompts
+
+### Architecture Integration
+
+The playground uses the same `ConversationService` that powers the Assistant chat in the main app, ensuring:
+- **Consistent behavior**: Same tools, same prompts, same responses
+- **Rapid prototyping**: Test prompt variations in seconds, not minutes
+- **Database integration**: Uses GRDB with `conversation_history` table
+
+### Use Cases
+
+1. **Prompt Engineering**: Refine Assistant prompts before UI integration
+2. **Tool Validation**: Verify GetGoals/GetActions/GetTerms/GetValues work correctly
+3. **Response Analysis**: Compare different prompt phrasings
+4. **Performance Benchmarking**: Measure response times for optimization
+
+See `Sources/LLMPlayground/README.md` for complete documentation.
+
+## iOS Implementation (Planning Phase)
+
+**iOS adaptation of the macOS app is ready for development. See `iOS-docs/` for complete planning materials.**
+
+### Status
+
+- ✅ Architecture analyzed (~80% platform-agnostic)
+- ✅ Design system created (Liquid Glass aesthetics)
+- ✅ Implementation plan completed (phased approach)
+- ✅ Example code written (ContentView_iOS, GoalProgressActivity, etc.)
+- 🚧 Implementation pending (requires UI layer work only)
+
+### Key Documents
+
+- **iOS_IMPLEMENTATION_PLAN.md**: Complete migration strategy with phase-based approach
+- **LIQUID_GLASS_DESIGN.md**: iOS design philosophy and principles
+- **LIQUID_GLASS_IMPLEMENTATION.md**: Technical implementation guide
+
+### What's Already Platform-Agnostic
+
+All of these work on iOS without changes:
+- ✅ All domain models (Action, Goal, Value, Term, Relationships)
+- ✅ All business logic services (MatchingService, InferenceService)
+- ✅ Database layer (DatabaseManager, GRDB, SQLite schemas)
+- ✅ Core ViewModels (ActionsViewModel, GoalsViewModel, etc.)
+- ✅ Design system tokens (with zoom scaling abstraction)
+
+### What Needs iOS Adaptation
+
+Platform-specific UI changes required:
+- ⚠️ Navigation pattern (NavigationSplitView → TabView or NavigationStack)
+- ⚠️ Form layouts and spacing (remove fixed widths, adapt for smaller screens)
+- ⚠️ Keyboard handling (on-screen keyboard, toolbar, dismissal)
+- ⚠️ Platform features (ZoomManager, keyboard shortcuts, AI availability checks)
+- ⚠️ Document handling (GoalDocument → iOS Files app integration)
+
 ---
 
-Last Updated: October 18, 2025
+Last Updated: October 24, 2025

@@ -22,18 +22,11 @@ struct LLMPlayground {
         print("\n🧪 LLM Playground - Foundation Models Testing Environment\n")
         print("═══════════════════════════════════════════════════════════\n")
 
-        // Check Foundation Models availability
-        guard #available(macOS 26.0, *) else {
-            print("❌ This playground requires macOS 26.0 or later")
-            print("   Foundation Models is not available on this system.\n")
-            return
-        }
-
         do {
             // Initialize conversation service
             print("🔧 Initializing ConversationService...")
             let service = try await ConversationService.createDefault()
-            let sessionId = service.getCurrentSessionId()
+            let sessionId = await service.getCurrentSessionId()
             print("✅ Session \(sessionId) ready\n")
 
             // Run interactive loop

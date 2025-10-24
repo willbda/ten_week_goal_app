@@ -24,21 +24,22 @@ struct TermRowView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                // Term number and name
+                // Title (or term number as fallback)
                 HStack {
-                    Text("Term \(term.termNumber)")
+                    Text(term.title ?? "Term \(term.termNumber)")
                         .font(DesignSystem.Typography.headline)
-
-                    if let theme = term.theme {
-                        Text("• \(theme)")
-                            .font(DesignSystem.Typography.headline)
-                            .foregroundStyle(.secondary)
-                    }
 
                     Spacer()
 
                     // Status badge
                     statusBadge
+                }
+
+                // Theme (if provided)
+                if let theme = term.theme {
+                    Text(theme)
+                        .font(DesignSystem.Typography.subheadline)
+                        .foregroundStyle(.secondary)
                 }
 
                 // Date range
