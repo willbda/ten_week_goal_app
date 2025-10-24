@@ -19,6 +19,11 @@ let package = Package(
         .executable(
             name: "GoalTrackerCLI",
             targets: ["AppRunner"]
+        ),
+        // LLM Playground for interactive prompt testing
+        .executable(
+            name: "LLMPlayground",
+            targets: ["LLMPlayground"]
         )
     ],
     dependencies: [
@@ -69,6 +74,17 @@ let package = Package(
                 .product(name: "GRDB", package: "GRDB.swift")
             ],
             path: "Sources/AppRunner"
+        ),
+        // LLM Playground executable for interactive prompt testing
+        .executableTarget(
+            name: "LLMPlayground",
+            dependencies: [
+                "Models",
+                "Database",
+                "BusinessLogic",
+                .product(name: "GRDB", package: "GRDB.swift")
+            ],
+            path: "Sources/LLMPlayground"
         ),
         // Tests
         .testTarget(
