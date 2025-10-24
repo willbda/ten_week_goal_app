@@ -46,11 +46,6 @@ struct GoalFormView: View {
     @State private var expectedTermLength: String
     @State private var useSmartFields: Bool
 
-    // Motivating properties
-    @State private var priority: Double
-    @State private var lifeDomain: String
-    @State private var useLifeDomain: Bool
-
     // UI state
     @State private var showingSmartInfo = false
 
@@ -87,11 +82,6 @@ struct GoalFormView: View {
         _howGoalIsActionable = State(initialValue: goal?.howGoalIsActionable ?? "")
         _expectedTermLength = State(initialValue: goal?.expectedTermLength.map { String($0) } ?? "10")
         _useSmartFields = State(initialValue: goal?.howGoalIsRelevant != nil || goal?.howGoalIsActionable != nil)
-
-        // Motivating fields
-        _priority = State(initialValue: Double(goal?.priority ?? 50))
-        _lifeDomain = State(initialValue: goal?.lifeDomain ?? "")
-        _useLifeDomain = State(initialValue: goal?.lifeDomain != nil)
     }
 
     // MARK: - Computed Properties
@@ -129,8 +119,6 @@ struct GoalFormView: View {
                 dateSection
 
                 smartSection
-
-                motivationSection
 
                 // SMART status indicator
                 if isSmart {
@@ -282,29 +270,6 @@ struct GoalFormView: View {
         }
     }
 
-    private var motivationSection: some View {
-        Section("Motivation & Context") {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Priority")
-                    Spacer()
-                    Text("\(Int(priority))")
-                        .foregroundStyle(.secondary)
-                }
-                .font(DesignSystem.Typography.subheadline)
-                Slider(value: $priority, in: 1...100, step: 1)
-                Text("Lower numbers = higher priority")
-                    .font(DesignSystem.Typography.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-
-            Toggle("Set Life Domain", isOn: $useLifeDomain)
-
-            if useLifeDomain {
-                TextField("Life Domain (e.g., Health, Career)", text: $lifeDomain)
-            }
-        }
-    }
 
     // MARK: - Actions
 
@@ -325,8 +290,6 @@ struct GoalFormView: View {
             howGoalIsRelevant: useSmartFields && !howGoalIsRelevant.isEmpty ? howGoalIsRelevant : nil,
             howGoalIsActionable: useSmartFields && !howGoalIsActionable.isEmpty ? howGoalIsActionable : nil,
             expectedTermLength: termLength,
-            priority: Int(priority),
-            lifeDomain: useLifeDomain && !lifeDomain.isEmpty ? lifeDomain : nil,
             logTime: logTime,
             id: goalToEdit?.id ?? UUID()  // Preserve ID when editing
         )
@@ -434,9 +397,7 @@ private struct SmartInfoSheet: View {
             targetDate: Date().addingTimeInterval(86400 * 70),
             howGoalIsRelevant: "Improves cardiovascular health and mental clarity",
             howGoalIsActionable: "Run 3x per week, gradually increasing distance",
-            expectedTermLength: 10,
-            priority: 20,
-            lifeDomain: "Health"
+            expectedTermLength: 10
         ),
         onSave: { goal in
             print("Would save: \(goal)")

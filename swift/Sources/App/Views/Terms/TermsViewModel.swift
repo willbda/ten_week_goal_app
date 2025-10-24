@@ -59,12 +59,19 @@ final class TermsViewModel {
 
     // MARK: - CRUD Operations
 
-    /// Create new term
-    /// - Parameter term: Term to create
-    func createTerm(_ term: GoalTerm) async {
+    /// Create new term with goal assignments
+    /// - Parameters:
+    ///   - term: Term to create
+    ///   - goalIDs: Set of goal UUIDs to assign to this term
+    func createTerm(_ term: GoalTerm, goalIDs: Set<UUID>) async {
         do {
             // Save term to database
             try await database.saveTerm(term)
+
+            // Create junction table assignments for each goal
+            for (index, goalID) in goalIDs.enumerated() {
+                try await database.assignGoal(goalID, toTerm: term.id, order: index)
+            }
 
             // Reload to get updated list
             await loadTerms()
@@ -74,12 +81,27 @@ final class TermsViewModel {
         }
     }
 
-    /// Update existing term
-    /// - Parameter term: Term to update
-    func updateTerm(_ term: GoalTerm) async {
+    /// Update existing term and goal assignments
+    /// - Parameters:
+    ///   - term: Term to update
+    ///   - goalIDs: Set of goal UUIDs to assign to this term (replaces existing assignments)
+    func updateTerm(_ term: GoalTerm, goalIDs: Set<UUID>) async {
         do {
             // Save term to database
             try await database.saveTerm(term)
+
+            // Remove existing assignments (they'll be recreated below)
+            // Fetch current assignments
+            if let (_, currentGoals) = try await database.fetchTermWithGoals(term.id) {
+                for goal in currentGoals {
+                    try await database.removeGoal(goal.id, fromTerm: term.id)
+                }
+            }
+
+            // Create new assignments
+            for (index, goalID) in goalIDs.enumerated() {
+                try await database.assignGoal(goalID, toTerm: term.id, order: index)
+            }
 
             // Reload to get updated list
             await loadTerms()

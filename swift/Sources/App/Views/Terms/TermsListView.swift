@@ -58,14 +58,14 @@ public struct TermsListView: View {
             if let viewModel = viewModel {
                 TermFormView(
                     term: termToEdit,
-                    onSave: { term in
+                    onSave: { term, goalIDs in
                         Task {
                             if termToEdit != nil {
                                 // Edit mode - update existing term
-                                await viewModel.updateTerm(term)
+                                await viewModel.updateTerm(term, goalIDs: goalIDs)
                             } else {
                                 // Create mode - create new term
-                                await viewModel.createTerm(term)
+                                await viewModel.createTerm(term, goalIDs: goalIDs)
                             }
                         }
                         showingTermForm = false
@@ -133,7 +133,7 @@ public struct TermsListView: View {
         } else {
             List {
                 ForEach(viewModel.terms) { term in
-                    TermRowView(term: term)
+                    TermRowView(term: term, goalCount: nil)  // TODO: Fetch goal count from database
                         .contentShape(Rectangle())
                         .onTapGesture {
                             termToEdit = term

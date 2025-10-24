@@ -251,15 +251,13 @@ private struct QuickActionCard: View {
                     title: "Run 50km this week",
                     measurementUnit: "km",
                     measurementTarget: 50.0,
-                    targetDate: Calendar.current.date(byAdding: .day, value: 5, to: Date()),
-                    priority: 5
+                    targetDate: Calendar.current.date(byAdding: .day, value: 5, to: Date())
                 ),
                 Goal(
                     title: "Meditate daily",
                     measurementUnit: "sessions",
                     measurementTarget: 30,
-                    targetDate: Calendar.current.date(byAdding: .month, value: 1, to: Date()),
-                    priority: 10
+                    targetDate: Calendar.current.date(byAdding: .month, value: 1, to: Date())
                 )
             ],
             onDuplicateAction: { action in

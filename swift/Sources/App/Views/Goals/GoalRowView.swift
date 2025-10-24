@@ -20,33 +20,12 @@ struct GoalRowView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                // Goal name with priority indicator
+                // Goal name
                 HStack {
                     Text(goal.title ?? "Untitled Goal")
                         .font(DesignSystem.Typography.headline)
 
                     Spacer()
-
-                    // Priority badge
-                    if goal.priority <= 10 {
-                        Text("HIGH")
-                            .font(DesignSystem.Typography.caption2)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, DesignSystem.Spacing.xs - 2)
-                            .padding(.vertical, DesignSystem.Spacing.xxs - 2)
-                            .background(DesignSystem.Colors.error)
-                            .foregroundStyle(.white)
-                            .clipShape(Capsule())
-                    } else if goal.priority <= 30 {
-                        Text("MED")
-                            .font(DesignSystem.Typography.caption2)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, DesignSystem.Spacing.xs - 2)
-                            .padding(.vertical, DesignSystem.Spacing.xxs - 2)
-                            .background(DesignSystem.Colors.warning)
-                            .foregroundStyle(.white)
-                            .clipShape(Capsule())
-                    }
                 }
 
                 // Measurement target
@@ -72,17 +51,6 @@ struct GoalRowView: View {
                     }
 
                     Spacer()
-
-                    // Life domain tag
-                    if let domain = goal.lifeDomain {
-                        Text(domain)
-                            .font(DesignSystem.Typography.caption2)
-                            .padding(.horizontal, DesignSystem.Spacing.xs - 2)
-                            .padding(.vertical, DesignSystem.Spacing.xxs - 2)
-                            .background(DesignSystem.Colors.goals.opacity(0.15))
-                            .foregroundStyle(DesignSystem.Colors.goals)
-                            .clipShape(Capsule())
-                    }
                 }
             }
         }
@@ -103,9 +71,7 @@ struct GoalRowView: View {
             targetDate: Calendar.current.date(byAdding: .weekOfYear, value: 10, to: Date()),
             howGoalIsRelevant: "Improve cardiovascular health",
             howGoalIsActionable: "Run 3-4 times per week",
-            expectedTermLength: 10,
-            priority: 5,
-            lifeDomain: "Health"
+            expectedTermLength: 10
         ))
 
         GoalRowView(goal: Goal(
@@ -113,15 +79,12 @@ struct GoalRowView: View {
             detailedDescription: "Master iOS development",
             measurementUnit: "hours",
             measurementTarget: 100.0,
-            targetDate: Calendar.current.date(byAdding: .month, value: 3, to: Date()),
-            priority: 15,
-            lifeDomain: "Career"
+            targetDate: Calendar.current.date(byAdding: .month, value: 3, to: Date())
         ))
 
         GoalRowView(goal: Goal(
             title: "Get healthier",
-            detailedDescription: "General wellness improvement",
-            priority: 25
+            detailedDescription: "General wellness improvement"
         ))
 
         // Overdue goal
@@ -129,9 +92,7 @@ struct GoalRowView: View {
             title: "Overdue goal",
             measurementUnit: "tasks",
             measurementTarget: 5.0,
-            targetDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),
-            priority: 8,
-            lifeDomain: "Work"
+            targetDate: Calendar.current.date(byAdding: .day, value: -7, to: Date())
         ))
     }
 }

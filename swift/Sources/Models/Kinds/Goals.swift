@@ -25,8 +25,7 @@ import GRDB
 /// - Persistable: id, title, detailedDescription, freeformNotes, logTime
 /// - Completable: targetDate, measurementUnit, measurementTarget, startDate
 /// - Polymorphable: polymorphicSubtype
-/// - Motivating: priority, lifeDomain
-public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable, Sendable,
+public struct Goal: Persistable, Completable, Polymorphable, Codable, Sendable,
                     FetchableRecord, PersistableRecord, TableRecord {
     // MARK: - Core Identity (Persistable)
 
@@ -67,11 +66,6 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
     /// Expected duration in weeks (e.g., 10 for ten-week term)
     public var expectedTermLength: Int?
 
-    // MARK: - Motivating Properties
-
-    public var priority: Int
-    public var lifeDomain: String?
-
     // MARK: - Polymorphic Type (Polymorphable)
 
     public var polymorphicSubtype: String { return "goal" }
@@ -95,6 +89,38 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
         update: .replace
     )
 
+    // MARK: - GRDB Associations
+
+    /// Association to term assignments (junction table)
+    public static let termAssignments = hasMany(
+        TermGoalAssignment.self,
+        key: "termAssignments",
+        using: ForeignKey(["goal_uuid"])
+    )
+
+    /// Association to terms (via junction table)
+    ///
+    /// This provides the reverse many-to-many relationship: Goal ← TermGoalAssignment → Term
+    ///
+    /// Usage:
+    /// ```swift
+    /// // Fetch goal with all terms containing it
+    /// let goal = try Goal
+    ///     .including(all: Goal.terms)
+    ///     .fetchOne(db, id: goalUUID)
+    ///
+    /// // Find all goals NOT yet assigned to any term
+    /// let unassigned = try Goal
+    ///     .having(Goal.termAssignments.isEmpty)
+    ///     .fetchAll(db)
+    /// ```
+    public static let terms = hasMany(
+        GoalTerm.self,
+        through: termAssignments,
+        using: TermGoalAssignment.term,
+        key: "terms"
+    )
+
     // MARK: - Codable Mapping
 
     /// Maps Swift property names to database column names
@@ -112,8 +138,6 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
         case howGoalIsRelevant = "how_goal_is_relevant"
         case howGoalIsActionable = "how_goal_is_actionable"
         case expectedTermLength = "expected_term_length"
-        case priority
-        case lifeDomain = "life_domain"
         // polymorphicSubtype is computed, stored as "goal" in database
     }
 
@@ -137,9 +161,6 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
         howGoalIsRelevant: String? = nil,
         howGoalIsActionable: String? = nil,
         expectedTermLength: Int? = nil,
-        // Motivating
-        priority: Int = 50,
-        lifeDomain: String? = nil,
         // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
@@ -156,8 +177,6 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
         self.howGoalIsRelevant = howGoalIsRelevant
         self.howGoalIsActionable = howGoalIsActionable
         self.expectedTermLength = expectedTermLength
-        self.priority = priority
-        self.lifeDomain = lifeDomain
     }
 }
 
@@ -169,7 +188,7 @@ public struct Goal: Persistable, Completable, Polymorphable, Motivating, Codable
 /// They require a target date but not necessarily a start date.
 ///
 /// Example: "Reach 50km by week 5"
-public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Codable, Sendable {
+public struct Milestone: Persistable, Completable, Polymorphable, Codable, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -192,11 +211,6 @@ public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Co
     /// When this milestone should be reached (typically REQUIRED)
     public var targetDate: Date?
 
-    // MARK: - Motivating Properties
-
-    public var priority: Int
-    public var lifeDomain: String?
-
     // MARK: - Polymorphic Type (Polymorphable)
 
     public var polymorphicSubtype: String { return "milestone" }
@@ -215,8 +229,6 @@ public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Co
         case measurementTarget = "measurement_target"
         case startDate = "start_date"
         case targetDate = "target_date"
-        case priority
-        case lifeDomain = "life_domain"
         // polymorphicSubtype is computed, stored as "milestone" in database
     }
 
@@ -233,9 +245,6 @@ public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Co
         measurementTarget: Double? = nil,
         startDate: Date? = nil,
         targetDate: Date? = nil,
-        // Motivating
-        priority: Int = 30,  // Milestones are moderate priority
-        lifeDomain: String? = nil,
         // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
@@ -249,8 +258,6 @@ public struct Milestone: Persistable, Completable, Polymorphable, Motivating, Co
         self.measurementTarget = measurementTarget
         self.startDate = startDate
         self.targetDate = targetDate
-        self.priority = priority
-        self.lifeDomain = lifeDomain
     }
 }
 

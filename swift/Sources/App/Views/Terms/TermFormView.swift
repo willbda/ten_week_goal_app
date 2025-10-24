@@ -30,7 +30,9 @@ public struct TermFormView: View {
     private let termToEdit: GoalTerm?
 
     /// Callbacks
-    private let onSave: (GoalTerm) -> Void
+    /// Save callback now receives both term and selected goal IDs
+    /// Parent is responsible for saving term and creating junction table assignments
+    private let onSave: (GoalTerm, Set<UUID>) -> Void
     private let onCancel: () -> Void
 
     // MARK: - Form State
@@ -93,7 +95,7 @@ public struct TermFormView: View {
 
     public init(
         term: GoalTerm? = nil,
-        onSave: @escaping (GoalTerm) -> Void,
+        onSave: @escaping (GoalTerm, Set<UUID>) -> Void,
         onCancel: @escaping () -> Void
     ) {
         self.termToEdit = term
@@ -111,10 +113,11 @@ public struct TermFormView: View {
             _detailedDescription = State(initialValue: term.detailedDescription ?? "")
             _freeformNotes = State(initialValue: term.freeformNotes ?? "")
             _reflection = State(initialValue: term.reflection ?? "")
-            _selectedGoalIDs = State(initialValue: Set(term.termGoalsByID))
+            // Goal IDs will be loaded async via onAppear
+            _selectedGoalIDs = State(initialValue: [])
             // Show optional sections if they have content
             _showOptionalFields = State(initialValue: term.title != nil || term.detailedDescription != nil || term.freeformNotes != nil)
-            _showGoalSelection = State(initialValue: !term.termGoalsByID.isEmpty)
+            _showGoalSelection = State(initialValue: false)  // Will be set in onAppear after loading goals
             _showReflection = State(initialValue: term.reflection != nil)
         } else {
             // Create mode - use defaults
@@ -284,8 +287,9 @@ public struct TermFormView: View {
                 }
             }
             .task {
-                // Load available goals when view appears
+                // Load available goals and selected goals for existing term
                 await loadAvailableGoals()
+                await loadSelectedGoals()
             }
         }
     }
@@ -309,13 +313,14 @@ public struct TermFormView: View {
             startDate: startDate,
             targetDate: targetDate,
             theme: theme.isEmpty ? nil : theme,
-            termGoalsByID: Array(selectedGoalIDs),
             reflection: reflection.isEmpty ? nil : reflection,
             logTime: termToEdit?.logTime ?? Date(),
             id: termToEdit?.id ?? UUID()
         )
 
-        onSave(term)
+        // Pass both term and selected goal IDs to parent
+        // Parent will handle saving term and creating junction table assignments
+        onSave(term, selectedGoalIDs)
     }
 
     /// Toggle goal selection
@@ -338,6 +343,24 @@ public struct TermFormView: View {
                 .sorted { ($0.title ?? "") < ($1.title ?? "") }
         } catch {
             print("❌ Failed to load goals: \(error)")
+        }
+    }
+
+    /// Load selected goals for existing term (edit mode)
+    private func loadSelectedGoals() async {
+        guard let term = termToEdit,
+              let database = appViewModel.databaseManager else {
+            return
+        }
+
+        do {
+            // Fetch term with goals using junction table
+            if let (_, goals) = try await database.fetchTermWithGoals(term.id) {
+                selectedGoalIDs = Set(goals.map { $0.id })
+                showGoalSelection = !goals.isEmpty
+            }
+        } catch {
+            print("❌ Failed to load term goals: \(error)")
         }
     }
 }
@@ -387,8 +410,8 @@ private struct GoalSelectionRow: View {
 #Preview("Create Mode") {
     TermFormView(
         term: nil,
-        onSave: { term in
-            print("Created term \(term.termNumber)")
+        onSave: { term, goalIDs in
+            print("Created term \(term.termNumber) with \(goalIDs.count) goals")
         },
         onCancel: {
             print("Cancelled")
@@ -405,14 +428,13 @@ private struct GoalSelectionRow: View {
         startDate: Date(),
         targetDate: Calendar.current.date(byAdding: .day, value: 70, to: Date())!,
         theme: "Health & Career",
-        termGoalsByID: [],
         reflection: "Great progress on fitness goals!"
     )
 
-    return TermFormView(
+    TermFormView(
         term: sampleTerm,
-        onSave: { term in
-            print("Updated term \(term.termNumber)")
+        onSave: { term, goalIDs in
+            print("Updated term \(term.termNumber) with \(goalIDs.count) goals")
         },
         onCancel: {
             print("Cancelled")

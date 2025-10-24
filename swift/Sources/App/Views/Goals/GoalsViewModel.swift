@@ -51,11 +51,7 @@ final class GoalsViewModel {
             // Fetch all goals from database
             goals = try await database.fetchGoals()
                 .sorted { goal1, goal2 in
-                    // Sort by priority first (lower numbers = higher priority)
-                    if goal1.priority != goal2.priority {
-                        return goal1.priority < goal2.priority
-                    }
-                    // Then by target date (soonest first)
+                    // Sort by target date (soonest first)
                     if let date1 = goal1.targetDate, let date2 = goal2.targetDate {
                         return date1 < date2
                     }

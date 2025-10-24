@@ -9,11 +9,15 @@ import Models
 /// Row view for displaying a single term
 ///
 /// Displays term details including term number, date range, theme, and goal count.
+///
+/// **Note**: Goal count must be provided by parent view (fetched via DatabaseManager.fetchTermWithGoals)
+/// since this synchronous view cannot perform async database queries.
 struct TermRowView: View {
 
     // MARK: - Properties
 
     let term: GoalTerm
+    let goalCount: Int?  // Optional: number of goals assigned to this term
 
     // MARK: - Body
 
@@ -48,14 +52,14 @@ struct TermRowView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                // Goal count
-                if !term.termGoalsByID.isEmpty {
+                // Goal count (if provided)
+                if let count = goalCount, count > 0 {
                     HStack {
                         Image(systemName: "target")
                             .font(DesignSystem.Typography.caption)
                             .foregroundStyle(.secondary)
 
-                        Text("\(term.termGoalsByID.count) goal\(term.termGoalsByID.count == 1 ? "" : "s")")
+                        Text("\(count) goal\(count == 1 ? "" : "s")")
                             .font(DesignSystem.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -125,41 +129,49 @@ struct TermRowView: View {
 
 #Preview {
     List {
-        // Active term
-        TermRowView(term: GoalTerm(
-            title: "Fall Focus",
-            termNumber: 3,
-            startDate: Date().addingTimeInterval(-7 * 24 * 3600), // 7 days ago
-            targetDate: Date().addingTimeInterval(63 * 24 * 3600), // 63 days from now
-            theme: "Health & Career",
-            termGoalsByID: [UUID(), UUID(), UUID()]
-        ))
+        // Active term with goals
+        TermRowView(
+            term: GoalTerm(
+                title: "Fall Focus",
+                termNumber: 3,
+                startDate: Date().addingTimeInterval(-7 * 24 * 3600), // 7 days ago
+                targetDate: Date().addingTimeInterval(63 * 24 * 3600), // 63 days from now
+                theme: "Health & Career"
+            ),
+            goalCount: 3
+        )
 
-        // Upcoming term
-        TermRowView(term: GoalTerm(
-            title: "Winter Planning",
-            termNumber: 4,
-            startDate: Date().addingTimeInterval(70 * 24 * 3600), // 70 days from now
-            targetDate: Date().addingTimeInterval(140 * 24 * 3600),
-            theme: "Relationships",
-            termGoalsByID: [UUID()]
-        ))
+        // Upcoming term with one goal
+        TermRowView(
+            term: GoalTerm(
+                title: "Winter Planning",
+                termNumber: 4,
+                startDate: Date().addingTimeInterval(70 * 24 * 3600), // 70 days from now
+                targetDate: Date().addingTimeInterval(140 * 24 * 3600),
+                theme: "Relationships"
+            ),
+            goalCount: 1
+        )
 
-        // Past term
-        TermRowView(term: GoalTerm(
-            title: "Summer Growth",
-            termNumber: 2,
-            startDate: Date().addingTimeInterval(-80 * 24 * 3600),
-            targetDate: Date().addingTimeInterval(-10 * 24 * 3600),
-            termGoalsByID: [UUID(), UUID()]
-        ))
+        // Past term with goals
+        TermRowView(
+            term: GoalTerm(
+                title: "Summer Growth",
+                termNumber: 2,
+                startDate: Date().addingTimeInterval(-80 * 24 * 3600),
+                targetDate: Date().addingTimeInterval(-10 * 24 * 3600)
+            ),
+            goalCount: 2
+        )
 
-        // Simple term without theme
-        TermRowView(term: GoalTerm(
-            termNumber: 1,
-            startDate: Date().addingTimeInterval(-150 * 24 * 3600),
-            targetDate: Date().addingTimeInterval(-80 * 24 * 3600),
-            termGoalsByID: []
-        ))
+        // Simple term without goals
+        TermRowView(
+            term: GoalTerm(
+                termNumber: 1,
+                startDate: Date().addingTimeInterval(-150 * 24 * 3600),
+                targetDate: Date().addingTimeInterval(-80 * 24 * 3600)
+            ),
+            goalCount: 0
+        )
     }
 }

@@ -184,7 +184,8 @@ public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable,
 /// value "Companionship".
 ///
 /// Importantly, LifeAreas are NOT values.
-public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendable {
+public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendable,
+                         TableRecord, FetchableRecord, PersistableRecord {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -215,6 +216,21 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendab
         case lifeDomain = "life_domain"
         // polymorphicSubtype is computed, returns type string
     }
+
+    // MARK: - GRDB TableRecord
+
+    public static let databaseTableName = "personal_values"
+
+    /// Use centralized UUID encoding strategy (UPPERCASE)
+    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
+        EntityUUIDEncoding.strategy
+    }
+
+    /// Handle INSERT conflicts by replacing the existing record
+    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
+        insert: .replace,
+        update: .replace
+    )
 
     // MARK: - Initialization
 
@@ -250,7 +266,8 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendab
 ///
 /// Example: "Physical health and vitality" is major enough that if you're
 /// not seeing health-related actions, something is off.
-public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Sendable {
+public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Sendable,
+                           TableRecord, FetchableRecord, PersistableRecord {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -285,6 +302,21 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Send
         case alignmentGuidance = "alignment_guidance"
         // polymorphicSubtype is computed, returns type string
     }
+
+    // MARK: - GRDB TableRecord
+
+    public static let databaseTableName = "personal_values"
+
+    /// Use centralized UUID encoding strategy (UPPERCASE)
+    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
+        EntityUUIDEncoding.strategy
+    }
+
+    /// Handle INSERT conflicts by replacing the existing record
+    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
+        insert: .replace,
+        update: .replace
+    )
 
     // MARK: - Initialization
 
@@ -322,7 +354,8 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Send
 ///
 /// Example: "Eudaimonia", "Truth", "Beauty" - aspirational ideals rather
 /// than concrete practices.
-public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Codable, Sendable {
+public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Codable, Sendable,
+                                  TableRecord, FetchableRecord, PersistableRecord {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -353,6 +386,21 @@ public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Codabl
         case lifeDomain = "life_domain"
         // polymorphicSubtype is computed, returns type string
     }
+
+    // MARK: - GRDB TableRecord
+
+    public static let databaseTableName = "personal_values"
+
+    /// Use centralized UUID encoding strategy (UPPERCASE)
+    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
+        EntityUUIDEncoding.strategy
+    }
+
+    /// Handle INSERT conflicts by replacing the existing record
+    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
+        insert: .replace,
+        update: .replace
+    )
 
     // MARK: - Initialization
 

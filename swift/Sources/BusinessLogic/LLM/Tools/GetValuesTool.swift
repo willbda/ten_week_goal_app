@@ -67,7 +67,7 @@ struct GetValuesTool: Tool {
     func call(arguments: Arguments) async throws -> String {
         do {
             // Build SQL query with filters
-            var sql = "SELECT * FROM values WHERE 1=1"
+            var sql = "SELECT * FROM personal_values WHERE 1=1"
             var queryArguments: [any DatabaseValueConvertible & Sendable] = []
 
             // Add value type filter if provided
@@ -94,7 +94,7 @@ struct GetValuesTool: Tool {
             }
 
             // Add ordering (highest priority first) and limit
-            sql += " ORDER BY priority DESC, created_at DESC LIMIT ?"
+            sql += " ORDER BY priority DESC, log_time DESC LIMIT ?"
             queryArguments.append(Int64(arguments.limit))
 
             // Fetch values from database

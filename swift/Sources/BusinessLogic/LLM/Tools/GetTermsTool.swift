@@ -165,31 +165,28 @@ struct GetTermsTool: Tool {
             lines.append("  Status: Active")
         }
 
-        // Goals assigned to this term
-        let goalIds = term.termGoalsByID
-        if !goalIds.isEmpty {
-            lines.append("  Assigned Goals (\(goalIds.count)):")
+        // Goals assigned to this term (using junction table)
+        do {
+            if let (_, goals) = try await database.fetchTermWithGoals(term.id) {
+                if !goals.isEmpty {
+                    lines.append("  Assigned Goals (\(goals.count)):")
 
-            // Fetch goal names for better readability
-            do {
-                for goalId in goalIds.prefix(5) {  // Show first 5 goals
-                    // goalId is already a UUID, no need to convert from string
-                    if let goal = try await database.fetchOne(Goal.self, id: goalId) {
+                    // Show first 5 goals
+                    for goal in goals.prefix(5) {
                         let goalName = goal.title ?? "Untitled"
                         lines.append("    - \(goalName)")
                     }
+                    if goals.count > 5 {
+                        lines.append("    ... and \(goals.count - 5) more")
+                    }
+                } else {
+                    lines.append("  No goals assigned yet")
                 }
-                if goalIds.count > 5 {
-                    lines.append("    ... and \(goalIds.count - 5) more")
-                }
-            } catch {
-                // Fallback to just showing IDs
-                for goalId in goalIds.prefix(3) {
-                    lines.append("    - Goal ID: \(goalId)")
-                }
+            } else {
+                lines.append("  No goals assigned yet")
             }
-        } else {
-            lines.append("  No goals assigned yet")
+        } catch {
+            lines.append("  Assigned Goals: (Error fetching goals)")
         }
 
         // Reflection if present

@@ -48,6 +48,9 @@ public actor DatabaseManager {
     /// Configuration used to initialize this manager
     public let configuration: DatabaseConfiguration
 
+    /// Whether this manager has been explicitly closed
+    private var isClosed = false
+
     // MARK: - Initialization
 
     /// Initialize database manager with configuration
@@ -628,9 +631,7 @@ public actor DatabaseManager {
     public func fetchMajorValues() async throws -> [MajorValues] {
         do {
             return try await dbPool.read { db in
-                let sql = "SELECT * FROM personal_values WHERE incentive_type = 'major'"
-                // TODO: Add direct GRDB conformance to Values
-                return []  // Temporarily return empty array
+                try MajorValues.fetchAll(db, sql: "SELECT * FROM personal_values WHERE incentive_type = 'major'")
             }
         } catch {
             throw DatabaseError.queryFailed(
@@ -654,9 +655,7 @@ public actor DatabaseManager {
     public func fetchHighestOrderValues() async throws -> [HighestOrderValues] {
         do {
             return try await dbPool.read { db in
-                let sql = "SELECT * FROM personal_values WHERE incentive_type = 'highest_order'"
-                // TODO: Add direct GRDB conformance to Values
-                return []  // Temporarily return empty array
+                try HighestOrderValues.fetchAll(db, sql: "SELECT * FROM personal_values WHERE incentive_type = 'highest_order'")
             }
         } catch {
             throw DatabaseError.queryFailed(
@@ -704,9 +703,7 @@ public actor DatabaseManager {
     public func fetchLifeAreas() async throws -> [LifeAreas] {
         do {
             return try await dbPool.read { db in
-                let sql = "SELECT * FROM personal_values WHERE incentive_type = 'life_area'"
-                // TODO: Add direct GRDB conformance to Values
-                return []  // Temporarily return empty array
+                try LifeAreas.fetchAll(db, sql: "SELECT * FROM personal_values WHERE incentive_type = 'life_area'")
             }
         } catch {
             throw DatabaseError.queryFailed(
@@ -898,6 +895,166 @@ public actor DatabaseManager {
             throw DatabaseError.writeFailed(
                 operation: "DELETE",
                 table: "terms",
+                error: error
+            )
+        }
+    }
+
+    // MARK: - Term-Goal Association Operations
+
+    /// Assign a goal to a term
+    ///
+    /// Creates an entry in the junction table linking the goal to the term.
+    /// If the assignment already exists, it will be replaced (upsert behavior).
+    ///
+    /// - Parameters:
+    ///   - goalId: UUID of the goal to assign
+    ///   - termId: UUID of the term
+    ///   - order: Optional order index for this goal within the term
+    /// - Throws: DatabaseError.writeFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// try await db.assignGoal(goalId, toTerm: termId, order: 0)
+    /// ```
+    public func assignGoal(_ goalId: UUID, toTerm termId: UUID, order: Int? = nil) async throws {
+        let assignment = TermGoalAssignment(
+            termUUID: termId,
+            goalUUID: goalId,
+            assignmentOrder: order
+        )
+
+        do {
+            try await dbPool.write { db in
+                try assignment.insert(db, onConflict: .replace)
+            }
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "INSERT",
+                table: "term_goal_assignments",
+                error: error
+            )
+        }
+    }
+
+    /// Remove a goal from a term
+    ///
+    /// Deletes the junction table entry linking the goal to the term.
+    ///
+    /// - Parameters:
+    ///   - goalId: UUID of the goal to remove
+    ///   - termId: UUID of the term
+    /// - Throws: DatabaseError.writeFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// try await db.removeGoal(goalId, fromTerm: termId)
+    /// ```
+    public func removeGoal(_ goalId: UUID, fromTerm termId: UUID) async throws {
+        do {
+            try await dbPool.write { db in
+                try db.execute(
+                    sql: "DELETE FROM term_goal_assignments WHERE term_uuid = ? AND goal_uuid = ?",
+                    arguments: [termId.uuidString, goalId.uuidString]
+                )
+            }
+        } catch {
+            throw DatabaseError.writeFailed(
+                operation: "DELETE",
+                table: "term_goal_assignments",
+                error: error
+            )
+        }
+    }
+
+    /// Fetch a term with all its goals loaded (eager loading)
+    ///
+    /// Uses GRDB's association system to load the term and its goals in a single query.
+    /// Goals are ordered by their assignment_order if specified.
+    ///
+    /// - Parameter termId: UUID of the term
+    /// - Returns: Tuple of (term, goals) or nil if term not found
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// if let (term, goals) = try await db.fetchTermWithGoals(termId) {
+    ///     print("\(term.title) has \(goals.count) goals")
+    /// }
+    /// ```
+    public func fetchTermWithGoals(_ termId: UUID) async throws -> (GoalTerm, [Goal])? {
+        do {
+            return try await dbPool.read { db in
+                // Fetch the term
+                guard let term = try GoalTerm.fetchOne(db, id: termId) else {
+                    return nil
+                }
+
+                // Fetch associated goals (ordered by assignment_order)
+                let goals = try Goal
+                    .joining(required: Goal.termAssignments.filter(Column("term_uuid") == termId.uuidString))
+                    .order(Column("assignment_order"))
+                    .fetchAll(db)
+
+                return (term, goals)
+            }
+        } catch {
+            throw DatabaseError.queryFailed(
+                sql: "SELECT term with goals WHERE uuid_id = \(termId)",
+                error: error
+            )
+        }
+    }
+
+    /// Fetch all terms containing a specific goal
+    ///
+    /// - Parameter goalId: UUID of the goal
+    /// - Returns: Array of terms that include this goal
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let terms = try await db.fetchTerms(containingGoal: goalId)
+    /// print("This goal appears in \(terms.count) terms")
+    /// ```
+    public func fetchTerms(containingGoal goalId: UUID) async throws -> [GoalTerm] {
+        do {
+            return try await dbPool.read { db in
+                try GoalTerm
+                    .joining(required: GoalTerm.goalAssignments.filter(Column("goal_uuid") == goalId.uuidString))
+                    .fetchAll(db)
+            }
+        } catch {
+            throw DatabaseError.queryFailed(
+                sql: "SELECT terms WHERE goal_uuid = \(goalId)",
+                error: error
+            )
+        }
+    }
+
+    /// Fetch all goals NOT assigned to any term
+    ///
+    /// Useful for showing available goals when creating/editing a term.
+    ///
+    /// - Returns: Array of unassigned goals
+    /// - Throws: DatabaseError.queryFailed
+    ///
+    /// Example:
+    /// ```swift
+    /// let unassigned = try await db.fetchUnassignedGoals()
+    /// ```
+    public func fetchUnassignedGoals() async throws -> [Goal] {
+        do {
+            return try await dbPool.read { db in
+                // Use LEFT JOIN to find goals with no assignments
+                try Goal
+                    .joining(optional: Goal.termAssignments)
+                    .having(Goal.termAssignments.isEmpty)
+                    .fetchAll(db)
+            }
+        } catch {
+            throw DatabaseError.queryFailed(
+                sql: "SELECT goals with no term assignments",
                 error: error
             )
         }

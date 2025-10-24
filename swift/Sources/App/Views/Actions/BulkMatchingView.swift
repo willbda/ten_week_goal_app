@@ -237,7 +237,7 @@ struct BulkMatchingView: View {
                 .sorted { $0.logTime > $1.logTime }  // Newest first
 
             goals = try await database.fetchGoals()
-                .sorted { $0.priority < $1.priority }  // Highest priority first
+                .sorted { ($0.targetDate ?? Date.distantFuture) < ($1.targetDate ?? Date.distantFuture) }  // Soonest first
 
             // Load existing relationships
             for action in actions {

@@ -56,9 +56,6 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable,
     /// Optional theme or focus for this term
     public var theme: String?
 
-    /// UUIDs of goals associated with this term
-    public var termGoalsByID: [UUID]
-
     /// Post-term reflection notes
     public var reflection: String?
 
@@ -79,9 +76,9 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable,
         case startDate = "start_date"
         case targetDate = "target_date"
         case theme
-        case termGoalsByID = "term_goals_by_id"
         case reflection
         // polymorphicSubtype is computed, not stored  // For future polymorphism
+        // termGoalsByID removed - use GRDB associations instead
     }
 
     // MARK: - GRDB TableRecord
@@ -102,6 +99,38 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable,
         update: .replace
     )
 
+    // MARK: - GRDB Associations
+
+    /// Association to goal assignments (junction table)
+    public static let goalAssignments = hasMany(
+        TermGoalAssignment.self,
+        key: "goalAssignments",
+        using: ForeignKey(["term_uuid"])
+    )
+
+    /// Association to goals (via junction table)
+    ///
+    /// This provides the many-to-many relationship: Term ← TermGoalAssignment → Goal
+    ///
+    /// Usage:
+    /// ```swift
+    /// // Fetch term with all its goals (ordered)
+    /// let term = try GoalTerm
+    ///     .including(all: GoalTerm.goals.order(TermGoalAssignment.Columns.assignmentOrder))
+    ///     .fetchOne(db, id: termUUID)
+    ///
+    /// // Fetch terms containing a specific goal
+    /// let terms = try GoalTerm
+    ///     .joining(required: GoalTerm.goals.filter(id: goalUUID))
+    ///     .fetchAll(db)
+    /// ```
+    public static let goals = hasMany(
+        Goal.self,
+        through: goalAssignments,
+        using: TermGoalAssignment.goal,
+        key: "goals"
+    )
+
     // MARK: - Initialization
 
     public init(
@@ -114,7 +143,6 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable,
         startDate: Date = Date(),
         targetDate: Date,
         theme: String? = nil,
-        termGoalsByID: [UUID] = [],
         reflection: String? = nil,
         // System-generated
         logTime: Date = Date(),
@@ -129,7 +157,6 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable,
         self.startDate = startDate
         self.targetDate = targetDate
         self.theme = theme
-        self.termGoalsByID = termGoalsByID
         self.reflection = reflection
     }
 }

@@ -3,6 +3,7 @@
 -- Updated 2025-10-16 to align with new categoriae structure
 -- Updated 2025-10-19 to support dual ID system (Python INTEGER + Swift UUID)
 -- Updated 2025-10-23 to migrate to UUID PRIMARY KEY (Phase 2 of UUID standardization)
+-- Updated 2025-10-23 to remove term_goals_by_id (migrated to term_goal_assignments junction table)
 --
 -- A term is a structured planning period (typically 10 weeks) that provides:
 -- - Temporal scaffolding for related goals
@@ -20,9 +21,10 @@
 -- Term-specific fields:
 --   - term_number: Sequential identifier (must be unique)
 --   - start_date, target_date: Time bounds
---   - term_goals_by_id: JSON array of goal UUIDs
 --   - reflection: Post-term notes
 --   - created_at, updated_at: Timestamps
+--
+-- Goal assignments: Use term_goal_assignments junction table (many-to-many relationship)
 
 CREATE TABLE IF NOT EXISTS terms (
   uuid_id TEXT PRIMARY KEY,                       -- PRIMARY KEY (e.g., "B3F21A45-7C92-4D5E-9B10-8A1E3F4D6C2A")
@@ -32,7 +34,7 @@ CREATE TABLE IF NOT EXISTS terms (
   term_number INTEGER NOT NULL UNIQUE,            -- Sequential identifier (1, 2, 3, etc.)
   start_date TEXT NOT NULL,                       -- First day of term (ISO format)
   target_date TEXT NOT NULL,                      -- Last day of term (ISO format)
-  term_goals_by_id TEXT,                          -- JSON array of goal UUIDs
+  theme TEXT,                                     -- Optional theme/focus for this term
   reflection TEXT,                                -- Post-term reflection
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP

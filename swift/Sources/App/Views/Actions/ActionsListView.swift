@@ -265,7 +265,7 @@ public struct ActionsListView: View {
                 let goalDay = Calendar.current.startOfDay(for: targetDate)
                 return goalDay >= today
             }
-            .sorted { ($0.priority) < ($1.priority) }  // Sort by priority
+            .sorted { ($0.targetDate ?? Date.distantFuture) < ($1.targetDate ?? Date.distantFuture) }  // Sort by target date
             .prefix(5)
             .map { $0 }
         } catch {

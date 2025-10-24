@@ -95,7 +95,7 @@ struct GetGoalsTool: Tool {
             }
 
             // Add ordering and limit
-            sql += " ORDER BY created_at DESC LIMIT ?"
+            sql += " ORDER BY log_time DESC LIMIT ?"
             queryArguments.append(Int64(arguments.limit))
 
             // Fetch goals from database
