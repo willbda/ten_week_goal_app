@@ -31,9 +31,6 @@ swift test --filter ActionTests
 
 # Clean build artifacts
 swift package clean
-
-# Run LLM Playground (requires macOS 26+)
-swift run LLMPlayground
 ```
 
 ### Development Workflow
@@ -56,22 +53,12 @@ swift/
 │   ├── App/                  # SwiftUI views and UI layer
 │   │   ├── DesignSystem.swift      # ✅ Central design tokens
 │   │   ├── ContentView.swift       # ✅ Root navigation (macOS)
-│   │   ├── iOS/                    # ✅ iOS-specific UI (planning phase)
-│   │   │   ├── ContentView_iOS.swift       # TabView navigation
-│   │   │   ├── GoalProgressActivity.swift  # Live Activities
-│   │   │   ├── LiquidGlassDesignSystem.swift # iOS design tokens
-│   │   │   └── LiquidGlassFormView.swift   # Adaptive forms
 │   │   ├── Views/                  # Feature views
 │   │   │   ├── Actions/            # Actions list/forms
 │   │   │   ├── Goals/              # Goals list/forms
 │   │   │   ├── Values/             # Values list/forms
 │   │   │   └── Terms/              # Terms list/forms
 │   │   └── GoalDocument.swift      # Document-based architecture
-│   ├── LLMPlayground/       # ✅ Interactive prompt testing CLI
-│   │   ├── Playground.swift        # Main CLI (macOS 26+)
-│   │   ├── PlaygroundHelpers.swift # Prompt engineering utilities
-│   │   ├── PromptLibrary.swift     # Example prompt collection
-│   │   └── README.md               # Usage guide
 │   ├── Models/              # Domain entities (protocol-oriented)
 │   │   ├── Protocols.swift  # Core ontological protocols (public)
 │   │   └── Kinds/           # Entity implementations
@@ -87,7 +74,12 @@ swift/
 ├── iOS-docs/                # ✅ iOS implementation planning docs
 │   ├── iOS_IMPLEMENTATION_PLAN.md  # Complete iOS migration strategy
 │   ├── LIQUID_GLASS_DESIGN.md      # iOS design philosophy
-│   └── LIQUID_GLASS_IMPLEMENTATION.md # Technical implementation guide
+│   ├── LIQUID_GLASS_IMPLEMENTATION.md # Technical implementation guide
+│   └── example-code/               # Reference iOS implementations
+│       ├── ContentView_iOS.swift       # TabView navigation
+│       ├── GoalProgressActivity.swift  # Live Activities
+│       ├── LiquidGlassDesignSystem.swift # iOS design tokens
+│       └── LiquidGlassFormView.swift   # Adaptive forms
 ├── Tests/
 │   ├── ActionTests.swift    # 5 tests passing
 │   └── GoalTests.swift      # 9 tests passing
@@ -715,58 +707,6 @@ See `../python/` for the authoritative Python implementation with:
 See `SWIFTROADMAP.md` for detailed breakdown:
 - **MVP**: 18-26 hours total (4 hours complete, 14-22 remaining)
 - **stable**: 24-34 hours
-
-## LLM Playground (Oct 24, 2025)
-
-**Interactive CLI for Foundation Models prompt engineering and experimentation.**
-
-### Overview
-
-The LLM Playground provides a command-line interface for testing Foundation Models integration before building UI. It enables rapid prompt iteration with immediate feedback.
-
-### Running the Playground
-
-```bash
-# Build and run (requires macOS 26+ with Foundation Models)
-swift run LLMPlayground
-
-# Interactive menu with options:
-# 1. Send custom prompt
-# 2. Use example prompts (20 curated examples)
-# 3. View conversation history
-# 4. Test tool calling (GetGoals, GetActions, GetTerms, GetValues)
-# 5. Clear session
-# 6. Benchmark prompts
-```
-
-### Features
-
-- **Custom Prompts**: Test arbitrary prompts with tool calling
-- **Example Library**: 20 pre-built prompts across 5 categories:
-  - Reflective: Patterns and themes
-  - Analytical: Metrics and breakdowns
-  - Exploratory: Relationship discovery
-  - Specific: Direct data queries
-  - Creative: Narratives and unconventional approaches
-- **Conversation History**: Session-based tracking with database persistence
-- **Tool Testing**: Verify individual tool responses
-- **Benchmarking**: Measure response times across multiple prompts
-
-### Architecture Integration
-
-The playground uses the same `ConversationService` that powers the Assistant chat in the main app, ensuring:
-- **Consistent behavior**: Same tools, same prompts, same responses
-- **Rapid prototyping**: Test prompt variations in seconds, not minutes
-- **Database integration**: Uses GRDB with `conversation_history` table
-
-### Use Cases
-
-1. **Prompt Engineering**: Refine Assistant prompts before UI integration
-2. **Tool Validation**: Verify GetGoals/GetActions/GetTerms/GetValues work correctly
-3. **Response Analysis**: Compare different prompt phrasings
-4. **Performance Benchmarking**: Measure response times for optimization
-
-See `Sources/LLMPlayground/README.md` for complete documentation.
 
 ## iOS Implementation (Planning Phase)
 
