@@ -264,3 +264,78 @@ extension ConversationService {
 }
 
 #endif // canImport(FoundationModels)
+
+// MARK: - Interactive Foundation Models Testing
+
+#if canImport(Playgrounds) && canImport(FoundationModels)
+import Playgrounds
+
+// MARK: - Playground Examples
+//
+// These inline playgrounds let you test Foundation Models interactively in Xcode 16+.
+// Open this file in Xcode, show the canvas (Editor > Canvas), and click Resume.
+//
+// Note: Requires macOS 26.0+ with Foundation Models framework.
+
+@available(macOS 26.0, *)
+#Playground {
+    // Test: Initialize ConversationService and send a prompt
+    Task {
+        do {
+            let db = try await DatabaseManager(configuration: .default)
+            let service = try await ConversationService(database: db)
+
+            let response = try await service.send(prompt: "What are my current goals?")
+            print("🤖 Response:")
+            print(response)
+        } catch {
+            print("❌ Error: \(error)")
+        }
+    }
+}
+
+@available(macOS 26.0, *)
+#Playground {
+    // Test: Try a reflective question
+    Task {
+        do {
+            let db = try await DatabaseManager(configuration: .default)
+            let service = try await ConversationService(database: db)
+
+            let response = try await service.send(
+                prompt: "What patterns do you see in my recent actions?"
+            )
+            print("🤖 Analysis:")
+            print(response)
+        } catch {
+            print("❌ Error: \(error)")
+        }
+    }
+}
+
+@available(macOS 26.0, *)
+#Playground {
+    // Test: Check conversation history
+    Task {
+        do {
+            let db = try await DatabaseManager(configuration: .default)
+            let service = try await ConversationService(database: db)
+
+            // Send a test message
+            _ = try await service.send(prompt: "Hello!")
+
+            // Get history
+            let history = try await service.getCurrentSessionHistory()
+            print("📜 Conversation history (\(history.count) messages):")
+            for entry in history {
+                print("User: \(entry.prompt)")
+                print("AI: \(entry.response)")
+                print("---")
+            }
+        } catch {
+            print("❌ Error: \(error)")
+        }
+    }
+}
+
+#endif
