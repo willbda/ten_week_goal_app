@@ -9,7 +9,7 @@
 // They provide context for evaluating alignment between actions and what matters.
 
 import Foundation
-import GRDB
+import SQLiteData
 
 // MARK: - PriorityLevel Value Type
 
@@ -36,7 +36,7 @@ public struct PriorityLevel: Codable, Equatable, Sendable {
 /// Incentives represent motivations and priorities that guide decision-making.
 /// This includes Values (what you believe is worthwhile), LifeAreas (domains
 /// that structure your life), and various value hierarchies.
-public struct Incentives: Persistable, Polymorphable, Motivating, Codable, Sendable {
+public struct Incentives: Persistable, Polymorphable, Motivating, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -56,21 +56,7 @@ public struct Incentives: Persistable, Polymorphable, Motivating, Codable, Senda
     // MARK: - Polymorphic Type (Polymorphable)
 
     /// Type identifier for polymorphic storage
-    public var polymorphicSubtype: String { return "incentive" }
-
-    // MARK: - Codable Mapping
-
-    /// Maps Swift property names to database column names
-    enum CodingKeys: String, CodingKey {
-        case id = "uuid_id"                    // UUID column (Swift-native)
-        case title
-        case detailedDescription = "description"
-        case freeformNotes = "notes"
-        case logTime = "log_time"
-        case priority
-        case lifeDomain = "life_domain"
-        // polymorphicSubtype is computed, returns type string
-    }
+    public var polymorphicSubtype: String = "incentive"
 
     // MARK: - Initialization
 
@@ -102,8 +88,8 @@ public struct Incentives: Persistable, Polymorphable, Motivating, Codable, Senda
 ///
 /// Values are general incentives - things you affirm as important without
 /// necessarily tracking them daily. Example: "Creativity", "Integrity"
-public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable,
-                      TableRecord, FetchableRecord, PersistableRecord {
+@Table
+public struct Values: Persistable, Polymorphable, Motivating, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -119,36 +105,7 @@ public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable,
 
     // MARK: - Polymorphic Type (Polymorphable)
 
-    public var polymorphicSubtype: String { return "general" }
-
-    // MARK: - Codable Mapping
-
-    /// Maps Swift property names to database column names
-    enum CodingKeys: String, CodingKey {
-        case id = "uuid_id"                    // UUID column (Swift-native)
-        case title
-        case detailedDescription = "description"
-        case freeformNotes = "notes"
-        case logTime = "log_time"
-        case priority
-        case lifeDomain = "life_domain"
-        // polymorphicSubtype is computed, returns type string
-    }
-
-    // MARK: - GRDB TableRecord
-
-    public static let databaseTableName = "personal_values"
-
-    /// Use centralized UUID encoding strategy (UPPERCASE)
-    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
-        EntityUUIDEncoding.strategy
-    }
-
-    /// Handle INSERT conflicts by replacing the existing record
-    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
-        insert: .replace,
-        update: .replace
-    )
+    public var polymorphicSubtype: String = "general"
 
     // MARK: - Initialization
 
@@ -184,8 +141,8 @@ public struct Values: Persistable, Polymorphable, Motivating, Codable, Sendable,
 /// value "Companionship".
 ///
 /// Importantly, LifeAreas are NOT values.
-public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendable,
-                         TableRecord, FetchableRecord, PersistableRecord {
+@Table
+public struct LifeAreas: Persistable, Polymorphable, Motivating, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -201,36 +158,7 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendab
 
     // MARK: - Polymorphic Type (Polymorphable)
 
-    public var polymorphicSubtype: String { return "life_area" }
-
-    // MARK: - Codable Mapping
-
-    /// Maps Swift property names to database column names
-    enum CodingKeys: String, CodingKey {
-        case id = "uuid_id"                    // UUID column (Swift-native)
-        case title
-        case detailedDescription = "description"
-        case freeformNotes = "notes"
-        case logTime = "log_time"
-        case priority
-        case lifeDomain = "life_domain"
-        // polymorphicSubtype is computed, returns type string
-    }
-
-    // MARK: - GRDB TableRecord
-
-    public static let databaseTableName = "personal_values"
-
-    /// Use centralized UUID encoding strategy (UPPERCASE)
-    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
-        EntityUUIDEncoding.strategy
-    }
-
-    /// Handle INSERT conflicts by replacing the existing record
-    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
-        insert: .replace,
-        update: .replace
-    )
+    public var polymorphicSubtype: String = "life_area"
 
     // MARK: - Initialization
 
@@ -266,8 +194,8 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Codable, Sendab
 ///
 /// Example: "Physical health and vitality" is major enough that if you're
 /// not seeing health-related actions, something is off.
-public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Sendable,
-                           TableRecord, FetchableRecord, PersistableRecord {
+@Table
+public struct MajorValues: Persistable, Polymorphable, Motivating, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -286,37 +214,7 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Send
 
     // MARK: - Polymorphic Type (Polymorphable)
 
-    public var polymorphicSubtype: String { return "major" }
-
-    // MARK: - Codable Mapping
-
-    /// Maps Swift property names to database column names
-    enum CodingKeys: String, CodingKey {
-        case id = "uuid_id"                    // UUID column (Swift-native)
-        case title
-        case detailedDescription = "description"
-        case freeformNotes = "notes"
-        case logTime = "log_time"
-        case priority
-        case lifeDomain = "life_domain"
-        case alignmentGuidance = "alignment_guidance"
-        // polymorphicSubtype is computed, returns type string
-    }
-
-    // MARK: - GRDB TableRecord
-
-    public static let databaseTableName = "personal_values"
-
-    /// Use centralized UUID encoding strategy (UPPERCASE)
-    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
-        EntityUUIDEncoding.strategy
-    }
-
-    /// Handle INSERT conflicts by replacing the existing record
-    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
-        insert: .replace,
-        update: .replace
-    )
+    public var polymorphicSubtype: String = "major"
 
     // MARK: - Initialization
 
@@ -354,8 +252,8 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Codable, Send
 ///
 /// Example: "Eudaimonia", "Truth", "Beauty" - aspirational ideals rather
 /// than concrete practices.
-public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Codable, Sendable,
-                                  TableRecord, FetchableRecord, PersistableRecord {
+@Table
+public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -371,36 +269,7 @@ public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Codabl
 
     // MARK: - Polymorphic Type (Polymorphable)
 
-    public var polymorphicSubtype: String { return "highest_order" }
-
-    // MARK: - Codable Mapping
-
-    /// Maps Swift property names to database column names
-    enum CodingKeys: String, CodingKey {
-        case id = "uuid_id"                    // UUID column (Swift-native)
-        case title
-        case detailedDescription = "description"
-        case freeformNotes = "notes"
-        case logTime = "log_time"
-        case priority
-        case lifeDomain = "life_domain"
-        // polymorphicSubtype is computed, returns type string
-    }
-
-    // MARK: - GRDB TableRecord
-
-    public static let databaseTableName = "personal_values"
-
-    /// Use centralized UUID encoding strategy (UPPERCASE)
-    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
-        EntityUUIDEncoding.strategy
-    }
-
-    /// Handle INSERT conflicts by replacing the existing record
-    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
-        insert: .replace,
-        update: .replace
-    )
+    public var polymorphicSubtype: String = "highest_order"
 
     // MARK: - Initialization
 

@@ -66,7 +66,9 @@ public protocol Completable {
 ///
 /// Used by: Action
 public protocol Doable {
-    var measuresByUnit: [String: Double]? { get set }
+    /// Measurements by unit (empty dictionary if no measurements)
+    /// Note: Non-optional for SQLiteData JSONRepresentation compatibility
+    var measuresByUnit: [String: Double] { get set }
     var durationMinutes: Double? { get set }
     var startTime: Date? { get set }
 }

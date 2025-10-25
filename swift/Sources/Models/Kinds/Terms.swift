@@ -9,7 +9,7 @@
 // Terms provide temporal scaffolding for goals and rhythmic reflection points.
 
 import Foundation
-import GRDB
+import SQLiteData
 
 // MARK: - Constants
 
@@ -28,8 +28,8 @@ public let DAYS_PER_YEAR = 365.25
 ///
 /// Business logic methods (isActive, daysRemaining, progressPercentage)
 /// are provided via extensions in ModelExtensions.swift
-public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable,
-                        TableRecord, FetchableRecord, PersistableRecord {
+@Table
+public struct GoalTerm: Persistable, Polymorphable, Sendable {
     // MARK: - Constants
 
     public static let TEN_WEEKS_IN_DAYS = 70 // 10 weeks × 7 days/week
@@ -61,75 +61,7 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable,
 
     // MARK: - Polymorphic Type (Polymorphable)
 
-    public var polymorphicSubtype: String { return "goal_term" }
-
-    // MARK: - Codable Mapping
-
-    /// Maps Swift property names to database column names
-    enum CodingKeys: String, CodingKey {
-        case id = "uuid_id"                    // UUID column (Swift-native)
-        case title
-        case detailedDescription = "description"
-        case freeformNotes = "notes"
-        case logTime = "created_at"            // Terms table uses created_at
-        case termNumber = "term_number"
-        case startDate = "start_date"
-        case targetDate = "target_date"
-        case theme
-        case reflection
-        // polymorphicSubtype is computed, not stored  // For future polymorphism
-        // termGoalsByID removed - use GRDB associations instead
-    }
-
-    // MARK: - GRDB TableRecord
-
-    public static let databaseTableName = "terms"
-
-    /// Use centralized UUID encoding strategy (UPPERCASE)
-    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
-        EntityUUIDEncoding.strategy
-    }
-
-    /// Handle INSERT conflicts by replacing the existing record
-    ///
-    /// Since uuid_id is our PRIMARY KEY, this tells GRDB to use INSERT OR REPLACE
-    /// which effectively does UPDATE when the uuid_id already exists.
-    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
-        insert: .replace,
-        update: .replace
-    )
-
-    // MARK: - GRDB Associations
-
-    /// Association to goal assignments (junction table)
-    public static let goalAssignments = hasMany(
-        TermGoalAssignment.self,
-        key: "goalAssignments",
-        using: ForeignKey(["term_uuid"])
-    )
-
-    /// Association to goals (via junction table)
-    ///
-    /// This provides the many-to-many relationship: Term ← TermGoalAssignment → Goal
-    ///
-    /// Usage:
-    /// ```swift
-    /// // Fetch term with all its goals (ordered)
-    /// let term = try GoalTerm
-    ///     .including(all: GoalTerm.goals.order(TermGoalAssignment.Columns.assignmentOrder))
-    ///     .fetchOne(db, id: termUUID)
-    ///
-    /// // Fetch terms containing a specific goal
-    /// let terms = try GoalTerm
-    ///     .joining(required: GoalTerm.goals.filter(id: goalUUID))
-    ///     .fetchAll(db)
-    /// ```
-    public static let goals = hasMany(
-        Goal.self,
-        through: goalAssignments,
-        using: TermGoalAssignment.goal,
-        key: "goals"
-    )
+    public var polymorphicSubtype: String = "goal_term"
 
     // MARK: - Initialization
 
@@ -173,7 +105,8 @@ public struct GoalTerm: Persistable, Polymorphable, Codable, Sendable,
 /// "I will be dead here shortly. Realistically, maybe that's another 30 to 70 years."
 ///
 /// Business logic methods (weeksLived, weeksRemaining) provided via extensions
-public struct LifeTime: Persistable, Polymorphable, Codable, Sendable {
+@Table
+public struct LifeTime: Persistable, Polymorphable, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -192,21 +125,7 @@ public struct LifeTime: Persistable, Polymorphable, Codable, Sendable {
 
     // MARK: - Polymorphic Type (Polymorphable)
 
-    public var polymorphicSubtype: String { return "lifetime" }
-
-    // MARK: - Codable Mapping
-
-    /// Maps Swift property names to database column names
-    enum CodingKeys: String, CodingKey {
-        case id = "uuid_id"                           // UUID column (Swift-native)
-        case title
-        case detailedDescription = "description"
-        case freeformNotes = "notes"
-        case logTime = "created_at"
-        case birthDate = "birth_date"
-        case estimatedDeathDate = "estimated_death_date"
-        // polymorphicSubtype is computed, not stored         // For future polymorphism
-    }
+    public var polymorphicSubtype: String = "lifetime"
 
     // MARK: - Initialization
 

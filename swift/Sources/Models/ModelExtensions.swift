@@ -15,8 +15,8 @@ extension Validatable where Self: Doable {
     ///
     /// Returns true if no measurements exist or all values > 0
     public func hasValidMeasurements() -> Bool {
-        guard let measurements = measuresByUnit else { return true }
-        return measurements.values.allSatisfy { $0 > 0 }
+        guard !measuresByUnit.isEmpty else { return true }
+        return measuresByUnit.values.allSatisfy { $0 > 0 }
     }
 
     /// Check if timing is consistent
@@ -29,8 +29,7 @@ extension Validatable where Self: Doable {
 
     /// Does this have any measurements?
     public var hasMeasurements: Bool {
-        guard let measurements = measuresByUnit else { return false }
-        return !measurements.isEmpty
+        return !measuresByUnit.isEmpty
     }
 }
 
@@ -107,9 +106,9 @@ extension Action: Validatable {
     /// - Any measurement value is negative or zero
     /// - startTime is provided without durationMinutes
     public func validate() throws {
-        // Check measurement values are positive
-        if let measurements = measuresByUnit {
-            for (unit, value) in measurements {
+        // Check measurement values are positive (skip if empty)
+        if !measuresByUnit.isEmpty {
+            for (unit, value) in measuresByUnit {
                 if value <= 0 {
                     throw ValidationError.invalidValue(
                         field: "measurement[\(unit)]",

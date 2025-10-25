@@ -9,7 +9,7 @@
 // Two types: Goal (flexible, can be minimal or SMART) and Milestone (point-in-time checkpoint)
 
 import Foundation
-import GRDB
+import SQLiteData
 
 // MARK: - Goal Struct
 
@@ -25,8 +25,8 @@ import GRDB
 /// - Persistable: id, title, detailedDescription, freeformNotes, logTime
 /// - Completable: targetDate, measurementUnit, measurementTarget, startDate
 /// - Polymorphable: polymorphicSubtype
-public struct Goal: Persistable, Completable, Polymorphable, Codable, Sendable,
-                    FetchableRecord, PersistableRecord, TableRecord {
+@Table
+public struct Goal: Persistable, Completable, Polymorphable, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -68,78 +68,7 @@ public struct Goal: Persistable, Completable, Polymorphable, Codable, Sendable,
 
     // MARK: - Polymorphic Type (Polymorphable)
 
-    public var polymorphicSubtype: String { return "goal" }
-
-    // MARK: - GRDB TableRecord
-
-    public static let databaseTableName = "goals"
-
-    /// Use centralized UUID encoding strategy (UPPERCASE)
-    public static func databaseUUIDEncodingStrategy(for column: String) -> DatabaseUUIDEncodingStrategy {
-        EntityUUIDEncoding.strategy
-    }
-
-    /// Handle INSERT conflicts by replacing the existing record
-    ///
-    /// Since uuid_id is our PRIMARY KEY, this tells GRDB to use INSERT OR REPLACE
-    /// which effectively does UPDATE when the uuid_id already exists.
-    /// This fixes the "UNIQUE constraint failed" error when editing goals.
-    public static let persistenceConflictPolicy = PersistenceConflictPolicy(
-        insert: .replace,
-        update: .replace
-    )
-
-    // MARK: - GRDB Associations
-
-    /// Association to term assignments (junction table)
-    public static let termAssignments = hasMany(
-        TermGoalAssignment.self,
-        key: "termAssignments",
-        using: ForeignKey(["goal_uuid"])
-    )
-
-    /// Association to terms (via junction table)
-    ///
-    /// This provides the reverse many-to-many relationship: Goal ← TermGoalAssignment → Term
-    ///
-    /// Usage:
-    /// ```swift
-    /// // Fetch goal with all terms containing it
-    /// let goal = try Goal
-    ///     .including(all: Goal.terms)
-    ///     .fetchOne(db, id: goalUUID)
-    ///
-    /// // Find all goals NOT yet assigned to any term
-    /// let unassigned = try Goal
-    ///     .having(Goal.termAssignments.isEmpty)
-    ///     .fetchAll(db)
-    /// ```
-    public static let terms = hasMany(
-        GoalTerm.self,
-        through: termAssignments,
-        using: TermGoalAssignment.term,
-        key: "terms"
-    )
-
-    // MARK: - Codable Mapping
-
-    /// Maps Swift property names to database column names
-    /// Note: polymorphicSubtype is a computed property, not included in CodingKeys
-    enum CodingKeys: String, CodingKey {
-        case id = "uuid_id"                          // UUID column (Swift-native)
-        case title
-        case detailedDescription = "description"
-        case freeformNotes = "notes"
-        case logTime = "log_time"
-        case measurementUnit = "measurement_unit"
-        case measurementTarget = "measurement_target"
-        case startDate = "start_date"
-        case targetDate = "target_date"
-        case howGoalIsRelevant = "how_goal_is_relevant"
-        case howGoalIsActionable = "how_goal_is_actionable"
-        case expectedTermLength = "expected_term_length"
-        // polymorphicSubtype is computed, stored as "goal" in database
-    }
+    public var polymorphicSubtype: String = "goal"
 
     // MARK: - Initialization
 
@@ -188,7 +117,8 @@ public struct Goal: Persistable, Completable, Polymorphable, Codable, Sendable,
 /// They require a target date but not necessarily a start date.
 ///
 /// Example: "Reach 50km by week 5"
-public struct Milestone: Persistable, Completable, Polymorphable, Codable, Sendable {
+@Table
+public struct Milestone: Persistable, Completable, Polymorphable, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
@@ -213,24 +143,7 @@ public struct Milestone: Persistable, Completable, Polymorphable, Codable, Senda
 
     // MARK: - Polymorphic Type (Polymorphable)
 
-    public var polymorphicSubtype: String { return "milestone" }
-
-    // MARK: - Codable Mapping
-
-    /// Maps Swift property names to database column names
-    /// Note: polymorphicSubtype is a computed property, not included in CodingKeys
-    enum CodingKeys: String, CodingKey {
-        case id = "uuid_id"                          // UUID column (Swift-native)
-        case title
-        case detailedDescription = "description"
-        case freeformNotes = "notes"
-        case logTime = "log_time"
-        case measurementUnit = "measurement_unit"
-        case measurementTarget = "measurement_target"
-        case startDate = "start_date"
-        case targetDate = "target_date"
-        // polymorphicSubtype is computed, stored as "milestone" in database
-    }
+    public var polymorphicSubtype: String = "milestone"
 
     // MARK: - Initialization
 

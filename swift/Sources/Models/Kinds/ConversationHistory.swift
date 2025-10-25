@@ -8,7 +8,7 @@
 //  conversations from the same app session.
 
 import Foundation
-import GRDB
+import SQLiteData
 
 /// A single prompt-response exchange with the AI assistant
 ///
@@ -30,8 +30,8 @@ import GRDB
 /// )
 /// try await database.save(&history)
 /// ```
-public struct ConversationHistory: Codable, Sendable,
-                                   FetchableRecord, PersistableRecord, TableRecord {
+@Table
+public struct ConversationHistory: Codable, Sendable {
 
     // MARK: - Properties
 
@@ -52,22 +52,6 @@ public struct ConversationHistory: Codable, Sendable,
 
     /// Optional user notes about this conversation
     public var freeformNotes: String?
-
-    // MARK: - TableRecord
-
-    public static let databaseTableName = "conversation_history"
-
-    // MARK: - Codable Keys
-
-    /// Maps Swift camelCase properties to database snake_case columns
-    enum CodingKeys: String, CodingKey {
-        case id
-        case sessionId = "session_id"
-        case prompt
-        case response
-        case createdAt = "created_at"
-        case freeformNotes = "freeform_notes"
-    }
 
     // MARK: - Initialization
 
