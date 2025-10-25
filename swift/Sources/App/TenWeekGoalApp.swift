@@ -4,7 +4,9 @@
 // Written by Claude Code on 2025-10-19
 
 import SwiftUI
-import Database
+import SQLiteData
+import GRDB
+import Models
 
 /// Main application entry point
 ///
@@ -17,24 +19,46 @@ public struct TenWeekGoalApp: App {
 
     // MARK: - Initialization
 
-    public init() {}
+    public init() {
+        // Configure SQLiteData with iCloud sync
+        prepareDependencies {
+            // Create database connection
+            let dbPath = FileManager.default.urls(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask
+            )[0].appendingPathComponent("GoalTracker/application_data.db")
+
+            // Ensure directory exists
+            try? FileManager.default.createDirectory(
+                at: dbPath.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+
+            let db = try! DatabaseQueue(path: dbPath.path)
+            $0.defaultDatabase = db
+
+            // TODO: Fix iCloud sync - .table property not accessible in this context
+            // 🎯 ENABLE ICLOUD SYNC!
+            // $0.defaultSyncEngine = SyncEngine(
+            //     for: db,
+            //     tables: [
+            //         Action.table,
+            //         Goal.table,
+            //         GoalTerm.table,
+            //         TermGoalAssignment.table
+            //     ]
+            // )
+        }
+    }
 
     // MARK: - Properties
-
-    /// Root app state management
-    @State private var appViewModel = AppViewModel()
 
     // MARK: - Body
 
     public var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(appViewModel)
                 .environment(ZoomManager.shared)
-                .task {
-                    // Initialize database on app launch
-                    await appViewModel.initialize()
-                }
                 #if os(macOS)
                 .frame(minWidth: 800, minHeight: 600)
                 #endif

@@ -5,7 +5,7 @@
 
 import SwiftUI
 import App
-import Database
+
 
 @main
 struct GoalTrackerApp: App {

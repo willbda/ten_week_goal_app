@@ -178,7 +178,6 @@ struct GoalDocumentEditor: View {
 /// - Primary workflow: Database-based (WindowGroup)
 /// - Secondary workflow: File-based for sharing/backup (DocumentGroup)
 struct HybridApp: App {
-    @State private var appViewModel = AppViewModel()
 
     var body: some Scene {
         // Primary: Database-based window
@@ -186,7 +185,7 @@ struct HybridApp: App {
             ContentView()
                 .environment(appViewModel)
                 .task {
-                    await appViewModel.initialize()
+                    
                 }
                 .frame(minWidth: 800, minHeight: 600)
         }

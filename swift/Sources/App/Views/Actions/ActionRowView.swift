@@ -38,9 +38,9 @@ struct ActionRowView: View {
                 }
 
                 // Individual measurements
-                if let measuresByUnit = action.measuresByUnit {
-                    ForEach(Array(measuresByUnit.keys.sorted()), id: \.self) { unit in
-                        if let value = measuresByUnit[unit] {
+                if !action.measuresByUnit.isEmpty {
+                    ForEach(Array(action.measuresByUnit.keys.sorted()), id: \.self) { unit in
+                        if let value = action.measuresByUnit[unit] {
                             Text("\(value, specifier: "%.1f") \(unit)")
                                 .font(DesignSystem.Typography.subheadline)
                                 .foregroundStyle(.secondary)

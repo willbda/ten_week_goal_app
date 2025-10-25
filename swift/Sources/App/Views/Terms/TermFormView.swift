@@ -22,7 +22,6 @@ public struct TermFormView: View {
     // MARK: - Environment
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(AppViewModel.self) private var appViewModel
 
     // MARK: - Properties
 
@@ -333,35 +332,18 @@ public struct TermFormView: View {
     }
 
     /// Load available goals from database
+    // TODO: Restore with SQLiteData queries
     private func loadAvailableGoals() async {
-        guard let database = appViewModel.databaseManager else {
-            return
-        }
-
-        do {
-            availableGoals = try await database.fetchGoals()
-                .sorted { ($0.title ?? "") < ($1.title ?? "") }
-        } catch {
-            print("❌ Failed to load goals: \(error)")
-        }
+        // Temporarily disabled - needs SQLiteData @FetchAll pattern
+        // availableGoals = try await database.fetchGoals()
+        //     .sorted { ($0.title ?? "") < ($1.title ?? "") }
     }
 
     /// Load selected goals for existing term (edit mode)
     private func loadSelectedGoals() async {
-        guard let term = termToEdit,
-              let database = appViewModel.databaseManager else {
-            return
-        }
-
-        do {
-            // Fetch term with goals using junction table
-            if let (_, goals) = try await database.fetchTermWithGoals(term.id) {
-                selectedGoalIDs = Set(goals.map { $0.id })
-                showGoalSelection = !goals.isEmpty
-            }
-        } catch {
-            print("❌ Failed to load term goals: \(error)")
-        }
+        // Temporarily disabled - needs SQLiteData query for junction table
+        // guard let term = termToEdit else { return }
+        // selectedGoalIDs = Set(goals.map { $0.id })
     }
 }
 
@@ -417,7 +399,6 @@ private struct GoalSelectionRow: View {
             print("Cancelled")
         }
     )
-    .environment(AppViewModel())
 }
 
 #Preview("Edit Mode") {
@@ -440,5 +421,4 @@ private struct GoalSelectionRow: View {
             print("Cancelled")
         }
     )
-    .environment(AppViewModel())
 }

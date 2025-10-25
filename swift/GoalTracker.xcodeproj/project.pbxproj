@@ -1,0 +1,1348 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		38DC6AAA2EAC6B6C001761FC /* ValueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A3C2EAC6B6C001761FC /* ValueTests.swift */; };
+		38DC6AAB2EAC6B6C001761FC /* ContentMaterials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A002EAC6B6C001761FC /* ContentMaterials.swift */; };
+		38DC6AAC2EAC6B6C001761FC /* TermFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F42EAC6B6C001761FC /* TermFormView.swift */; };
+		38DC6AAD2EAC6B6C001761FC /* ValuesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69FB2EAC6B6C001761FC /* ValuesViewModel.swift */; };
+		38DC6AAE2EAC6B6C001761FC /* ConversationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69EA2EAC6B6C001761FC /* ConversationViewModel.swift */; };
+		38DC6AAF2EAC6B6C001761FC /* ExpectationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A342EAC6B6C001761FC /* ExpectationTests.swift */; };
+		38DC6AB02EAC6B6C001761FC /* RelationshipGRDBTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A322EAC6B6C001761FC /* RelationshipGRDBTests.swift */; };
+		38DC6AB12EAC6B6C001761FC /* GoalValueAlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A372EAC6B6C001761FC /* GoalValueAlignmentTests.swift */; };
+		38DC6AB22EAC6B6C001761FC /* TermIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A472EAC6B6C001761FC /* TermIntegrationTests.swift */; };
+		38DC6AB32EAC6B6C001761FC /* ActionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E12EAC6B6C001761FC /* ActionRowView.swift */; };
+		38DC6AB42EAC6B6C001761FC /* ValidationError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A292EAC6B6C001761FC /* ValidationError.swift */; };
+		38DC6AB52EAC6B6C001761FC /* ValuesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69FA2EAC6B6C001761FC /* ValuesListView.swift */; };
+		38DC6AB62EAC6B6C001761FC /* GoalsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69EF2EAC6B6C001761FC /* GoalsViewModel.swift */; };
+		38DC6AB72EAC6B6C001761FC /* ConversationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A102EAC6B6C001761FC /* ConversationService.swift */; };
+		38DC6AB82EAC6B6C001761FC /* InferenceServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A2E2EAC6B6C001761FC /* InferenceServiceTests.swift */; };
+		38DC6AB92EAC6B6C001761FC /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A1C2EAC6B6C001761FC /* Actions.swift */; };
+		38DC6ABA2EAC6B6C001761FC /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A1A2EAC6B6C001761FC /* DatabaseManager.swift */; };
+		38DC6ABB2EAC6B6C001761FC /* BulkMatchingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E42EAC6B6C001761FC /* BulkMatchingView.swift */; };
+		38DC6ABC2EAC6B6C001761FC /* ActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A392EAC6B6C001761FC /* ActionTests.swift */; };
+		38DC6ABD2EAC6B6C001761FC /* DatabaseError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A192EAC6B6C001761FC /* DatabaseError.swift */; };
+		38DC6ABE2EAC6B6C001761FC /* ActionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E32EAC6B6C001761FC /* ActionsViewModel.swift */; };
+		38DC6ABF2EAC6B6C001761FC /* ListViewBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69FD2EAC6B6C001761FC /* ListViewBuilder.swift */; };
+		38DC6AC02EAC6B6C001761FC /* TermRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F52EAC6B6C001761FC /* TermRowView.swift */; };
+		38DC6AC12EAC6B6C001761FC /* GoalValueAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A252EAC6B6C001761FC /* GoalValueAlignment.swift */; };
+		38DC6AC22EAC6B6C001761FC /* LiquidGlassSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A042EAC6B6C001761FC /* LiquidGlassSystem.swift */; };
+		38DC6AC32EAC6B6C001761FC /* GoalRowViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A402EAC6B6C001761FC /* GoalRowViewTests.swift */; };
+		38DC6AC42EAC6B6C001761FC /* GetTermsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A0C2EAC6B6C001761FC /* GetTermsTool.swift */; };
+		38DC6AC52EAC6B6C001761FC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A012EAC6B6C001761FC /* ContentView.swift */; };
+		38DC6AC62EAC6B6C001761FC /* GoalTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69D82EAC6B6C001761FC /* GoalTrackerApp.swift */; };
+		38DC6AC72EAC6B6C001761FC /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69FF2EAC6B6C001761FC /* AppViewModel.swift */; };
+		38DC6AC82EAC6B6C001761FC /* GoalRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69ED2EAC6B6C001761FC /* GoalRowView.swift */; };
+		38DC6AC92EAC6B6C001761FC /* ActionFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E02EAC6B6C001761FC /* ActionFormView.swift */; };
+		38DC6ACA2EAC6B6C001761FC /* ActionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E22EAC6B6C001761FC /* ActionsListView.swift */; };
+		38DC6ACB2EAC6B6C001761FC /* Expectations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A1E2EAC6B6C001761FC /* Expectations.swift */; };
+		38DC6ACC2EAC6B6C001761FC /* GetActionsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A0A2EAC6B6C001761FC /* GetActionsTool.swift */; };
+		38DC6ACD2EAC6B6C001761FC /* ActionGoalRelationship.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A242EAC6B6C001761FC /* ActionGoalRelationship.swift */; };
+		38DC6ACE2EAC6B6C001761FC /* AssistantChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E72EAC6B6C001761FC /* AssistantChatView.swift */; };
+		38DC6ACF2EAC6B6C001761FC /* ValueRowViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A432EAC6B6C001761FC /* ValueRowViewTests.swift */; };
+		38DC6AD02EAC6B6C001761FC /* GoalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A3A2EAC6B6C001761FC /* GoalTests.swift */; };
+		38DC6AD12EAC6B6C001761FC /* InferenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A132EAC6B6C001761FC /* InferenceService.swift */; };
+		38DC6AD22EAC6B6C001761FC /* MatchingServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A2F2EAC6B6C001761FC /* MatchingServiceTests.swift */; };
+		38DC6AD32EAC6B6C001761FC /* ExpandableFormSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F12EAC6B6C001761FC /* ExpandableFormSection.swift */; };
+		38DC6AD42EAC6B6C001761FC /* Terms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A212EAC6B6C001761FC /* Terms.swift */; };
+		38DC6AD52EAC6B6C001761FC /* ModelAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A112EAC6B6C001761FC /* ModelAvailability.swift */; };
+		38DC6AD62EAC6B6C001761FC /* Values.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A222EAC6B6C001761FC /* Values.swift */; };
+		38DC6AD72EAC6B6C001761FC /* GoalFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69EC2EAC6B6C001761FC /* GoalFormView.swift */; };
+		38DC6AD82EAC6B6C001761FC /* DatabaseConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A182EAC6B6C001761FC /* DatabaseConfiguration.swift */; };
+		38DC6AD92EAC6B6C001761FC /* ChatMessageRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E92EAC6B6C001761FC /* ChatMessageRow.swift */; };
+		38DC6ADA2EAC6B6C001761FC /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A082EAC6B6C001761FC /* main.swift */; };
+		38DC6ADB2EAC6B6C001761FC /* ConversationError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A0F2EAC6B6C001761FC /* ConversationError.swift */; };
+		38DC6ADC2EAC6B6C001761FC /* ActionGRDBTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A312EAC6B6C001761FC /* ActionGRDBTests.swift */; };
+		38DC6ADD2EAC6B6C001761FC /* GoalsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69EE2EAC6B6C001761FC /* GoalsListView.swift */; };
+		38DC6ADE2EAC6B6C001761FC /* ActionFormViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A3E2EAC6B6C001761FC /* ActionFormViewTests.swift */; };
+		38DC6ADF2EAC6B6C001761FC /* TenWeekGoalApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A052EAC6B6C001761FC /* TenWeekGoalApp.swift */; };
+		38DC6AE02EAC6B6C001761FC /* GetValuesTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A0D2EAC6B6C001761FC /* GetValuesTool.swift */; };
+		38DC6AE12EAC6B6C001761FC /* TermsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F72EAC6B6C001761FC /* TermsViewModel.swift */; };
+		38DC6AE32EAC6B6C001761FC /* GoalDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A032EAC6B6C001761FC /* GoalDocument.swift */; };
+		38DC6AE42EAC6B6C001761FC /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A022EAC6B6C001761FC /* DesignSystem.swift */; };
+		38DC6AE52EAC6B6C001761FC /* TermRowViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A422EAC6B6C001761FC /* TermRowViewTests.swift */; };
+		38DC6AE62EAC6B6C001761FC /* Protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A282EAC6B6C001761FC /* Protocols.swift */; };
+		38DC6AE72EAC6B6C001761FC /* ActionRowViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A3F2EAC6B6C001761FC /* ActionRowViewTests.swift */; };
+		38DC6AE82EAC6B6C001761FC /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E82EAC6B6C001761FC /* ChatMessage.swift */; };
+		38DC6AE92EAC6B6C001761FC /* MatchingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A142EAC6B6C001761FC /* MatchingService.swift */; };
+		38DC6AEA2EAC6B6C001761FC /* GetGoalsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A0B2EAC6B6C001761FC /* GetGoalsTool.swift */; };
+		38DC6AEB2EAC6B6C001761FC /* Goals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A1F2EAC6B6C001761FC /* Goals.swift */; };
+		38DC6AEC2EAC6B6C001761FC /* ConversationHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A1D2EAC6B6C001761FC /* ConversationHistory.swift */; };
+		38DC6AED2EAC6B6C001761FC /* TermTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A3B2EAC6B6C001761FC /* TermTests.swift */; };
+		38DC6AEE2EAC6B6C001761FC /* ModelExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A272EAC6B6C001761FC /* ModelExtensions.swift */; };
+		38DC6AEF2EAC6B6C001761FC /* ValueRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F92EAC6B6C001761FC /* ValueRowView.swift */; };
+		38DC6AF02EAC6B6C001761FC /* TermGoalAssignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A202EAC6B6C001761FC /* TermGoalAssignment.swift */; };
+		38DC6AF12EAC6B6C001761FC /* QuickAddSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E52EAC6B6C001761FC /* QuickAddSectionView.swift */; };
+		38DC6AF22EAC6B6C001761FC /* FormFieldModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F22EAC6B6C001761FC /* FormFieldModifiers.swift */; };
+		38DC6AF32EAC6B6C001761FC /* ActionGoalRelationshipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A362EAC6B6C001761FC /* ActionGoalRelationshipTests.swift */; };
+		38DC6AF42EAC6B6C001761FC /* TermsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F62EAC6B6C001761FC /* TermsListView.swift */; };
+		38DC6AF52EAC6B6C001761FC /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 38DC69D92EAC6B6C001761FC /* Info.plist */; };
+		38DC6AF62EAC6B6C001761FC /* SETUP_INSTRUCTIONS.md in Resources */ = {isa = PBXBuildFile; fileRef = 38DC69DB2EAC6B6C001761FC /* SETUP_INSTRUCTIONS.md */; };
+		38DC6AF72EAC6B6C001761FC /* .gitkeep in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A172EAC6B6C001761FC /* .gitkeep */; };
+		38DC6AF92EAC6B6C001761FC /* TestingStrategy.md in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A482EAC6B6C001761FC /* TestingStrategy.md */; };
+		38DC6AFD2EAC6B6C001761FC /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A072EAC6B6C001761FC /* Info.plist */; };
+		38DC6AFF2EAC6B6C001761FC /* RecordIntegrationTests.swift.disabled in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A462EAC6B6C001761FC /* RecordIntegrationTests.swift.disabled */; };
+		38DC6B042EAC6B6C001761FC /* RecordIntegrationTests.swift.backup in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A452EAC6B6C001761FC /* RecordIntegrationTests.swift.backup */; };
+		38DC6B062EAC6B6C001761FC /* .gitkeep in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A2B2EAC6B6C001761FC /* .gitkeep */; };
+		38DC6B072EAC6B6C001761FC /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A412EAC6B6C001761FC /* README.md */; };
+		38DC6B0A2EAC6B6C001761FC /* ValueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A3C2EAC6B6C001761FC /* ValueTests.swift */; };
+		38DC6B0B2EAC6B6C001761FC /* ContentMaterials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A002EAC6B6C001761FC /* ContentMaterials.swift */; };
+		38DC6B0C2EAC6B6C001761FC /* TermFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F42EAC6B6C001761FC /* TermFormView.swift */; };
+		38DC6B0D2EAC6B6C001761FC /* ValuesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69FB2EAC6B6C001761FC /* ValuesViewModel.swift */; };
+		38DC6B0E2EAC6B6C001761FC /* ConversationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69EA2EAC6B6C001761FC /* ConversationViewModel.swift */; };
+		38DC6B0F2EAC6B6C001761FC /* ExpectationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A342EAC6B6C001761FC /* ExpectationTests.swift */; };
+		38DC6B102EAC6B6C001761FC /* RelationshipGRDBTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A322EAC6B6C001761FC /* RelationshipGRDBTests.swift */; };
+		38DC6B112EAC6B6C001761FC /* GoalValueAlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A372EAC6B6C001761FC /* GoalValueAlignmentTests.swift */; };
+		38DC6B122EAC6B6C001761FC /* TermIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A472EAC6B6C001761FC /* TermIntegrationTests.swift */; };
+		38DC6B132EAC6B6C001761FC /* ActionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E12EAC6B6C001761FC /* ActionRowView.swift */; };
+		38DC6B142EAC6B6C001761FC /* ValidationError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A292EAC6B6C001761FC /* ValidationError.swift */; };
+		38DC6B152EAC6B6C001761FC /* ValuesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69FA2EAC6B6C001761FC /* ValuesListView.swift */; };
+		38DC6B162EAC6B6C001761FC /* GoalsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69EF2EAC6B6C001761FC /* GoalsViewModel.swift */; };
+		38DC6B172EAC6B6C001761FC /* ConversationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A102EAC6B6C001761FC /* ConversationService.swift */; };
+		38DC6B182EAC6B6C001761FC /* InferenceServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A2E2EAC6B6C001761FC /* InferenceServiceTests.swift */; };
+		38DC6B192EAC6B6C001761FC /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A1C2EAC6B6C001761FC /* Actions.swift */; };
+		38DC6B1A2EAC6B6C001761FC /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A1A2EAC6B6C001761FC /* DatabaseManager.swift */; };
+		38DC6B1B2EAC6B6C001761FC /* BulkMatchingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E42EAC6B6C001761FC /* BulkMatchingView.swift */; };
+		38DC6B1C2EAC6B6C001761FC /* ActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A392EAC6B6C001761FC /* ActionTests.swift */; };
+		38DC6B1D2EAC6B6C001761FC /* DatabaseError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A192EAC6B6C001761FC /* DatabaseError.swift */; };
+		38DC6B1E2EAC6B6C001761FC /* ActionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E32EAC6B6C001761FC /* ActionsViewModel.swift */; };
+		38DC6B1F2EAC6B6C001761FC /* ListViewBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69FD2EAC6B6C001761FC /* ListViewBuilder.swift */; };
+		38DC6B202EAC6B6C001761FC /* TermRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F52EAC6B6C001761FC /* TermRowView.swift */; };
+		38DC6B212EAC6B6C001761FC /* GoalValueAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A252EAC6B6C001761FC /* GoalValueAlignment.swift */; };
+		38DC6B222EAC6B6C001761FC /* LiquidGlassSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A042EAC6B6C001761FC /* LiquidGlassSystem.swift */; };
+		38DC6B232EAC6B6C001761FC /* GoalRowViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A402EAC6B6C001761FC /* GoalRowViewTests.swift */; };
+		38DC6B242EAC6B6C001761FC /* GetTermsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A0C2EAC6B6C001761FC /* GetTermsTool.swift */; };
+		38DC6B252EAC6B6C001761FC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A012EAC6B6C001761FC /* ContentView.swift */; };
+		38DC6B262EAC6B6C001761FC /* GoalTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69D82EAC6B6C001761FC /* GoalTrackerApp.swift */; };
+		38DC6B272EAC6B6C001761FC /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69FF2EAC6B6C001761FC /* AppViewModel.swift */; };
+		38DC6B282EAC6B6C001761FC /* GoalRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69ED2EAC6B6C001761FC /* GoalRowView.swift */; };
+		38DC6B292EAC6B6C001761FC /* ActionFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E02EAC6B6C001761FC /* ActionFormView.swift */; };
+		38DC6B2A2EAC6B6C001761FC /* ActionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E22EAC6B6C001761FC /* ActionsListView.swift */; };
+		38DC6B2B2EAC6B6C001761FC /* Expectations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A1E2EAC6B6C001761FC /* Expectations.swift */; };
+		38DC6B2C2EAC6B6C001761FC /* GetActionsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A0A2EAC6B6C001761FC /* GetActionsTool.swift */; };
+		38DC6B2D2EAC6B6C001761FC /* ActionGoalRelationship.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A242EAC6B6C001761FC /* ActionGoalRelationship.swift */; };
+		38DC6B2E2EAC6B6C001761FC /* AssistantChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E72EAC6B6C001761FC /* AssistantChatView.swift */; };
+		38DC6B2F2EAC6B6C001761FC /* ValueRowViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A432EAC6B6C001761FC /* ValueRowViewTests.swift */; };
+		38DC6B302EAC6B6C001761FC /* GoalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A3A2EAC6B6C001761FC /* GoalTests.swift */; };
+		38DC6B312EAC6B6C001761FC /* InferenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A132EAC6B6C001761FC /* InferenceService.swift */; };
+		38DC6B322EAC6B6C001761FC /* MatchingServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A2F2EAC6B6C001761FC /* MatchingServiceTests.swift */; };
+		38DC6B332EAC6B6C001761FC /* ExpandableFormSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F12EAC6B6C001761FC /* ExpandableFormSection.swift */; };
+		38DC6B342EAC6B6C001761FC /* Terms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A212EAC6B6C001761FC /* Terms.swift */; };
+		38DC6B352EAC6B6C001761FC /* ModelAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A112EAC6B6C001761FC /* ModelAvailability.swift */; };
+		38DC6B362EAC6B6C001761FC /* Values.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A222EAC6B6C001761FC /* Values.swift */; };
+		38DC6B372EAC6B6C001761FC /* GoalFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69EC2EAC6B6C001761FC /* GoalFormView.swift */; };
+		38DC6B382EAC6B6C001761FC /* DatabaseConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A182EAC6B6C001761FC /* DatabaseConfiguration.swift */; };
+		38DC6B392EAC6B6C001761FC /* ChatMessageRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E92EAC6B6C001761FC /* ChatMessageRow.swift */; };
+		38DC6B3A2EAC6B6C001761FC /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A082EAC6B6C001761FC /* main.swift */; };
+		38DC6B3B2EAC6B6C001761FC /* ConversationError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A0F2EAC6B6C001761FC /* ConversationError.swift */; };
+		38DC6B3C2EAC6B6C001761FC /* ActionGRDBTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A312EAC6B6C001761FC /* ActionGRDBTests.swift */; };
+		38DC6B3D2EAC6B6C001761FC /* GoalsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69EE2EAC6B6C001761FC /* GoalsListView.swift */; };
+		38DC6B3E2EAC6B6C001761FC /* ActionFormViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A3E2EAC6B6C001761FC /* ActionFormViewTests.swift */; };
+		38DC6B3F2EAC6B6C001761FC /* TenWeekGoalApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A052EAC6B6C001761FC /* TenWeekGoalApp.swift */; };
+		38DC6B402EAC6B6C001761FC /* GetValuesTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A0D2EAC6B6C001761FC /* GetValuesTool.swift */; };
+		38DC6B412EAC6B6C001761FC /* TermsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F72EAC6B6C001761FC /* TermsViewModel.swift */; };
+		38DC6B432EAC6B6C001761FC /* GoalDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A032EAC6B6C001761FC /* GoalDocument.swift */; };
+		38DC6B442EAC6B6C001761FC /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A022EAC6B6C001761FC /* DesignSystem.swift */; };
+		38DC6B452EAC6B6C001761FC /* TermRowViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A422EAC6B6C001761FC /* TermRowViewTests.swift */; };
+		38DC6B462EAC6B6C001761FC /* Protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A282EAC6B6C001761FC /* Protocols.swift */; };
+		38DC6B472EAC6B6C001761FC /* ActionRowViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A3F2EAC6B6C001761FC /* ActionRowViewTests.swift */; };
+		38DC6B482EAC6B6C001761FC /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E82EAC6B6C001761FC /* ChatMessage.swift */; };
+		38DC6B492EAC6B6C001761FC /* MatchingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A142EAC6B6C001761FC /* MatchingService.swift */; };
+		38DC6B4A2EAC6B6C001761FC /* GetGoalsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A0B2EAC6B6C001761FC /* GetGoalsTool.swift */; };
+		38DC6B4B2EAC6B6C001761FC /* Goals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A1F2EAC6B6C001761FC /* Goals.swift */; };
+		38DC6B4C2EAC6B6C001761FC /* ConversationHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A1D2EAC6B6C001761FC /* ConversationHistory.swift */; };
+		38DC6B4D2EAC6B6C001761FC /* TermTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A3B2EAC6B6C001761FC /* TermTests.swift */; };
+		38DC6B4E2EAC6B6C001761FC /* ModelExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A272EAC6B6C001761FC /* ModelExtensions.swift */; };
+		38DC6B4F2EAC6B6C001761FC /* ValueRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F92EAC6B6C001761FC /* ValueRowView.swift */; };
+		38DC6B502EAC6B6C001761FC /* TermGoalAssignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A202EAC6B6C001761FC /* TermGoalAssignment.swift */; };
+		38DC6B512EAC6B6C001761FC /* QuickAddSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69E52EAC6B6C001761FC /* QuickAddSectionView.swift */; };
+		38DC6B522EAC6B6C001761FC /* FormFieldModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F22EAC6B6C001761FC /* FormFieldModifiers.swift */; };
+		38DC6B532EAC6B6C001761FC /* ActionGoalRelationshipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC6A362EAC6B6C001761FC /* ActionGoalRelationshipTests.swift */; };
+		38DC6B542EAC6B6C001761FC /* TermsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69F62EAC6B6C001761FC /* TermsListView.swift */; };
+		38DC6B552EAC6B6C001761FC /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 38DC69D92EAC6B6C001761FC /* Info.plist */; };
+		38DC6B562EAC6B6C001761FC /* SETUP_INSTRUCTIONS.md in Resources */ = {isa = PBXBuildFile; fileRef = 38DC69DB2EAC6B6C001761FC /* SETUP_INSTRUCTIONS.md */; };
+		38DC6B572EAC6B6C001761FC /* .gitkeep in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A172EAC6B6C001761FC /* .gitkeep */; };
+		38DC6B592EAC6B6C001761FC /* TestingStrategy.md in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A482EAC6B6C001761FC /* TestingStrategy.md */; };
+		38DC6B5D2EAC6B6C001761FC /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A072EAC6B6C001761FC /* Info.plist */; };
+		38DC6B5F2EAC6B6C001761FC /* RecordIntegrationTests.swift.disabled in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A462EAC6B6C001761FC /* RecordIntegrationTests.swift.disabled */; };
+		38DC6B642EAC6B6C001761FC /* RecordIntegrationTests.swift.backup in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A452EAC6B6C001761FC /* RecordIntegrationTests.swift.backup */; };
+		38DC6B662EAC6B6C001761FC /* .gitkeep in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A2B2EAC6B6C001761FC /* .gitkeep */; };
+		38DC6B672EAC6B6C001761FC /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 38DC6A412EAC6B6C001761FC /* README.md */; };
+		38DC6B6A2EAC6E3E001761FC /* GoalTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DC69D82EAC6B6C001761FC /* GoalTrackerApp.swift */; };
+		38DC6B6D2EAC703F001761FC /* GoalTrackerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 38DC6B6C2EAC703F001761FC /* GoalTrackerKit */; };
+		38DC6B702EAC71A1001761FC /* GoalTrackerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 38DC6B6F2EAC71A1001761FC /* GoalTrackerKit */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		38DC69932EAC6A13001761FC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 38DC697D2EAC6A11001761FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 38DC69842EAC6A11001761FC;
+			remoteInfo = GoalTracker;
+		};
+		38DC699D2EAC6A13001761FC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 38DC697D2EAC6A11001761FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 38DC69842EAC6A11001761FC;
+			remoteInfo = GoalTracker;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		38DC69852EAC6A11001761FC /* GoalTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GoalTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		38DC69922EAC6A13001761FC /* GoalTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GoalTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		38DC699C2EAC6A13001761FC /* GoalTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GoalTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		38DC69D82EAC6B6C001761FC /* GoalTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalTrackerApp.swift; sourceTree = "<group>"; };
+		38DC69D92EAC6B6C001761FC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		38DC69DB2EAC6B6C001761FC /* SETUP_INSTRUCTIONS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SETUP_INSTRUCTIONS.md; sourceTree = "<group>"; };
+		38DC69E02EAC6B6C001761FC /* ActionFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionFormView.swift; sourceTree = "<group>"; };
+		38DC69E12EAC6B6C001761FC /* ActionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionRowView.swift; sourceTree = "<group>"; };
+		38DC69E22EAC6B6C001761FC /* ActionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionsListView.swift; sourceTree = "<group>"; };
+		38DC69E32EAC6B6C001761FC /* ActionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionsViewModel.swift; sourceTree = "<group>"; };
+		38DC69E42EAC6B6C001761FC /* BulkMatchingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkMatchingView.swift; sourceTree = "<group>"; };
+		38DC69E52EAC6B6C001761FC /* QuickAddSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddSectionView.swift; sourceTree = "<group>"; };
+		38DC69E72EAC6B6C001761FC /* AssistantChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantChatView.swift; sourceTree = "<group>"; };
+		38DC69E82EAC6B6C001761FC /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		38DC69E92EAC6B6C001761FC /* ChatMessageRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageRow.swift; sourceTree = "<group>"; };
+		38DC69EA2EAC6B6C001761FC /* ConversationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationViewModel.swift; sourceTree = "<group>"; };
+		38DC69EC2EAC6B6C001761FC /* GoalFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalFormView.swift; sourceTree = "<group>"; };
+		38DC69ED2EAC6B6C001761FC /* GoalRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalRowView.swift; sourceTree = "<group>"; };
+		38DC69EE2EAC6B6C001761FC /* GoalsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsListView.swift; sourceTree = "<group>"; };
+		38DC69EF2EAC6B6C001761FC /* GoalsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsViewModel.swift; sourceTree = "<group>"; };
+		38DC69F12EAC6B6C001761FC /* ExpandableFormSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableFormSection.swift; sourceTree = "<group>"; };
+		38DC69F22EAC6B6C001761FC /* FormFieldModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormFieldModifiers.swift; sourceTree = "<group>"; };
+		38DC69F42EAC6B6C001761FC /* TermFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermFormView.swift; sourceTree = "<group>"; };
+		38DC69F52EAC6B6C001761FC /* TermRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermRowView.swift; sourceTree = "<group>"; };
+		38DC69F62EAC6B6C001761FC /* TermsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermsListView.swift; sourceTree = "<group>"; };
+		38DC69F72EAC6B6C001761FC /* TermsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermsViewModel.swift; sourceTree = "<group>"; };
+		38DC69F92EAC6B6C001761FC /* ValueRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueRowView.swift; sourceTree = "<group>"; };
+		38DC69FA2EAC6B6C001761FC /* ValuesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValuesListView.swift; sourceTree = "<group>"; };
+		38DC69FB2EAC6B6C001761FC /* ValuesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValuesViewModel.swift; sourceTree = "<group>"; };
+		38DC69FD2EAC6B6C001761FC /* ListViewBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViewBuilder.swift; sourceTree = "<group>"; };
+		38DC69FF2EAC6B6C001761FC /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		38DC6A002EAC6B6C001761FC /* ContentMaterials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentMaterials.swift; sourceTree = "<group>"; };
+		38DC6A012EAC6B6C001761FC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		38DC6A022EAC6B6C001761FC /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		38DC6A032EAC6B6C001761FC /* GoalDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalDocument.swift; sourceTree = "<group>"; };
+		38DC6A042EAC6B6C001761FC /* LiquidGlassSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassSystem.swift; sourceTree = "<group>"; };
+		38DC6A052EAC6B6C001761FC /* TenWeekGoalApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenWeekGoalApp.swift; sourceTree = "<group>"; };
+		38DC6A072EAC6B6C001761FC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		38DC6A082EAC6B6C001761FC /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		38DC6A0A2EAC6B6C001761FC /* GetActionsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetActionsTool.swift; sourceTree = "<group>"; };
+		38DC6A0B2EAC6B6C001761FC /* GetGoalsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetGoalsTool.swift; sourceTree = "<group>"; };
+		38DC6A0C2EAC6B6C001761FC /* GetTermsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetTermsTool.swift; sourceTree = "<group>"; };
+		38DC6A0D2EAC6B6C001761FC /* GetValuesTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetValuesTool.swift; sourceTree = "<group>"; };
+		38DC6A0F2EAC6B6C001761FC /* ConversationError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationError.swift; sourceTree = "<group>"; };
+		38DC6A102EAC6B6C001761FC /* ConversationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationService.swift; sourceTree = "<group>"; };
+		38DC6A112EAC6B6C001761FC /* ModelAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelAvailability.swift; sourceTree = "<group>"; };
+		38DC6A132EAC6B6C001761FC /* InferenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceService.swift; sourceTree = "<group>"; };
+		38DC6A142EAC6B6C001761FC /* MatchingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingService.swift; sourceTree = "<group>"; };
+		38DC6A172EAC6B6C001761FC /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+		38DC6A182EAC6B6C001761FC /* DatabaseConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseConfiguration.swift; sourceTree = "<group>"; };
+		38DC6A192EAC6B6C001761FC /* DatabaseError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseError.swift; sourceTree = "<group>"; };
+		38DC6A1A2EAC6B6C001761FC /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
+		38DC6A1C2EAC6B6C001761FC /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
+		38DC6A1D2EAC6B6C001761FC /* ConversationHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationHistory.swift; sourceTree = "<group>"; };
+		38DC6A1E2EAC6B6C001761FC /* Expectations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expectations.swift; sourceTree = "<group>"; };
+		38DC6A1F2EAC6B6C001761FC /* Goals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Goals.swift; sourceTree = "<group>"; };
+		38DC6A202EAC6B6C001761FC /* TermGoalAssignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermGoalAssignment.swift; sourceTree = "<group>"; };
+		38DC6A212EAC6B6C001761FC /* Terms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Terms.swift; sourceTree = "<group>"; };
+		38DC6A222EAC6B6C001761FC /* Values.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Values.swift; sourceTree = "<group>"; };
+		38DC6A242EAC6B6C001761FC /* ActionGoalRelationship.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionGoalRelationship.swift; sourceTree = "<group>"; };
+		38DC6A252EAC6B6C001761FC /* GoalValueAlignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalValueAlignment.swift; sourceTree = "<group>"; };
+		38DC6A272EAC6B6C001761FC /* ModelExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelExtensions.swift; sourceTree = "<group>"; };
+		38DC6A282EAC6B6C001761FC /* Protocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Protocols.swift; sourceTree = "<group>"; };
+		38DC6A292EAC6B6C001761FC /* ValidationError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationError.swift; sourceTree = "<group>"; };
+		38DC6A2B2EAC6B6C001761FC /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+		38DC6A2E2EAC6B6C001761FC /* InferenceServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceServiceTests.swift; sourceTree = "<group>"; };
+		38DC6A2F2EAC6B6C001761FC /* MatchingServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingServiceTests.swift; sourceTree = "<group>"; };
+		38DC6A312EAC6B6C001761FC /* ActionGRDBTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionGRDBTests.swift; sourceTree = "<group>"; };
+		38DC6A322EAC6B6C001761FC /* RelationshipGRDBTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelationshipGRDBTests.swift; sourceTree = "<group>"; };
+		38DC6A342EAC6B6C001761FC /* ExpectationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpectationTests.swift; sourceTree = "<group>"; };
+		38DC6A362EAC6B6C001761FC /* ActionGoalRelationshipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionGoalRelationshipTests.swift; sourceTree = "<group>"; };
+		38DC6A372EAC6B6C001761FC /* GoalValueAlignmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalValueAlignmentTests.swift; sourceTree = "<group>"; };
+		38DC6A392EAC6B6C001761FC /* ActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionTests.swift; sourceTree = "<group>"; };
+		38DC6A3A2EAC6B6C001761FC /* GoalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalTests.swift; sourceTree = "<group>"; };
+		38DC6A3B2EAC6B6C001761FC /* TermTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermTests.swift; sourceTree = "<group>"; };
+		38DC6A3C2EAC6B6C001761FC /* ValueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueTests.swift; sourceTree = "<group>"; };
+		38DC6A3E2EAC6B6C001761FC /* ActionFormViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionFormViewTests.swift; sourceTree = "<group>"; };
+		38DC6A3F2EAC6B6C001761FC /* ActionRowViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionRowViewTests.swift; sourceTree = "<group>"; };
+		38DC6A402EAC6B6C001761FC /* GoalRowViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalRowViewTests.swift; sourceTree = "<group>"; };
+		38DC6A412EAC6B6C001761FC /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		38DC6A422EAC6B6C001761FC /* TermRowViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermRowViewTests.swift; sourceTree = "<group>"; };
+		38DC6A432EAC6B6C001761FC /* ValueRowViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueRowViewTests.swift; sourceTree = "<group>"; };
+		38DC6A452EAC6B6C001761FC /* RecordIntegrationTests.swift.backup */ = {isa = PBXFileReference; lastKnownFileType = text; path = RecordIntegrationTests.swift.backup; sourceTree = "<group>"; };
+		38DC6A462EAC6B6C001761FC /* RecordIntegrationTests.swift.disabled */ = {isa = PBXFileReference; lastKnownFileType = text; path = RecordIntegrationTests.swift.disabled; sourceTree = "<group>"; };
+		38DC6A472EAC6B6C001761FC /* TermIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermIntegrationTests.swift; sourceTree = "<group>"; };
+		38DC6A482EAC6B6C001761FC /* TestingStrategy.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TestingStrategy.md; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		38DC69822EAC6A11001761FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38DC6B6D2EAC703F001761FC /* GoalTrackerKit in Frameworks */,
+				38DC6B702EAC71A1001761FC /* GoalTrackerKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		38DC698F2EAC6A13001761FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		38DC69992EAC6A13001761FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		38DC697C2EAC6A11001761FC = {
+			isa = PBXGroup;
+			children = (
+				38DC69DC2EAC6B6C001761FC /* iOS */,
+				38DC6A2D2EAC6B6C001761FC /* Sources */,
+				38DC6A492EAC6B6C001761FC /* Tests */,
+				38DC69862EAC6A11001761FC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		38DC69862EAC6A11001761FC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69852EAC6A11001761FC /* GoalTracker.app */,
+				38DC69922EAC6A13001761FC /* GoalTrackerTests.xctest */,
+				38DC699C2EAC6A13001761FC /* GoalTrackerUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		38DC69DA2EAC6B6C001761FC /* GoalTrackerApp */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69D82EAC6B6C001761FC /* GoalTrackerApp.swift */,
+				38DC69D92EAC6B6C001761FC /* Info.plist */,
+			);
+			path = GoalTrackerApp;
+			sourceTree = "<group>";
+		};
+		38DC69DC2EAC6B6C001761FC /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69DA2EAC6B6C001761FC /* GoalTrackerApp */,
+				38DC69DB2EAC6B6C001761FC /* SETUP_INSTRUCTIONS.md */,
+			);
+			path = iOS;
+			sourceTree = "<group>";
+		};
+		38DC69E62EAC6B6C001761FC /* Actions */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69E02EAC6B6C001761FC /* ActionFormView.swift */,
+				38DC69E12EAC6B6C001761FC /* ActionRowView.swift */,
+				38DC69E22EAC6B6C001761FC /* ActionsListView.swift */,
+				38DC69E32EAC6B6C001761FC /* ActionsViewModel.swift */,
+				38DC69E42EAC6B6C001761FC /* BulkMatchingView.swift */,
+				38DC69E52EAC6B6C001761FC /* QuickAddSectionView.swift */,
+			);
+			path = Actions;
+			sourceTree = "<group>";
+		};
+		38DC69EB2EAC6B6C001761FC /* Assistant */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69E72EAC6B6C001761FC /* AssistantChatView.swift */,
+				38DC69E82EAC6B6C001761FC /* ChatMessage.swift */,
+				38DC69E92EAC6B6C001761FC /* ChatMessageRow.swift */,
+				38DC69EA2EAC6B6C001761FC /* ConversationViewModel.swift */,
+			);
+			path = Assistant;
+			sourceTree = "<group>";
+		};
+		38DC69F02EAC6B6C001761FC /* Goals */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69EC2EAC6B6C001761FC /* GoalFormView.swift */,
+				38DC69ED2EAC6B6C001761FC /* GoalRowView.swift */,
+				38DC69EE2EAC6B6C001761FC /* GoalsListView.swift */,
+				38DC69EF2EAC6B6C001761FC /* GoalsViewModel.swift */,
+			);
+			path = Goals;
+			sourceTree = "<group>";
+		};
+		38DC69F32EAC6B6C001761FC /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69F12EAC6B6C001761FC /* ExpandableFormSection.swift */,
+				38DC69F22EAC6B6C001761FC /* FormFieldModifiers.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		38DC69F82EAC6B6C001761FC /* Terms */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69F42EAC6B6C001761FC /* TermFormView.swift */,
+				38DC69F52EAC6B6C001761FC /* TermRowView.swift */,
+				38DC69F62EAC6B6C001761FC /* TermsListView.swift */,
+				38DC69F72EAC6B6C001761FC /* TermsViewModel.swift */,
+			);
+			path = Terms;
+			sourceTree = "<group>";
+		};
+		38DC69FC2EAC6B6C001761FC /* Values */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69F92EAC6B6C001761FC /* ValueRowView.swift */,
+				38DC69FA2EAC6B6C001761FC /* ValuesListView.swift */,
+				38DC69FB2EAC6B6C001761FC /* ValuesViewModel.swift */,
+			);
+			path = Values;
+			sourceTree = "<group>";
+		};
+		38DC69FE2EAC6B6C001761FC /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69E62EAC6B6C001761FC /* Actions */,
+				38DC69EB2EAC6B6C001761FC /* Assistant */,
+				38DC69F02EAC6B6C001761FC /* Goals */,
+				38DC69F32EAC6B6C001761FC /* Shared */,
+				38DC69F82EAC6B6C001761FC /* Terms */,
+				38DC69FC2EAC6B6C001761FC /* Values */,
+				38DC69FD2EAC6B6C001761FC /* ListViewBuilder.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		38DC6A062EAC6B6C001761FC /* App */ = {
+			isa = PBXGroup;
+			children = (
+				38DC69FE2EAC6B6C001761FC /* Views */,
+				38DC69FF2EAC6B6C001761FC /* AppViewModel.swift */,
+				38DC6A002EAC6B6C001761FC /* ContentMaterials.swift */,
+				38DC6A012EAC6B6C001761FC /* ContentView.swift */,
+				38DC6A022EAC6B6C001761FC /* DesignSystem.swift */,
+				38DC6A032EAC6B6C001761FC /* GoalDocument.swift */,
+				38DC6A042EAC6B6C001761FC /* LiquidGlassSystem.swift */,
+				38DC6A052EAC6B6C001761FC /* TenWeekGoalApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		38DC6A092EAC6B6C001761FC /* AppRunner */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A072EAC6B6C001761FC /* Info.plist */,
+				38DC6A082EAC6B6C001761FC /* main.swift */,
+			);
+			path = AppRunner;
+			sourceTree = "<group>";
+		};
+		38DC6A0E2EAC6B6C001761FC /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A0A2EAC6B6C001761FC /* GetActionsTool.swift */,
+				38DC6A0B2EAC6B6C001761FC /* GetGoalsTool.swift */,
+				38DC6A0C2EAC6B6C001761FC /* GetTermsTool.swift */,
+				38DC6A0D2EAC6B6C001761FC /* GetValuesTool.swift */,
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		38DC6A122EAC6B6C001761FC /* LLM */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A0E2EAC6B6C001761FC /* Tools */,
+				38DC6A0F2EAC6B6C001761FC /* ConversationError.swift */,
+				38DC6A102EAC6B6C001761FC /* ConversationService.swift */,
+				38DC6A112EAC6B6C001761FC /* ModelAvailability.swift */,
+			);
+			path = LLM;
+			sourceTree = "<group>";
+		};
+		38DC6A152EAC6B6C001761FC /* BusinessLogic */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A122EAC6B6C001761FC /* LLM */,
+				38DC6A132EAC6B6C001761FC /* InferenceService.swift */,
+				38DC6A142EAC6B6C001761FC /* MatchingService.swift */,
+			);
+			path = BusinessLogic;
+			sourceTree = "<group>";
+		};
+		38DC6A162EAC6B6C001761FC /* Records */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Records;
+			sourceTree = "<group>";
+		};
+		38DC6A1B2EAC6B6C001761FC /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A162EAC6B6C001761FC /* Records */,
+				38DC6A172EAC6B6C001761FC /* .gitkeep */,
+				38DC6A182EAC6B6C001761FC /* DatabaseConfiguration.swift */,
+				38DC6A192EAC6B6C001761FC /* DatabaseError.swift */,
+				38DC6A1A2EAC6B6C001761FC /* DatabaseManager.swift */,
+			);
+			path = Database;
+			sourceTree = "<group>";
+		};
+		38DC6A232EAC6B6C001761FC /* Kinds */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A1C2EAC6B6C001761FC /* Actions.swift */,
+				38DC6A1D2EAC6B6C001761FC /* ConversationHistory.swift */,
+				38DC6A1E2EAC6B6C001761FC /* Expectations.swift */,
+				38DC6A1F2EAC6B6C001761FC /* Goals.swift */,
+				38DC6A202EAC6B6C001761FC /* TermGoalAssignment.swift */,
+				38DC6A212EAC6B6C001761FC /* Terms.swift */,
+				38DC6A222EAC6B6C001761FC /* Values.swift */,
+			);
+			path = Kinds;
+			sourceTree = "<group>";
+		};
+		38DC6A262EAC6B6C001761FC /* Relationships */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A242EAC6B6C001761FC /* ActionGoalRelationship.swift */,
+				38DC6A252EAC6B6C001761FC /* GoalValueAlignment.swift */,
+			);
+			path = Relationships;
+			sourceTree = "<group>";
+		};
+		38DC6A2A2EAC6B6C001761FC /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A232EAC6B6C001761FC /* Kinds */,
+				38DC6A262EAC6B6C001761FC /* Relationships */,
+				38DC6A272EAC6B6C001761FC /* ModelExtensions.swift */,
+				38DC6A282EAC6B6C001761FC /* Protocols.swift */,
+				38DC6A292EAC6B6C001761FC /* ValidationError.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		38DC6A2C2EAC6B6C001761FC /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A2B2EAC6B6C001761FC /* .gitkeep */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		38DC6A2D2EAC6B6C001761FC /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A062EAC6B6C001761FC /* App */,
+				38DC6A092EAC6B6C001761FC /* AppRunner */,
+				38DC6A152EAC6B6C001761FC /* BusinessLogic */,
+				38DC6A1B2EAC6B6C001761FC /* Database */,
+				38DC6A2A2EAC6B6C001761FC /* Models */,
+				38DC6A2C2EAC6B6C001761FC /* Services */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		38DC6A302EAC6B6C001761FC /* BusinessLogicTests */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A2E2EAC6B6C001761FC /* InferenceServiceTests.swift */,
+				38DC6A2F2EAC6B6C001761FC /* MatchingServiceTests.swift */,
+			);
+			path = BusinessLogicTests;
+			sourceTree = "<group>";
+		};
+		38DC6A332EAC6B6C001761FC /* IntegrationTests */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A312EAC6B6C001761FC /* ActionGRDBTests.swift */,
+				38DC6A322EAC6B6C001761FC /* RelationshipGRDBTests.swift */,
+			);
+			path = IntegrationTests;
+			sourceTree = "<group>";
+		};
+		38DC6A352EAC6B6C001761FC /* Kinds */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A342EAC6B6C001761FC /* ExpectationTests.swift */,
+			);
+			path = Kinds;
+			sourceTree = "<group>";
+		};
+		38DC6A382EAC6B6C001761FC /* Relationships */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A362EAC6B6C001761FC /* ActionGoalRelationshipTests.swift */,
+				38DC6A372EAC6B6C001761FC /* GoalValueAlignmentTests.swift */,
+			);
+			path = Relationships;
+			sourceTree = "<group>";
+		};
+		38DC6A3D2EAC6B6C001761FC /* ModelTests */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A352EAC6B6C001761FC /* Kinds */,
+				38DC6A382EAC6B6C001761FC /* Relationships */,
+				38DC6A392EAC6B6C001761FC /* ActionTests.swift */,
+				38DC6A3A2EAC6B6C001761FC /* GoalTests.swift */,
+				38DC6A3B2EAC6B6C001761FC /* TermTests.swift */,
+				38DC6A3C2EAC6B6C001761FC /* ValueTests.swift */,
+			);
+			path = ModelTests;
+			sourceTree = "<group>";
+		};
+		38DC6A442EAC6B6C001761FC /* ViewTests */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A3E2EAC6B6C001761FC /* ActionFormViewTests.swift */,
+				38DC6A3F2EAC6B6C001761FC /* ActionRowViewTests.swift */,
+				38DC6A402EAC6B6C001761FC /* GoalRowViewTests.swift */,
+				38DC6A412EAC6B6C001761FC /* README.md */,
+				38DC6A422EAC6B6C001761FC /* TermRowViewTests.swift */,
+				38DC6A432EAC6B6C001761FC /* ValueRowViewTests.swift */,
+			);
+			path = ViewTests;
+			sourceTree = "<group>";
+		};
+		38DC6A492EAC6B6C001761FC /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				38DC6A302EAC6B6C001761FC /* BusinessLogicTests */,
+				38DC6A332EAC6B6C001761FC /* IntegrationTests */,
+				38DC6A3D2EAC6B6C001761FC /* ModelTests */,
+				38DC6A442EAC6B6C001761FC /* ViewTests */,
+				38DC6A452EAC6B6C001761FC /* RecordIntegrationTests.swift.backup */,
+				38DC6A462EAC6B6C001761FC /* RecordIntegrationTests.swift.disabled */,
+				38DC6A472EAC6B6C001761FC /* TermIntegrationTests.swift */,
+				38DC6A482EAC6B6C001761FC /* TestingStrategy.md */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		38DC69842EAC6A11001761FC /* GoalTracker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 38DC69A62EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTracker" */;
+			buildPhases = (
+				38DC69812EAC6A11001761FC /* Sources */,
+				38DC69822EAC6A11001761FC /* Frameworks */,
+				38DC69832EAC6A11001761FC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GoalTracker;
+			packageProductDependencies = (
+				38DC6B6C2EAC703F001761FC /* GoalTrackerKit */,
+				38DC6B6F2EAC71A1001761FC /* GoalTrackerKit */,
+			);
+			productName = GoalTracker;
+			productReference = 38DC69852EAC6A11001761FC /* GoalTracker.app */;
+			productType = "com.apple.product-type.application";
+		};
+		38DC69912EAC6A13001761FC /* GoalTrackerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 38DC69A92EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTrackerTests" */;
+			buildPhases = (
+				38DC698E2EAC6A13001761FC /* Sources */,
+				38DC698F2EAC6A13001761FC /* Frameworks */,
+				38DC69902EAC6A13001761FC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				38DC69942EAC6A13001761FC /* PBXTargetDependency */,
+			);
+			name = GoalTrackerTests;
+			packageProductDependencies = (
+			);
+			productName = GoalTrackerTests;
+			productReference = 38DC69922EAC6A13001761FC /* GoalTrackerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		38DC699B2EAC6A13001761FC /* GoalTrackerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 38DC69AC2EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTrackerUITests" */;
+			buildPhases = (
+				38DC69982EAC6A13001761FC /* Sources */,
+				38DC69992EAC6A13001761FC /* Frameworks */,
+				38DC699A2EAC6A13001761FC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				38DC699E2EAC6A13001761FC /* PBXTargetDependency */,
+			);
+			name = GoalTrackerUITests;
+			packageProductDependencies = (
+			);
+			productName = GoalTrackerUITests;
+			productReference = 38DC699C2EAC6A13001761FC /* GoalTrackerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		38DC697D2EAC6A11001761FC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					38DC69842EAC6A11001761FC = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					38DC69912EAC6A13001761FC = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = 38DC69842EAC6A11001761FC;
+					};
+					38DC699B2EAC6A13001761FC = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = 38DC69842EAC6A11001761FC;
+					};
+				};
+			};
+			buildConfigurationList = 38DC69802EAC6A11001761FC /* Build configuration list for PBXProject "GoalTracker" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 38DC697C2EAC6A11001761FC;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				38DC6B6E2EAC71A1001761FC /* XCLocalSwiftPackageReference "../swift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 38DC69862EAC6A11001761FC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				38DC69842EAC6A11001761FC /* GoalTracker */,
+				38DC69912EAC6A13001761FC /* GoalTrackerTests */,
+				38DC699B2EAC6A13001761FC /* GoalTrackerUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		38DC69832EAC6A11001761FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		38DC69902EAC6A13001761FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38DC6B552EAC6B6C001761FC /* Info.plist in Resources */,
+				38DC6B562EAC6B6C001761FC /* SETUP_INSTRUCTIONS.md in Resources */,
+				38DC6B572EAC6B6C001761FC /* .gitkeep in Resources */,
+				38DC6B592EAC6B6C001761FC /* TestingStrategy.md in Resources */,
+				38DC6B5D2EAC6B6C001761FC /* Info.plist in Resources */,
+				38DC6B5F2EAC6B6C001761FC /* RecordIntegrationTests.swift.disabled in Resources */,
+				38DC6B642EAC6B6C001761FC /* RecordIntegrationTests.swift.backup in Resources */,
+				38DC6B662EAC6B6C001761FC /* .gitkeep in Resources */,
+				38DC6B672EAC6B6C001761FC /* README.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		38DC699A2EAC6A13001761FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38DC6AF52EAC6B6C001761FC /* Info.plist in Resources */,
+				38DC6AF62EAC6B6C001761FC /* SETUP_INSTRUCTIONS.md in Resources */,
+				38DC6AF72EAC6B6C001761FC /* .gitkeep in Resources */,
+				38DC6AF92EAC6B6C001761FC /* TestingStrategy.md in Resources */,
+				38DC6AFD2EAC6B6C001761FC /* Info.plist in Resources */,
+				38DC6AFF2EAC6B6C001761FC /* RecordIntegrationTests.swift.disabled in Resources */,
+				38DC6B042EAC6B6C001761FC /* RecordIntegrationTests.swift.backup in Resources */,
+				38DC6B062EAC6B6C001761FC /* .gitkeep in Resources */,
+				38DC6B072EAC6B6C001761FC /* README.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		38DC69812EAC6A11001761FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38DC6B6A2EAC6E3E001761FC /* GoalTrackerApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		38DC698E2EAC6A13001761FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38DC6B0A2EAC6B6C001761FC /* ValueTests.swift in Sources */,
+				38DC6B0B2EAC6B6C001761FC /* ContentMaterials.swift in Sources */,
+				38DC6B0C2EAC6B6C001761FC /* TermFormView.swift in Sources */,
+				38DC6B0D2EAC6B6C001761FC /* ValuesViewModel.swift in Sources */,
+				38DC6B0E2EAC6B6C001761FC /* ConversationViewModel.swift in Sources */,
+				38DC6B0F2EAC6B6C001761FC /* ExpectationTests.swift in Sources */,
+				38DC6B102EAC6B6C001761FC /* RelationshipGRDBTests.swift in Sources */,
+				38DC6B112EAC6B6C001761FC /* GoalValueAlignmentTests.swift in Sources */,
+				38DC6B122EAC6B6C001761FC /* TermIntegrationTests.swift in Sources */,
+				38DC6B132EAC6B6C001761FC /* ActionRowView.swift in Sources */,
+				38DC6B142EAC6B6C001761FC /* ValidationError.swift in Sources */,
+				38DC6B152EAC6B6C001761FC /* ValuesListView.swift in Sources */,
+				38DC6B162EAC6B6C001761FC /* GoalsViewModel.swift in Sources */,
+				38DC6B172EAC6B6C001761FC /* ConversationService.swift in Sources */,
+				38DC6B182EAC6B6C001761FC /* InferenceServiceTests.swift in Sources */,
+				38DC6B192EAC6B6C001761FC /* Actions.swift in Sources */,
+				38DC6B1A2EAC6B6C001761FC /* DatabaseManager.swift in Sources */,
+				38DC6B1B2EAC6B6C001761FC /* BulkMatchingView.swift in Sources */,
+				38DC6B1C2EAC6B6C001761FC /* ActionTests.swift in Sources */,
+				38DC6B1D2EAC6B6C001761FC /* DatabaseError.swift in Sources */,
+				38DC6B1E2EAC6B6C001761FC /* ActionsViewModel.swift in Sources */,
+				38DC6B1F2EAC6B6C001761FC /* ListViewBuilder.swift in Sources */,
+				38DC6B202EAC6B6C001761FC /* TermRowView.swift in Sources */,
+				38DC6B212EAC6B6C001761FC /* GoalValueAlignment.swift in Sources */,
+				38DC6B222EAC6B6C001761FC /* LiquidGlassSystem.swift in Sources */,
+				38DC6B232EAC6B6C001761FC /* GoalRowViewTests.swift in Sources */,
+				38DC6B242EAC6B6C001761FC /* GetTermsTool.swift in Sources */,
+				38DC6B252EAC6B6C001761FC /* ContentView.swift in Sources */,
+				38DC6B262EAC6B6C001761FC /* GoalTrackerApp.swift in Sources */,
+				38DC6B272EAC6B6C001761FC /* AppViewModel.swift in Sources */,
+				38DC6B282EAC6B6C001761FC /* GoalRowView.swift in Sources */,
+				38DC6B292EAC6B6C001761FC /* ActionFormView.swift in Sources */,
+				38DC6B2A2EAC6B6C001761FC /* ActionsListView.swift in Sources */,
+				38DC6B2B2EAC6B6C001761FC /* Expectations.swift in Sources */,
+				38DC6B2C2EAC6B6C001761FC /* GetActionsTool.swift in Sources */,
+				38DC6B2D2EAC6B6C001761FC /* ActionGoalRelationship.swift in Sources */,
+				38DC6B2E2EAC6B6C001761FC /* AssistantChatView.swift in Sources */,
+				38DC6B2F2EAC6B6C001761FC /* ValueRowViewTests.swift in Sources */,
+				38DC6B302EAC6B6C001761FC /* GoalTests.swift in Sources */,
+				38DC6B312EAC6B6C001761FC /* InferenceService.swift in Sources */,
+				38DC6B322EAC6B6C001761FC /* MatchingServiceTests.swift in Sources */,
+				38DC6B332EAC6B6C001761FC /* ExpandableFormSection.swift in Sources */,
+				38DC6B342EAC6B6C001761FC /* Terms.swift in Sources */,
+				38DC6B352EAC6B6C001761FC /* ModelAvailability.swift in Sources */,
+				38DC6B362EAC6B6C001761FC /* Values.swift in Sources */,
+				38DC6B372EAC6B6C001761FC /* GoalFormView.swift in Sources */,
+				38DC6B382EAC6B6C001761FC /* DatabaseConfiguration.swift in Sources */,
+				38DC6B392EAC6B6C001761FC /* ChatMessageRow.swift in Sources */,
+				38DC6B3A2EAC6B6C001761FC /* main.swift in Sources */,
+				38DC6B3B2EAC6B6C001761FC /* ConversationError.swift in Sources */,
+				38DC6B3C2EAC6B6C001761FC /* ActionGRDBTests.swift in Sources */,
+				38DC6B3D2EAC6B6C001761FC /* GoalsListView.swift in Sources */,
+				38DC6B3E2EAC6B6C001761FC /* ActionFormViewTests.swift in Sources */,
+				38DC6B3F2EAC6B6C001761FC /* TenWeekGoalApp.swift in Sources */,
+				38DC6B402EAC6B6C001761FC /* GetValuesTool.swift in Sources */,
+				38DC6B412EAC6B6C001761FC /* TermsViewModel.swift in Sources */,
+				38DC6B432EAC6B6C001761FC /* GoalDocument.swift in Sources */,
+				38DC6B442EAC6B6C001761FC /* DesignSystem.swift in Sources */,
+				38DC6B452EAC6B6C001761FC /* TermRowViewTests.swift in Sources */,
+				38DC6B462EAC6B6C001761FC /* Protocols.swift in Sources */,
+				38DC6B472EAC6B6C001761FC /* ActionRowViewTests.swift in Sources */,
+				38DC6B482EAC6B6C001761FC /* ChatMessage.swift in Sources */,
+				38DC6B492EAC6B6C001761FC /* MatchingService.swift in Sources */,
+				38DC6B4A2EAC6B6C001761FC /* GetGoalsTool.swift in Sources */,
+				38DC6B4B2EAC6B6C001761FC /* Goals.swift in Sources */,
+				38DC6B4C2EAC6B6C001761FC /* ConversationHistory.swift in Sources */,
+				38DC6B4D2EAC6B6C001761FC /* TermTests.swift in Sources */,
+				38DC6B4E2EAC6B6C001761FC /* ModelExtensions.swift in Sources */,
+				38DC6B4F2EAC6B6C001761FC /* ValueRowView.swift in Sources */,
+				38DC6B502EAC6B6C001761FC /* TermGoalAssignment.swift in Sources */,
+				38DC6B512EAC6B6C001761FC /* QuickAddSectionView.swift in Sources */,
+				38DC6B522EAC6B6C001761FC /* FormFieldModifiers.swift in Sources */,
+				38DC6B532EAC6B6C001761FC /* ActionGoalRelationshipTests.swift in Sources */,
+				38DC6B542EAC6B6C001761FC /* TermsListView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		38DC69982EAC6A13001761FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38DC6AAA2EAC6B6C001761FC /* ValueTests.swift in Sources */,
+				38DC6AAB2EAC6B6C001761FC /* ContentMaterials.swift in Sources */,
+				38DC6AAC2EAC6B6C001761FC /* TermFormView.swift in Sources */,
+				38DC6AAD2EAC6B6C001761FC /* ValuesViewModel.swift in Sources */,
+				38DC6AAE2EAC6B6C001761FC /* ConversationViewModel.swift in Sources */,
+				38DC6AAF2EAC6B6C001761FC /* ExpectationTests.swift in Sources */,
+				38DC6AB02EAC6B6C001761FC /* RelationshipGRDBTests.swift in Sources */,
+				38DC6AB12EAC6B6C001761FC /* GoalValueAlignmentTests.swift in Sources */,
+				38DC6AB22EAC6B6C001761FC /* TermIntegrationTests.swift in Sources */,
+				38DC6AB32EAC6B6C001761FC /* ActionRowView.swift in Sources */,
+				38DC6AB42EAC6B6C001761FC /* ValidationError.swift in Sources */,
+				38DC6AB52EAC6B6C001761FC /* ValuesListView.swift in Sources */,
+				38DC6AB62EAC6B6C001761FC /* GoalsViewModel.swift in Sources */,
+				38DC6AB72EAC6B6C001761FC /* ConversationService.swift in Sources */,
+				38DC6AB82EAC6B6C001761FC /* InferenceServiceTests.swift in Sources */,
+				38DC6AB92EAC6B6C001761FC /* Actions.swift in Sources */,
+				38DC6ABA2EAC6B6C001761FC /* DatabaseManager.swift in Sources */,
+				38DC6ABB2EAC6B6C001761FC /* BulkMatchingView.swift in Sources */,
+				38DC6ABC2EAC6B6C001761FC /* ActionTests.swift in Sources */,
+				38DC6ABD2EAC6B6C001761FC /* DatabaseError.swift in Sources */,
+				38DC6ABE2EAC6B6C001761FC /* ActionsViewModel.swift in Sources */,
+				38DC6ABF2EAC6B6C001761FC /* ListViewBuilder.swift in Sources */,
+				38DC6AC02EAC6B6C001761FC /* TermRowView.swift in Sources */,
+				38DC6AC12EAC6B6C001761FC /* GoalValueAlignment.swift in Sources */,
+				38DC6AC22EAC6B6C001761FC /* LiquidGlassSystem.swift in Sources */,
+				38DC6AC32EAC6B6C001761FC /* GoalRowViewTests.swift in Sources */,
+				38DC6AC42EAC6B6C001761FC /* GetTermsTool.swift in Sources */,
+				38DC6AC52EAC6B6C001761FC /* ContentView.swift in Sources */,
+				38DC6AC62EAC6B6C001761FC /* GoalTrackerApp.swift in Sources */,
+				38DC6AC72EAC6B6C001761FC /* AppViewModel.swift in Sources */,
+				38DC6AC82EAC6B6C001761FC /* GoalRowView.swift in Sources */,
+				38DC6AC92EAC6B6C001761FC /* ActionFormView.swift in Sources */,
+				38DC6ACA2EAC6B6C001761FC /* ActionsListView.swift in Sources */,
+				38DC6ACB2EAC6B6C001761FC /* Expectations.swift in Sources */,
+				38DC6ACC2EAC6B6C001761FC /* GetActionsTool.swift in Sources */,
+				38DC6ACD2EAC6B6C001761FC /* ActionGoalRelationship.swift in Sources */,
+				38DC6ACE2EAC6B6C001761FC /* AssistantChatView.swift in Sources */,
+				38DC6ACF2EAC6B6C001761FC /* ValueRowViewTests.swift in Sources */,
+				38DC6AD02EAC6B6C001761FC /* GoalTests.swift in Sources */,
+				38DC6AD12EAC6B6C001761FC /* InferenceService.swift in Sources */,
+				38DC6AD22EAC6B6C001761FC /* MatchingServiceTests.swift in Sources */,
+				38DC6AD32EAC6B6C001761FC /* ExpandableFormSection.swift in Sources */,
+				38DC6AD42EAC6B6C001761FC /* Terms.swift in Sources */,
+				38DC6AD52EAC6B6C001761FC /* ModelAvailability.swift in Sources */,
+				38DC6AD62EAC6B6C001761FC /* Values.swift in Sources */,
+				38DC6AD72EAC6B6C001761FC /* GoalFormView.swift in Sources */,
+				38DC6AD82EAC6B6C001761FC /* DatabaseConfiguration.swift in Sources */,
+				38DC6AD92EAC6B6C001761FC /* ChatMessageRow.swift in Sources */,
+				38DC6ADA2EAC6B6C001761FC /* main.swift in Sources */,
+				38DC6ADB2EAC6B6C001761FC /* ConversationError.swift in Sources */,
+				38DC6ADC2EAC6B6C001761FC /* ActionGRDBTests.swift in Sources */,
+				38DC6ADD2EAC6B6C001761FC /* GoalsListView.swift in Sources */,
+				38DC6ADE2EAC6B6C001761FC /* ActionFormViewTests.swift in Sources */,
+				38DC6ADF2EAC6B6C001761FC /* TenWeekGoalApp.swift in Sources */,
+				38DC6AE02EAC6B6C001761FC /* GetValuesTool.swift in Sources */,
+				38DC6AE12EAC6B6C001761FC /* TermsViewModel.swift in Sources */,
+				38DC6AE32EAC6B6C001761FC /* GoalDocument.swift in Sources */,
+				38DC6AE42EAC6B6C001761FC /* DesignSystem.swift in Sources */,
+				38DC6AE52EAC6B6C001761FC /* TermRowViewTests.swift in Sources */,
+				38DC6AE62EAC6B6C001761FC /* Protocols.swift in Sources */,
+				38DC6AE72EAC6B6C001761FC /* ActionRowViewTests.swift in Sources */,
+				38DC6AE82EAC6B6C001761FC /* ChatMessage.swift in Sources */,
+				38DC6AE92EAC6B6C001761FC /* MatchingService.swift in Sources */,
+				38DC6AEA2EAC6B6C001761FC /* GetGoalsTool.swift in Sources */,
+				38DC6AEB2EAC6B6C001761FC /* Goals.swift in Sources */,
+				38DC6AEC2EAC6B6C001761FC /* ConversationHistory.swift in Sources */,
+				38DC6AED2EAC6B6C001761FC /* TermTests.swift in Sources */,
+				38DC6AEE2EAC6B6C001761FC /* ModelExtensions.swift in Sources */,
+				38DC6AEF2EAC6B6C001761FC /* ValueRowView.swift in Sources */,
+				38DC6AF02EAC6B6C001761FC /* TermGoalAssignment.swift in Sources */,
+				38DC6AF12EAC6B6C001761FC /* QuickAddSectionView.swift in Sources */,
+				38DC6AF22EAC6B6C001761FC /* FormFieldModifiers.swift in Sources */,
+				38DC6AF32EAC6B6C001761FC /* ActionGoalRelationshipTests.swift in Sources */,
+				38DC6AF42EAC6B6C001761FC /* TermsListView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		38DC69942EAC6A13001761FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 38DC69842EAC6A11001761FC /* GoalTracker */;
+			targetProxy = 38DC69932EAC6A13001761FC /* PBXContainerItemProxy */;
+		};
+		38DC699E2EAC6A13001761FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 38DC69842EAC6A11001761FC /* GoalTracker */;
+			targetProxy = 38DC699D2EAC6A13001761FC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		38DC69A42EAC6A13001761FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 2DT4MGA664;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		38DC69A52EAC6A13001761FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 2DT4MGA664;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		38DC69A72EAC6A13001761FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2DT4MGA664;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "GoalTracker-Info.plist";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTracker;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		38DC69A82EAC6A13001761FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2DT4MGA664;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "GoalTracker-Info.plist";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTracker;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		38DC69AA2EAC6A13001761FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2DT4MGA664;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GoalTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GoalTracker";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		38DC69AB2EAC6A13001761FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2DT4MGA664;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GoalTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GoalTracker";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		38DC69AD2EAC6A13001761FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2DT4MGA664;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = GoalTracker;
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		38DC69AE2EAC6A13001761FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2DT4MGA664;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = GoalTracker;
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		38DC69802EAC6A11001761FC /* Build configuration list for PBXProject "GoalTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				38DC69A42EAC6A13001761FC /* Debug */,
+				38DC69A52EAC6A13001761FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		38DC69A62EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				38DC69A72EAC6A13001761FC /* Debug */,
+				38DC69A82EAC6A13001761FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		38DC69A92EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTrackerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				38DC69AA2EAC6A13001761FC /* Debug */,
+				38DC69AB2EAC6A13001761FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		38DC69AC2EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTrackerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				38DC69AD2EAC6A13001761FC /* Debug */,
+				38DC69AE2EAC6A13001761FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		38DC6B6E2EAC71A1001761FC /* XCLocalSwiftPackageReference "../swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../swift;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		38DC6B6C2EAC703F001761FC /* GoalTrackerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GoalTrackerKit;
+		};
+		38DC6B6F2EAC71A1001761FC /* GoalTrackerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GoalTrackerKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 38DC697D2EAC6A11001761FC /* Project object */;
+}

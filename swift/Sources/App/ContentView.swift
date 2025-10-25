@@ -71,7 +71,6 @@ public struct ContentView: View {
 
     // MARK: - Environment
 
-    @Environment(AppViewModel.self) private var appViewModel
 
     // MARK: - Body
 
@@ -82,13 +81,7 @@ public struct ContentView: View {
         } detail: {
             // Detail pane
             ZStack {
-                if appViewModel.isInitializing {
-                    initializingView
-                } else if let error = appViewModel.initializationError {
-                    errorView(error: error)
-                } else {
-                    detailContent
-                }
+                detailContent
             }
             .animation(.smooth, value: selectedSection)
         }
@@ -259,7 +252,8 @@ public struct ContentView: View {
             case .terms:
                 TermsListView()
             case .assistant:
-                AssistantChatView()
+                Text("Assistant Chat temporarily disabled")
+                    .foregroundStyle(.secondary)
             }
         } else {
             welcomeView
@@ -296,62 +290,13 @@ public struct ContentView: View {
         .background(.ultraThinMaterial)
     }
 
-    private var initializingView: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.5)
-                .progressViewStyle(CircularProgressViewStyle(tint: .accentColor))
+    // Removed initializingView - database initialization happens in prepareDependencies
 
-            Text("Initializing database...")
-                .font(.title2)
-                .foregroundStyle(.primary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.regularMaterial)
-    }
-
-    private func errorView(error: Error) -> some View {
-        VStack(spacing: 24) {
-            // Error icon with material backing
-            ZStack {
-                Circle()
-                    .fill(.red.opacity(0.15))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 56))
-                    .foregroundStyle(.red)
-                    .symbolEffect(.bounce, options: .nonRepeating)
-            }
-
-            VStack(spacing: 12) {
-                Text("Database Error")
-                    .font(.title)
-                    .bold()
-
-                Text(error.localizedDescription)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-
-                Button("Retry") {
-                    Task {
-                        await appViewModel.initialize()
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.regularMaterial)
-    }
+    // Removed errorView - database initialization happens in prepareDependencies
 }
 
 // MARK: - Preview
 
 #Preview {
     ContentView()
-        .environment(AppViewModel())
 }

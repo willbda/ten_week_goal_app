@@ -51,7 +51,6 @@ struct ActionFormView: View {
     @State private var showingAddMeasurement = false
 
     // Goal selection
-    @Environment(AppViewModel.self) private var appViewModel
     @State private var availableGoals: [Goal] = []
     @State private var selectedGoalIds: Set<UUID> = []
     @State private var isLoadingGoals = false
@@ -81,7 +80,7 @@ struct ActionFormView: View {
         _useDuration = State(initialValue: action?.durationMinutes != nil)
 
         // Convert measurements dict to array for editing
-        let measurementItems = action?.measuresByUnit?.map { unit, value in
+        let measurementItems = action?.measuresByUnit.map { unit, value in
             MeasurementItem(unit: unit, value: value)
         } ?? []
         _measurements = State(initialValue: measurementItems)
@@ -284,23 +283,11 @@ struct ActionFormView: View {
     }
 
     private func loadGoals() async {
-        guard let database = appViewModel.databaseManager else { return }
-
+        // TODO: Implement using GoalsViewModel with @FetchAll
+        // For now, leave empty until GoalsViewModel is integrated with SQLiteData
         isLoadingGoals = true
         defer { isLoadingGoals = false }
-
-        do {
-            // Load all available goals
-            availableGoals = try await database.fetchGoals()
-
-            // If editing, load existing relationships
-            if let action = actionToEdit {
-                let relationships = try await database.fetchRelationships(forAction: action.id)
-                selectedGoalIds = Set(relationships.map { $0.goalId })
-            }
-        } catch {
-            print("❌ Failed to load goals: \(error)")
-        }
+        availableGoals = []
     }
 
     private func saveAction() {
@@ -317,7 +304,7 @@ struct ActionFormView: View {
             title: title.isEmpty ? nil : title,
             detailedDescription: detailedDescription.isEmpty ? nil : detailedDescription,
             freeformNotes: freeformNotes.isEmpty ? nil : freeformNotes,
-            measuresByUnit: measuresByUnit,
+            measuresByUnit: measuresByUnit ?? [:],
             durationMinutes: duration,
             startTime: useStartTime ? startTime : nil,
             logTime: logTime,
@@ -333,32 +320,8 @@ struct ActionFormView: View {
     }
 
     private func saveRelationships(for action: Action) async {
-        guard let database = appViewModel.databaseManager else { return }
-
-        do {
-            // First, delete all existing relationships for this action
-            try await database.deleteAllRelationships(forAction: action.id)
-
-            // Then create new relationships for selected goals
-            for goalId in selectedGoalIds {
-                // TODO: Calculate actual contribution based on measurements and goal unit
-                // For now, use 1.0 as default contribution
-                let relationship = ActionGoalRelationship(
-                    id: UUID(),
-                    actionId: action.id,
-                    goalId: goalId,
-                    contribution: 1.0,  // TODO: Calculate from measurements
-                    matchMethod: .manual,
-                    confidence: 1.0,
-                    matchedOn: [],
-                    createdAt: Date()
-                )
-
-                try await database.saveRelationship(relationship)
-            }
-        } catch {
-            print("❌ Failed to save relationships: \(error)")
-        }
+        // TODO: Implement using relationship storage with SQLiteData
+        // For now, leave empty until relationship support is added
     }
 }
 

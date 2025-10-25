@@ -2,86 +2,74 @@
 // State management for values list and operations
 //
 // Written by Claude Code on 2025-10-20
+// Refactored by Claude Code on 2025-10-24 for SQLiteData @FetchAll
 
 import SwiftUI
-import Database
+import SQLiteData
 import Models
 
 /// View model for values list and CRUD operations
 ///
 /// Manages state for the values list view, including loading different types
 /// of values (general values, major values, highest order values, life areas).
-/// Uses @Observable for automatic view updates.
+/// Uses @Observable + @FetchAll for automatic reactive database queries.
 @Observable
 @MainActor
 final class ValuesViewModel {
 
-    // MARK: - Properties
+    // MARK: - Properties (Reactive Database Queries)
 
-    /// Database manager for data operations
-    private let database: DatabaseManager
+    /// General values from database (unsorted)
+    @ObservationIgnored
+    @FetchAll
+    var generalValuesQuery: [Models.Values]
 
-    /// All general values loaded from database
-    private(set) var generalValues: [Values] = []
+    /// Major values from database (unsorted)
+    @ObservationIgnored
+    @FetchAll
+    var majorValuesQuery: [MajorValues]
 
-    /// All major values loaded from database
-    private(set) var majorValues: [MajorValues] = []
+    /// Highest order values from database (unsorted)
+    @ObservationIgnored
+    @FetchAll
+    var highestOrderValuesQuery: [HighestOrderValues]
 
-    /// All highest order values loaded from database
-    private(set) var highestOrderValues: [HighestOrderValues] = []
+    /// Life areas from database (unsorted)
+    @ObservationIgnored
+    @FetchAll
+    var lifeAreasQuery: [LifeAreas]
 
-    /// All life areas loaded from database
-    private(set) var lifeAreas: [LifeAreas] = []
-
-    /// Loading state
-    private(set) var isLoading = false
-
-    /// Error state
+    /// Error state (for CRUD operations)
     private(set) var error: Error?
+
+    // MARK: - Computed Properties (Sorted)
+
+    /// General values sorted by priority (ascending)
+    var generalValues: [Models.Values] {
+        generalValuesQuery.sorted { $0.priority < $1.priority }
+    }
+
+    /// Major values sorted by priority (ascending)
+    var majorValues: [MajorValues] {
+        majorValuesQuery.sorted { $0.priority < $1.priority }
+    }
+
+    /// Highest order values sorted by priority (ascending)
+    var highestOrderValues: [HighestOrderValues] {
+        highestOrderValuesQuery.sorted { $0.priority < $1.priority }
+    }
+
+    /// Life areas sorted by priority (ascending)
+    var lifeAreas: [LifeAreas] {
+        lifeAreasQuery.sorted { $0.priority < $1.priority }
+    }
 
     // MARK: - Initialization
 
-    /// Create view model with database manager
-    /// - Parameter database: Database manager for data operations
-    init(database: DatabaseManager) {
-        self.database = database
-    }
-
-    // MARK: - Loading
-
-    /// Load all types of values from database
-    ///
-    /// Fetches general values, major values, highest order values, and life areas.
-    /// Each type is sorted by priority (lower numbers = higher priority).
-    func loadAllValues() async {
-        isLoading = true
-        error = nil
-        defer { isLoading = false }
-
-        do {
-            // Load all types of values concurrently
-            async let generalValuesTask = database.fetchGeneralValues()
-            async let majorValuesTask = database.fetchMajorValues()
-            async let highestOrderValuesTask = database.fetchHighestOrderValues()
-            async let lifeAreasTask = database.fetchLifeAreas()
-
-            // Wait for all results and sort by priority
-            generalValues = try await generalValuesTask
-                .sorted { $0.priority < $1.priority }
-            
-            majorValues = try await majorValuesTask
-                .sorted { $0.priority < $1.priority }
-            
-            highestOrderValues = try await highestOrderValuesTask
-                .sorted { $0.priority < $1.priority }
-            
-            lifeAreas = try await lifeAreasTask
-                .sorted { $0.priority < $1.priority }
-
-        } catch {
-            self.error = error
-            print("❌ Failed to load values: \(error)")
-        }
+    /// Create view model
+    /// Note: @FetchAll properties automatically connect to database via prepareDependencies
+    init() {
+        // No database parameter needed - @FetchAll uses @Dependency(\.defaultDatabase)
     }
 
     // MARK: - Computed Properties
@@ -179,7 +167,7 @@ struct MajorValuesWrapper: ValueDisplayable {
 
 /// Wrapper for general Values
 struct GeneralValuesWrapper: ValueDisplayable {
-    let values: [Values]
+    let values: [Models.Values]
     
     var displayItems: [ValueDisplayItem] {
         values.map { value in

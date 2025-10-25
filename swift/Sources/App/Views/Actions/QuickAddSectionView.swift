@@ -136,8 +136,8 @@ struct QuickAddSectionView: View {
         var details: [String] = []
 
         // Add measurements
-        if let measurements = action.measuresByUnit, !measurements.isEmpty {
-            let formatted = measurements.map { String(format: "%.1f %@", $0.value, $0.key) }
+        if !action.measuresByUnit.isEmpty {
+            let formatted = action.measuresByUnit.map { String(format: "%.1f %@", $0.value, $0.key) }
             details.append(formatted.joined(separator: ", "))
         }
 

@@ -23,7 +23,6 @@ struct BulkMatchingView: View {
     // MARK: - Environment
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(AppViewModel.self) private var appViewModel
 
     // MARK: - State
 
@@ -130,12 +129,12 @@ struct BulkMatchingView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                if let measurements = action.measuresByUnit, !measurements.isEmpty {
+                if !action.measuresByUnit.isEmpty {
                     Text("•")
                         .foregroundStyle(.secondary)
 
-                    ForEach(Array(measurements.keys.sorted().prefix(2)), id: \.self) { unit in
-                        if let value = measurements[unit] {
+                    ForEach(Array(action.measuresByUnit.keys.sorted().prefix(2)), id: \.self) { unit in
+                        if let value = action.measuresByUnit[unit] {
                             Text("\(value, specifier: "%.1f") \(unit)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -196,58 +195,19 @@ struct BulkMatchingView: View {
     }
 
     private func saveRelationship(goalId: UUID, actionId: UUID) async {
-        guard let database = appViewModel.databaseManager else { return }
-
-        do {
-            let isSelected = actionGoalSelections[actionId]?.contains(goalId) ?? false
-
-            if isSelected {
-                // Create relationship
-                let relationship = ActionGoalRelationship(
-                    id: UUID(),
-                    actionId: actionId,
-                    goalId: goalId,
-                    contribution: 1.0,  // TODO: Calculate from measurements
-                    matchMethod: .manual,
-                    confidence: 1.0,
-                    matchedOn: [],
-                    createdAt: Date()
-                )
-                try await database.saveRelationship(relationship)
-            } else {
-                // Delete relationship
-                try await database.deleteRelationship(actionId: actionId, goalId: goalId)
-            }
-        } catch {
-            print("❌ Failed to save relationship: \(error)")
-            self.error = "Failed to save: \(error.localizedDescription)"
-        }
+        // TODO: Implement using relationship storage with SQLiteData
+        // For now, leave empty until relationship support is added
     }
 
     private func loadData() async {
-        guard let database = appViewModel.databaseManager else { return }
-
+        // TODO: Implement using ActionsViewModel and GoalsViewModel with @FetchAll
+        // For now, leave empty until ViewModels are integrated with SQLiteData
         isLoading = true
         error = nil
         defer { isLoading = false }
 
-        do {
-            // Load all actions and goals
-            actions = try await database.fetchActions()
-                .sorted { $0.logTime > $1.logTime }  // Newest first
-
-            goals = try await database.fetchGoals()
-                .sorted { ($0.targetDate ?? Date.distantFuture) < ($1.targetDate ?? Date.distantFuture) }  // Soonest first
-
-            // Load existing relationships
-            for action in actions {
-                let relationships = try await database.fetchRelationships(forAction: action.id)
-                actionGoalSelections[action.id] = Set(relationships.map { $0.goalId })
-            }
-        } catch {
-            self.error = "Failed to load data: \(error.localizedDescription)"
-            print("❌ Failed to load bulk matching data: \(error)")
-        }
+        actions = []
+        goals = []
     }
 }
 
@@ -287,5 +247,4 @@ private struct GoalBadge: View {
 
 #Preview {
     BulkMatchingView()
-        .environment(AppViewModel())
 }

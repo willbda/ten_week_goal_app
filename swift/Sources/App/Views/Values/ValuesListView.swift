@@ -16,14 +16,10 @@ public struct ValuesListView: View {
 
     public init() {}
 
-    // MARK: - Environment
-
-    @Environment(AppViewModel.self) private var appViewModel
-
     // MARK: - State
 
     /// View model for values management
-    @State private var viewModel: ValuesViewModel?
+    @State private var viewModel = ValuesViewModel()
 
     /// Sheet presentation for adding new value
     @State private var showingAddValue = false
@@ -31,51 +27,28 @@ public struct ValuesListView: View {
     // MARK: - Body
 
     public var body: some View {
-        Group {
-            if let viewModel = viewModel {
-                contentView(viewModel: viewModel)
-            } else {
-                Text("Database not initialized")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .navigationTitle("Values")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showingAddValue = true
-                } label: {
-                    Label("Add Value", systemImage: "plus")
+        contentView(viewModel: viewModel)
+            .navigationTitle("Values")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingAddValue = true
+                    } label: {
+                        Label("Add Value", systemImage: "plus")
+                    }
                 }
-                .disabled(viewModel == nil)
             }
-        }
-        .task {
-            // Initialize view model when view appears
-            if let database = appViewModel.databaseManager {
-                viewModel = ValuesViewModel(database: database)
-                await viewModel?.loadAllValues()
-            }
-        }
     }
 
     // MARK: - Content View
 
     @ViewBuilder
     private func contentView(viewModel: ValuesViewModel) -> some View {
-        if viewModel.isLoading {
-            ProgressView("Loading values...")
-        } else if let error = viewModel.error {
+        if let error = viewModel.error {
             ContentUnavailableView {
                 Label("Error Loading Values", systemImage: "exclamationmark.triangle")
             } description: {
                 Text(error.localizedDescription)
-            } actions: {
-                Button("Retry") {
-                    Task {
-                        await viewModel.loadAllValues()
-                    }
-                }
             }
         } else if viewModel.allValuesForDisplay.isEmpty {
             ContentUnavailableView {
@@ -118,9 +91,6 @@ public struct ValuesListView: View {
                     EmptyView()
                 }
             }
-            .refreshable {
-                await viewModel.loadAllValues()
-            }
         }
     }
     
@@ -141,6 +111,5 @@ public struct ValuesListView: View {
 #Preview {
     NavigationStack {
         ValuesListView()
-            .environment(AppViewModel())
     }
 }

@@ -10,7 +10,6 @@
 import Foundation
 import Playgrounds
 import SQLiteData
-import GRDB
 
 /// An action taken at a point in time, with optional measurements and timing
 ///
@@ -22,10 +21,7 @@ import GRDB
 /// and TableRecord, enabling direct database operations without intermediate Record types.
 ///
 @Table
-public struct Action: Persistable, Doable, Sendable, FetchableRecord, PersistableRecord, TableRecord {
-
-    // MARK: - GRDB TableRecord
-    public static let databaseTableName = "actions"
+public struct Action: Persistable, Doable, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var title: String?

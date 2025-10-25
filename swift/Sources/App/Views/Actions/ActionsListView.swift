@@ -21,14 +21,10 @@ public struct ActionsListView: View {
 
     public init() {}
 
-    // MARK: - Environment
-
-    @Environment(AppViewModel.self) private var appViewModel
-
     // MARK: - State
 
     /// View model for actions management
-    @State private var viewModel: ActionsViewModel?
+    @State private var viewModel = ActionsViewModel()
 
     /// Form presentation state (combines action + mode)
     @State private var actionFormState: ActionFormState?
@@ -54,14 +50,7 @@ public struct ActionsListView: View {
     // MARK: - Body
 
     public var body: some View {
-        Group {
-            if let viewModel = viewModel {
-                contentView(viewModel: viewModel)
-            } else {
-                Text("Database not initialized")
-                    .foregroundStyle(.secondary)
-            }
-        }
+        contentView(viewModel: viewModel)
         .navigationTitle("Actions")
         .toolbar {
             ToolbarItem(placement: .secondaryAction) {
@@ -70,7 +59,6 @@ public struct ActionsListView: View {
                 } label: {
                     Label("Match to Goals", systemImage: "link.circle")
                 }
-                .disabled(viewModel == nil)
             }
 
             ToolbarItem(placement: .primaryAction) {
@@ -79,44 +67,30 @@ public struct ActionsListView: View {
                 } label: {
                     Label("Add Action", systemImage: "plus")
                 }
-                .disabled(viewModel == nil)
             }
         }
         .sheet(item: $actionFormState) { formState in
-            if let viewModel = viewModel {
-                ActionFormView(
-                    action: formState.action,
-                    mode: formState.mode,
-                    onSave: { action in
-                        Task {
-                            if formState.mode == .edit {
-                                // Edit mode - update existing action
-                                await viewModel.updateAction(action)
-                            } else {
-                                // Create mode - create new action
-                                await viewModel.createAction(action)
-                            }
-                            // Reload action-goal mappings after save
-                            await loadActionGoals()
+            ActionFormView(
+                action: formState.action,
+                mode: formState.mode,
+                onSave: { action in
+                    Task {
+                        if formState.mode == .edit {
+                            // Edit mode - update existing action
+                            await viewModel.updateAction(action)
+                        } else {
+                            // Create mode - create new action
+                            await viewModel.createAction(action)
                         }
-                        actionFormState = nil
-                    },
-                    onCancel: {
-                        actionFormState = nil
+                        // Reload action-goal mappings after save
+                        await loadActionGoals()
                     }
-                )
-            } else {
-                // Show loading state while database initializes
-                VStack(spacing: DesignSystem.Spacing.md) {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                    Text("Loading...")
-                        .font(DesignSystem.Typography.body)
-                        .foregroundStyle(.secondary)
+                    actionFormState = nil
+                },
+                onCancel: {
+                    actionFormState = nil
                 }
-                .frame(minWidth: 400, minHeight: 300)
-                .presentationBackground(ContentMaterials.modal)
-            }
+            )
         }
         .sheet(isPresented: $showingBulkMatching, onDismiss: {
             // Reload action-goal mappings when bulk matching is dismissed
@@ -127,13 +101,8 @@ public struct ActionsListView: View {
             BulkMatchingView()
         }
         .task {
-            // Initialize view model when view appears
-            if let database = appViewModel.databaseManager {
-                viewModel = ActionsViewModel(database: database)
-                await viewModel?.loadActions()
-                await loadActiveGoals()
-                await loadActionGoals()
-            }
+            await loadActiveGoals()
+            await loadActionGoals()
         }
     }
 
@@ -141,19 +110,11 @@ public struct ActionsListView: View {
 
     @ViewBuilder
     private func contentView(viewModel: ActionsViewModel) -> some View {
-        if viewModel.isLoading {
-            ProgressView("Loading actions...")
-        } else if let error = viewModel.error {
+        if let error = viewModel.error {
             ContentUnavailableView {
                 Label("Error Loading Actions", systemImage: "exclamationmark.triangle")
             } description: {
                 Text(error.localizedDescription)
-            } actions: {
-                Button("Retry") {
-                    Task {
-                        await viewModel.loadActions()
-                    }
-                }
             }
         } else if viewModel.actions.isEmpty {
             ContentUnavailableView {
@@ -240,7 +201,6 @@ public struct ActionsListView: View {
                 }
             }
             .refreshable {
-                await viewModel.loadActions()
                 await loadActiveGoals()
                 await loadActionGoals()
             }
@@ -253,24 +213,9 @@ public struct ActionsListView: View {
     ///
     /// Fetches goals with target dates in the future for the quick add section.
     private func loadActiveGoals() async {
-        guard let database = appViewModel.databaseManager else { return }
-
-        do {
-            // Fetch all goals and filter to active ones
-            let allGoals: [Goal] = try await database.fetchGoals()
-            let today = Calendar.current.startOfDay(for: Date())
-
-            activeGoals = allGoals.filter { goal in
-                guard let targetDate = goal.targetDate else { return false }
-                let goalDay = Calendar.current.startOfDay(for: targetDate)
-                return goalDay >= today
-            }
-            .sorted { ($0.targetDate ?? Date.distantFuture) < ($1.targetDate ?? Date.distantFuture) }  // Sort by target date
-            .prefix(5)
-            .map { $0 }
-        } catch {
-            print("❌ Failed to load active goals: \(error)")
-        }
+        // TODO: Implement using GoalsViewModel with @FetchAll
+        // For now, leave empty until GoalsViewModel is integrated with SQLiteData
+        activeGoals = []
     }
 
     /// Load action-goal mappings for display
@@ -278,28 +223,9 @@ public struct ActionsListView: View {
     /// For each action, fetches its relationships and resolves them to Goal objects.
     /// Populates actionGoals dictionary for display in ActionRowView.
     private func loadActionGoals() async {
-        guard let database = appViewModel.databaseManager,
-              let viewModel = viewModel else { return }
-
-        do {
-            // Fetch all goals once
-            let allGoals = try await database.fetchGoals()
-            let goalsById = Dictionary(uniqueKeysWithValues: allGoals.map { ($0.id, $0) })
-
-            // Clear previous mappings
-            actionGoals.removeAll()
-
-            // For each action, fetch its relationships and resolve to goals
-            for action in viewModel.actions {
-                let relationships = try await database.fetchRelationships(forAction: action.id)
-                let goals = relationships.compactMap { goalsById[$0.goalId] }
-                if !goals.isEmpty {
-                    actionGoals[action.id] = goals
-                }
-            }
-        } catch {
-            print("❌ Failed to load action-goal mappings: \(error)")
-        }
+        // TODO: Implement using relationship queries with SQLiteData
+        // For now, leave empty until relationship support is added
+        actionGoals.removeAll()
     }
 
     /// Create a new action pre-filled from goal context
@@ -326,7 +252,7 @@ public struct ActionsListView: View {
             title: suggestedTitle,
             detailedDescription: nil,  // User will fill if needed
             freeformNotes: nil,
-            measuresByUnit: nil,       // User will add via form
+            measuresByUnit: [:],       // User will add via form (empty, not nil)
             durationMinutes: nil,
             startTime: nil,
             logTime: Date(),           // Current time
@@ -365,6 +291,5 @@ public struct ActionsListView: View {
 #Preview {
     NavigationStack {
         ActionsListView()
-            .environment(AppViewModel())
     }
 }

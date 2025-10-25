@@ -2,59 +2,45 @@
 // State management for actions list and operations
 //
 // Written by Claude Code on 2025-10-19
+// Refactored by Claude Code on 2025-10-24 for SQLiteData @FetchAll
 
 import SwiftUI
-
+import SQLiteData
 import Models
+import GRDB
 
 /// View model for actions list and CRUD operations
 ///
 /// Manages state for the actions list view, including loading, creating,
-/// updating, and deleting actions. Uses @Observable for automatic view updates.
+/// updating, and deleting actions. Uses @Observable + @FetchAll for automatic
+/// reactive database queries.
 @Observable
 @MainActor
 final class ActionsViewModel {
 
-    // MARK: - Properties
+    // MARK: - Properties (Reactive Database Query)
 
-    /// Database manager for data operations
-    private let database: DatabaseManager
+    /// Actions from database (unsorted)
+    @ObservationIgnored
+    @FetchAll
+    var actionsQuery: [Action]
 
-    /// All actions loaded from database
-    private(set) var actions: [Action] = []
-
-    /// Loading state
-    private(set) var isLoading = false
-
-    /// Error state
+    /// Error state (for CRUD operations)
     private(set) var error: Error?
+
+    // MARK: - Computed Properties
+
+    /// Actions sorted by log time (most recent first)
+    var actions: [Action] {
+        actionsQuery.sorted { $0.logTime > $1.logTime }
+    }
 
     // MARK: - Initialization
 
-    /// Create view model with database manager
-    /// - Parameter database: Database manager for data operations
-    init(database: DatabaseManager) {
-        self.database = database
-    }
-
-    // MARK: - Loading
-
-    /// Load all actions from database
-    ///
-    /// Fetches all actions and sorts by log time (most recent first).
-    func loadActions() async {
-        isLoading = true
-        error = nil
-        defer { isLoading = false }
-
-        do {
-            // Fetch all actions from database
-            actions = try await database.fetchActions()
-                                .sorted { $0.logTime > $1.logTime }
-        } catch {
-            self.error = error
-            print("❌ Failed to load actions: \(error)")
-        }
+    /// Create view model
+    /// Note: @FetchAll property automatically connects to database via prepareDependencies
+    init() {
+        // No database parameter needed - @FetchAll uses dependency injection
     }
 
     // MARK: - CRUD Operations
@@ -62,12 +48,14 @@ final class ActionsViewModel {
     /// Create new action
     /// - Parameter action: Action to create
     func createAction(_ action: Action) async {
+        @Dependency(\.defaultDatabase) var database
         do {
-            // Save action to database
-            try await database.saveAction(action)
-
-            // Reload to get updated list
-            await loadActions()
+            // Insert action using upsert (handles both create and update)
+            try await database.write { db in
+                try Action.upsert { action }
+                    .execute(db)
+            }
+            // @FetchAll automatically refreshes
         } catch {
             self.error = error
             print("❌ Failed to create action: \(error)")
@@ -77,12 +65,14 @@ final class ActionsViewModel {
     /// Update existing action
     /// - Parameter action: Action to update
     func updateAction(_ action: Action) async {
+        @Dependency(\.defaultDatabase) var database
         do {
-            // Save action to database (saveAction handles both create and update)
-            try await database.saveAction(action)
-
-            // Reload to get updated list
-            await loadActions()
+            // Upsert handles both insert and update based on primary key
+            try await database.write { db in
+                try Action.upsert { action }
+                    .execute(db)
+            }
+            // @FetchAll automatically refreshes
         } catch {
             self.error = error
             print("❌ Failed to update action: \(error)")
@@ -92,15 +82,16 @@ final class ActionsViewModel {
     /// Delete action
     /// - Parameter action: Action to delete
     ///
-    /// Deletes action from database with archiving for audit trail.
-    /// Uses UUID→Int64 mapping to find database record.
+    /// Deletes action from database.
     func deleteAction(_ action: Action) async {
+        @Dependency(\.defaultDatabase) var database
         do {
-            // Delete action from database
-            try await database.deleteAction(action)
-
-            // Reload to get updated list
-            await loadActions()
+            // Delete action from database (static method)
+            try await database.write { db in
+                try Action.delete(action)
+                    .execute(db)
+            }
+            // @FetchAll automatically refreshes
         } catch {
             self.error = error
             print("❌ Failed to delete action: \(error)")

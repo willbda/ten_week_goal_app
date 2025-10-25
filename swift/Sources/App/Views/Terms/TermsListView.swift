@@ -16,14 +16,10 @@ public struct TermsListView: View {
 
     public init() {}
 
-    // MARK: - Environment
-
-    @Environment(AppViewModel.self) private var appViewModel
-
     // MARK: - State
 
     /// View model for terms management
-    @State private var viewModel: TermsViewModel?
+    @State private var viewModel = TermsViewModel()
 
     /// Sheet presentation for term form (create or edit)
     @State private var showingTermForm = false
@@ -34,30 +30,21 @@ public struct TermsListView: View {
     // MARK: - Body
 
     public var body: some View {
-        Group {
-            if let viewModel = viewModel {
-                contentView(viewModel: viewModel)
-            } else {
-                Text("Database not initialized")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .navigationTitle("Terms")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    termToEdit = nil  // Create mode
-                    showingTermForm = true
-                } label: {
-                    Label("Add Term", systemImage: "plus")
+        contentView(viewModel: viewModel)
+            .navigationTitle("Terms")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        termToEdit = nil  // Create mode
+                        showingTermForm = true
+                    } label: {
+                        Label("Add Term", systemImage: "plus")
+                    }
                 }
-                .disabled(viewModel == nil)
             }
-        }
         .sheet(isPresented: $showingTermForm) {
-            if let viewModel = viewModel {
-                TermFormView(
-                    term: termToEdit,
+            TermFormView(
+                term: termToEdit,
                     onSave: { term, goalIDs in
                         Task {
                             if termToEdit != nil {
@@ -79,25 +66,6 @@ public struct TermsListView: View {
                 #if os(macOS)
                 .frame(minWidth: 600, minHeight: 700)
                 #endif
-            } else {
-                // Show loading state while database initializes
-                VStack(spacing: DesignSystem.Spacing.md) {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                    Text("Loading...")
-                        .font(DesignSystem.Typography.body)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(minWidth: 400, minHeight: 300)
-                .presentationBackground(ContentMaterials.modal)
-            }
-        }
-        .task {
-            // Initialize view model when view appears
-            if let database = appViewModel.databaseManager {
-                viewModel = TermsViewModel(database: database)
-                await viewModel?.loadTerms()
-            }
         }
     }
 
@@ -105,19 +73,11 @@ public struct TermsListView: View {
 
     @ViewBuilder
     private func contentView(viewModel: TermsViewModel) -> some View {
-        if viewModel.isLoading {
-            ProgressView("Loading terms...")
-        } else if let error = viewModel.error {
+        if let error = viewModel.error {
             ContentUnavailableView {
                 Label("Error Loading Terms", systemImage: "exclamationmark.triangle")
             } description: {
                 Text(error.localizedDescription)
-            } actions: {
-                Button("Retry") {
-                    Task {
-                        await viewModel.loadTerms()
-                    }
-                }
             }
         } else if viewModel.terms.isEmpty {
             ContentUnavailableView {
@@ -160,7 +120,6 @@ public struct TermsListView: View {
                 }
             }
             .refreshable {
-                await viewModel.loadTerms()
             }
         }
     }
@@ -171,6 +130,5 @@ public struct TermsListView: View {
 #Preview {
     NavigationStack {
         TermsListView()
-            .environment(AppViewModel())
     }
 }

@@ -18,14 +18,10 @@ public struct GoalsListView: View {
 
     public init() {}
 
-    // MARK: - Environment
-
-    @Environment(AppViewModel.self) private var appViewModel
-
     // MARK: - State
 
     /// View model for goals management
-    @State private var viewModel: GoalsViewModel?
+    @State private var viewModel = GoalsViewModel()
 
     /// Sheet presentation for adding new goal
     @State private var showingAddGoal = false
@@ -45,14 +41,7 @@ public struct GoalsListView: View {
     // MARK: - Body
 
     public var body: some View {
-        Group {
-            if let viewModel = viewModel {
-                contentView(viewModel: viewModel)
-            } else {
-                Text("Database not initialized")
-                    .foregroundStyle(.secondary)
-            }
-        }
+        contentView(viewModel: viewModel)
         .navigationTitle("Goals")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -61,38 +50,24 @@ public struct GoalsListView: View {
                 } label: {
                     Label("Add Goal", systemImage: "plus")
                 }
-                .disabled(viewModel == nil)
             }
         }
         .sheet(isPresented: $showingAddGoal) {
-            if let viewModel = viewModel {
-                GoalFormView(
-                    goal: nil,
-                    onSave: { goal in
-                        Task {
-                            await viewModel.createGoal(goal)
-                            showingAddGoal = false
-                        }
-                    },
-                    onCancel: {
+            GoalFormView(
+                goal: nil,
+                onSave: { goal in
+                    Task {
+                        await viewModel.createGoal(goal)
                         showingAddGoal = false
                     }
-                )
-            } else {
-                // Show loading state while database initializes
-                VStack(spacing: DesignSystem.Spacing.md) {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                    Text("Loading...")
-                        .font(DesignSystem.Typography.body)
-                        .foregroundStyle(.secondary)
+                },
+                onCancel: {
+                    showingAddGoal = false
                 }
-                .frame(minWidth: 400, minHeight: 300)
-                .presentationBackground(ContentMaterials.modal)
-            }
+            )
         }
         .sheet(isPresented: $showingEditGoal) {
-            if let goalToEdit = goalToEdit, let viewModel = viewModel {
+            if let goalToEdit = goalToEdit {
                 GoalFormView(
                     goal: goalToEdit,
                     onSave: { goal in
@@ -107,55 +82,23 @@ public struct GoalsListView: View {
                         self.goalToEdit = nil
                     }
                 )
-            } else {
-                // Show loading state while database initializes
-                VStack(spacing: DesignSystem.Spacing.md) {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                    Text("Loading...")
-                        .font(DesignSystem.Typography.body)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(minWidth: 400, minHeight: 300)
-                .presentationBackground(ContentMaterials.modal)
             }
         }
         .sheet(isPresented: $showingActionForm) {
-            if let actionToCreate = actionToCreate, let database = appViewModel.databaseManager {
+            if let actionToCreate = actionToCreate {
                 ActionFormView(
                     action: actionToCreate,
                     mode: .create,  // Always creating from goals
                     onSave: { action in
-                        Task {
-                            // Save action directly to database
-                            try? await database.saveAction(action)
-                            showingActionForm = false
-                            self.actionToCreate = nil
-                        }
+                        // TODO: Save action using ActionsViewModel
+                        showingActionForm = false
+                        self.actionToCreate = nil
                     },
                     onCancel: {
                         showingActionForm = false
                         self.actionToCreate = nil
                     }
                 )
-            } else {
-                // Show loading state while database initializes
-                VStack(spacing: DesignSystem.Spacing.md) {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                    Text("Loading...")
-                        .font(DesignSystem.Typography.body)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(minWidth: 400, minHeight: 300)
-                .presentationBackground(ContentMaterials.modal)
-            }
-        }
-        .task {
-            // Initialize view model when view appears
-            if let database = appViewModel.databaseManager {
-                viewModel = GoalsViewModel(database: database)
-                await viewModel?.loadGoals()
             }
         }
     }
@@ -164,19 +107,11 @@ public struct GoalsListView: View {
 
     @ViewBuilder
     private func contentView(viewModel: GoalsViewModel) -> some View {
-        if viewModel.isLoading {
-            ProgressView("Loading goals...")
-        } else if let error = viewModel.error {
+        if let error = viewModel.error {
             ContentUnavailableView {
                 Label("Error Loading Goals", systemImage: "exclamationmark.triangle")
             } description: {
                 Text(error.localizedDescription)
-            } actions: {
-                Button("Retry") {
-                    Task {
-                        await viewModel.loadGoals()
-                    }
-                }
             }
         } else if viewModel.goals.isEmpty {
             ContentUnavailableView {
@@ -284,7 +219,6 @@ public struct GoalsListView: View {
                 }
             }
             .refreshable {
-                await viewModel.loadGoals()
             }
         }
     }
@@ -345,7 +279,7 @@ public struct GoalsListView: View {
             title: suggestedTitle,
             detailedDescription: nil,  // User will fill if needed
             freeformNotes: nil,
-            measuresByUnit: nil,       // User will add via form
+            measuresByUnit: [:],       // User will add via form
             durationMinutes: nil,
             startTime: nil,
             logTime: Date(),           // Current time
@@ -362,6 +296,5 @@ public struct GoalsListView: View {
 #Preview {
     NavigationStack {
         GoalsListView()
-            .environment(AppViewModel())
     }
 }

@@ -2,72 +2,63 @@
 // State management for goals list and operations
 //
 // Written by Claude Code on 2025-10-20
+// Refactored by Claude Code on 2025-10-24 for SQLiteData @FetchAll
 
 import SwiftUI
-
+import SQLiteData
 import Models
+import GRDB
 
 /// View model for goals list and CRUD operations
 ///
 /// Manages state for the goals list view, including loading, creating,
-/// updating, and deleting goals. Uses @Observable for automatic view updates.
+/// updating, and deleting goals. Uses @Observable + @FetchAll for automatic
+/// reactive database queries.
 @Observable
 @MainActor
 final class GoalsViewModel {
 
-    // MARK: - Properties
+    // MARK: - Properties (Reactive Database Query)
 
-    /// Database manager for data operations
-    private let database: DatabaseManager
+    /// Goals from database (unsorted)
+    @ObservationIgnored
+    @FetchAll
+    var goalsQuery: [Goal]
 
-    /// All goals loaded from database
-    private(set) var goals: [Goal] = []
-
-    /// Loading state
-    private(set) var isLoading = false
-
-    /// Error state
+    /// Error state (for CRUD operations)
     private(set) var error: Error?
 
     // MARK: - Initialization
 
-    /// Create view model with database manager
-    /// - Parameter database: Database manager for data operations
-    init(database: DatabaseManager) {
-        self.database = database
+    /// Create view model
+    /// Note: @FetchAll property automatically connects to database via prepareDependencies
+    init() {
+        // No database parameter needed - @FetchAll uses dependency injection
     }
 
-    // MARK: - Loading
+    // MARK: - Computed Properties
 
-    /// Load all goals from database
+    /// Goals sorted for display
     ///
-    /// Fetches all goals and sorts by priority and target date.
-    func loadGoals() async {
-        isLoading = true
-        error = nil
-        defer { isLoading = false }
-
-        do {
-            // Fetch all goals from database
-            goals = try await database.fetchGoals()
-                .sorted { goal1, goal2 in
-                    // Sort by target date (soonest first)
-                    if let date1 = goal1.targetDate, let date2 = goal2.targetDate {
-                        return date1 < date2
-                    }
-                    // Goals with target dates come before those without
-                    if goal1.targetDate != nil && goal2.targetDate == nil {
-                        return true
-                    }
-                    if goal1.targetDate == nil && goal2.targetDate != nil {
-                        return false
-                    }
-                    // Finally by log time (most recent first)
-                    return goal1.logTime > goal2.logTime
-                }
-        } catch {
-            self.error = error
-            print("❌ Failed to load goals: \(error)")
+    /// Sorts goals by:
+    /// 1. Target date (soonest first)
+    /// 2. Goals with target dates before those without
+    /// 3. Log time (most recent first)
+    var goals: [Goal] {
+        goalsQuery.sorted { goal1, goal2 in
+            // Sort by target date (soonest first)
+            if let date1 = goal1.targetDate, let date2 = goal2.targetDate {
+                return date1 < date2
+            }
+            // Goals with target dates come before those without
+            if goal1.targetDate != nil && goal2.targetDate == nil {
+                return true
+            }
+            if goal1.targetDate == nil && goal2.targetDate != nil {
+                return false
+            }
+            // Finally by log time (most recent first)
+            return goal1.logTime > goal2.logTime
         }
     }
 
@@ -76,12 +67,14 @@ final class GoalsViewModel {
     /// Create new goal
     /// - Parameter goal: Goal to create
     func createGoal(_ goal: Goal) async {
+        @Dependency(\.defaultDatabase) var database
         do {
-            // Save goal to database
-            try await database.saveGoal(goal)
-
-            // Reload to get updated list
-            await loadGoals()
+            // Insert goal using upsert (handles both create and update)
+            try await database.write { db in
+                try Goal.upsert { goal }
+                    .execute(db)
+            }
+            // @FetchAll automatically refreshes
         } catch {
             self.error = error
             print("❌ Failed to create goal: \(error)")
@@ -91,12 +84,14 @@ final class GoalsViewModel {
     /// Update existing goal
     /// - Parameter goal: Goal to update
     func updateGoal(_ goal: Goal) async {
+        @Dependency(\.defaultDatabase) var database
         do {
-            // Save goal to database (saveGoal handles both create and update)
-            try await database.saveGoal(goal)
-
-            // Reload to get updated list
-            await loadGoals()
+            // Upsert handles both insert and update based on primary key
+            try await database.write { db in
+                try Goal.upsert { goal }
+                    .execute(db)
+            }
+            // @FetchAll automatically refreshes
         } catch {
             self.error = error
             print("❌ Failed to update goal: \(error)")
@@ -106,12 +101,14 @@ final class GoalsViewModel {
     /// Delete goal
     /// - Parameter goal: Goal to delete
     func deleteGoal(_ goal: Goal) async {
+        @Dependency(\.defaultDatabase) var database
         do {
-            // Delete goal from database
-            try await database.deleteGoal(goal)
-
-            // Reload to get updated list
-            await loadGoals()
+            // Delete goal from database (static method)
+            try await database.write { db in
+                try Goal.delete(goal)
+                    .execute(db)
+            }
+            // @FetchAll automatically refreshes
         } catch {
             self.error = error
             print("❌ Failed to delete goal: \(error)")
