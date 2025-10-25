@@ -4,7 +4,7 @@
 // Written by Claude Code on 2025-10-19
 
 import SwiftUI
-import Database
+
 import Models
 
 /// View model for actions list and CRUD operations

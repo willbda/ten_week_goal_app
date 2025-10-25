@@ -4,7 +4,7 @@
 // Written by Claude Code on 2025-10-20
 
 import SwiftUI
-import Database
+
 import Models
 
 /// View model for goals list and CRUD operations
