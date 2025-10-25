@@ -9,8 +9,22 @@ __pycache__/*
 # Test data
 test_data/
 
-# Build artifacts
+# Python build artifacts
 *.egg-info/
 *.pyc
 shared/database/application_data.db-shm
 shared/database/application_data.db-wal
+
+# Swift/Xcode build artifacts
+.build/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+*.swiftpm/
+.swiftpm/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
