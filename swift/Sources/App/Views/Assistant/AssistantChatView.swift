@@ -83,7 +83,7 @@ public struct AssistantChatView: View {
                     .padding(DesignSystem.Spacing.md)
                 }
                 .scrollContentBackground(.hidden)
-                .background(DesignSystem.Materials.sidebar)
+                .background(ContentMaterials.listRow)
                 .onChange(of: scrollToBottom) { _, shouldScroll in
                     if shouldScroll {
                         withAnimation(.smooth) {
@@ -103,7 +103,7 @@ public struct AssistantChatView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(DesignSystem.Materials.sidebar)
+            .background(ContentMaterials.listRow)
         }
     }
 
@@ -142,7 +142,7 @@ public struct AssistantChatView: View {
             .keyboardShortcut(.return, modifiers: .command)
         }
         .padding(DesignSystem.Spacing.md)
-        .background(DesignSystem.Materials.modal)
+        .background(ContentMaterials.form)
     }
 
     // MARK: - Toolbar

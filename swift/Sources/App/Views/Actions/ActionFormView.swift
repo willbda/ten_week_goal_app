@@ -134,7 +134,7 @@ struct ActionFormView: View {
                 }
             }
         }
-        .presentationBackground(DesignSystem.Materials.modal)
+        .presentationBackground(ContentMaterials.modal)
         .task {
             await loadGoals()
         }
@@ -424,7 +424,7 @@ private struct AddMeasurementSheet: View {
                 }
             }
         }
-        .presentationBackground(DesignSystem.Materials.modal)
+        .presentationBackground(ContentMaterials.modal)
     }
 }
 

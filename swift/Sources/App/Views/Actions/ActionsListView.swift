@@ -115,7 +115,7 @@ public struct ActionsListView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(minWidth: 400, minHeight: 300)
-                .presentationBackground(DesignSystem.Materials.modal)
+                .presentationBackground(ContentMaterials.modal)
             }
         }
         .sheet(isPresented: $showingBulkMatching, onDismiss: {

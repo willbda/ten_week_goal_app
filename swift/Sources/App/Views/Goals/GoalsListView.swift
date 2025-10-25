@@ -88,7 +88,7 @@ public struct GoalsListView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(minWidth: 400, minHeight: 300)
-                .presentationBackground(DesignSystem.Materials.modal)
+                .presentationBackground(ContentMaterials.modal)
             }
         }
         .sheet(isPresented: $showingEditGoal) {
@@ -117,7 +117,7 @@ public struct GoalsListView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(minWidth: 400, minHeight: 300)
-                .presentationBackground(DesignSystem.Materials.modal)
+                .presentationBackground(ContentMaterials.modal)
             }
         }
         .sheet(isPresented: $showingActionForm) {
@@ -148,7 +148,7 @@ public struct GoalsListView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(minWidth: 400, minHeight: 300)
-                .presentationBackground(DesignSystem.Materials.modal)
+                .presentationBackground(ContentMaterials.modal)
             }
         }
         .task {

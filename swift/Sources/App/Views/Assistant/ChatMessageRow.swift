@@ -123,7 +123,7 @@ public struct ChatMessageRow: View {
             .padding(.vertical, DesignSystem.Spacing.xs)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(DesignSystem.Materials.modal)
+                    .fill(ContentMaterials.card)
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .strokeBorder(Color.secondary.opacity(0.1), lineWidth: 1)
@@ -153,7 +153,7 @@ public struct ChatMessageRow: View {
         .padding(.vertical, DesignSystem.Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(DesignSystem.Materials.modal)
+                .fill(ContentMaterials.card)
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .strokeBorder(Color.secondary.opacity(0.1), lineWidth: 1)

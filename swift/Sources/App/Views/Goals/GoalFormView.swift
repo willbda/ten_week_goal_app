@@ -156,7 +156,7 @@ struct GoalFormView: View {
                 SmartInfoSheet()
             }
         }
-        .presentationBackground(DesignSystem.Materials.modal)
+        .presentationBackground(ContentMaterials.modal)
     }
 
     // MARK: - Sections

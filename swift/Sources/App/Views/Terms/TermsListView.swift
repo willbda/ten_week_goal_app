@@ -89,7 +89,7 @@ public struct TermsListView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(minWidth: 400, minHeight: 300)
-                .presentationBackground(DesignSystem.Materials.modal)
+                .presentationBackground(ContentMaterials.modal)
             }
         }
         .task {
