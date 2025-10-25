@@ -199,14 +199,26 @@ dependencies: [
 
 ## Platform Support
 
-- **macOS 14.0+** (current focus)
-- **iOS/watchOS** support ready (all core types are platform-agnostic)
+- **macOS 26.0+** (primary development platform)
+- **iOS 26.0+** (unified platform convergence with macOS)
 - **Swift 6.2+** required
+
+**Platform Convergence**: iOS 26 and macOS 26 share unified APIs (`.sidebarAdaptable`, `.glassEffect()`, etc.) enabling single-codebase development. See `docs/IOS26_CONFORMANCE.md` for full iOS 26 migration strategy.
 
 ## Documentation
 
-- **`SWIFTROADMAP.md`** - Complete project roadmap and architecture decisions
+### Core Docs
 - **`CLAUDE.md`** - Development guide for Claude Code
+- **`docs/`** - Complete documentation (architecture, roadmap, guides)
+
+### Key Documents
+- **`docs/ROADMAP.md`** - Current status and next steps
+- **`docs/ARCHITECTURE.md`** - System design and patterns
+- **`docs/IOS26_CONFORMANCE.md`** - iOS 26 / macOS 26 migration guide
+- **`docs/DESIGN_SYSTEM.md`** - UI design reference
+- **`docs/SWIFT_6_2.md`** - Swift language features
+
+### External
 - **`../CLAUDE.md`** - Project-level documentation
 - **`../shared/schemas/`** - Database schemas
 
@@ -257,6 +269,6 @@ See `SWIFTROADMAP.md` for:
 
 ---
 
-**Status**: Foundation complete, database layer operational, ready for business logic port.
+**Status**: Foundation complete, database layer operational, iOS 26/macOS 26 conformance in progress.
 
-Last Updated: October 18, 2025
+Last Updated: October 24, 2025

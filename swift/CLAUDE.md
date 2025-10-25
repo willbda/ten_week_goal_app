@@ -587,13 +587,11 @@ VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
 ## Platform Support
 
 **Current**:
-- macOS 14.0+ (development focus)
+- macOS 26.0+ (primary development platform)
+- iOS 26.0+ (unified platform convergence)
 - Swift 6.2+ required
 
-**Future**:
-- iOS 13.0+ (all types platform-agnostic)
-- watchOS 7.0+
-- tvOS 13.0+
+**Platform Convergence**: iOS 26 and macOS 26 share unified APIs (`.sidebarAdaptable`, `.glassEffect()`, etc.), enabling single-codebase development with automatic platform adaptation. All domain models, business logic, and database code are 100% platform-agnostic.
 
 ## Dependencies
 
@@ -621,7 +619,11 @@ See `../python/` for the authoritative Python implementation with:
 - Full layer implementation
 
 ### Documentation
-- **SWIFTROADMAP.md**: Complete architecture and roadmap
+- **docs/ROADMAP.md**: Current status and project phases
+- **docs/ARCHITECTURE.md**: System design and patterns
+- **docs/IOS26_CONFORMANCE.md**: iOS 26 / macOS 26 conformance strategy
+- **docs/DESIGN_SYSTEM.md**: UI design reference
+- **docs/SWIFT_6_2.md**: Swift language features
 - **../CLAUDE.md**: Project-level documentation
 - **../shared/schemas/**: Database schemas
 
@@ -632,7 +634,18 @@ See `../python/` for the authoritative Python implementation with:
 
 ## Development Notes
 
-### Recent Changes (2025-10-23)
+### Recent Changes (2025-10-24)
+
+**iOS 26 / macOS 26 Conformance Plan**:
+- ✅ Created comprehensive conformance plan based on official Apple documentation
+- ✅ Deleted 10 outdated planning docs (iOS 18+ targets, pre-Apple Liquid Glass)
+- ✅ Documented 4-phase migration strategy (~8-12 hours)
+- ✅ Aligned all documentation with iOS 26+ / macOS 26+ platform targets
+- ✅ Established authoritative documentation structure
+
+**Key Insight**: Apple's official "Liquid Glass" (June 2025) differs from our October 2024 design system. Apple's guidelines specify Liquid Glass should ONLY be used for navigation/controls, NOT content layers. Conformance plan provides migration path to native APIs.
+
+### Previous Changes (2025-10-23)
 
 **Design System & UI Architecture Complete**:
 - ✅ Centralized design system (`DesignSystem.swift`) with semantic tokens
@@ -658,7 +671,6 @@ See `../python/` for the authoritative Python implementation with:
 - `DesignSystem.swift` - Central design tokens and modifiers
 - `GoalDocument.swift` - Document-based architecture
 - `DESIGN_SYSTEM.md` - Complete usage guide
-- `LIQUID_GLASS_NOTES.md` - Material design patterns
 
 ### Previous Changes (2025-10-18)
 
@@ -708,41 +720,66 @@ See `SWIFTROADMAP.md` for detailed breakdown:
 - **MVP**: 18-26 hours total (4 hours complete, 14-22 remaining)
 - **stable**: 24-34 hours
 
-## iOS Implementation (Planning Phase)
+## iOS 26 / macOS 26 Conformance (In Progress)
 
-**iOS adaptation of the macOS app is ready for development. See `iOS-docs/` for complete planning materials.**
+**Status**: Conformance plan complete, awaiting implementation (Phase 1-4, ~8-12 hours)
 
-### Status
+### Conformance Strategy
 
-- ✅ Architecture analyzed (~80% platform-agnostic)
-- ✅ Design system created (Liquid Glass aesthetics)
-- ✅ Implementation plan completed (phased approach)
-- ✅ Example code written (ContentView_iOS, GoalProgressActivity, etc.)
-- 🚧 Implementation pending (requires UI layer work only)
+See **`docs/IOS26_CONFORMANCE.md`** for the complete 4-phase migration strategy based on official Apple guidelines.
 
-### Key Documents
+### Key Changes
 
-- **iOS_IMPLEMENTATION_PLAN.md**: Complete migration strategy with phase-based approach
-- **LIQUID_GLASS_DESIGN.md**: iOS design philosophy and principles
-- **LIQUID_GLASS_IMPLEMENTATION.md**: Technical implementation guide
+1. **Liquid Glass Usage** - Aligning with Apple's official guidelines
+   - ✅ Use Liquid Glass ONLY for navigation/controls (tab bars, sidebars, buttons)
+   - ✅ Use standard materials for content layer (cards, list rows, forms)
+   - ✅ Migrate to native `.glassEffect()` API
 
-### What's Already Platform-Agnostic
+2. **Platform Convergence** - Leveraging iOS 26 / macOS 26 unified APIs
+   - ✅ `.tabViewStyle(.sidebarAdaptable)` for automatic platform adaptation
+   - ✅ Remove `#if os()` guards where APIs are unified
+   - ✅ Single codebase for both platforms
 
-All of these work on iOS without changes:
+3. **Deployment Targets** - Simplified platform support
+   - ✅ iOS 26.0+ / macOS 26.0+ (no backward compatibility)
+   - ✅ Remove all `@available` guards for older platforms
+   - ✅ Embrace latest design language features
+
+### Implementation Phases
+
+**Phase 1: Foundation** (1-2 hours)
+- Update Package.swift to iOS 26.0+ / macOS 26.0+
+- Remove backward compatibility guards
+- Update documentation
+
+**Phase 2: Design System** (2-3 hours)
+- Create `LiquidGlassSystem.swift` (navigation/controls only)
+- Create `ContentMaterials.swift` (standard materials for content)
+- Refactor DesignSystem.swift
+
+**Phase 3: View Updates** (3-4 hours)
+- Update row views to use `.contentMaterial()`
+- Update navigation to use `.navigationGlass()`
+- Migrate to `.sidebarAdaptable` for tabs
+
+**Phase 4: Cleanup** (1 hour)
+- Remove deprecated code
+- Update all documentation
+- Final testing
+
+### Example Code
+
+**Live Activities** (iOS 16.1+):
+- Example implementations available in project history (see git log for GoalProgressActivity.swift)
+
+### Platform-Agnostic Code
+
+~80% of the codebase works on both iOS 26 and macOS 26 without modification:
 - ✅ All domain models (Action, Goal, Value, Term, Relationships)
-- ✅ All business logic services (MatchingService, InferenceService)
-- ✅ Database layer (DatabaseManager, GRDB, SQLite schemas)
+- ✅ All business logic (MatchingService, InferenceService)
+- ✅ Database layer (DatabaseManager, GRDB integration)
 - ✅ Core ViewModels (ActionsViewModel, GoalsViewModel, etc.)
-- ✅ Design system tokens (with zoom scaling abstraction)
-
-### What Needs iOS Adaptation
-
-Platform-specific UI changes required:
-- ⚠️ Navigation pattern (NavigationSplitView → TabView or NavigationStack)
-- ⚠️ Form layouts and spacing (remove fixed widths, adapt for smaller screens)
-- ⚠️ Keyboard handling (on-screen keyboard, toolbar, dismissal)
-- ⚠️ Platform features (ZoomManager, keyboard shortcuts, AI availability checks)
-- ⚠️ Document handling (GoalDocument → iOS Files app integration)
+- ✅ Design system tokens
 
 ---
 

@@ -1,17 +1,18 @@
 # Swift Architecture & Implementation Roadmap
 
-**Last Updated**: 2025-10-21
+**Last Updated**: 2025-10-24
 **Written by**: Claude Code with David Williams
 **Swift Version**: 6.2
 **GRDB Version**: 7.8.0
+**Platform Target**: iOS 26.0+ / macOS 26.0+
 
 ## Executive Summary
 
 This document consolidates the Swift implementation architecture, completed work, and future refactoring plans for the Ten Week Goal App. Based on comprehensive research of Swift 6.2 patterns, GRDB documentation, and architectural analysis, we've identified opportunities to simplify the codebase while maintaining Python database compatibility.
 
-**Current State**: Python 36 tests passing, Swift tests failing (actor isolation errors from recent changes), functional but with architectural inconsistencies
-**Goal**: Simplify architecture by eliminating translation layer (~700 lines), leverage GRDB's Codable integration, maintain clean separation of concerns
-**Recent Work**: Title field refactoring completed 2025-10-21 (unified `common_name`/`friendlyName` → `title` across Python, Swift, and database)
+**Current State**: Foundation complete, relationships system operational, iOS 26/macOS 26 conformance planning complete
+**Platform Shift**: Now targeting iOS 26.0+ / macOS 26.0+ (platform convergence, simplified codebase)
+**Recent Work**: iOS 26 conformance plan created (see `iOS-docs/IOS26_MACOS26_CONFORMANCE_PLAN.md`) - migration to official Apple Liquid Glass guidelines and native APIs
 
 ---
 

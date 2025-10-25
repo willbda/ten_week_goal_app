@@ -1,12 +1,36 @@
 # Swift Implementation Roadmap
 
-## Status: Relationships Database Integration Complete (Phases 1-3)
+## Status: Relationships Database Integration Complete (Phases 1-3) + iOS 26/macOS 26 Conformance Planning Complete
 
-Last Updated: October 22, 2025
+Last Updated: October 24, 2025
 
 ---
 
-## Recent Progress: Relationship System (October 22, 2025)
+## Recent Progress: iOS 26 / macOS 26 Conformance (October 24, 2025)
+
+### ✅ Conformance Plan Complete
+- **Created**: `iOS-docs/IOS26_MACOS26_CONFORMANCE_PLAN.md` (comprehensive 4-phase migration strategy)
+- **Based on**: Official Apple documentation (Adopting Liquid Glass, Materials HIG, SwiftUI APIs)
+- **Platform Target**: iOS 26.0+ / macOS 26.0+ (removed backward compatibility)
+- **Timeline**: 8-12 hours for full implementation
+
+**Key Changes:**
+1. Liquid Glass usage aligned with Apple guidelines (navigation/controls only, NOT content)
+2. Migration to native `.glassEffect()` API (replace manual implementations)
+3. Platform convergence: `.sidebarAdaptable`, unified APIs across iOS/macOS
+4. Documentation cleanup: Deleted 10 outdated planning docs, established clear hierarchy
+
+**Implementation Phases:**
+- Phase 1: Foundation updates (Package.swift → iOS 26+/macOS 26+)
+- Phase 2: Design system refactor (separate glass from materials)
+- Phase 3: View updates (apply correct materials per Apple HIG)
+- Phase 4: Cleanup and documentation
+
+**Status**: Planning complete, ready for implementation
+
+---
+
+## Previous Progress: Relationship System (October 22, 2025)
 
 ### ✅ Phase 1: Relationship Data Models (Complete)
 - Created `ActionGoalRelationship.swift` (200 lines)
