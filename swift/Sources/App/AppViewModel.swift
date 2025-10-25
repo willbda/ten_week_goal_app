@@ -12,7 +12,7 @@ import Database
 /// Uses @Observable for automatic view updates (Swift 5.9+).
 @Observable
 @MainActor
-final class AppViewModel {
+public final class AppViewModel {
 
     // MARK: - Properties
 
@@ -27,11 +27,14 @@ final class AppViewModel {
 
     // MARK: - Initialization
 
+    /// Public initializer for cross-module access
+    public init() {}
+
     /// Initialize database connection
     ///
     /// Called once on app launch via `.task` modifier.
     /// Uses default database configuration (file-based storage).
-    func initialize() async {
+    public func initialize() async {
         guard database == nil else { return } // Already initialized
 
         isInitializing = true
@@ -40,6 +43,26 @@ final class AppViewModel {
         do {
             // Initialize with default configuration (production database)
             database = try await DatabaseManager(configuration: .default)
+            initializationError = nil
+        } catch {
+            initializationError = error
+            print("❌ Failed to initialize database: \(error)")
+        }
+    }
+
+    /// Initialize database for iOS/macOS app
+    ///
+    /// Uses `.app` configuration for sandboxed apps.
+    /// Database created in Application Support, schemas from bundle.
+    public func initializeForApp() async {
+        guard database == nil else { return } // Already initialized
+
+        isInitializing = true
+        defer { isInitializing = false }
+
+        do {
+            // Initialize with app configuration (sandboxed iOS/macOS)
+            database = try await DatabaseManager(configuration: .app)
             initializationError = nil
         } catch {
             initializationError = error

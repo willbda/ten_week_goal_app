@@ -1,6 +1,6 @@
 # Ten Week Goal App - Swift Implementation
 
-A production-ready Swift port of the Ten Week Goal App using Swift 6.2 strict concurrency and GRDB for type-safe database operations.
+A Swift port of the Ten Week Goal App using Swift 6.2 strict concurrency and GRDB for type-safe database operations.
 
 ## Quick Start
 
