@@ -490,7 +490,24 @@ Logs are written to `logs/` directory (configured in config.toml)
 
 ## Future Extensions (Not Yet Implemented)
 
-- GoalValueAlignment inference (connecting goals to values)
+### Value-Goal-Action Alignment System
+
+See **[swift/docs/VALUE_ALIGNMENT_MATCHING.md](swift/docs/VALUE_ALIGNMENT_MATCHING.md)** for comprehensive design proposals.
+
+**Proposed Matching Functions** (informative and encouraging):
+1. **Value Fulfillment Score** - Weekly metric showing how much you're honoring each value
+2. **Cross-Domain Action Detection** - Highlight actions serving multiple values simultaneously
+3. **Value Neglect Alert** - Gentle prompts for values that haven't been activated recently
+4. **Goal-Value Alignment Verification** - Ensure current goals serve stated values
+5. **Value Momentum Tracker** - Show trends over time (growing/declining/steady)
+6. **Action-Value Attribution** - Real-time feedback showing which values each action serves
+
+**Migration Required**: Populate `goal_value_alignment` table from existing JSON in `goals.how_goal_is_relevant`
+
+**Status**: Design complete, not yet implemented
+
+### Other Extensions
+
 - Flask API integration tests
 - Web UI frontend (HTML/JS consuming Flask API)
 - Authentication for API

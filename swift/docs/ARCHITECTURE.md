@@ -701,7 +701,23 @@ All MVP criteria plus:
 
 ---
 
-## Appendix C: Lessons Learned
+## Appendix C: Value-Goal-Action Alignment
+
+See **[VALUE_ALIGNMENT_MATCHING.md](VALUE_ALIGNMENT_MATCHING.md)** for comprehensive matching function proposals that connect Actions → Goals → Values.
+
+**Key concepts**:
+- **Value Fulfillment Score**: Weekly metric showing how much you're honoring each value
+- **Cross-Domain Actions**: Celebrate actions serving multiple values simultaneously
+- **Value Neglect Alert**: Gentle prompts for values that haven't been activated recently
+- **Goal-Value Alignment**: Verify current goals serve stated values
+- **Action-Value Attribution**: Real-time feedback showing which values each action serves
+
+**Status**: Design proposal (not yet implemented)
+**Migration needed**: Populate `goal_value_alignment` table from existing JSON in `goals.how_goal_is_relevant`
+
+---
+
+## Appendix D: Lessons Learned
 
 ### Swift 6 Concurrency
 
