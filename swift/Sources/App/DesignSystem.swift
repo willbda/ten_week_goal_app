@@ -3,6 +3,7 @@
 //
 // Written by Claude Code on 2025-10-23
 // Updated 2025-10-23: Added zoom support for accessibility
+// Updated 2025-10-24: Separated Liquid Glass (navigation) from ContentMaterials (content)
 
 import SwiftUI
 
@@ -192,9 +193,37 @@ enum DesignSystem {
 
     // MARK: - Materials
 
+    /// Materials for UI surfaces
+    ///
+    /// **Migration Notice (2025-10-24)**:
+    /// This enum is deprecated in favor of specialized systems:
+    /// - **Navigation/Controls**: Use `LiquidGlassSystem` (iOS 26 native `.glassEffect()`)
+    /// - **Content Layer**: Use `ContentMaterials` (standard materials for readability)
+    ///
+    /// **Why the split?**
+    /// Apple's iOS 26/macOS 26 guidelines specify that Liquid Glass should ONLY be used
+    /// for navigation and controls, NOT content. Content should use standard materials
+    /// for better readability and accessibility.
+    ///
+    /// **Migration Guide**:
+    /// ```swift
+    /// // OLD: Generic materials
+    /// .presentationBackground(DesignSystem.Materials.modal)
+    ///
+    /// // NEW: Content-specific materials
+    /// .presentationBackground(ContentMaterials.modal)
+    ///
+    /// // OR: Navigation-specific glass
+    /// .navigationGlass()
+    /// ```
     enum Materials {
+        @available(*, deprecated, message: "Use LiquidGlassSystem.navigationGlass() for navigation elements")
         static let sidebar: Material = .ultraThinMaterial
+
+        @available(*, deprecated, message: "Use ContentMaterials.card or ContentMaterials.form for content")
         static let detail: Material = .regularMaterial
+
+        @available(*, deprecated, message: "Use ContentMaterials.modal for sheet presentations")
         static let modal: Material = .regularMaterial
     }
 }
@@ -222,7 +251,7 @@ struct StandardFieldStyle: ViewModifier {
 struct SheetStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .presentationBackground(DesignSystem.Materials.modal)
+            .presentationBackground(ContentMaterials.modal) // Updated 2025-10-24: Use ContentMaterials
             .presentationCornerRadius(DesignSystem.CornerRadius.xl)
             #if os(macOS)
             .frame(minWidth: 500, minHeight: 400)

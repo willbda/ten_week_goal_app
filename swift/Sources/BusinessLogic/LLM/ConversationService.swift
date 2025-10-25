@@ -54,12 +54,6 @@ public actor ConversationService {
         meaningful?"), explore their goals and actions from that period together,
         looking for patterns and significance.
 
-        Always be:
-        - Thoughtful and reflective
-        - Encouraging about progress
-        - Analytical about patterns
-        - Curious about motivations
-        - Respectful of their values
 
         You can access:
         - Goals (with targets, dates, and types)
@@ -162,28 +156,22 @@ public actor ConversationService {
 
     /// Initialize the language model session with tools
     private func initializeSession() async throws {
-        do {
-            // Create tools
-            let goalsTool = GetGoalsTool(database: database)
-            let actionsTool = GetActionsTool(database: database)
-            let termsTool = GetTermsTool(database: database)
-            let valuesTool = GetValuesTool(database: database)
+        // Create tools
+        let goalsTool = GetGoalsTool(database: database)
+        let actionsTool = GetActionsTool(database: database)
+        let termsTool = GetTermsTool(database: database)
+        let valuesTool = GetValuesTool(database: database)
 
-            // Create session with tools and instructions
-            self.session = LanguageModelSession(
-                tools: [
-                    goalsTool,
-                    actionsTool,
-                    termsTool,
-                    valuesTool
-                ],
-                instructions: systemInstructions
-            )
-        } catch {
-            throw ConversationError.sessionCreationFailed(
-                reason: error.localizedDescription
-            )
-        }
+        // Create session with tools and instructions
+        self.session = LanguageModelSession(
+            tools: [
+                goalsTool,
+                actionsTool,
+                termsTool,
+                valuesTool
+            ],
+            instructions: systemInstructions
+        )
     }
 
     /// Get the next session ID by querying the database
@@ -231,6 +219,16 @@ public actor ConversationService {
             // Refusals don't have async explanation in current API
             return .guardrailViolation(message: "The model refused to generate a response")
 
+        case .assetsUnavailable(let details):
+            return .systemError(underlying: NSError(domain: "LanguageModel", code: -1, userInfo: ["details": details]))
+        case .unsupportedGuide(let details):
+            return .systemError(underlying: NSError(domain: "LanguageModel", code: -1, userInfo: ["details": details]))
+        case .decodingFailure(let details):
+            return .systemError(underlying: NSError(domain: "LanguageModel", code: -1, userInfo: ["details": details]))
+        case .rateLimited(let details):
+            return .systemError(underlying: NSError(domain: "LanguageModel", code: -1, userInfo: ["details": details]))
+        case .concurrentRequests(let details):
+            return .systemError(underlying: NSError(domain: "LanguageModel", code: -1, userInfo: ["details": details]))
         @unknown default:
             return .systemError(underlying: error)
         }
