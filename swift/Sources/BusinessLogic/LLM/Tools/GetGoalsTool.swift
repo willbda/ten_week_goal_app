@@ -10,7 +10,7 @@
 import Foundation
 import GRDB
 import Models
-import Database
+import Dependencies
 
 #if canImport(FoundationModels)
 import FoundationModels
@@ -34,7 +34,7 @@ struct GetGoalsTool: Tool {
 
     // MARK: - Properties
 
-    let database: DatabaseManager
+    @Dependency(\.defaultDatabase) var database
 
     // MARK: - Arguments
 
@@ -99,11 +99,9 @@ struct GetGoalsTool: Tool {
             queryArguments.append(Int64(arguments.limit))
 
             // Fetch goals from database
-            let goals: [Goal] = try await database.fetch(
-                Goal.self,
-                sql: sql,
-                arguments: queryArguments
-            )
+            let goals: [Goal] = try await database.read { db in
+                try Goal.fetchAll(db, sql: sql, arguments: StatementArguments(queryArguments))
+            }
 
             // Format results for the model to understand
             if goals.isEmpty {

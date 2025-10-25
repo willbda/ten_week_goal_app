@@ -10,7 +10,7 @@
 import Foundation
 import GRDB
 import Models
-import Database
+import Dependencies
 
 #if canImport(FoundationModels)
 import FoundationModels
@@ -35,7 +35,7 @@ struct GetValuesTool: Tool {
 
     // MARK: - Properties
 
-    let database: DatabaseManager
+    @Dependency(\.defaultDatabase) var database
 
     // MARK: - Arguments
 
@@ -98,11 +98,9 @@ struct GetValuesTool: Tool {
             queryArguments.append(Int64(arguments.limit))
 
             // Fetch values from database
-            let values: [Values] = try await database.fetch(
-                Values.self,
-                sql: sql,
-                arguments: queryArguments
-            )
+            let values: [Values] = try await database.read { db in
+                try Values.fetchAll(db, sql: sql, arguments: StatementArguments(queryArguments))
+            }
 
             // Format results for the model to understand
             if values.isEmpty {

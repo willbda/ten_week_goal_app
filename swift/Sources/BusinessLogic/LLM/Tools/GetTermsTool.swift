@@ -10,7 +10,7 @@
 import Foundation
 import GRDB
 import Models
-import Database
+import Dependencies
 
 #if canImport(FoundationModels)
 import FoundationModels
@@ -35,7 +35,7 @@ struct GetTermsTool: Tool {
 
     // MARK: - Properties
 
-    let database: DatabaseManager
+    @Dependency(\.defaultDatabase) var database
 
     // MARK: - Arguments
 
@@ -115,11 +115,10 @@ struct GetTermsTool: Tool {
             queryArguments.append(Int64(arguments.limit))
 
             // Fetch terms from database
-            let terms: [GoalTerm] = try await database.fetch(
-                GoalTerm.self,
-                sql: sql,
-                arguments: queryArguments
-            )
+            let terms: [GoalTerm] = try await database.read { db in
+                let rows = try Row.fetchAll(db, sql: sql, arguments: StatementArguments(queryArguments))
+                return try rows.map { try GoalTerm(row: $0) }
+            }
 
             // Format results for the model to understand
             if terms.isEmpty {
@@ -167,20 +166,27 @@ struct GetTermsTool: Tool {
 
         // Goals assigned to this term (using junction table)
         do {
-            if let (_, goals) = try await database.fetchTermWithGoals(term.id) {
-                if !goals.isEmpty {
-                    lines.append("  Assigned Goals (\(goals.count)):")
+            let goals: [Goal] = try await database.read { db in
+                let sql = """
+                    SELECT g.* FROM goals g
+                    JOIN term_goals tg ON g.id = tg.goal_id
+                    WHERE tg.term_id = ?
+                    ORDER BY g.created_at
+                    """
+                let rows = try Row.fetchAll(db, sql: sql, arguments: [term.id.uuidString])
+                return try rows.map { try Goal(row: $0) }
+            }
 
-                    // Show first 5 goals
-                    for goal in goals.prefix(5) {
-                        let goalName = goal.title ?? "Untitled"
-                        lines.append("    - \(goalName)")
-                    }
-                    if goals.count > 5 {
-                        lines.append("    ... and \(goals.count - 5) more")
-                    }
-                } else {
-                    lines.append("  No goals assigned yet")
+            if !goals.isEmpty {
+                lines.append("  Assigned Goals (\(goals.count)):")
+
+                // Show first 5 goals
+                for goal in goals.prefix(5) {
+                    let goalName = goal.title ?? "Untitled"
+                    lines.append("    - \(goalName)")
+                }
+                if goals.count > 5 {
+                    lines.append("    ... and \(goals.count - 5) more")
                 }
             } else {
                 lines.append("  No goals assigned yet")
