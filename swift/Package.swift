@@ -13,7 +13,7 @@ let package = Package(
         // Shared library for iOS/macOS apps
         .library(
             name: "GoalTrackerKit",
-            targets: ["Models", "BusinessLogic", "Database", "App"]
+            targets: ["Models", "BusinessLogic", "App"]
         ),
         // Command-line executable for testing
         .executable(
@@ -22,14 +22,14 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.8.0")
+        .package(url: "https://github.com/pointfreeco/sqlite-data.git", from: "1.2.0")
     ],
     targets: [
         // Domain layer (with GRDB for direct conformance)
         .target(
             name: "Models",
             dependencies: [
-                .product(name: "GRDB", package: "GRDB.swift")
+                .product(name: "SQLiteData", package: "sqlite-data")
             ],
             path: "Sources/Models"
         ),
@@ -39,23 +39,13 @@ let package = Package(
             dependencies: ["Models"],
             path: "Sources/BusinessLogic"
         ),
-        // Infrastructure layer (Database operations)
-        .target(
-            name: "Database",
-            dependencies: [
-                "Models",
-                .product(name: "GRDB", package: "GRDB.swift")
-            ],
-            path: "Sources/Database"
-        ),
         // SwiftUI App Views (iOS/macOS library)
         .target(
             name: "App",
             dependencies: [
                 "Models",
-                "Database",
                 "BusinessLogic",
-                .product(name: "GRDB", package: "GRDB.swift")
+                .product(name: "SQLiteData", package: "sqlite-data")
             ],
             path: "Sources/App"
         ),
@@ -64,16 +54,15 @@ let package = Package(
             name: "AppRunner",
             dependencies: [
                 "Models",
-                "Database",
                 "App",
-                .product(name: "GRDB", package: "GRDB.swift")
+                .product(name: "SQLiteData", package: "sqlite-data")
             ],
             path: "Sources/AppRunner"
         ),
         // Tests
         .testTarget(
             name: "GoalTrackerTests",
-            dependencies: ["Models", "BusinessLogic", "Database", "App"],
+            dependencies: ["Models", "BusinessLogic", "App"],
             path: "Tests",
             exclude: [
                 "TestingStrategy.md"
