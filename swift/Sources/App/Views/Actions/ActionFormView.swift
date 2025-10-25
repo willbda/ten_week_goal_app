@@ -110,6 +110,7 @@ struct ActionFormView: View {
                 goalsSection
             }
             .formStyle(.grouped)
+            .scrollContentBackground(.hidden)  // Allow glass background to show through
             #if os(macOS)
             .padding(DesignSystem.Spacing.formPadding)
             .frame(minWidth: 500, minHeight: 450)
@@ -397,6 +398,7 @@ private struct AddMeasurementSheet: View {
                 }
             }
             .formStyle(.grouped)
+            .scrollContentBackground(.hidden)  // Allow glass background to show through
             #if os(macOS)
             .padding(DesignSystem.Spacing.formPadding)
             .frame(minWidth: 400, minHeight: 200)

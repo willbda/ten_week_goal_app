@@ -129,6 +129,7 @@ struct GoalFormView: View {
                 }
             }
             .formStyle(.grouped)
+            .scrollContentBackground(.hidden)  // Allow glass background to show through
             #if os(macOS)
             .padding(DesignSystem.Spacing.formPadding)
             .frame(minWidth: 600, minHeight: 700)
