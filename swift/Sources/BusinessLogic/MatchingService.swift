@@ -75,7 +75,7 @@ public struct MatchingService {
     /// - Action: `{"minutes": 30}`, Goal unit: "km" → (false, nil, nil)
     /// - Action: no measurements, Goal unit: "km" → (false, nil, nil)
     public static func matchesOnUnit(action: Action, goal: Goal) -> (Bool, String?, Double?) {
-        guard let measurements = action.measuresByUnit,
+        guard   !action.measuresByUnit.isEmpty,
               let goalUnit = goal.measurementUnit else {
             return (false, nil, nil)
         }
@@ -84,7 +84,7 @@ public struct MatchingService {
         let normalizedGoalUnit = goalUnit.lowercased().replacingOccurrences(of: " ", with: "_")
 
         // Look for measurement keys containing the goal unit
-        for (key, value) in measurements {
+        for (key, value) in action.measuresByUnit {
             if key.lowercased().contains(normalizedGoalUnit) {
                 return (true, key, value)
             }
@@ -166,12 +166,12 @@ public struct MatchingService {
         }
 
         // Check 1: Does action have measurement matching allowed units?
-        guard let measurements = action.measuresByUnit else {
+        guard !action.measuresByUnit.isEmpty else {
             return (false, nil)
         }
 
         var contribution: Double? = nil
-        for (key, value) in measurements {
+        for (key, value) in action.measuresByUnit {
             if allowedUnits.contains(key.lowercased()) {
                 contribution = value
                 break
