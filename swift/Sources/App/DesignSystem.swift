@@ -191,41 +191,25 @@ enum DesignSystem {
         static let info = Color.blue
     }
 
-    // MARK: - Materials
+    // MARK: - Materials (Removed - See Migration Note Below)
 
-    /// Materials for UI surfaces
+    /// **Migration Complete (2025-10-24)**:
+    /// The generic Materials enum has been removed in favor of specialized systems:
     ///
-    /// **Migration Notice (2025-10-24)**:
-    /// This enum is deprecated in favor of specialized systems:
-    /// - **Navigation/Controls**: Use `LiquidGlassSystem` (iOS 26 native `.glassEffect()`)
-    /// - **Content Layer**: Use `ContentMaterials` (standard materials for readability)
+    /// - **Navigation/Controls**: Use `LiquidGlassSystem` (LiquidGlassSystem.swift)
+    ///   - `.navigationGlass()` - For sidebars, tab bars, toolbars
+    ///   - `.buttonGlass(tint:)` - For glass-effect buttons
+    ///
+    /// - **Content Layer**: Use `ContentMaterials` (ContentMaterials.swift)
+    ///   - `.contentCard()` - For content cards with shadows
+    ///   - `.listRowMaterial()` - For list row backgrounds
+    ///   - `.formMaterial()` - For form backgrounds
+    ///   - `ContentMaterials.modal` - For modal presentations
     ///
     /// **Why the split?**
     /// Apple's iOS 26/macOS 26 guidelines specify that Liquid Glass should ONLY be used
     /// for navigation and controls, NOT content. Content should use standard materials
     /// for better readability and accessibility.
-    ///
-    /// **Migration Guide**:
-    /// ```swift
-    /// // OLD: Generic materials
-    /// .presentationBackground(DesignSystem.Materials.modal)
-    ///
-    /// // NEW: Content-specific materials
-    /// .presentationBackground(ContentMaterials.modal)
-    ///
-    /// // OR: Navigation-specific glass
-    /// .navigationGlass()
-    /// ```
-    enum Materials {
-        @available(*, deprecated, message: "Use LiquidGlassSystem.navigationGlass() for navigation elements")
-        static let sidebar: Material = .ultraThinMaterial
-
-        @available(*, deprecated, message: "Use ContentMaterials.card or ContentMaterials.form for content")
-        static let detail: Material = .regularMaterial
-
-        @available(*, deprecated, message: "Use ContentMaterials.modal for sheet presentations")
-        static let modal: Material = .regularMaterial
-    }
 }
 
 // MARK: - View Modifiers
