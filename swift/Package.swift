@@ -6,8 +6,8 @@ import PackageDescription
 let package = Package(
     name: "GoalTracker",
     platforms: [
-        .macOS(.v15),  // macOS 15 (Sequoia) with Swift 6.2
-        .iOS(.v18)     // iOS 18 for latest SwiftUI features
+        .macOS(.v26),  // macOS 26+ for platform convergence
+        .iOS(.v26)     // iOS 26+ for unified APIs (.sidebarAdaptable, .glassEffect)
     ],
     products: [
         // Shared library for iOS/macOS apps

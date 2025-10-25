@@ -60,6 +60,8 @@ protocol ListViewModel {
 /// - How does ForEach constrain its Item type? (Identifiable)
 /// - How do you pass a closure that builds a view from an item?
 /// - How do you make sections optional while keeping syntax clean?
+// TODO(human): Uncomment and complete generic constraints when implementing
+/*
 struct EntityListView<ViewModel, RowContent>: View where
     // TODO(human): Add generic constraints
     // ViewModel: ListViewModel,
@@ -155,6 +157,7 @@ struct EntityListView<ViewModel, RowContent>: View where
         Text("TODO: Content view")
     }
 }
+*/
 
 // MARK: - Usage Example (Commented Out)
 
