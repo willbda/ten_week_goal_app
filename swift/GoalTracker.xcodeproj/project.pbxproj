@@ -7,8 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		38DC6B6D2EAC703F001761FC /* GoalTrackerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 38DC6B6C2EAC703F001761FC /* GoalTrackerKit */; };
-		38DC6B702EAC71A1001761FC /* GoalTrackerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 38DC6B6F2EAC71A1001761FC /* GoalTrackerKit */; };
+		38CFE0CE2EB5C0560060016C /* App in Frameworks */ = {isa = PBXBuildFile; productRef = 38CFE0CD2EB5C0560060016C /* App */; };
 		38E2EE762EADD5270085019E /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 38E2EE752EADD5270085019E /* AppIcon.icon */; };
 		38E2EE772EADD5270085019E /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 38E2EE752EADD5270085019E /* AppIcon.icon */; };
 		38E2EE782EADD5270085019E /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 38E2EE752EADD5270085019E /* AppIcon.icon */; };
@@ -32,6 +31,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		3867B1132EB51381009EE277 /* Package.resolved */ = {isa = PBXFileReference; lastKnownFileType = text; path = Package.resolved; sourceTree = "<group>"; };
+		3867B1142EB51381009EE277 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		38D1EF892EACCC95004BE243 /* GoalTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GoalTracker.entitlements; sourceTree = "<group>"; };
 		38E2EE752EADD5270085019E /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		38E2EE792EB07D0D0085019E /* GoalTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GoalTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -39,13 +40,35 @@
 		38E2EE7B2EB07D0D0085019E /* GoalTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GoalTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		3867B10B2EB51381009EE277 /* docs */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = docs;
+			sourceTree = "<group>";
+		};
+		3867B1112EB51381009EE277 /* iOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = iOS;
+			sourceTree = "<group>";
+		};
+		3867B16F2EB51381009EE277 /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		3867B1832EB51381009EE277 /* Tests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Tests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		38DC69822EAC6A11001761FC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				38DC6B6D2EAC703F001761FC /* GoalTrackerKit in Frameworks */,
-				38DC6B702EAC71A1001761FC /* GoalTrackerKit in Frameworks */,
+				38CFE0CE2EB5C0560060016C /* App in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,14 +89,28 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		38CFE0CC2EB5C0560060016C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		38DC697C2EAC6A11001761FC = {
 			isa = PBXGroup;
 			children = (
+				3867B10B2EB51381009EE277 /* docs */,
+				3867B1112EB51381009EE277 /* iOS */,
+				3867B1132EB51381009EE277 /* Package.resolved */,
+				3867B1142EB51381009EE277 /* Package.swift */,
+				3867B16F2EB51381009EE277 /* Sources */,
+				3867B1832EB51381009EE277 /* Tests */,
 				38D1EF892EACCC95004BE243 /* GoalTracker.entitlements */,
 				38E2EE752EADD5270085019E /* AppIcon.icon */,
 				38E2EE792EB07D0D0085019E /* GoalTracker.app */,
 				38E2EE7A2EB07D0D0085019E /* GoalTrackerTests.xctest */,
 				38E2EE7B2EB07D0D0085019E /* GoalTrackerUITests.xctest */,
+				38CFE0CC2EB5C0560060016C /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -94,8 +131,7 @@
 			);
 			name = GoalTracker;
 			packageProductDependencies = (
-				38DC6B6C2EAC703F001761FC /* GoalTrackerKit */,
-				38DC6B6F2EAC71A1001761FC /* GoalTrackerKit */,
+				38CFE0CD2EB5C0560060016C /* App */,
 			);
 			productName = GoalTracker;
 			productReference = 38E2EE792EB07D0D0085019E /* GoalTracker.app */;
@@ -174,7 +210,7 @@
 			mainGroup = 38DC697C2EAC6A11001761FC;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				38DC6B6E2EAC71A1001761FC /* XCLocalSwiftPackageReference "../swift" */,
+				3867B2932EB5BE89009EE277 /* XCLocalSwiftPackageReference "../swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 38DC697C2EAC6A11001761FC;
@@ -645,20 +681,17 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		38DC6B6E2EAC71A1001761FC /* XCLocalSwiftPackageReference "../swift" */ = {
+		3867B2932EB5BE89009EE277 /* XCLocalSwiftPackageReference "../swift" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../swift;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		38DC6B6C2EAC703F001761FC /* GoalTrackerKit */ = {
+		38CFE0CD2EB5C0560060016C /* App */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = GoalTrackerKit;
-		};
-		38DC6B6F2EAC71A1001761FC /* GoalTrackerKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = GoalTrackerKit;
+			package = 3867B2932EB5BE89009EE277 /* XCLocalSwiftPackageReference "../swift" */;
+			productName = App;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -1,88 +1,154 @@
 // swift-tools-version: 6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
+//
+// Package manifest for Ten Week Goal App
+// Written by Claude Code on 2025-10-31
+//
+// ARCHITECTURE:
+// - Single product: App (includes Models, Services, Logic transitively)
+// - Multi-platform: iOS 26+, macOS 26+, visionOS 26+
+// - Swift 6.2 with full concurrency support
 
 import PackageDescription
 
 let package = Package(
-    name: "GoalTracker",
+    name: "GoalTrackerApp",
+
+    // MARK: - Platforms
+
     platforms: [
-        .macOS(.v26),  // macOS 26+ for platform convergence
-        .iOS(.v26)     // iOS 26+ for unified APIs (.sidebarAdaptable, .glassEffect)
+        .macOS(.v26),       // macOS Tahoe 26+
+        .iOS(.v26),         // iOS 26+
+        .visionOS(.v26),    // visionOS 26+
     ],
+
+    // MARK: - Products
+
     products: [
-        // Shared library for iOS/macOS apps
+        // Single library product - import this in your Xcode app
         .library(
-            name: "GoalTrackerKit",
-            targets: ["Models", "BusinessLogic", "App"]
+            name: "App",
+            targets: ["App"]
         ),
-        // Command-line executable for testing
-        .executable(
-            name: "GoalTrackerCLI",
-            targets: ["AppRunner"]
-        )
     ],
+
+    // MARK: - Dependencies
+
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/sqlite-data.git", from: "1.2.0")
+        // Database: SQLiteData for type-safe database operations
+        .package(
+            url: "https://github.com/pointfreeco/sqlite-data.git",
+            from: "1.2.0"
+        ),
     ],
+
+    // MARK: - Targets
+
     targets: [
-        // Domain layer (with GRDB for direct conformance)
+        // =========================================================================
+        // MODELS
+        // =========================================================================
+        // Domain models: Abstractions/ Basics/ Composits/
+
         .target(
             name: "Models",
             dependencies: [
-                .product(name: "SQLiteData", package: "sqlite-data")
+                .product(name: "SQLiteData", package: "sqlite-data"),
             ],
             path: "Sources/Models"
         ),
-        // Business logic layer (matching, inference, progress calculations)
+
+        // =========================================================================
+        // SERVICES
+        // =========================================================================
+        // Platform services: HealthKitManager, MetricRepository
+
         .target(
-            name: "BusinessLogic",
-            dependencies: ["Models"],
-            path: "Sources/BusinessLogic",
-            exclude: [
-                "LLM/ConversationService.swift.disabled",
-                "LLM/Tools/GetActionsTool.swift.disabled",
-                "LLM/Tools/GetGoalsTool.swift.disabled",
-                "LLM/Tools/GetValuesTool.swift.disabled",
-                "LLM/Tools/GetTermsTool.swift.disabled"
-            ]
+            name: "Services",
+            dependencies: [
+                "Models",
+                .product(name: "SQLiteData", package: "sqlite-data"),
+            ],
+            path: "Sources/Services"
         ),
-        // SwiftUI App Views (iOS/macOS library)
+
+        // =========================================================================
+        // LOGIC
+        // =========================================================================
+        // Business logic: GoalValidation, LLM/
+
+        .target(
+            name: "Logic",
+            dependencies: [
+                "Models",
+            ],
+            path: "Sources/Logic"
+        ),
+
+        // =========================================================================
+        // APP
+        // =========================================================================
+        // SwiftUI views: App.swift, Views/
+        // This is the product - depends on all other modules
+
         .target(
             name: "App",
             dependencies: [
                 "Models",
-                "BusinessLogic",
-                .product(name: "SQLiteData", package: "sqlite-data")
+                "Services",
+                "Logic",
+                .product(name: "SQLiteData", package: "sqlite-data"),
             ],
-            path: "Sources/App",
-            exclude: [
-                "AppViewModel.swift.disabled",
-                "GoalDocument.swift.disabled",
-                "Views/Assistant/AssistantChatView.swift.disabled",
-                "Views/Assistant/ChatMessage.swift.disabled",
-                "Views/Assistant/ChatMessageRow.swift.disabled",
-                "Views/Assistant/ConversationViewModel.swift.disabled"
-            ]
+            path: "Sources/App"
         ),
-        // Command-line executable target
-        .executableTarget(
-            name: "AppRunner",
+
+        // =========================================================================
+        // TESTS
+        // =========================================================================
+
+        // Model Tests
+        .testTarget(
+            name: "ModelTests",
             dependencies: [
                 "Models",
-                "App",
-                .product(name: "SQLiteData", package: "sqlite-data")
             ],
-            path: "Sources/AppRunner",
-            exclude: ["Info.plist"]
+            path: "Tests/ModelTests"
         ),
-        // Tests
+
+        // View Tests
         .testTarget(
-            name: "GoalTrackerTests",
-            dependencies: ["Models", "BusinessLogic", "App"],
-            path: "Tests",
-            exclude: [
-                "ViewTests/README.md"
-            ]
+            name: "ViewTests",
+            dependencies: [
+                "App",
+                "Models",
+            ],
+            path: "Tests/ViewTests"
         ),
-    ]
+
+        // Business Logic Tests (empty directory)
+        .testTarget(
+            name: "BusinessLogicTests",
+            dependencies: [
+                "Logic",
+                "Models",
+            ],
+            path: "Tests/BusinessLogicTests"
+        ),
+
+        // Integration Tests (empty directory)
+        .testTarget(
+            name: "IntegrationTests",
+            dependencies: [
+                "Models",
+                "Services",
+                "Logic",
+                "App",
+            ],
+            path: "Tests/IntegrationTests"
+        ),
+    ],
+
+    // MARK: - Swift Language Settings
+
+    swiftLanguageModes: [.v6]
 )
