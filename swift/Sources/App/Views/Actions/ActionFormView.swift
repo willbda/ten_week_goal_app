@@ -23,16 +23,9 @@ struct ActionFormView: View {
 
     // MARK: - Properties
 
-    /// The action being edited (nil for create mode)
     let actionToEdit: Action?
-
-    /// Explicit form mode (overrides automatic detection)
     let mode: Mode
-
-    /// Callback when save button is tapped
     let onSave: (Action) -> Void
-
-    /// Callback when cancel button is tapped
     let onCancel: () -> Void
 
     // MARK: - State
@@ -45,12 +38,8 @@ struct ActionFormView: View {
     @State private var startTime: Date
     @State private var useStartTime: Bool
     @State private var useDuration: Bool
-
-    // Measurements editing
     @State private var measurements: [MeasurementItem]
     @State private var showingAddMeasurement = false
-
-    // Goal selection
     @State private var availableGoals: [Goal] = []
     @State private var selectedGoalIds: Set<UUID> = []
     @State private var isLoadingGoals = false
@@ -69,7 +58,6 @@ struct ActionFormView: View {
         self.onSave = onSave
         self.onCancel = onCancel
 
-        // Initialize state from action or defaults
         _title = State(initialValue: action?.title ?? "")
         _detailedDescription = State(initialValue: action?.detailedDescription ?? "")
         _freeformNotes = State(initialValue: action?.freeformNotes ?? "")
@@ -79,7 +67,6 @@ struct ActionFormView: View {
         _useStartTime = State(initialValue: action?.startTime != nil)
         _useDuration = State(initialValue: action?.durationMinutes != nil)
 
-        // Convert measurements dict to array for editing
         let measurementItems = action?.measuresByUnit.map { unit, value in
             MeasurementItem(unit: unit, value: value)
         } ?? []
@@ -93,7 +80,6 @@ struct ActionFormView: View {
     }
 
     private var canSave: Bool {
-        // At minimum, need either a friendly name or a description
         !title.trimmingCharacters(in: .whitespaces).isEmpty ||
         !detailedDescription.trimmingCharacters(in: .whitespaces).isEmpty
     }
@@ -291,15 +277,12 @@ struct ActionFormView: View {
     }
 
     private func saveAction() {
-        // Build measurements dictionary
         let measuresByUnit: [String: Double]? = measurements.isEmpty ? nil : Dictionary(
             uniqueKeysWithValues: measurements.map { ($0.unit, $0.value) }
         )
 
-        // Parse duration
         let duration: Double? = useDuration ? Double(durationMinutes) : nil
 
-        // Create or update action
         let action = Action(
             title: title.isEmpty ? nil : title,
             detailedDescription: detailedDescription.isEmpty ? nil : detailedDescription,
@@ -308,10 +291,9 @@ struct ActionFormView: View {
             durationMinutes: duration,
             startTime: useStartTime ? startTime : nil,
             logTime: logTime,
-            id: actionToEdit?.id ?? UUID()  // Preserve ID when editing
+            id: actionToEdit?.id ?? UUID()
         )
 
-        // Save action-goal relationships
         Task {
             await saveRelationships(for: action)
         }

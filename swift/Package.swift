@@ -37,7 +37,14 @@ let package = Package(
         .target(
             name: "BusinessLogic",
             dependencies: ["Models"],
-            path: "Sources/BusinessLogic"
+            path: "Sources/BusinessLogic",
+            exclude: [
+                "LLM/ConversationService.swift.disabled",
+                "LLM/Tools/GetActionsTool.swift.disabled",
+                "LLM/Tools/GetGoalsTool.swift.disabled",
+                "LLM/Tools/GetValuesTool.swift.disabled",
+                "LLM/Tools/GetTermsTool.swift.disabled"
+            ]
         ),
         // SwiftUI App Views (iOS/macOS library)
         .target(
@@ -47,7 +54,15 @@ let package = Package(
                 "BusinessLogic",
                 .product(name: "SQLiteData", package: "sqlite-data")
             ],
-            path: "Sources/App"
+            path: "Sources/App",
+            exclude: [
+                "AppViewModel.swift.disabled",
+                "GoalDocument.swift.disabled",
+                "Views/Assistant/AssistantChatView.swift.disabled",
+                "Views/Assistant/ChatMessage.swift.disabled",
+                "Views/Assistant/ChatMessageRow.swift.disabled",
+                "Views/Assistant/ConversationViewModel.swift.disabled"
+            ]
         ),
         // Command-line executable target
         .executableTarget(
@@ -57,7 +72,8 @@ let package = Package(
                 "App",
                 .product(name: "SQLiteData", package: "sqlite-data")
             ],
-            path: "Sources/AppRunner"
+            path: "Sources/AppRunner",
+            exclude: ["Info.plist"]
         ),
         // Tests
         .testTarget(
@@ -65,7 +81,7 @@ let package = Package(
             dependencies: ["Models", "BusinessLogic", "App"],
             path: "Tests",
             exclude: [
-                "TestingStrategy.md"
+                "ViewTests/README.md"
             ]
         ),
     ]

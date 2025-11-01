@@ -5,79 +5,75 @@
 // Updated by Claude Code on 2025-10-19 (validation moved to ModelExtensions.swift)
 // Updated by Claude Code on 2025-10-22 (added direct GRDB conformance)
 // Updated by Claude Code on 2025-10-25 (using StructuredQueries JSONRepresentation)
+// Updated by Claude Code on 2025-10-30 (removed measuresByUnit for 3NF normalization)
 // Ported from Python implementation (python/categoriae/actions.py)
 
 import Foundation
-import Playgrounds
 import SQLiteData
 
-/// An action taken at a point in time, with optional measurements and timing
+/// An action taken at a point in time, with optional timing
 ///
 /// Actions serve as the primary entity for tracking what you've done.
-/// They can include quantitative measurements (distance, duration, reps, etc.)
-/// and timing information (when started, how long it took).
+/// Measurements are now stored separately in the ActionMetric junction table
+/// for proper 3NF normalization.
 ///
-/// **GRDB Conformance**: This struct conforms to FetchableRecord, PersistableRecord,
-/// and TableRecord, enabling direct database operations without intermediate Record types.
+/// **Design Philosophy**: On Apple platforms, data structures should work equally well
+/// in the database AND in SwiftUI. @Table from SQLiteData achieves this by generating
+/// database schema and operations at compile time, eliminating boilerplate Record types.
+///
+/// **3NF Normalization**: Previously stored measurements as JSON dictionary (measuresByUnit).
+/// Now measurements are stored in the ActionMetric junction table, enabling:
+/// - Proper indexing on metric types
+/// - Foreign key constraints to metrics catalog
+/// - Efficient aggregation queries
+/// - No JSON parsing overhead
+///
+/// **Sendable Conformance**: Action is Sendable because it's a struct with only Sendable
+/// properties (String, Date, UUID, Double). This allows Actions to safely cross actor
+/// boundaries and be used in @MainActor SwiftUI views without Swift 6 concurrency warnings.
+///
+/// **@Table Benefits**:
+/// - Compile-time schema generation for the `actions` table
+/// - Type-safe insert/update/delete operations
+/// - Automatic Codable conformance
 ///
 @Table
-public struct Action: Persistable, Doable, Sendable {
+public struct Action: Persistable, Sendable {
     // MARK: - Core Identity (Persistable)
 
     public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
 
-    // MARK: - Domain-specific Properties (Doable)
+    // MARK: - Domain-specific Properties
 
-    /// Measurements dictionary (JSON storage via StructuredQueries)
-    /// Note: Empty dictionary ([:])) instead of nil for compatibility with JSONRepresentation
-    @Column(as: [String: Double].JSONRepresentation.self)
-    public var measuresByUnit: [String: Double] = [:]
+    // Note: measuresByUnit removed for 3NF normalization
+    // Measurements are now stored in ActionMetric junction table
 
     public var durationMinutes: Double?
     public var startTime: Date?
 
-    // MARK: - System-generated (Persistable)
+    // MARK: - System-generated
 
     public var logTime: Date
     public var id: UUID
 
     // MARK: - Initialization
 
-    /// Create a new action with required and optional fields
-    /// - Parameters:
-    ///   - title: Short description of the action
-    ///   - detailedDescription: Optional detailed description
-    ///   - freeformNotes: Optional freeform notes
-    ///   - measuresByUnit: Optional measurements by unit (e.g., ["km": 5.0])
-    ///   - durationMinutes: Optional duration in minutes
-    ///   - startTime: Optional start time
-    ///   - logTime: When action was logged (defaults to now)
-    ///   - id: Application assigned UUID
-
     public init(
-        // Core identity
         title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
-        // Domain-specific
-        measuresByUnit: [String: Double] = [:],
         durationMinutes: Double? = nil,
         startTime: Date? = nil,
-        // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
     ) {
-        // System-generated (initialize first)
         self.logTime = logTime
         self.id = id
-        // Core identity
         self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
-        // Domain-specific
-        self.measuresByUnit = measuresByUnit
         self.durationMinutes = durationMinutes
         self.startTime = startTime
     }

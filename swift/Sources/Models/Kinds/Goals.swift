@@ -1,176 +1,106 @@
 // Goals.swift
-// Domain entity representing objectives and targets
+// Domain entity representing objectives and intentions
 //
 // Written by Claude Code on 2025-10-18
 // Updated by Claude Code on 2025-10-19 (consolidated Goal/SmartGoal, removed Doable properties)
+// Updated by Claude Code on 2025-10-28 (decomposed into Goal + GoalMetric)
 // Ported from Python implementation (python/categoriae/goals.py)
 //
-// Goals are FUTURE-oriented entities (Completable), not PAST-oriented (Doable)
-// Two types: Goal (flexible, can be minimal or SMART) and Milestone (point-in-time checkpoint)
+// ARCHITECTURE:
+// - Goal: The narrative/intention (what you want to achieve, why, how)
+// - GoalMetric: Measurable targets (0 to many per goal)
+// - Classification (milestone, SMART, etc.): Determined by services examining Goal + GoalMetrics
+//
+// A goal can be:
+// - Minimal: Just narrative, no metrics (e.g., "Get healthier")
+// - Measured: Narrative + metrics (e.g., "Run 120km in 10 weeks")
+// - SMART: Measured + complete metadata (dates, action plan, value alignment)
+//
+// Services determine classification by querying:
+// - Has metrics? → Measured
+// - Has metrics + dates + action plan? → SMART
+// - Has only targetDate, no metrics? → Milestone
 
 import Foundation
 import SQLiteData
 
 // MARK: - Goal Struct
 
-/// Flexible goal structure supporting both minimal and SMART goals
+/// Represents the narrative and intention of a goal
 ///
-/// Goals represent objectives with optional measurements and time bounds.
-/// A goal can evolve from minimal ("get healthier") to SMART-compliant
-/// ("run 120km in 10 weeks starting Oct 10") by progressively filling in fields.
+/// Goals describe **what you want to achieve** and **how you'll approach it**.
+/// Measurement targets are stored separately in GoalMetric relationships.
 ///
-/// Use `isSmart()` validation method to check if goal meets all SMART criteria.
+/// **Minimal goal example**:
+/// ```swift
+/// Goal(title: "Get healthier")
+/// // No metrics, no dates - just an intention
+/// ```
 ///
-/// Conforms to:
-/// - Persistable: id, title, detailedDescription, freeformNotes, logTime
-/// - Completable: targetDate, measurementUnit, measurementTarget, startDate
-/// - Polymorphable: polymorphicSubtype
+/// **Measured goal example**:
+/// ```swift
+/// let goal = Goal(
+///     title: "Spring into Running",
+///     startDate: Date("2025-03-01"),
+///     targetDate: Date("2025-05-10"),
+///     actionPlan: "Run 3x/week, increase 10% weekly"
+/// )
+/// // Metrics added separately:
+/// GoalMetric(goalId: goal.id, metricId: distanceKm, targetValue: 120.0)
+/// GoalMetric(goalId: goal.id, metricId: occasions, targetValue: 30.0)
+/// ```
+///
+/// **Classification**: Determined by services, not stored in Goal
+/// - Service queries GoalMetrics for this goal
+/// - Evaluates completeness of fields
+/// - Returns classification (minimal, milestone, measured, SMART)
 @Table
-public struct Goal: Persistable, Completable, Polymorphable, Sendable {
-    // MARK: - Core Identity (Persistable)
+public struct Goal: Persistable, Sendable {
+    // MARK: - Required Fields
 
     public var id: UUID
+    public var logTime: Date
+
+    // MARK: - Core Content
+
     public var title: String?
     public var detailedDescription: String?
     public var freeformNotes: String?
-    public var logTime: Date
 
-    // MARK: - Domain-specific Properties (Completable)
+    // MARK: - Temporal Bounds
 
-    /// What unit to measure (e.g., "km", "hours", "pages")
-    /// Required for SMART goals, optional for minimal goals
-    public var measurementUnit: String?
-
-    /// Target value to achieve
-    /// Required for SMART goals, optional for minimal goals
-    public var measurementTarget: Double?
-
-    /// When the goal period starts
-    /// Required for SMART goals, optional for minimal goals
     public var startDate: Date?
-
-    /// When the goal should be achieved by
-    /// Required for SMART goals, optional for minimal goals
     public var targetDate: Date?
 
-    // MARK: - SMART Enhancement Fields
+    // MARK: - Implementation Metadata
 
-    /// Why this goal matters (SMART: Relevant)
-    /// Required for SMART compliance, optional otherwise
-    public var howGoalIsRelevant: String?
-
-    /// How to achieve this goal (SMART: Actionable)
-    /// Required for SMART compliance, optional otherwise
-    public var howGoalIsActionable: String?
-
-    /// Expected duration in weeks (e.g., 10 for ten-week term)
+    public var actionPlan: String?
     public var expectedTermLength: Int?
-
-    // MARK: - Polymorphic Type (Polymorphable)
-
-    public var polymorphicSubtype: String = "goal"
 
     // MARK: - Initialization
 
-    /// Create a new goal with flexible field requirements
-    ///
-    /// For minimal goals: Provide just title or detailedDescription
-    /// For SMART goals: Provide all measurement, date, and SMART fields
     public init(
-        // Core identity
         title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
-        // Completable
-        measurementUnit: String? = nil,
-        measurementTarget: Double? = nil,
         startDate: Date? = nil,
         targetDate: Date? = nil,
-        // SMART fields
-        howGoalIsRelevant: String? = nil,
-        howGoalIsActionable: String? = nil,
+        actionPlan: String? = nil,
         expectedTermLength: Int? = nil,
-        // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
     ) {
+        precondition(title != nil || detailedDescription != nil,
+                    "Goal must have either title or detailedDescription")
+
         self.id = id
+        self.logTime = logTime
         self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
-        self.logTime = logTime
-        self.measurementUnit = measurementUnit
-        self.measurementTarget = measurementTarget
         self.startDate = startDate
         self.targetDate = targetDate
-        self.howGoalIsRelevant = howGoalIsRelevant
-        self.howGoalIsActionable = howGoalIsActionable
+        self.actionPlan = actionPlan
         self.expectedTermLength = expectedTermLength
     }
 }
-
-// MARK: - Milestone Struct
-
-/// A significant checkpoint within a larger goal
-///
-/// Milestones are point-in-time targets, not ranges.
-/// They require a target date but not necessarily a start date.
-///
-/// Example: "Reach 50km by week 5"
-@Table
-public struct Milestone: Persistable, Completable, Polymorphable, Sendable {
-    // MARK: - Core Identity (Persistable)
-
-    public var id: UUID
-    public var title: String?
-    public var detailedDescription: String?
-    public var freeformNotes: String?
-    public var logTime: Date
-
-    // MARK: - Domain-specific Properties (Completable)
-
-    /// What unit to measure (e.g., "km", "pages")
-    public var measurementUnit: String?
-
-    /// Target value to achieve at this checkpoint
-    public var measurementTarget: Double?
-
-    /// Optional start date (milestones can be point-in-time)
-    public var startDate: Date?
-
-    /// When this milestone should be reached (typically REQUIRED)
-    public var targetDate: Date?
-
-    // MARK: - Polymorphic Type (Polymorphable)
-
-    public var polymorphicSubtype: String = "milestone"
-
-    // MARK: - Initialization
-
-    /// Create a milestone checkpoint
-    public init(
-        // Core identity
-        title: String? = nil,
-        detailedDescription: String? = nil,
-        freeformNotes: String? = nil,
-        // Completable
-        measurementUnit: String? = nil,
-        measurementTarget: Double? = nil,
-        startDate: Date? = nil,
-        targetDate: Date? = nil,
-        // System-generated
-        logTime: Date = Date(),
-        id: UUID = UUID()
-    ) {
-        self.id = id
-        self.title = title
-        self.detailedDescription = detailedDescription
-        self.freeformNotes = freeformNotes
-        self.logTime = logTime
-        self.measurementUnit = measurementUnit
-        self.measurementTarget = measurementTarget
-        self.startDate = startDate
-        self.targetDate = targetDate
-    }
-}
-

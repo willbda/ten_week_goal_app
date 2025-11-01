@@ -18,14 +18,12 @@ import GRDB
 @MainActor
 final class ActionsViewModel {
 
-    // MARK: - Properties (Reactive Database Query)
+    // MARK: - Properties
 
-    /// Actions from database (unsorted)
     @ObservationIgnored
     @FetchAll
     var actionsQuery: [Action]
 
-    /// Error state (for CRUD operations)
     private(set) var error: Error?
 
     // MARK: - Computed Properties
@@ -37,61 +35,43 @@ final class ActionsViewModel {
 
     // MARK: - Initialization
 
-    /// Create view model
-    /// Note: @FetchAll property automatically connects to database via prepareDependencies
-    init() {
-        // No database parameter needed - @FetchAll uses dependency injection
-    }
+    init() {}
 
     // MARK: - CRUD Operations
 
-    /// Create new action
-    /// - Parameter action: Action to create
     func createAction(_ action: Action) async {
         @Dependency(\.defaultDatabase) var database
         do {
-            // Insert action using upsert (handles both create and update)
             try await database.write { db in
                 try Action.upsert { action }
                     .execute(db)
             }
-            // @FetchAll automatically refreshes
         } catch {
             self.error = error
             print("❌ Failed to create action: \(error)")
         }
     }
 
-    /// Update existing action
-    /// - Parameter action: Action to update
     func updateAction(_ action: Action) async {
         @Dependency(\.defaultDatabase) var database
         do {
-            // Upsert handles both insert and update based on primary key
             try await database.write { db in
                 try Action.upsert { action }
                     .execute(db)
             }
-            // @FetchAll automatically refreshes
         } catch {
             self.error = error
             print("❌ Failed to update action: \(error)")
         }
     }
 
-    /// Delete action
-    /// - Parameter action: Action to delete
-    ///
-    /// Deletes action from database.
     func deleteAction(_ action: Action) async {
         @Dependency(\.defaultDatabase) var database
         do {
-            // Delete action from database (static method)
             try await database.write { db in
                 try Action.delete(action)
                     .execute(db)
             }
-            // @FetchAll automatically refreshes
         } catch {
             self.error = error
             print("❌ Failed to delete action: \(error)")

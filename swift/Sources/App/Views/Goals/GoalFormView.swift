@@ -14,24 +14,16 @@ struct GoalFormView: View {
 
     // MARK: - Properties
 
-    /// The goal being edited (nil for create mode)
     let goalToEdit: Goal?
-
-    /// Callback when save button is tapped
     let onSave: (Goal) -> Void
-
-    /// Callback when cancel button is tapped
     let onCancel: () -> Void
 
     // MARK: - State
 
-    // Core identity
     @State private var title: String
     @State private var detailedDescription: String
     @State private var freeformNotes: String
     @State private var logTime: Date
-
-    // Completable properties (SMART criteria)
     @State private var measurementUnit: String
     @State private var measurementTarget: String
     @State private var startDate: Date
@@ -39,14 +31,10 @@ struct GoalFormView: View {
     @State private var useStartDate: Bool
     @State private var useTargetDate: Bool
     @State private var useMeasurement: Bool
-
-    // SMART enhancement fields
     @State private var howGoalIsRelevant: String
     @State private var howGoalIsActionable: String
     @State private var expectedTermLength: String
     @State private var useSmartFields: Bool
-
-    // UI state
     @State private var showingSmartInfo = false
 
     // MARK: - Initialization
@@ -60,24 +48,20 @@ struct GoalFormView: View {
         self.onSave = onSave
         self.onCancel = onCancel
 
-        // Initialize state from goal or defaults
         _title = State(initialValue: goal?.title ?? "")
         _detailedDescription = State(initialValue: goal?.detailedDescription ?? "")
         _freeformNotes = State(initialValue: goal?.freeformNotes ?? "")
         _logTime = State(initialValue: goal?.logTime ?? Date())
 
-        // Measurement fields
         _measurementUnit = State(initialValue: goal?.measurementUnit ?? "")
         _measurementTarget = State(initialValue: goal?.measurementTarget.map { String(format: "%.1f", $0) } ?? "")
         _useMeasurement = State(initialValue: goal?.measurementUnit != nil || goal?.measurementTarget != nil)
 
-        // Date fields
         _startDate = State(initialValue: goal?.startDate ?? Date())
-        _targetDate = State(initialValue: goal?.targetDate ?? Date().addingTimeInterval(86400 * 70)) // 10 weeks from now
+        _targetDate = State(initialValue: goal?.targetDate ?? Date().addingTimeInterval(86400 * 70))
         _useStartDate = State(initialValue: goal?.startDate != nil)
         _useTargetDate = State(initialValue: goal?.targetDate != nil)
 
-        // SMART fields
         _howGoalIsRelevant = State(initialValue: goal?.howGoalIsRelevant ?? "")
         _howGoalIsActionable = State(initialValue: goal?.howGoalIsActionable ?? "")
         _expectedTermLength = State(initialValue: goal?.expectedTermLength.map { String($0) } ?? "10")
@@ -95,13 +79,11 @@ struct GoalFormView: View {
     }
 
     private var canSave: Bool {
-        // At minimum, need either a friendly name or a description
         !title.trimmingCharacters(in: .whitespaces).isEmpty ||
         !detailedDescription.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     private var isSmart: Bool {
-        // Check if current values would make a SMART goal
         useMeasurement && !measurementUnit.isEmpty && Double(measurementTarget) != nil &&
         useStartDate && useTargetDate &&
         useSmartFields && !howGoalIsRelevant.isEmpty && !howGoalIsActionable.isEmpty
@@ -214,10 +196,6 @@ struct GoalFormView: View {
                 DatePicker("Target Date", selection: $targetDate, displayedComponents: .date)
             }
 
-            // TODO(human): Add expected term length field
-            // This should show when both dates are set and calculate/display the duration in weeks
-
-            // Show duration when both dates set
             if useStartDate && useTargetDate {
                 let days = Calendar.current.dateComponents([.day], from: startDate, to: targetDate).day ?? 0
                 let weeks = Double(days) / 7.0
@@ -275,11 +253,9 @@ struct GoalFormView: View {
     // MARK: - Actions
 
     private func saveGoal() {
-        // Parse optional numeric values
         let target: Double? = useMeasurement ? Double(measurementTarget) : nil
         let termLength: Int? = useSmartFields && !expectedTermLength.isEmpty ? Int(expectedTermLength) : nil
 
-        // Create or update goal
         let goal = Goal(
             title: title.isEmpty ? nil : title,
             detailedDescription: detailedDescription.isEmpty ? nil : detailedDescription,
@@ -292,7 +268,7 @@ struct GoalFormView: View {
             howGoalIsActionable: useSmartFields && !howGoalIsActionable.isEmpty ? howGoalIsActionable : nil,
             expectedTermLength: termLength,
             logTime: logTime,
-            id: goalToEdit?.id ?? UUID()  // Preserve ID when editing
+            id: goalToEdit?.id ?? UUID()
         )
 
         onSave(goal)

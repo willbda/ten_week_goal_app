@@ -31,13 +31,8 @@ public struct PriorityLevel: Codable, Equatable, Sendable {
 
 // MARK: - Incentives Base Struct
 
-///† Base struct for all value-related entities
-///
-/// Incentives represent motivations and priorities that guide decision-making.
-/// This includes Values (what you believe is worthwhile), LifeAreas (domains
-/// that structure your life), and various value hierarchies.
-public struct Incentives: Persistable, Polymorphable, Motivating, Sendable {
-    // MARK: - Core Identity (Persistable)
+public struct Incentives: Persistable, Sendable {
+    // MARK: - Core Identity
 
     public var id: UUID
     public var title: String?
@@ -45,30 +40,23 @@ public struct Incentives: Persistable, Polymorphable, Motivating, Sendable {
     public var freeformNotes: String?
     public var logTime: Date
 
-    // MARK: - Domain-specific Properties (Motivating)
+    // MARK: - Domain-specific Properties
 
-    /// Priority level (1 = highest, 100 = lowest)
     public var priority: Int
-
-    /// Life domain this incentive relates to (e.g., "Health", "Relationships")
     public var lifeDomain: String?
 
-    // MARK: - Polymorphic Type (Polymorphable)
+    // MARK: - Polymorphic Type
 
-    /// Type identifier for polymorphic storage
     public var polymorphicSubtype: String = "incentive"
 
     // MARK: - Initialization
 
     public init(
-        // Core identity
         title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
-        // Domain-specific
         priority: Int = 50,
         lifeDomain: String? = nil,
-        // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
     ) {
@@ -89,8 +77,8 @@ public struct Incentives: Persistable, Polymorphable, Motivating, Sendable {
 /// Values are general incentives - things you affirm as important without
 /// necessarily tracking them daily. Example: "Creativity", "Integrity"
 @Table
-public struct Values: Persistable, Polymorphable, Motivating, Sendable {
-    // MARK: - Core Identity (Persistable)
+public struct Values: Persistable, Sendable {
+    // MARK: - Core Identity
 
     public var id: UUID
     public var title: String?
@@ -98,26 +86,23 @@ public struct Values: Persistable, Polymorphable, Motivating, Sendable {
     public var freeformNotes: String?
     public var logTime: Date
 
-    // MARK: - Domain-specific Properties (Motivating)
+    // MARK: - Domain-specific Properties
 
     public var priority: Int
     public var lifeDomain: String?
 
-    // MARK: - Polymorphic Type (Polymorphable)
+    // MARK: - Polymorphic Type
 
     public var polymorphicSubtype: String = "general"
 
     // MARK: - Initialization
 
     public init(
-        // Core identity
         title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
-        // Domain-specific
-        priority: Int = 40,  // Values default to 40
+        priority: Int = 40,
         lifeDomain: String? = nil,
-        // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
     ) {
@@ -142,8 +127,8 @@ public struct Values: Persistable, Polymorphable, Motivating, Sendable {
 ///
 /// Importantly, LifeAreas are NOT values.
 @Table
-public struct LifeAreas: Persistable, Polymorphable, Motivating, Sendable {
-    // MARK: - Core Identity (Persistable)
+public struct LifeAreas: Persistable, Sendable {
+    // MARK: - Core Identity
 
     public var id: UUID
     public var title: String?
@@ -151,26 +136,23 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Sendable {
     public var freeformNotes: String?
     public var logTime: Date
 
-    // MARK: - Domain-specific Properties (Motivating)
+    // MARK: - Domain-specific Properties
 
     public var priority: Int
     public var lifeDomain: String?
 
-    // MARK: - Polymorphic Type (Polymorphable)
+    // MARK: - Polymorphic Type
 
     public var polymorphicSubtype: String = "life_area"
 
     // MARK: - Initialization
 
     public init(
-        // Core identity
         title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
-        // Domain-specific
         priority: Int = 40,
         lifeDomain: String? = nil,
-        // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
     ) {
@@ -195,8 +177,8 @@ public struct LifeAreas: Persistable, Polymorphable, Motivating, Sendable {
 /// Example: "Physical health and vitality" is major enough that if you're
 /// not seeing health-related actions, something is off.
 @Table
-public struct MajorValues: Persistable, Polymorphable, Motivating, Sendable {
-    // MARK: - Core Identity (Persistable)
+public struct MajorValues: Persistable, Sendable {
+    // MARK: - Core Identity
 
     public var id: UUID
     public var title: String?
@@ -204,30 +186,25 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Sendable {
     public var freeformNotes: String?
     public var logTime: Date
 
-    // MARK: - Domain-specific Properties (Motivating)
+    // MARK: - Domain-specific Properties
 
     public var priority: Int
     public var lifeDomain: String?
-
-    /// How this value shows up in actions/goals (flexible format for now)
     public var alignmentGuidance: String?
 
-    // MARK: - Polymorphic Type (Polymorphable)
+    // MARK: - Polymorphic Type
 
     public var polymorphicSubtype: String = "major"
 
     // MARK: - Initialization
 
     public init(
-        // Core identity
         title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
-        // Domain-specific
-        priority: Int = 10,  // Major values are high priority
+        priority: Int = 10,
         lifeDomain: String? = nil,
         alignmentGuidance: String? = nil,
-        // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
     ) {
@@ -253,8 +230,8 @@ public struct MajorValues: Persistable, Polymorphable, Motivating, Sendable {
 /// Example: "Eudaimonia", "Truth", "Beauty" - aspirational ideals rather
 /// than concrete practices.
 @Table
-public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Sendable {
-    // MARK: - Core Identity (Persistable)
+public struct HighestOrderValues: Persistable, Sendable {
+    // MARK: - Core Identity
 
     public var id: UUID
     public var title: String?
@@ -262,26 +239,23 @@ public struct HighestOrderValues: Persistable, Polymorphable, Motivating, Sendab
     public var freeformNotes: String?
     public var logTime: Date
 
-    // MARK: - Domain-specific Properties (Motivating)
+    // MARK: - Domain-specific Properties
 
     public var priority: Int
     public var lifeDomain: String?
 
-    // MARK: - Polymorphic Type (Polymorphable)
+    // MARK: - Polymorphic Type
 
     public var polymorphicSubtype: String = "highest_order"
 
     // MARK: - Initialization
 
     public init(
-        // Core identity
         title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
-        // Domain-specific
-        priority: Int = 1,  // Ultimate priority
+        priority: Int = 1,
         lifeDomain: String? = nil,
-        // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
     ) {

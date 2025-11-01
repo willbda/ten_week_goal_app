@@ -29,12 +29,12 @@ public let DAYS_PER_YEAR = 365.25
 /// Business logic methods (isActive, daysRemaining, progressPercentage)
 /// are provided via extensions in ModelExtensions.swift
 @Table
-public struct GoalTerm: Persistable, Polymorphable, Sendable {
+public struct GoalTerm: Persistable, Sendable {
     // MARK: - Constants
 
-    public static let TEN_WEEKS_IN_DAYS = 70 // 10 weeks × 7 days/week
+    public static let TEN_WEEKS_IN_DAYS = 70
 
-    // MARK: - Core Identity (Persistable)
+    // MARK: - Core Identity
 
     public var id: UUID
     public var title: String?
@@ -44,39 +44,27 @@ public struct GoalTerm: Persistable, Polymorphable, Sendable {
 
     // MARK: - Domain-specific Properties
 
-    /// Sequential term number (1, 2, 3, etc.)
     public var termNumber: Int
-
-    /// When this term begins
     public var startDate: Date
-
-    /// When this term ends
     public var targetDate: Date
-
-    /// Optional theme or focus for this term
     public var theme: String?
-
-    /// Post-term reflection notes
     public var reflection: String?
 
-    // MARK: - Polymorphic Type (Polymorphable)
+    // MARK: - Polymorphic Type
 
     public var polymorphicSubtype: String = "goal_term"
 
     // MARK: - Initialization
 
     public init(
-        // Core identity
         title: String? = nil,
         detailedDescription: String? = "A focused 10-week period for achieving specific goals",
         freeformNotes: String? = nil,
-        // Domain-specific
         termNumber: Int = 0,
         startDate: Date = Date(),
         targetDate: Date,
         theme: String? = nil,
         reflection: String? = nil,
-        // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
     ) {
@@ -106,8 +94,8 @@ public struct GoalTerm: Persistable, Polymorphable, Sendable {
 ///
 /// Business logic methods (weeksLived, weeksRemaining) provided via extensions
 @Table
-public struct LifeTime: Persistable, Polymorphable, Sendable {
-    // MARK: - Core Identity (Persistable)
+public struct LifeTime: Persistable, Sendable {
+    // MARK: - Core Identity
 
     public var id: UUID
     public var title: String?
@@ -117,27 +105,21 @@ public struct LifeTime: Persistable, Polymorphable, Sendable {
 
     // MARK: - Domain-specific Properties
 
-    /// Date of birth
     public var birthDate: Date
-
-    /// Optional estimated death date (based on life expectancy or personal estimate)
     public var estimatedDeathDate: Date?
 
-    // MARK: - Polymorphic Type (Polymorphable)
+    // MARK: - Polymorphic Type
 
     public var polymorphicSubtype: String = "lifetime"
 
     // MARK: - Initialization
 
     public init(
-        // Core identity
         title: String? = nil,
         detailedDescription: String? = "The arc of a human life - memento mori",
         freeformNotes: String? = nil,
-        // Domain-specific
         birthDate: Date,
         estimatedDeathDate: Date? = nil,
-        // System-generated
         logTime: Date = Date(),
         id: UUID = UUID()
     ) {

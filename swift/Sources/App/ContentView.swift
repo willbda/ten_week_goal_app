@@ -7,6 +7,7 @@
 
 import SwiftUI
 import BusinessLogic
+import SQLiteData
 
 /// Root application view
 /// Uses NavigationSplitView for persistent sidebar access.
@@ -67,15 +68,20 @@ public struct ContentView: View {
 
     // MARK: - Initialization
 
-    public init() {}
+    public init() {
+        print("🟢 ContentView init()")
+    }
 
     // MARK: - Environment
+
+    @Dependency(\.defaultSyncEngine) private var syncEngine
 
 
     // MARK: - Body
 
     public var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
+        print("🟢 ContentView body accessed")
+        return NavigationSplitView(columnVisibility: $columnVisibility) {
             // Sidebar
             sidebarContent
         } detail: {
@@ -86,7 +92,6 @@ public struct ContentView: View {
             .animation(.smooth, value: selectedSection)
         }
         .background {
-            // Hidden buttons for keyboard shortcuts
             Group {
                 Button("Actions") { selectedSection = .actions }
                     .keyboardShortcut("1", modifiers: .command)
@@ -104,8 +109,14 @@ public struct ContentView: View {
                     Button("AI Assistant") { selectedSection = .assistant }
                         .keyboardShortcut("5", modifiers: .command)
                 }
+
+                Button("Sync Now") { forceSyncNow() }
+                    .keyboardShortcut("s", modifiers: [.command, .shift])
             }
             .hidden()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .syncNowRequested)) { _ in
+            forceSyncNow()
         }
     }
 
@@ -117,30 +128,22 @@ public struct ContentView: View {
                 let width = geometry.size.width
                 let zoom = ZoomManager.shared.zoomLevel
 
-                // Progressive scaling with no hard stops (base values at 100% zoom)
-                let fullThreshold: CGFloat = 200 * zoom   // Full size at 200px
-                let textThreshold: CGFloat = 120 * zoom   // Text starts fading at 120px
+                let fullThreshold: CGFloat = 200 * zoom
+                let textThreshold: CGFloat = 120 * zoom
 
-                // Text opacity: fades between 120-200px
                 let textProgress = min(max((width - textThreshold) / (fullThreshold - textThreshold), 0), 1)
                 let textOpacity = easeInOut(textProgress)
 
-                // Icon scaling: continuous shrinking with reasonable minimum (scaled by zoom)
                 let minIconSize: CGFloat = 20 * zoom
                 let maxIconSize: CGFloat = 48 * zoom
-                let iconSize = max(minIconSize, min(maxIconSize, width * 0.24)) // 24% of sidebar width
+                let iconSize = max(minIconSize, min(maxIconSize, width * 0.24))
 
-                // Corner radius: becomes circular as icons shrink
-                let cornerRadius = iconSize / 2 // Always proportional to icon size
+                let cornerRadius = iconSize / 2
 
-                // Spacing and font scale with width (scaled by zoom)
-                let spacing = max(0, min(12 * zoom, (width - 80 * zoom) * 0.15)) // Shrinks to 0 smoothly
-                let iconFontSize = max(12 * zoom, iconSize * 0.42) // Font scales with container
+                let spacing = max(0, min(12 * zoom, (width - 80 * zoom) * 0.15))
+                let iconFontSize = max(12 * zoom, iconSize * 0.42)
 
-                // Show text only when there's enough room (threshold scales with zoom)
                 let showText = width > 100 * zoom
-
-                // Filter sections based on AI availability
                 let visibleSections = Section.allCases.filter { section in
                     section != .assistant || aiAvailability.isAvailable
                 }
@@ -148,9 +151,7 @@ public struct ContentView: View {
                 List(visibleSections, selection: $selectedSection) { section in
                     NavigationLink(value: section) {
                         HStack(spacing: spacing) {
-                            // Icon with morphing container (matched geometry effect)
                             ZStack {
-                                // Background shape morphs continuously
                                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                                     .fill(section.accentColor.opacity(0.15))
                                     .frame(width: iconSize, height: iconSize)
@@ -165,10 +166,9 @@ public struct ContentView: View {
                                     .foregroundStyle(section.accentColor)
                                     .symbolEffect(.scale.up, isActive: selectedSection == section)
                             }
-                            .layoutPriority(1) // Icon always visible
-                            .frame(maxWidth: .infinity) // Center icon when text is hidden
+                            .layoutPriority(1)
+                            .frame(maxWidth: .infinity)
 
-                            // Text compresses naturally with layout priority
                             if showText {
                                 HStack(spacing: 8 * zoom * textOpacity) {
                                     VStack(alignment: .leading, spacing: 2 * zoom) {
@@ -179,11 +179,10 @@ public struct ContentView: View {
                                             .foregroundStyle(.secondary)
                                     }
                                     .opacity(textOpacity)
-                                    .layoutPriority(0) // Compresses first
+                                    .layoutPriority(0)
 
                                     Spacer(minLength: 0)
 
-                                    // Activity indicator
                                     if let count = activityCount(for: section) {
                                         Text("\(count)")
                                             .font(DesignSystem.Typography.caption.monospacedDigit())
@@ -194,7 +193,7 @@ public struct ContentView: View {
                                             .opacity(textOpacity)
                                     }
                                 }
-                                .frame(minWidth: 0) // Allows compression to zero
+                                .frame(minWidth: 0)
                             }
                         }
                         .padding(.vertical, 6)
@@ -207,14 +206,13 @@ public struct ContentView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .background(.ultraThinMaterial)
-                .navigationTitle(width > textThreshold ? "Quests" : "")
+                
             }
             .navigationSplitViewColumnWidth(min: 60, ideal: 300, max: 400)
     }
 
     // MARK: - Easing Functions
 
-    /// Cubic ease-in-out for smooth transitions
     private func easeInOut(_ t: Double) -> Double {
         t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2
     }
@@ -222,18 +220,36 @@ public struct ContentView: View {
     // MARK: - Activity Tracking
 
     private func activityCount(for section: Section) -> Int? {
-        // TODO(human): Implement activity counts from database
-        // This should return actual counts based on your business logic:
-        // - Actions: Count of today's actions
-        // - Goals: Count of active goals
-        // - Values: Count of defined values
-        // - Terms: Current term week number
+        // TODO: Implement activity counts from database
         switch section {
         case .actions: return nil
         case .goals: return nil
         case .values: return nil
         case .terms: return nil
         case .assistant: return nil
+        }
+    }
+
+    // MARK: - iCloud Sync
+
+    /// Check iCloud sync status and log current state
+    private func forceSyncNow() {
+        print("🔄 iCloud Sync Status Check")
+        print("─────────────────────────────────")
+        print("  Running: \(syncEngine.isRunning ? "✅" : "❌")")
+        print("  Sending changes: \(syncEngine.isSendingChanges ? "📤" : "💤")")
+        print("  Fetching changes: \(syncEngine.isFetchingChanges ? "📥" : "💤")")
+        print("  Synchronizing: \(syncEngine.isSynchronizing ? "🔄" : "⏸️")")
+        print("─────────────────────────────────")
+
+        if syncEngine.isRunning {
+            print("ℹ️  Sync is active. Changes upload automatically:")
+            print("   • In batches every 1-5 minutes")
+            print("   • When you quit the app (⌘Q)")
+            print("   • You can safely close this window")
+        } else {
+            print("⚠️  Sync engine is not running")
+            print("   Try restarting the app")
         }
     }
 
@@ -264,7 +280,6 @@ public struct ContentView: View {
 
     private var welcomeView: some View {
         VStack(spacing: 24) {
-            // Material-backed icon
             ZStack {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(.quaternary.opacity(0.3))
@@ -289,10 +304,6 @@ public struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.ultraThinMaterial)
     }
-
-    // Removed initializingView - database initialization happens in prepareDependencies
-
-    // Removed errorView - database initialization happens in prepareDependencies
 }
 
 // MARK: - Preview

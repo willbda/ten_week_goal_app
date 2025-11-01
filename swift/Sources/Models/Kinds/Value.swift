@@ -1,0 +1,239 @@
+// Value.swift
+// Unified domain entity for personal values and life areas
+//
+// Written by Claude Code on 2025-10-30
+// Replaces separate Values, MajorValues, HighestOrderValues, and LifeAreas structs
+// Part of 3NF normalization effort to eliminate redundant tables
+//
+// Values reflect a personal, intentional sense of how one's life should go.
+// They provide context for evaluating alignment between actions and what matters.
+
+import Foundation
+import SQLiteData
+
+// MARK: - ValueLevel Enum
+
+/// Classification of value types
+///
+/// Replaces polymorphic subtypes with a clean enum approach.
+/// This enables a single unified table while maintaining type distinction.
+public enum ValueLevel: String, Codable, CaseIterable, Sendable, QueryRepresentable, QueryBindable {
+    case general = "general"
+    case major = "major"
+    case highestOrder = "highest_order"
+    case lifeArea = "life_area"
+
+    /// Default priority for this value level
+    public var defaultPriority: Int {
+        switch self {
+        case .general:
+            return 40
+        case .major:
+            return 10
+        case .highestOrder:
+            return 1
+        case .lifeArea:
+            return 40
+        }
+    }
+
+    /// Human-readable description of this level
+    public var description: String {
+        switch self {
+        case .general:
+            return "General Value"
+        case .major:
+            return "Major Value"
+        case .highestOrder:
+            return "Highest Order Value"
+        case .lifeArea:
+            return "Life Area"
+        }
+    }
+}
+
+// MARK: - Unified Value Struct
+
+/// Personal values that align with beliefs about what is worthwhile
+///
+/// This unified struct replaces four separate tables (Values, MajorValues,
+/// HighestOrderValues, LifeAreas) for proper 3NF normalization.
+///
+/// **Value Levels**:
+/// - **General**: Things you affirm as important (e.g., "Creativity", "Integrity")
+/// - **Major**: Actionable values that should regularly appear in actions/goals
+/// - **Highest Order**: Abstract philosophical values (e.g., "Eudaimonia", "Truth")
+/// - **Life Area**: Domains that provide structure (e.g., "Career", "Health")
+///
+/// **3NF Benefits**:
+/// - Single table for all value types (no redundancy)
+/// - Type discrimination via enum (not string polymorphism)
+/// - Simplified queries ("get all my values" is trivial)
+/// - Consistent schema maintenance
+///
+/// **Usage**:
+/// ```swift
+/// // General value
+/// let creativity = Value(
+///     title: "Creativity",
+///     valueLevel: .general,
+///     priority: 30
+/// )
+///
+/// // Major value with alignment guidance
+/// let health = Value(
+///     title: "Physical Health",
+///     valueLevel: .major,
+///     priority: 5,
+///     alignmentGuidance: "Regular exercise, good nutrition, adequate sleep"
+/// )
+///
+/// // Life area
+/// let career = Value(
+///     title: "Professional Development",
+///     valueLevel: .lifeArea,
+///     lifeDomain: "Career"
+/// )
+/// ```
+@Table  // SQLiteData will use "values" as the table name (struct name lowercased + s)
+public struct Value: Persistable, Sendable {
+    // MARK: - Core Identity (Persistable)
+
+    public var id: UUID
+    public var title: String?
+    public var detailedDescription: String?
+    public var freeformNotes: String?
+    public var logTime: Date
+
+    // MARK: - Value-specific Properties
+
+    /// Priority level (1-100, lower number = higher priority)
+    public var priority: Int
+
+    /// Classification of this value
+    public var valueLevel: ValueLevel
+
+    /// Optional categorization domain
+    /// Example: "Health", "Relationships", "Career"
+    public var lifeDomain: String?
+
+    /// How this value shows up in actions/goals (primarily for major values)
+    /// Example: "Regular exercise, meditation, healthy eating"
+    public var alignmentGuidance: String?
+
+    // MARK: - Initialization
+
+    /// Create a new value
+    ///
+    /// - Parameters:
+    ///   - title: Human-readable name
+    ///   - detailedDescription: Fuller explanation
+    ///   - freeformNotes: Additional notes
+    ///   - priority: 1-100 (lower = higher priority)
+    ///   - valueLevel: Classification (.general, .major, etc.)
+    ///   - lifeDomain: Optional categorization
+    ///   - alignmentGuidance: How this shows up (for major values)
+    ///   - logTime: When created
+    ///   - id: Unique identifier
+    public init(
+        title: String? = nil,
+        detailedDescription: String? = nil,
+        freeformNotes: String? = nil,
+        priority: Int? = nil,
+        valueLevel: ValueLevel = .general,
+        lifeDomain: String? = nil,
+        alignmentGuidance: String? = nil,
+        logTime: Date = Date(),
+        id: UUID = UUID()
+    ) {
+        self.id = id
+        self.title = title
+        self.detailedDescription = detailedDescription
+        self.freeformNotes = freeformNotes
+        self.logTime = logTime
+        self.priority = priority ?? valueLevel.defaultPriority
+        self.valueLevel = valueLevel
+        self.lifeDomain = lifeDomain
+        self.alignmentGuidance = alignmentGuidance
+    }
+}
+
+// MARK: - Query Helpers
+
+extension Value {
+    /// Check if this is a major value (has alignment guidance)
+    public var isMajor: Bool {
+        valueLevel == .major
+    }
+
+    /// Check if this is actionable (major or general, not highest order or life area)
+    public var isActionable: Bool {
+        valueLevel == .major || valueLevel == .general
+    }
+
+    /// Check if this requires alignment tracking
+    public var requiresAlignmentTracking: Bool {
+        valueLevel == .major && alignmentGuidance != nil
+    }
+}
+
+// MARK: - Migration Support
+
+extension Value {
+    /// Create from legacy Values struct
+    public init(from legacy: Values) {
+        self.init(
+            title: legacy.title,
+            detailedDescription: legacy.detailedDescription,
+            freeformNotes: legacy.freeformNotes,
+            priority: legacy.priority,
+            valueLevel: .general,
+            lifeDomain: legacy.lifeDomain,
+            logTime: legacy.logTime,
+            id: legacy.id
+        )
+    }
+
+    /// Create from legacy MajorValues struct
+    public init(from legacy: MajorValues) {
+        self.init(
+            title: legacy.title,
+            detailedDescription: legacy.detailedDescription,
+            freeformNotes: legacy.freeformNotes,
+            priority: legacy.priority,
+            valueLevel: .major,
+            lifeDomain: legacy.lifeDomain,
+            alignmentGuidance: legacy.alignmentGuidance,
+            logTime: legacy.logTime,
+            id: legacy.id
+        )
+    }
+
+    /// Create from legacy HighestOrderValues struct
+    public init(from legacy: HighestOrderValues) {
+        self.init(
+            title: legacy.title,
+            detailedDescription: legacy.detailedDescription,
+            freeformNotes: legacy.freeformNotes,
+            priority: legacy.priority,
+            valueLevel: .highestOrder,
+            lifeDomain: legacy.lifeDomain,
+            logTime: legacy.logTime,
+            id: legacy.id
+        )
+    }
+
+    /// Create from legacy LifeAreas struct
+    public init(from legacy: LifeAreas) {
+        self.init(
+            title: legacy.title,
+            detailedDescription: legacy.detailedDescription,
+            freeformNotes: legacy.freeformNotes,
+            priority: legacy.priority,
+            valueLevel: .lifeArea,
+            lifeDomain: legacy.lifeDomain,
+            logTime: legacy.logTime,
+            id: legacy.id
+        )
+    }
+}

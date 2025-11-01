@@ -20,22 +20,11 @@ public struct GoalsListView: View {
 
     // MARK: - State
 
-    /// View model for goals management
     @State private var viewModel = GoalsViewModel()
-
-    /// Sheet presentation for adding new goal
     @State private var showingAddGoal = false
-
-    /// Sheet presentation for editing existing goal
     @State private var showingEditGoal = false
-
-    /// The goal currently being edited
     @State private var goalToEdit: Goal?
-
-    /// Sheet presentation for creating action from goal
     @State private var showingActionForm = false
-
-    /// The action being created (pre-filled from goal)
     @State private var actionToCreate: Action?
 
     // MARK: - Body
@@ -88,7 +77,7 @@ public struct GoalsListView: View {
             if let actionToCreate = actionToCreate {
                 ActionFormView(
                     action: actionToCreate,
-                    mode: .create,  // Always creating from goals
+                    mode: .create,
                     onSave: { action in
                         // TODO: Save action using ActionsViewModel
                         showingActionForm = false
@@ -251,15 +240,7 @@ public struct GoalsListView: View {
     }
 
     /// Create a new action pre-filled from goal context
-    ///
-    /// Creates an action with:
-    /// - Title suggested from goal description
-    /// - Measurement unit from goal (if available)
-    /// - Current timestamp
-    ///
-    /// Opens ActionFormView pre-filled with the generated data.
     private func createActionForGoal(_ goal: Goal) {
-        // Build suggested title from goal
         let suggestedTitle: String?
         if let goalTitle = goal.title {
             suggestedTitle = "Progress on: \(goalTitle)"
@@ -270,20 +251,15 @@ public struct GoalsListView: View {
             suggestedTitle = nil
         }
 
-        // Note: We don't pre-fill measurements because the user needs to enter
-        // the actual value. The ActionFormView's AddMeasurementSheet will guide them
-        // to add measurements with the appropriate unit.
-
-        // Create new action with pre-filled data
         let action = Action(
             title: suggestedTitle,
-            detailedDescription: nil,  // User will fill if needed
+            detailedDescription: nil,
             freeformNotes: nil,
-            measuresByUnit: [:],       // User will add via form
+            measuresByUnit: [:],
             durationMinutes: nil,
             startTime: nil,
-            logTime: Date(),           // Current time
-            id: UUID()                 // New ID
+            logTime: Date(),
+            id: UUID()
         )
 
         actionToCreate = action

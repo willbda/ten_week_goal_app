@@ -2,10 +2,11 @@
 // Junction table model for term-goal many-to-many relationships
 //
 // Written by Claude Code on 2025-10-23
+// Updated by Claude Code on 2025-10-30 (renamed fields for consistency)
 //
 // This is a pure infrastructure type (not a domain entity).
 // It represents the database relationship between terms and goals,
-// allowing GRDB to handle associations efficiently.
+// allowing SQLiteData to handle associations efficiently.
 
 import Foundation
 import SQLiteData
@@ -23,29 +24,44 @@ public struct TermGoalAssignment: Sendable {
 
     // MARK: - Properties
 
-    /// UUID of the term
-    public var termUUID: UUID
-
-    /// UUID of the goal
-    public var goalUUID: UUID
-
-    /// Order of this goal within the term (0-indexed)
+    public var id: UUID
+    public var termId: UUID  // Renamed from termUUID for consistency
+    public var goalId: UUID  // Renamed from goalUUID for consistency
     public var assignmentOrder: Int?
-
-    /// When this assignment was created
     public var createdAt: Date
 
     // MARK: - Initialization
 
     public init(
+        id: UUID = UUID(),
+        termId: UUID,
+        goalId: UUID,
+        assignmentOrder: Int? = nil,
+        createdAt: Date = Date()
+    ) {
+        self.id = id
+        self.termId = termId
+        self.goalId = goalId
+        self.assignmentOrder = assignmentOrder
+        self.createdAt = createdAt
+    }
+
+    // MARK: - Legacy Support
+
+    /// Initialize with legacy field names (for migration)
+    public init(
+        id: UUID = UUID(),
         termUUID: UUID,
         goalUUID: UUID,
         assignmentOrder: Int? = nil,
         createdAt: Date = Date()
     ) {
-        self.termUUID = termUUID
-        self.goalUUID = goalUUID
-        self.assignmentOrder = assignmentOrder
-        self.createdAt = createdAt
+        self.init(
+            id: id,
+            termId: termUUID,
+            goalId: goalUUID,
+            assignmentOrder: assignmentOrder,
+            createdAt: createdAt
+        )
     }
 }

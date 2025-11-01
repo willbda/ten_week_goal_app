@@ -2,28 +2,18 @@
 // iOS app entry point for Ten Week Goal Tracker
 //
 // Written by Claude Code on 2025-10-24
+// Updated 2025-10-25: Migrated to SQLiteData with shared TenWeekGoalApp
 
 import SwiftUI
 import App
 
-
+// Use the shared TenWeekGoalApp from the App module
+// This provides SQLiteData initialization with iCloud sync
 @main
-struct GoalTrackerApp: App {
-
-    // MARK: - State
-
-    @State private var appViewModel = AppViewModel()
-
-    // MARK: - Body
+struct GoalTrackerAppWrapper: App {
+    private let app = TenWeekGoalApp()
 
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environment(appViewModel)
-                .task {
-                    // Initialize database on app launch (uses .app config for iOS sandbox)
-                    await appViewModel.initializeForApp()
-                }
-        }
+        app.body
     }
 }

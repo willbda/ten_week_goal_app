@@ -23,19 +23,10 @@ public struct ActionsListView: View {
 
     // MARK: - State
 
-    /// View model for actions management
     @State private var viewModel = ActionsViewModel()
-
-    /// Form presentation state (combines action + mode)
     @State private var actionFormState: ActionFormState?
-
-    /// Active goals for quick add section
     @State private var activeGoals: [Goal] = []
-
-    /// Mapping of action ID → contributing goals
     @State private var actionGoals: [UUID: [Goal]] = [:]
-
-    /// Sheet presentation for bulk matching view
     @State private var showingBulkMatching = false
 
     // MARK: - Form State Wrapper
@@ -76,13 +67,10 @@ public struct ActionsListView: View {
                 onSave: { action in
                     Task {
                         if formState.mode == .edit {
-                            // Edit mode - update existing action
                             await viewModel.updateAction(action)
                         } else {
-                            // Create mode - create new action
                             await viewModel.createAction(action)
                         }
-                        // Reload action-goal mappings after save
                         await loadActionGoals()
                     }
                     actionFormState = nil
@@ -93,7 +81,6 @@ public struct ActionsListView: View {
             )
         }
         .sheet(isPresented: $showingBulkMatching, onDismiss: {
-            // Reload action-goal mappings when bulk matching is dismissed
             Task {
                 await loadActionGoals()
             }
@@ -146,11 +133,9 @@ public struct ActionsListView: View {
                     ActionRowView(action: action, goals: actionGoals[action.id] ?? [])
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            // Click to edit (works with mouse on macOS)
                             actionFormState = ActionFormState(action: action, mode: .edit)
                         }
                         .contextMenu {
-                            // Right-click menu (macOS) / long-press menu (iOS)
                             Button {
                                 duplicateAction(action)
                             } label: {
@@ -209,19 +194,12 @@ public struct ActionsListView: View {
 
     // MARK: - Helper Methods
 
-    /// Load active goals for quick add section
-    ///
-    /// Fetches goals with target dates in the future for the quick add section.
     private func loadActiveGoals() async {
         // TODO: Implement using GoalsViewModel with @FetchAll
         // For now, leave empty until GoalsViewModel is integrated with SQLiteData
         activeGoals = []
     }
 
-    /// Load action-goal mappings for display
-    ///
-    /// For each action, fetches its relationships and resolves them to Goal objects.
-    /// Populates actionGoals dictionary for display in ActionRowView.
     private func loadActionGoals() async {
         // TODO: Implement using relationship queries with SQLiteData
         // For now, leave empty until relationship support is added
@@ -229,14 +207,7 @@ public struct ActionsListView: View {
     }
 
     /// Create a new action pre-filled from goal context
-    ///
-    /// Creates an action with:
-    /// - Title suggested from goal description
-    /// - Current timestamp
-    ///
-    /// Opens ActionFormView pre-filled with the generated data.
     private func createActionForGoal(_ goal: Goal) {
-        // Build suggested title from goal
         let suggestedTitle: String?
         if let goalTitle = goal.title {
             suggestedTitle = "Progress on: \(goalTitle)"
@@ -247,29 +218,21 @@ public struct ActionsListView: View {
             suggestedTitle = nil
         }
 
-        // Create new action with pre-filled data
         let action = Action(
             title: suggestedTitle,
-            detailedDescription: nil,  // User will fill if needed
+            detailedDescription: nil,
             freeformNotes: nil,
-            measuresByUnit: [:],       // User will add via form (empty, not nil)
+            measuresByUnit: [:],
             durationMinutes: nil,
             startTime: nil,
-            logTime: Date(),           // Current time
-            id: UUID()                 // New ID
+            logTime: Date(),
+            id: UUID()
         )
 
         actionFormState = ActionFormState(action: action, mode: .create)
     }
 
-    /// Duplicate an existing action
-    ///
-    /// Creates a new action with all fields copied from the source except:
-    /// - `id`: New UUID generated
-    /// - `logTime`: Set to current time
-    /// - `startTime`: Cleared (user can set if needed)
-    ///
-    /// Opens the ActionFormView pre-filled with the duplicated data.
+    /// Duplicate an existing action with new ID and current timestamp
     private func duplicateAction(_ action: Action) {
         let duplicate = Action(
             title: action.title,
@@ -277,9 +240,9 @@ public struct ActionsListView: View {
             freeformNotes: action.freeformNotes,
             measuresByUnit: action.measuresByUnit,
             durationMinutes: action.durationMinutes,
-            startTime: nil,        // User will set if needed
-            logTime: Date(),       // Current time
-            id: UUID()             // New ID
+            startTime: nil,
+            logTime: Date(),
+            id: UUID()
         )
 
         actionFormState = ActionFormState(action: duplicate, mode: .create)
