@@ -42,20 +42,27 @@ The two implementations have diverged significantly and **no longer share a data
 - Platform integrations (AppIntents, EventKit)
 - Test suite (broken after database migration)
 
-## Path to 1.0 (Revised - Acknowledges Rearchitecture)
+## Path to 1.0 (Revised - 7-Phase Rearchitecture)
+
+**Based on**: [swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md](swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md)
 
 ```
-0.5.0 - Current state (foundation works, needs rethink)
-0.6.0 - Data structure simplification (fewer optionals, remove unnecessary protocols)
-0.6.5 - SwiftUI integration patterns (ViewModels or better struct shapes)
-0.7.0 - Design language defined (visual identity, component library)
-0.7.5 - Accessibility foundation (VoiceOver labels, Dynamic Type)
-0.8.0 - Platform integrations (AppIntents OR EventKit - pick one)
-0.9.0 - Test suite complete, documentation current
+0.5.0 - Current state (Phases 1-2 complete: Schema & Models) ✅
+0.6.0 - Phase 3: Repository/Service layer complete
+0.7.0 - Phase 4: Protocol redesign + Phase 5: ViewModels
+0.8.0 - Phase 6: Views updated (UI fully functional)
+0.9.0 - Phase 7: Testing & Migration complete
 1.0.0 - First stable release (Swift only)
 ```
 
-**Estimated Time to 1.0**: 25-40 hours (accounting for rearchitecture)
+**Phase Timeline**:
+- Phase 3 (Repositories): 1 week
+- Phase 4 (Protocols): 3 days
+- Phase 5 (ViewModels): 1 week
+- Phase 6 (Views): 1 week
+- Phase 7 (Testing/Migration): 1-2 weeks
+
+**Estimated Time to 1.0**: 5-7 weeks (assuming consistent development)
 
 
 - First stable release
@@ -108,24 +115,23 @@ echo "✓ Version bumped to $NEW_VERSION"
 echo "Run 'git push && git push --tags' to publish"
 ```
 
-## Current Status Summary
+## Current Status Summary (Updated 2025-10-31)
 
-**Swift Implementation:** ~50% complete (honest assessment)
-- Foundation proven: ✅ (SQLiteData, protocols compile, views work)
-- Data architecture: ⚠️ Needs simplification
-- Design language: ❌ Not defined
-- Accessibility: ❌ Not started
-- Platform features: ❌ Not started
-- Testing: ⚠️ Broken (fixable)
+**Swift Implementation:** Phases 1-2 complete (Database & Models)
+- ✅ Phase 1: 3NF schema designed and tested
+- ✅ Phase 2: Swift models migrated to SQLiteData
+- 🚧 Phase 3: Repository/Service layer (next)
+- ⏳ Phase 4: Protocol redesign
+- ⏳ Phase 5: ViewModels
+- ⏳ Phase 6: Views
+- ⏳ Phase 7: Testing & Migration
+- ❌ Design language: Not defined (deferred post-rearchitecture)
+- ❌ Accessibility: Not started (target: before 1.0)
 
-**Python Implementation:** On hold
-- Last stable: 0.2.5 (Flask deployment)
-- Not actively developed
+**Python Implementation:** Archived
+- Last stable: 0.2.5 (Flask deployment) - Tagged as v1.0-python
+- No longer actively developed
 
-**Estimated time to 1.0:** 25-40 hours (revised upward)
-- Rearchitecture (data + protocols): 8-12 hours
-- Design language definition: 4-6 hours
-- Component library: 4-6 hours
-- Accessibility: 6-8 hours
-- Platform integration (1 feature): 4-6 hours
-- Testing/documentation: 3-4 hours
+**Breaking Changes**: Intentional during rearchitecture
+- MatchingService, GoalFormView, ActionsViewModel, GoalsViewModel
+- Will be fixed in Phases 3-6
