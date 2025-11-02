@@ -29,6 +29,7 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
+build.log
 # Xcode - User-specific files (DO NOT COMMIT)
 *.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
