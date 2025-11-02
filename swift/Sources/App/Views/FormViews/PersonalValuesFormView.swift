@@ -1,8 +1,28 @@
 import Models
 import SwiftUI
 
+// ARCHITECTURE DECISION: Why @State instead of @StateObject?
+// CONTEXT: Swift 5.9+ changed how we initialize @Observable models in views
+// OLD PATTERN (ObservableObject):
+//   @StateObject private var viewModel = PersonalValuesFormViewModel()
+// NEW PATTERN (@Observable):
+//   @State private var viewModel = PersonalValuesFormViewModel()
+// WHY THE CHANGE:
+//   - @Observable doesn't need @StateObject wrapper
+//   - @State now works with @Observable classes (not just structs!)
+//   - Simpler, more consistent API
+// SEE: PersonalValuesFormViewModel.swift for why we use @Observable
+//
+// ARCHITECTURE DECISION: ViewModel uses @Dependency internally
+// PATTERN: From SQLiteData's ObservableModelDemo example
+// HOW IT WORKS:
+//   - ViewModel has @ObservationIgnored @Dependency(\.defaultDatabase)
+//   - View just creates ViewModel() with no parameters
+//   - Dependency injection happens automatically
+// SEE: sqlite-data-main/Examples/CaseStudies/ObservableModelDemo.swift:56-57
+
 public struct PersonalValuesFormView: View {
-    @StateObject private var viewModel = PersonalValueFormViewModel()
+    @State private var viewModel = PersonalValuesFormViewModel()
     @Environment(\.dismiss) private var dismiss
 
     // Form state
@@ -96,4 +116,3 @@ public struct PersonalValuesFormView: View {
     // WHEN: If user feedback indicates they want success confirmation
     // IMPL: Requires @Published var successMessage: String? in ViewModel
 }
-
