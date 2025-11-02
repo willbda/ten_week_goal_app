@@ -159,18 +159,17 @@ public struct PersonalValue: DomainAbstraction {
     }
 }
 
-//   // In Models/Abstractions/PersonalValue.swift
-//   extension ValueLevel {
-//       public var displayName: String {
-//           switch self {
-//           case .general:
-//               return "General"
-//           case .major:
-//               return "Major Value"
-//           case .highestOrder:
-//               return "Highest Order"
-//           case .lifeArea:
-//               return "Life Area"
-//           }
-//       }
-//   }
+extension ValueLevel {
+    public var displayName: String {
+        switch self {
+        case .general:
+            return "General"
+        case .major:
+            return "Major Value"
+        case .highestOrder:
+            return "Highest Order"
+        case .lifeArea:
+            return "Life Area"
+        }
+    }
+}

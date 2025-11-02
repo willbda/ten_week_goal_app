@@ -10,15 +10,13 @@ public final class PersonalValueFormViewModel: ObservableObject {
     @Published public var isSaving: Bool = false
     @Published public var errorMessage: String?
 
-    // FIXME: Performance Issue - Coordinator Re-creation
-    // CURRENT: Creates new coordinator instance on EVERY access (computed property)
-    // IMPACT: Memory churn, unnecessary allocations during save operations
-    // FIX: Change to `private lazy var coordinator: PersonalValueCoordinator = { ... }()`
-    // WHEN: Before Phase 4 (when update/delete methods added, this compounds)
-    // IF NOT FIXED: App will work but wastes memory/CPU, especially with frequent saves
-    private var coordinator: PersonalValueCoordinator {
+    // NOTE: Coordinator Lifecycle
+    // PATTERN: Lazy initialization - creates coordinator once on first access
+    // BENEFIT: Avoids re-creating coordinator on every save() call
+    // ALTERNATIVE: Could inject coordinator in init(), but @Dependency makes that awkward
+    private lazy var coordinator: PersonalValueCoordinator = {
         PersonalValueCoordinator(database: database)
-    }
+    }()
 
     public init() {}
 

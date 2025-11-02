@@ -16,14 +16,12 @@ public struct ValueRowView: View {
 
                 Spacer()
 
+                // Using BadgeView for consistent badge styling across app
                 if let priority = value.priority {
-                    Text("\(priority)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(.secondary.opacity(0.15))
-                        .clipShape(Capsule())
+                    BadgeView(badge: Badge(
+                        text: "\(priority)",
+                        color: .secondary
+                    ))
                 }
             }
 
@@ -34,13 +32,16 @@ public struct ValueRowView: View {
                     .lineLimit(2)
             }
 
+            // Life domain as badge for visual distinction
             if let domain = value.lifeDomain {
-                Text(domain)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .padding(.top, 2)
+                BadgeView(badge: Badge(
+                    text: domain,
+                    color: .purple.opacity(0.8)
+                ))
+                .padding(.top, 2)
             }
         }
         .padding(.vertical, 4)
     }
 }
+
