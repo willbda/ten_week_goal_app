@@ -1,13 +1,13 @@
 //
-//  GoalTrackerIIUITestsLaunchTests.swift
-//  GoalTrackerIIUITests
+//  GoalTrackerUITestsLaunchTests.swift
+//  GoalTrackerUITests
 //
 //  Created by David Williams on 11/1/25.
 //
 
 import XCTest
 
-final class GoalTrackerIIUITestsLaunchTests: XCTestCase {
+final class GoalTrackerUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

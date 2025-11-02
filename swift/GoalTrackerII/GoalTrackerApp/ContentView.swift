@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  GoalTrackerII
+//  GoalTrackerApp
 //
 //  Created by David Williams on 11/1/25.
 //

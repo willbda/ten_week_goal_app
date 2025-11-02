@@ -5,7 +5,7 @@
 // Written by Claude Code on 2025-10-31
 //
 // ARCHITECTURE:
-// - Target-based package (no library products - consumed by Xcode project)
+// - Library products: Models, Services, Logic, App (for Xcode project consumption)
 // - Targets: Models, Services, Logic, App
 // - Multi-platform: iOS 26+, macOS 26+, visionOS 26+
 // - Swift 6.2 with full concurrency support
@@ -21,6 +21,15 @@ let package = Package(
         .macOS(.v26),       // macOS Tahoe 26+
         .iOS(.v26),         // iOS 26+
         .visionOS(.v26),    // visionOS 26+
+    ],
+
+    // MARK: - Products
+
+    products: [
+        .library(name: "Models", targets: ["Models"]),
+        .library(name: "Services", targets: ["Services"]),
+        .library(name: "Logic", targets: ["Logic"]),
+        .library(name: "App", targets: ["App"]),
     ],
 
     // MARK: - Dependencies
@@ -60,7 +69,10 @@ let package = Package(
                 "Models",
                 .product(name: "SQLiteData", package: "sqlite-data"),
             ],
-            path: "Sources/Services"
+            path: "Sources/Services",
+            resources: [
+                .process("Resources/schema_current.sql")
+            ]
         ),
 
         // =========================================================================
