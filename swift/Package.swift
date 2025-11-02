@@ -71,7 +71,7 @@ let package = Package(
             ],
             path: "Sources/Services",
             resources: [
-                .process("Resources/schema_current.sql")
+                .copy("../Database/Schemas/schema_current.sql")
             ]
         ),
 
