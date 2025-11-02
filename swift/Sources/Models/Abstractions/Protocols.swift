@@ -21,13 +21,10 @@ import SQLiteData
 
 // MARK: - Trait Protocols
 
-/// All database entities have a unique identifier
+/// All database entities must conform to Swift's Identifiable with UUID
+/// This is required for SQLiteData and CloudKit synchronization
 ///
-/// This is the minimal requirement for any entity that can be stored
-/// and referenced in the database.
-public protocol Identifiable: Equatable, Sendable {
-    var id: UUID { get }
-}
+/// Note: We extend Swift.Identifiable (not redefine it) to work with SQLiteData
 
 /// Entities that can be titled and described
 ///
@@ -56,7 +53,8 @@ public protocol Timestamped {
 /// **Examples**: Expectation, TimePeriod, Action, Measure, PersonalValue
 ///
 /// **Fields**: id, title, detailedDescription, freeformNotes, logTime
-public typealias DomainAbstraction = Identifiable & Documentable & Timestamped
+public protocol DomainAbstraction: Identifiable, Documentable, Timestamped, Equatable, Sendable
+    where ID == UUID {}
 
 /// Concrete working entities that reference abstracts
 ///
@@ -66,7 +64,8 @@ public typealias DomainAbstraction = Identifiable & Documentable & Timestamped
 /// **Examples**: Goal, Milestone, Obligation, GoalTerm
 ///
 /// **Fields**: id + type-specific fields (startDate, deadline, etc.)
-public typealias DomainBasic = Identifiable
+public protocol DomainBasic: Identifiable, Equatable, Sendable
+    where ID == UUID {}
 
 /// Junction tables connecting entities
 ///
@@ -76,11 +75,11 @@ public typealias DomainBasic = Identifiable
 /// **Examples**: MeasuredAction, GoalRelevance, ActionGoalContribution
 ///
 /// **Fields**: id + FK references + relationship data
-public typealias DomainComposit = Identifiable
+public protocol DomainComposit: Identifiable, Equatable, Sendable
+    where ID == UUID {}
 
-/// Default equality: two entities are equal if they have the same UUID
-/// This represents identity (same database record), not value equality
-extension Identifiable {
+/// Default equality for Identifiable entities: two entities are equal if they have the same UUID
+extension Identifiable where Self: Equatable, ID == UUID {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         return lhs.id == rhs.id
     }

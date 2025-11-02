@@ -22,6 +22,7 @@ public enum ValueLevel: String, Codable, CaseIterable, Sendable, QueryRepresenta
     case major = "major"
     case highestOrder = "highest_order"
     case lifeArea = "life_area"
+    public static let queryRepresentationType: QueryRepresentationType = .text
 
     /// Default priority for this value level
     public var defaultPriority: Int {
@@ -140,7 +141,7 @@ public struct PersonalValue: DomainAbstraction {
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         priority: Int? = nil,
-        valueLevel: ValueLevel = .general,
+        valueLevel: valueLevel = .general,
         lifeDomain: String? = nil,
         alignmentGuidance: String? = nil,
         logTime: Date = Date(),
@@ -157,3 +158,19 @@ public struct PersonalValue: DomainAbstraction {
         self.alignmentGuidance = alignmentGuidance
     }
 }
+
+//   // In Models/Abstractions/PersonalValue.swift
+//   extension ValueLevel {
+//       public var displayName: String {
+//           switch self {
+//           case .general:
+//               return "General"
+//           case .major:
+//               return "Major Value"
+//           case .highestOrder:
+//               return "Highest Order"
+//           case .lifeArea:
+//               return "Life Area"
+//           }
+//       }
+//   }
