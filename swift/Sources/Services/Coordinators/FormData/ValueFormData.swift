@@ -1,7 +1,7 @@
 import Foundation
 import Models
 
-public struct ValueFormData {
+public struct ValueFormData: Sendable {
     public let title: String
     public let detailedDescription: String?
     public let freeformNotes: String?
