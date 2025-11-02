@@ -1,7 +1,19 @@
 import Foundation
 import SQLiteData
-import GRDB
+import GRDB  // ARCHITECTURE NOTE: Required for low-level database initialization
 import Models
+
+// ARCHITECTURE DECISION: Why GRDB import here?
+// CONTEXT: DatabaseBootstrap needs low-level database setup APIs
+// GRDB APIs REQUIRED (not exposed by SQLiteData):
+//   - DatabaseQueue(path:) - Constructor to create database file
+//   - barrierWriteWithoutTransaction - WAL mode setup outside transaction
+//   - Database.tableExists() - Schema initialization check
+//   - Database.execute(sql:) - Raw SQL execution for schema
+// ALTERNATIVE: Could use DatabaseMigrator (see SQLiteData examples)
+//   BUT: We already have schema_current.sql, so direct execute is simpler
+// PATTERN: Bootstrap uses GRDB, rest of app uses SQLiteData
+// SEE: sqlite-data-main/Examples/CaseStudies/SwiftUIDemo.swift:66-80 for migrator pattern
 
 public enum DatabaseBootstrap {
 
@@ -43,9 +55,13 @@ public enum DatabaseBootstrap {
             )
         }
 
+        // GRDB API: DatabaseQueue constructor
         let db = try DatabaseQueue(path: dbPath.path)
 
-        // Enable WAL mode - must be outside transaction
+        // GRDB API: barrierWriteWithoutTransaction for WAL mode
+        // ARCHITECTURE NOTE: WAL (Write-Ahead Logging) improves concurrency
+        // MUST be set outside transaction, hence barrierWriteWithoutTransaction
+        // SEE: https://www.sqlite.org/wal.html
         try db.barrierWriteWithoutTransaction { db in
             try db.execute(sql: "PRAGMA journal_mode = WAL")
         }
@@ -57,7 +73,7 @@ public enum DatabaseBootstrap {
     }
 
     private static func initializeSchema(_ db: DatabaseQueue) throws {
-        // Check if schema is already initialized
+        // GRDB API: Database.tableExists() check
         let hasSchema = try db.read { db in
             try db.tableExists("actions")
         }
@@ -77,7 +93,14 @@ public enum DatabaseBootstrap {
 
         let schemaSql = try String(contentsOf: schemaURL, encoding: .utf8)
 
-        // Execute schema creation
+        // GRDB API: Database.execute(sql:) for raw SQL
+        // ARCHITECTURE NOTE: We use direct SQL execution instead of DatabaseMigrator
+        // REASON: schema_current.sql is our source of truth, simpler to execute directly
+        // ALTERNATIVE: Could use DatabaseMigrator like SQLiteData examples
+        //   migrator.registerMigration("v1") { db in try db.execute(sql: schemaSql) }
+        //   Pro: Migration tracking, can add incremental migrations later
+        //   Con: More boilerplate for our current single-schema approach
+        // DECISION: Stick with direct execution until we need migration versioning
         try db.write { db in
             try db.execute(sql: schemaSql)
         }
@@ -90,6 +113,7 @@ public enum DatabaseBootstrap {
     }
 
     private static func createSyncEngine(for db: DatabaseQueue) throws -> SyncEngine {
+        // SyncEngine is from SQLiteData - handles CloudKit sync
         return try SyncEngine(
             for: db,
             tables:

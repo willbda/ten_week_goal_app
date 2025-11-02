@@ -109,15 +109,15 @@ let package = Package(
         // TESTS
         // =========================================================================
 
-        // View Tests
-        .testTarget(
-            name: "ViewTests",
-            dependencies: [
-                "App",
-                "Models",
-            ],
-            path: "Tests/ViewTests"
-        )
+        // View Tests - Disabled until Tests/ViewTests directory created
+        // .testTarget(
+        //     name: "ViewTests",
+        //     dependencies: [
+        //         "App",
+        //         "Models",
+        //     ],
+        //     path: "Tests/ViewTests"
+        // )
     ],
 
     // MARK: - Swift Language Settings

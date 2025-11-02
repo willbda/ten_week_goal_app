@@ -38,12 +38,8 @@
                   Label("Goals", systemImage: "target")
               }
 
-              // Tab 4: Values (Future Sprint 3)
-              PlaceholderTab(
-                  icon: "heart",
-                  title: "Values",
-                  subtitle: "Coming in Sprint 3"
-              )
+              // Tab 4: Values (Phase 3 - Complete)
+              PersonalValuesListView()
               .tabItem {
                   Label("Values", systemImage: "heart.fill")
               }
