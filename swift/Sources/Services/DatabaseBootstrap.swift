@@ -19,15 +19,29 @@ public enum DatabaseBootstrap {
     }
 
     private static func createDatabase() throws -> DatabaseQueue {
-        let dbPath = FileManager.default.urls(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask
-        )[0].appendingPathComponent("GoalTracker/application_data.db")
+        let dbPath: URL
+        if ProcessInfo.processInfo.environment["USE_TEST_DB"] == "1" {
+            dbPath = FileManager.default.urls(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask
+            )[0].appendingPathComponent("GoalTracker/testing.db")
 
-        try FileManager.default.createDirectory(
-            at: dbPath.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
+            try FileManager.default.createDirectory(
+                at: dbPath.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            print("⚠️ Using TEST database at: \(dbPath.path)")
+        } else {
+            dbPath = FileManager.default.urls(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask
+            )[0].appendingPathComponent("GoalTracker/application_data.db")
+
+            try FileManager.default.createDirectory(
+                at: dbPath.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+        }
 
         let db = try DatabaseQueue(path: dbPath.path)
 
@@ -79,12 +93,20 @@ public enum DatabaseBootstrap {
         return try SyncEngine(
             for: db,
             tables:
-                Action.self, Expectation.self, Measure.self,
-                PersonalValue.self, TimePeriod.self,
-                Goal.self, Milestone.self, Obligation.self,
-                GoalTerm.self, ExpectationMeasure.self,
-                MeasuredAction.self, GoalRelevance.self,
-                ActionGoalContribution.self, TermGoalAssignment.self
+                Action.self,
+                Expectation.self,
+                Measure.self,
+                PersonalValue.self,
+                TimePeriod.self,
+                Goal.self,
+                Milestone.self,
+                Obligation.self,
+                GoalTerm.self,
+                ExpectationMeasure.self,
+                MeasuredAction.self,
+                GoalRelevance.self,
+                ActionGoalContribution.self,
+                TermGoalAssignment.self
         )
     }
 }
