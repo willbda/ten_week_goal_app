@@ -17,12 +17,14 @@ import SQLiteData
 ///
 /// Replaces polymorphic subtypes with a clean enum approach.
 /// This enables a single unified table while maintaining type distinction.
+///
+/// NOTE: QueryRepresentable + QueryBindable conformance required by SQLiteData's @Table macro.
+/// See SQLiteData+ModelExtensions.swift for the implementation.
 public enum ValueLevel: String, Codable, CaseIterable, Sendable, QueryRepresentable, QueryBindable {
     case general = "general"
     case major = "major"
     case highestOrder = "highest_order"
     case lifeArea = "life_area"
-    public static let queryRepresentationType: QueryRepresentationType = .text
 
     /// Default priority for this value level
     public var defaultPriority: Int {
@@ -38,15 +40,20 @@ public enum ValueLevel: String, Codable, CaseIterable, Sendable, QueryRepresenta
         }
     }
 
-    /// Human-readable description of this level
-    public var description: String {
+    /// Display name for UI presentation
+    ///
+    /// NOTE: This is domain knowledge (what each level means), so it lives in Models.
+    /// ALTERNATIVE: Could move to View layer if we want Models to be purely data.
+    /// TRADEOFF: Moving to Views means duplicating this knowledge if used in multiple views.
+    /// DECISION: Keep here for now; reconsider in Phase 5 if UI needs diverge from domain names.
+    public var displayName: String {
         switch self {
         case .general:
-            return "General Value"
+            return "General"
         case .major:
             return "Major Value"
         case .highestOrder:
-            return "Highest Order Value"
+            return "Highest Order"
         case .lifeArea:
             return "Life Area"
         }
@@ -109,7 +116,8 @@ public struct PersonalValue: DomainAbstraction {
     // MARK: - Value-specific Properties
 
     /// Priority level (1-100, lower number = higher priority)
-    public var priority: Int
+    /// Optional - defaults to valueLevel.defaultPriority if not set
+    public var priority: Int?
 
     /// Classification of this value
     public var valueLevel: ValueLevel
@@ -141,7 +149,7 @@ public struct PersonalValue: DomainAbstraction {
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         priority: Int? = nil,
-        valueLevel: valueLevel = .general,
+        valueLevel: ValueLevel = .general,
         lifeDomain: String? = nil,
         alignmentGuidance: String? = nil,
         logTime: Date = Date(),
@@ -156,20 +164,5 @@ public struct PersonalValue: DomainAbstraction {
         self.valueLevel = valueLevel
         self.lifeDomain = lifeDomain
         self.alignmentGuidance = alignmentGuidance
-    }
-}
-
-extension ValueLevel {
-    public var displayName: String {
-        switch self {
-        case .general:
-            return "General"
-        case .major:
-            return "Major Value"
-        case .highestOrder:
-            return "Highest Order"
-        case .lifeArea:
-            return "Life Area"
-        }
     }
 }

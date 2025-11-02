@@ -2,8 +2,25 @@ import Models
 import SQLiteData
 import SwiftUI
 
+// ARCHITECTURE DECISION: Why @FetchAll instead of ViewModel?
+// CONTEXT: Evaluated different patterns for fetching data in list views
+// OPTIONS CONSIDERED:
+//   A. ViewModel with @Published values array (Repository pattern)
+//   B. @FetchAll directly in View (SwiftUI + SQLiteData pattern)
+//   C. @Query from SwiftData (if we were using SwiftData instead of SQLiteData)
+// WHY @FetchAll:
+//   - Reactive updates: Values automatically refresh when database changes
+//   - Minimal boilerplate: No ViewModel needed for simple lists
+//   - Type-safe: Query defined at compile-time (PersonalValue.all)
+//   - Memory efficient: SQLiteData handles pagination under the hood
+// WHEN TO USE VIEWMODEL INSTEAD:
+//   - Complex filtering/sorting logic
+//   - Multi-source data aggregation
+//   - Business logic coordination
+// SEE: ActionListView for example of list WITH ViewModel (complex filtering)
+
 public struct PersonalValuesListView: View {
-    @Query private var values: [PersonalValue]
+    @FetchAll(PersonalValue.all) private var values
     @State private var showingAddValue = false
 
     public init() {}
@@ -23,7 +40,7 @@ public struct PersonalValuesListView: View {
                             // TODO: Phase 4 - Add Edit Navigation
                             // PATTERN: NavigationLink { PersonalValuesFormView(mode: .edit(value)) }
                             // REQUIRES: Edit mode support in FormView
-                            ValueRowView(value: value)
+                            PersonalValuesRowView(value: value)
                         }
                         // TODO: Phase 4 - Add Delete Functionality
                         // .onDelete { indexSet in

@@ -1,7 +1,7 @@
 import Models
 import SwiftUI
 
-public struct ValueRowView: View {
+public struct PersonalValuesRowView: View {
     let value: PersonalValue
 
     public init(value: PersonalValue) {
@@ -18,10 +18,11 @@ public struct ValueRowView: View {
 
                 // Using BadgeView for consistent badge styling across app
                 if let priority = value.priority {
-                    BadgeView(badge: Badge(
-                        text: "\(priority)",
-                        color: .secondary
-                    ))
+                    BadgeView(
+                        badge: Badge(
+                            text: "\(priority)",
+                            color: .secondary
+                        ))
                 }
             }
 
@@ -34,14 +35,15 @@ public struct ValueRowView: View {
 
             // Life domain as badge for visual distinction
             if let domain = value.lifeDomain {
-                BadgeView(badge: Badge(
-                    text: domain,
-                    color: .purple.opacity(0.8)
-                ))
+                BadgeView(
+                    badge: Badge(
+                        text: domain,
+                        color: .purple.opacity(0.8)
+                    )
+                )
                 .padding(.top, 2)
             }
         }
         .padding(.vertical, 4)
     }
 }
-

@@ -10,7 +10,7 @@
 // Implements MeasurementDisplayContract from ComponentContracts.
 //
 // REUSABILITY:
-// Used by ActionRowView, GoalRowView, TermRowView, ValueRowView for consistent
+// Used by ActionRowView, GoalRowView, TermRowView, PersonalValuesRowView for consistent
 // measurement display across the app.
 
 import Foundation
@@ -139,10 +139,12 @@ public struct MeasurementDisplay: Identifiable {
         Group {
             Text("Distance:")
                 .font(.caption).foregroundStyle(.secondary)
-            Text(MeasurementDisplay(
-                value: 5.2, unit: "km", measureType: "distance"
-            ).displayString)
-                .font(.headline)
+            Text(
+                MeasurementDisplay(
+                    value: 5.2, unit: "km", measureType: "distance"
+                ).displayString
+            )
+            .font(.headline)
         }
 
         Divider()
@@ -150,10 +152,12 @@ public struct MeasurementDisplay: Identifiable {
         Group {
             Text("Time:")
                 .font(.caption).foregroundStyle(.secondary)
-            Text(MeasurementDisplay(
-                value: 28.0, unit: "minutes", measureType: "time"
-            ).displayString)
-                .font(.headline)
+            Text(
+                MeasurementDisplay(
+                    value: 28.0, unit: "minutes", measureType: "time"
+                ).displayString
+            )
+            .font(.headline)
         }
 
         Divider()
@@ -161,10 +165,12 @@ public struct MeasurementDisplay: Identifiable {
         Group {
             Text("Count:")
                 .font(.caption).foregroundStyle(.secondary)
-            Text(MeasurementDisplay(
-                value: 3, unit: "occasions", measureType: "count"
-            ).displayString)
-                .font(.headline)
+            Text(
+                MeasurementDisplay(
+                    value: 3, unit: "occasions", measureType: "count"
+                ).displayString
+            )
+            .font(.headline)
         }
 
         Divider()
@@ -172,10 +178,12 @@ public struct MeasurementDisplay: Identifiable {
         Group {
             Text("Whole Number:")
                 .font(.caption).foregroundStyle(.secondary)
-            Text(MeasurementDisplay(
-                value: 10.0, unit: "km", measureType: "distance"
-            ).displayString)
-                .font(.headline)
+            Text(
+                MeasurementDisplay(
+                    value: 10.0, unit: "km", measureType: "distance"
+                ).displayString
+            )
+            .font(.headline)
         }
     }
     .padding()
@@ -186,12 +194,13 @@ public struct MeasurementDisplay: Identifiable {
         ForEach([
             MeasurementDisplay(value: 5.2, unit: "km", measureType: "distance"),
             MeasurementDisplay(value: 28.0, unit: "min", measureType: "time"),
-            MeasurementDisplay(value: 3, unit: "occasions", measureType: "count")
+            MeasurementDisplay(value: 3, unit: "occasions", measureType: "count"),
         ]) { measurement in
-            BadgeView(badge: Badge(
-                text: measurement.displayString,
-                color: measurement.color
-            ))
+            BadgeView(
+                badge: Badge(
+                    text: measurement.displayString,
+                    color: measurement.color
+                ))
         }
     }
     .padding()
@@ -203,7 +212,7 @@ public struct MeasurementDisplay: Identifiable {
             MeasurementDisplay(value: 5.2, unit: "km", measureType: "distance"),
             MeasurementDisplay(value: 2.5, unit: "hours", measureType: "time"),
             MeasurementDisplay(value: 10, unit: "reps", measureType: "count"),
-            MeasurementDisplay(value: 75.0, unit: "kg", measureType: "mass")
+            MeasurementDisplay(value: 75.0, unit: "kg", measureType: "mass"),
         ]) { measurement in
             HStack {
                 Circle()
@@ -224,9 +233,10 @@ public struct MeasurementDisplay: Identifiable {
             .font(.caption).foregroundStyle(.secondary)
 
         ForEach([1.0, 5.0, 100.0], id: \.self) { value in
-            Text(MeasurementDisplay(
-                value: value, unit: "km", measureType: "distance"
-            ).displayString)
+            Text(
+                MeasurementDisplay(
+                    value: value, unit: "km", measureType: "distance"
+                ).displayString)
         }
 
         Divider()
@@ -235,9 +245,10 @@ public struct MeasurementDisplay: Identifiable {
             .font(.caption).foregroundStyle(.secondary)
 
         ForEach([1.5, 5.2, 10.7], id: \.self) { value in
-            Text(MeasurementDisplay(
-                value: value, unit: "km", measureType: "distance"
-            ).displayString)
+            Text(
+                MeasurementDisplay(
+                    value: value, unit: "km", measureType: "distance"
+                ).displayString)
         }
     }
     .padding()
