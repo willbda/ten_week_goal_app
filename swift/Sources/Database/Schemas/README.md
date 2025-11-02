@@ -1,45 +1,35 @@
-# Database Schemas
+# Database Schema
 
-SQL schema definitions for the Ten Week Goal App database.
+SQL schema definition for the Ten Week Goal App database.
 
-## Files
+## File
 
 ### `schema_current.sql`
-**Complete production schema** matching Swift models as of 2025-10-31.
-Contains all tables with foreign keys and constraints. Use this for:
-- Creating new databases
-- Reference documentation
-- Understanding complete schema structure
+**Single source of truth** for the complete production schema.
 
-### Layer-Specific Files
+Contains all tables organized by layer:
+1. **Abstraction Layer** - Full metadata entities (DomainAbstraction)
+   - Tables: actions, expectations, measures, personalValues, timePeriods
+   - Fields: id + title + detailedDescription + freeformNotes + logTime + type-specific
 
-**`abstractions.sql`**
-- Entities with full metadata (DomainAbstraction)
-- Tables: actions, expectations, measures, personalvalues, timeperiods
-- 5 base fields + type-specific fields
+2. **Basic Layer** - Lightweight working entities (DomainBasic)
+   - Tables: goals, milestones, obligations, goalTerms, expectationMeasures
+   - Fields: id + FK references + type-specific
+   - Reference Abstractions via FK
 
-**`basics.sql`**
-- Lightweight working entities (DomainBasic)
-- Tables: goals, milestones, obligations, goalterms, expectationmeasures
-- Reference Abstractions via FK
+3. **Composit Layer** - Pure junction tables (DomainComposit)
+   - Tables: measuredActions, goalRelevances, actionGoalContributions, termGoalAssignments
+   - Fields: id + multiple FK references + relationship data
 
-**`composits.sql`**
-- Pure junction tables (DomainComposit)
-- Tables: measuredactions, goalrelevances, actiongoalcontributions, termgoalassignments
-- Minimal fields (id + FKs + relationship data)
+4. **Staging Layer** - Apple SDK data ingestion
+   - Table: appledata
+   - Purpose: Raw JSON storage for HealthKit/EventKit responses
 
 ## Usage
 
-### Create Complete Database
+### Create Database
 ```bash
 sqlite3 mydb.db < schema_current.sql
-```
-
-### Create Layer-by-Layer
-```bash
-sqlite3 mydb.db < abstractions.sql
-sqlite3 mydb.db < basics.sql
-sqlite3 mydb.db < composits.sql
 ```
 
 ### Verify Schema
@@ -101,5 +91,6 @@ Will be added separately once query patterns are established.
 
 ---
 
-**Last Updated**: 2025-10-31
-**Swift Models Version**: Current production models
+**Last Updated**: 2025-11-01
+**Schema Organization**: Single file (schema_current.sql) - component files removed to prevent duplication
+**Table Naming**: lowerCamelCase to match SQLiteData @Table macro convention
