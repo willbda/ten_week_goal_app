@@ -46,10 +46,10 @@ The current schema has fundamental issues that prevent efficient querying, prope
 
 # Current Status
 
-## ✅ Completed (Phases 1-2)
+## Tested Phases 1-2
 - **Database Schema**: Full 3NF normalization designed and tested
 - **Swift Models**: All entities and junction tables created
-- **Migration Script**: Successfully migrated 381 actions, 16 goals, 13 values
+- **Migration Script**: Successfully tested migration 381 actions, 16 goals, 13 values
 - **Documentation**: Schema design, challenges, and rationale documented
 
 ## ⚠️ Breaking Changes Introduced (2025-10-30)
@@ -330,7 +330,7 @@ See [Sources/Database/SCHEMA_FINAL.md](swift/Sources/Database/SCHEMA_FINAL.md) f
 
 ## Still Needed: Model Cleanup
 
-- [ ] **Remove ALL legacy support**
+- [x] **Remove ALL legacy support**
   ```swift
   // Remove this:
   public init(termUUID: UUID, goalUUID: UUID, ...) // Legacy

@@ -7,79 +7,70 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		38CFE0CE2EB5C0560060016C /* App in Frameworks */ = {isa = PBXBuildFile; productRef = 38CFE0CD2EB5C0560060016C /* App */; };
-		38E2EE762EADD5270085019E /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 38E2EE752EADD5270085019E /* AppIcon.icon */; };
-		38E2EE772EADD5270085019E /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 38E2EE752EADD5270085019E /* AppIcon.icon */; };
-		38E2EE782EADD5270085019E /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 38E2EE752EADD5270085019E /* AppIcon.icon */; };
+		388F12B22EB6C2DB00A8CED4 /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = 388F12B12EB6C2DB00A8CED4 /* Models */; };
+		388F12B42EB6C2DB00A8CED4 /* Services in Frameworks */ = {isa = PBXBuildFile; productRef = 388F12B32EB6C2DB00A8CED4 /* Services */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		38DC69932EAC6A13001761FC /* PBXContainerItemProxy */ = {
+		388F12872EB6BEDF00A8CED4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 38DC697D2EAC6A11001761FC /* Project object */;
+			containerPortal = 388F12712EB6BEDE00A8CED4 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 38DC69842EAC6A11001761FC;
-			remoteInfo = GoalTracker;
+			remoteGlobalIDString = 388F12782EB6BEDE00A8CED4;
+			remoteInfo = GoalTrackerII;
 		};
-		38DC699D2EAC6A13001761FC /* PBXContainerItemProxy */ = {
+		388F12912EB6BEDF00A8CED4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 38DC697D2EAC6A11001761FC /* Project object */;
+			containerPortal = 388F12712EB6BEDE00A8CED4 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 38DC69842EAC6A11001761FC;
-			remoteInfo = GoalTracker;
+			remoteGlobalIDString = 388F12782EB6BEDE00A8CED4;
+			remoteInfo = GoalTrackerII;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		3867B1132EB51381009EE277 /* Package.resolved */ = {isa = PBXFileReference; lastKnownFileType = text; path = Package.resolved; sourceTree = "<group>"; };
-		3867B1142EB51381009EE277 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		38D1EF892EACCC95004BE243 /* GoalTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GoalTracker.entitlements; sourceTree = "<group>"; };
-		38E2EE752EADD5270085019E /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
-		38E2EE792EB07D0D0085019E /* GoalTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GoalTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		38E2EE7A2EB07D0D0085019E /* GoalTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GoalTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		38E2EE7B2EB07D0D0085019E /* GoalTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GoalTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		388F12792EB6BEDE00A8CED4 /* GoalTrackerApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GoalTrackerApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		388F12862EB6BEDF00A8CED4 /* GoalTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GoalTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		388F12902EB6BEDF00A8CED4 /* GoalTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GoalTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		388F12B62EB6CD7900A8CED4 /* GoalTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = GoalTracker.entitlements; path = ../GoalTracker.entitlements; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		3867B10B2EB51381009EE277 /* docs */ = {
+		388F127B2EB6BEDE00A8CED4 /* GoalTrackerApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = docs;
+			path = GoalTrackerApp;
 			sourceTree = "<group>";
 		};
-		3867B1112EB51381009EE277 /* iOS */ = {
+		388F12892EB6BEDF00A8CED4 /* GoalTrackerTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = iOS;
+			path = GoalTrackerTests;
 			sourceTree = "<group>";
 		};
-		3867B16F2EB51381009EE277 /* Sources */ = {
+		388F12932EB6BEDF00A8CED4 /* GoalTrackerUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Sources;
-			sourceTree = "<group>";
-		};
-		3867B1832EB51381009EE277 /* Tests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Tests;
+			path = GoalTrackerUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		38DC69822EAC6A11001761FC /* Frameworks */ = {
+		388F12762EB6BEDE00A8CED4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				38CFE0CE2EB5C0560060016C /* App in Frameworks */,
+				388F12B42EB6C2DB00A8CED4 /* Services in Frameworks */,
+				388F12B22EB6C2DB00A8CED4 /* Models in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		38DC698F2EAC6A13001761FC /* Frameworks */ = {
+		388F12832EB6BEDF00A8CED4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		38DC69992EAC6A13001761FC /* Frameworks */ = {
+		388F128D2EB6BEDF00A8CED4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -89,184 +80,187 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		38CFE0CC2EB5C0560060016C /* Frameworks */ = {
+		388F12702EB6BEDE00A8CED4 = {
 			isa = PBXGroup;
 			children = (
+				388F12B62EB6CD7900A8CED4 /* GoalTracker.entitlements */,
+				388F127B2EB6BEDE00A8CED4 /* GoalTrackerApp */,
+				388F12892EB6BEDF00A8CED4 /* GoalTrackerTests */,
+				388F12932EB6BEDF00A8CED4 /* GoalTrackerUITests */,
+				388F127A2EB6BEDE00A8CED4 /* Products */,
 			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		38DC697C2EAC6A11001761FC = {
+		388F127A2EB6BEDE00A8CED4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3867B10B2EB51381009EE277 /* docs */,
-				3867B1112EB51381009EE277 /* iOS */,
-				3867B1132EB51381009EE277 /* Package.resolved */,
-				3867B1142EB51381009EE277 /* Package.swift */,
-				3867B16F2EB51381009EE277 /* Sources */,
-				3867B1832EB51381009EE277 /* Tests */,
-				38D1EF892EACCC95004BE243 /* GoalTracker.entitlements */,
-				38E2EE752EADD5270085019E /* AppIcon.icon */,
-				38E2EE792EB07D0D0085019E /* GoalTracker.app */,
-				38E2EE7A2EB07D0D0085019E /* GoalTrackerTests.xctest */,
-				38E2EE7B2EB07D0D0085019E /* GoalTrackerUITests.xctest */,
-				38CFE0CC2EB5C0560060016C /* Frameworks */,
+				388F12792EB6BEDE00A8CED4 /* GoalTrackerApp.app */,
+				388F12862EB6BEDF00A8CED4 /* GoalTrackerTests.xctest */,
+				388F12902EB6BEDF00A8CED4 /* GoalTrackerUITests.xctest */,
 			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		38DC69842EAC6A11001761FC /* GoalTracker */ = {
+		388F12782EB6BEDE00A8CED4 /* GoalTrackerApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 38DC69A62EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTracker" */;
+			buildConfigurationList = 388F129A2EB6BEDF00A8CED4 /* Build configuration list for PBXNativeTarget "GoalTrackerApp" */;
 			buildPhases = (
-				38DC69812EAC6A11001761FC /* Sources */,
-				38DC69822EAC6A11001761FC /* Frameworks */,
-				38DC69832EAC6A11001761FC /* Resources */,
+				388F12752EB6BEDE00A8CED4 /* Sources */,
+				388F12762EB6BEDE00A8CED4 /* Frameworks */,
+				388F12772EB6BEDE00A8CED4 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = GoalTracker;
-			packageProductDependencies = (
-				38CFE0CD2EB5C0560060016C /* App */,
+			fileSystemSynchronizedGroups = (
+				388F127B2EB6BEDE00A8CED4 /* GoalTrackerApp */,
 			);
-			productName = GoalTracker;
-			productReference = 38E2EE792EB07D0D0085019E /* GoalTracker.app */;
+			name = GoalTrackerApp;
+			packageProductDependencies = (
+				388F12B12EB6C2DB00A8CED4 /* Models */,
+				388F12B32EB6C2DB00A8CED4 /* Services */,
+			);
+			productName = GoalTrackerII;
+			productReference = 388F12792EB6BEDE00A8CED4 /* GoalTrackerApp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		38DC69912EAC6A13001761FC /* GoalTrackerTests */ = {
+		388F12852EB6BEDF00A8CED4 /* GoalTrackerTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 38DC69A92EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTrackerTests" */;
+			buildConfigurationList = 388F129D2EB6BEDF00A8CED4 /* Build configuration list for PBXNativeTarget "GoalTrackerTests" */;
 			buildPhases = (
-				38DC698E2EAC6A13001761FC /* Sources */,
-				38DC698F2EAC6A13001761FC /* Frameworks */,
-				38DC69902EAC6A13001761FC /* Resources */,
+				388F12822EB6BEDF00A8CED4 /* Sources */,
+				388F12832EB6BEDF00A8CED4 /* Frameworks */,
+				388F12842EB6BEDF00A8CED4 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				38DC69942EAC6A13001761FC /* PBXTargetDependency */,
+				388F12882EB6BEDF00A8CED4 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				388F12892EB6BEDF00A8CED4 /* GoalTrackerTests */,
 			);
 			name = GoalTrackerTests;
 			packageProductDependencies = (
 			);
-			productName = GoalTrackerTests;
-			productReference = 38E2EE7A2EB07D0D0085019E /* GoalTrackerTests.xctest */;
+			productName = GoalTrackerIITests;
+			productReference = 388F12862EB6BEDF00A8CED4 /* GoalTrackerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		38DC699B2EAC6A13001761FC /* GoalTrackerUITests */ = {
+		388F128F2EB6BEDF00A8CED4 /* GoalTrackerUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 38DC69AC2EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTrackerUITests" */;
+			buildConfigurationList = 388F12A02EB6BEDF00A8CED4 /* Build configuration list for PBXNativeTarget "GoalTrackerUITests" */;
 			buildPhases = (
-				38DC69982EAC6A13001761FC /* Sources */,
-				38DC69992EAC6A13001761FC /* Frameworks */,
-				38DC699A2EAC6A13001761FC /* Resources */,
+				388F128C2EB6BEDF00A8CED4 /* Sources */,
+				388F128D2EB6BEDF00A8CED4 /* Frameworks */,
+				388F128E2EB6BEDF00A8CED4 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				38DC699E2EAC6A13001761FC /* PBXTargetDependency */,
+				388F12922EB6BEDF00A8CED4 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				388F12932EB6BEDF00A8CED4 /* GoalTrackerUITests */,
 			);
 			name = GoalTrackerUITests;
 			packageProductDependencies = (
 			);
-			productName = GoalTrackerUITests;
-			productReference = 38E2EE7B2EB07D0D0085019E /* GoalTrackerUITests.xctest */;
+			productName = GoalTrackerIIUITests;
+			productReference = 388F12902EB6BEDF00A8CED4 /* GoalTrackerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		38DC697D2EAC6A11001761FC /* Project object */ = {
+		388F12712EB6BEDE00A8CED4 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
-					38DC69842EAC6A11001761FC = {
+					388F12782EB6BEDE00A8CED4 = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
-					38DC69912EAC6A13001761FC = {
+					388F12852EB6BEDF00A8CED4 = {
 						CreatedOnToolsVersion = 26.0.1;
-						TestTargetID = 38DC69842EAC6A11001761FC;
+						TestTargetID = 388F12782EB6BEDE00A8CED4;
 					};
-					38DC699B2EAC6A13001761FC = {
+					388F128F2EB6BEDF00A8CED4 = {
 						CreatedOnToolsVersion = 26.0.1;
-						TestTargetID = 38DC69842EAC6A11001761FC;
+						TestTargetID = 388F12782EB6BEDE00A8CED4;
 					};
 				};
 			};
-			buildConfigurationList = 38DC69802EAC6A11001761FC /* Build configuration list for PBXProject "GoalTracker" */;
+			buildConfigurationList = 388F12742EB6BEDE00A8CED4 /* Build configuration list for PBXProject "GoalTrackerII" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = 38DC697C2EAC6A11001761FC;
+			mainGroup = 388F12702EB6BEDE00A8CED4;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				3867B2932EB5BE89009EE277 /* XCLocalSwiftPackageReference "../swift" */,
+				388F12B02EB6C2DB00A8CED4 /* XCLocalSwiftPackageReference "../../swift" */,
 			);
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 38DC697C2EAC6A11001761FC;
+			productRefGroup = 388F127A2EB6BEDE00A8CED4 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				38DC69842EAC6A11001761FC /* GoalTracker */,
-				38DC69912EAC6A13001761FC /* GoalTrackerTests */,
-				38DC699B2EAC6A13001761FC /* GoalTrackerUITests */,
+				388F12782EB6BEDE00A8CED4 /* GoalTrackerApp */,
+				388F12852EB6BEDF00A8CED4 /* GoalTrackerTests */,
+				388F128F2EB6BEDF00A8CED4 /* GoalTrackerUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		38DC69832EAC6A11001761FC /* Resources */ = {
+		388F12772EB6BEDE00A8CED4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				38E2EE772EADD5270085019E /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		38DC69902EAC6A13001761FC /* Resources */ = {
+		388F12842EB6BEDF00A8CED4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				38E2EE762EADD5270085019E /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		38DC699A2EAC6A13001761FC /* Resources */ = {
+		388F128E2EB6BEDF00A8CED4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				38E2EE782EADD5270085019E /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		38DC69812EAC6A11001761FC /* Sources */ = {
+		388F12752EB6BEDE00A8CED4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		38DC698E2EAC6A13001761FC /* Sources */ = {
+		388F12822EB6BEDF00A8CED4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		38DC69982EAC6A13001761FC /* Sources */ = {
+		388F128C2EB6BEDF00A8CED4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -276,20 +270,20 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		38DC69942EAC6A13001761FC /* PBXTargetDependency */ = {
+		388F12882EB6BEDF00A8CED4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 38DC69842EAC6A11001761FC /* GoalTracker */;
-			targetProxy = 38DC69932EAC6A13001761FC /* PBXContainerItemProxy */;
+			target = 388F12782EB6BEDE00A8CED4 /* GoalTrackerApp */;
+			targetProxy = 388F12872EB6BEDF00A8CED4 /* PBXContainerItemProxy */;
 		};
-		38DC699E2EAC6A13001761FC /* PBXTargetDependency */ = {
+		388F12922EB6BEDF00A8CED4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 38DC69842EAC6A11001761FC /* GoalTracker */;
-			targetProxy = 38DC699D2EAC6A13001761FC /* PBXContainerItemProxy */;
+			target = 388F12782EB6BEDE00A8CED4 /* GoalTrackerApp */;
+			targetProxy = 388F12912EB6BEDF00A8CED4 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		38DC69A42EAC6A13001761FC /* Debug */ = {
+		388F12982EB6BEDF00A8CED4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -326,7 +320,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 2DT4MGA664;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = NO;
+				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -351,7 +345,7 @@
 			};
 			name = Debug;
 		};
-		38DC69A52EAC6A13001761FC /* Release */ = {
+		388F12992EB6BEDF00A8CED4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -385,7 +379,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 2DT4MGA664;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -405,33 +399,20 @@
 			};
 			name = Release;
 		};
-		38DC69A72EAC6A13001761FC /* Debug */ = {
+		388F129B2EB6BEDF00A8CED4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				AUTOMATION_APPLE_EVENTS = NO;
-				CODE_SIGN_ENTITLEMENTS = GoalTracker.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2DT4MGA664;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
-				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
-				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
-				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
-				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = Testing;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = Testing;
-				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = Testing;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -447,15 +428,11 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTracker;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerApp;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = GoalTrackerApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
-				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
-				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
-				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
-				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
-				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
-				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -463,39 +440,26 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 6.0;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};
-		38DC69A82EAC6A13001761FC /* Release */ = {
+		388F129C2EB6BEDF00A8CED4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				AUTOMATION_APPLE_EVENTS = NO;
-				CODE_SIGN_ENTITLEMENTS = GoalTracker.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2DT4MGA664;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
-				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
-				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
-				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
-				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = Testing;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = Testing;
-				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = Testing;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -511,15 +475,11 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTracker;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerApp;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = GoalTrackerApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
-				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
-				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
-				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
-				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
-				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
-				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -527,17 +487,16 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 6.0;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
 		};
-		38DC69AA2EAC6A13001761FC /* Debug */ = {
+		388F129E2EB6BEDF00A8CED4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_ENTITLEMENTS = GoalTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2DT4MGA664;
@@ -545,7 +504,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerIITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -555,16 +514,15 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GoalTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GoalTracker";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GoalTrackerII.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GoalTrackerII";
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};
-		38DC69AB2EAC6A13001761FC /* Release */ = {
+		388F129F2EB6BEDF00A8CED4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_ENTITLEMENTS = GoalTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2DT4MGA664;
@@ -572,7 +530,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerIITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -582,15 +540,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GoalTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GoalTracker";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GoalTrackerII.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GoalTrackerII";
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
 		};
-		38DC69AD2EAC6A13001761FC /* Debug */ = {
+		388F12A12EB6BEDF00A8CED4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = GoalTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2DT4MGA664;
@@ -598,7 +555,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerIIUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -608,15 +565,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = GoalTracker;
+				TEST_TARGET_NAME = GoalTrackerII;
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};
-		38DC69AE2EAC6A13001761FC /* Release */ = {
+		388F12A22EB6BEDF00A8CED4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = GoalTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2DT4MGA664;
@@ -624,7 +580,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerIIUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -634,7 +590,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = GoalTracker;
+				TEST_TARGET_NAME = GoalTrackerII;
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
@@ -642,38 +598,38 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		38DC69802EAC6A11001761FC /* Build configuration list for PBXProject "GoalTracker" */ = {
+		388F12742EB6BEDE00A8CED4 /* Build configuration list for PBXProject "GoalTrackerII" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				38DC69A42EAC6A13001761FC /* Debug */,
-				38DC69A52EAC6A13001761FC /* Release */,
+				388F12982EB6BEDF00A8CED4 /* Debug */,
+				388F12992EB6BEDF00A8CED4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		38DC69A62EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTracker" */ = {
+		388F129A2EB6BEDF00A8CED4 /* Build configuration list for PBXNativeTarget "GoalTrackerApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				38DC69A72EAC6A13001761FC /* Debug */,
-				38DC69A82EAC6A13001761FC /* Release */,
+				388F129B2EB6BEDF00A8CED4 /* Debug */,
+				388F129C2EB6BEDF00A8CED4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		38DC69A92EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTrackerTests" */ = {
+		388F129D2EB6BEDF00A8CED4 /* Build configuration list for PBXNativeTarget "GoalTrackerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				38DC69AA2EAC6A13001761FC /* Debug */,
-				38DC69AB2EAC6A13001761FC /* Release */,
+				388F129E2EB6BEDF00A8CED4 /* Debug */,
+				388F129F2EB6BEDF00A8CED4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		38DC69AC2EAC6A13001761FC /* Build configuration list for PBXNativeTarget "GoalTrackerUITests" */ = {
+		388F12A02EB6BEDF00A8CED4 /* Build configuration list for PBXNativeTarget "GoalTrackerUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				38DC69AD2EAC6A13001761FC /* Debug */,
-				38DC69AE2EAC6A13001761FC /* Release */,
+				388F12A12EB6BEDF00A8CED4 /* Debug */,
+				388F12A22EB6BEDF00A8CED4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -681,19 +637,22 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		3867B2932EB5BE89009EE277 /* XCLocalSwiftPackageReference "../swift" */ = {
+		388F12B02EB6C2DB00A8CED4 /* XCLocalSwiftPackageReference "../../swift" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../swift;
+			relativePath = ../../swift;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		38CFE0CD2EB5C0560060016C /* App */ = {
+		388F12B12EB6C2DB00A8CED4 /* Models */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3867B2932EB5BE89009EE277 /* XCLocalSwiftPackageReference "../swift" */;
-			productName = App;
+			productName = Models;
+		};
+		388F12B32EB6C2DB00A8CED4 /* Services */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Services;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 38DC697D2EAC6A11001761FC /* Project object */;
+	rootObject = 388F12712EB6BEDE00A8CED4 /* Project object */;
 }

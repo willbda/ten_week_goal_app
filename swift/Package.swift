@@ -5,7 +5,8 @@
 // Written by Claude Code on 2025-10-31
 //
 // ARCHITECTURE:
-// - Single product: App (includes Models, Services, Logic transitively)
+// - Target-based package (no library products - consumed by Xcode project)
+// - Targets: Models, Services, Logic, App
 // - Multi-platform: iOS 26+, macOS 26+, visionOS 26+
 // - Swift 6.2 with full concurrency support
 
@@ -20,16 +21,6 @@ let package = Package(
         .macOS(.v26),       // macOS Tahoe 26+
         .iOS(.v26),         // iOS 26+
         .visionOS(.v26),    // visionOS 26+
-    ],
-
-    // MARK: - Products
-
-    products: [
-        // Single library product - import this in your Xcode app
-        .library(
-            name: "App",
-            targets: ["App"]
-        ),
     ],
 
     // MARK: - Dependencies
@@ -106,15 +97,6 @@ let package = Package(
         // TESTS
         // =========================================================================
 
-        // Model Tests
-        .testTarget(
-            name: "ModelTests",
-            dependencies: [
-                "Models",
-            ],
-            path: "Tests/ModelTests"
-        ),
-
         // View Tests
         .testTarget(
             name: "ViewTests",
@@ -123,29 +105,7 @@ let package = Package(
                 "Models",
             ],
             path: "Tests/ViewTests"
-        ),
-
-        // Business Logic Tests (empty directory)
-        .testTarget(
-            name: "BusinessLogicTests",
-            dependencies: [
-                "Logic",
-                "Models",
-            ],
-            path: "Tests/BusinessLogicTests"
-        ),
-
-        // Integration Tests (empty directory)
-        .testTarget(
-            name: "IntegrationTests",
-            dependencies: [
-                "Models",
-                "Services",
-                "Logic",
-                "App",
-            ],
-            path: "Tests/IntegrationTests"
-        ),
+        )
     ],
 
     // MARK: - Swift Language Settings

@@ -130,19 +130,18 @@ public struct Expectation: DomainAbstraction {
         expectationImportance: Int? = nil,
         expectationUrgency: Int? = nil,
         logTime: Date = Date(),
-        id: UUID = UUID(),
-        importance: Int? = nil,
-        urgency: Int? = nil
+        id: UUID = UUID()
     ) {
-
         self.id = id
         self.logTime = logTime
         self.title = title
         self.detailedDescription = detailedDescription
         self.freeformNotes = freeformNotes
         self.expectationType = expectationType
-        self.expectationImportance = importance ?? 5
-        self.expectationUrgency = urgency ?? 5
+
+        // Use defaults if not provided, or use Expectation's type-specific defaults
+        self.expectationImportance = expectationImportance ?? Expectation.defaultImportance(for: expectationType)
+        self.expectationUrgency = expectationUrgency ?? Expectation.defaultUrgency(for: expectationType)
     }
 }
 

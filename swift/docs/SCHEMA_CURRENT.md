@@ -387,72 +387,7 @@ Composits (Junction Tables):                                │                 
 - Actions → ActionGoalContribution → Goals (progress tracking)
 - GoalTerms → TimePeriods (chronological boundaries)
 
----
 
-## Query Examples
-
-### Find all running actions (no JSON parsing!)
-```sql
-SELECT a.title, ma.value as km, a.logTime
-FROM actions a
-JOIN measuredactions ma ON a.id = ma.actionId
-JOIN measures m ON ma.measureId = m.id
-WHERE m.unit = 'km'
-ORDER BY ma.value DESC;
-```
-
-### Get goal with all metadata (table inheritance join)
-```sql
-SELECT
-    e.title, e.detailedDescription,
-    e.expectationImportance, e.expectationUrgency,
-    g.startDate, g.targetDate, g.actionPlan
-FROM expectations e
-JOIN goals g ON e.id = g.expectationId
-WHERE g.id = ?;
-```
-
-### Calculate goal progress
-```sql
-SELECT
-    e.title,
-    em.targetValue,
-    SUM(ac.contributionAmount) as actual,
-    (SUM(ac.contributionAmount) / em.targetValue * 100) as percentage
-FROM expectations e
-JOIN goals g ON e.id = g.expectationId
-JOIN expectationmeasures em ON e.id = em.expectationId
-LEFT JOIN actiongoalcontributions ac ON g.id = ac.goalId
-WHERE e.expectationType = 'goal'
-GROUP BY e.id, em.targetValue;
-```
-
-### Find goals aligned with a value
-```sql
-SELECT e.title, gr.alignmentStrength, gr.relevanceNotes
-FROM expectations e
-JOIN goals g ON e.id = g.expectationId
-JOIN goalrelevances gr ON g.id = gr.goalId
-WHERE gr.valueId = ?
-ORDER BY gr.alignmentStrength DESC;
-```
-
-### Get active term with goals
-```sql
-SELECT
-    gt.termNumber, gt.theme,
-    tp.startDate, tp.endDate,
-    e.title as goalTitle
-FROM goalterms gt
-JOIN timeperiods tp ON gt.timePeriodId = tp.id
-JOIN termgoalassignments tga ON gt.id = tga.termId
-JOIN goals g ON tga.goalId = g.id
-JOIN expectations e ON g.expectationId = e.id
-WHERE gt.status = 'active'
-ORDER BY tga.assignmentOrder;
-```
-
----
 
 ## Design Principles
 
@@ -555,7 +490,7 @@ personalvalues:
 
 ---
 
-## Indexes
+## Probable Indexes
 
 ```sql
 -- Abstraction lookups

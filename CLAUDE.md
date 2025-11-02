@@ -12,44 +12,9 @@ The Swift codebase is undergoing a **complete 3NF database rearchitecture** with
 
 **Breaking**: Old ViewModels and Views have been removed - will be rebuilt in Phases 5-6.
 
----
+Build for iOS/MacOS/VisionOS 26+
 
-## Swift Development Commands
-
-### Building & Testing
-```bash
-cd swift/
-
-# Build the package
-swift build
-
-# Run all tests
-swift test
-
-# Run specific test target
-swift test --filter ModelTests
-
-# Build for iOS/macOS (requires Xcode)
-xcodebuild -scheme GoalTrackerApp -destination 'platform=iOS Simulator,name=iPhone 16'
-```
-
-### Database Operations
-```bash
-# Create database from schema
-sqlite3 goaltracker.db < Sources/Database/Schemas/schema_current.sql
-
-# Verify schema structure
-sqlite3 goaltracker.db ".schema"
-
-# Run migration (when available)
-sqlite3 goaltracker.db < Sources/Database/complete_migration.sql
-```
-
-### Code Quality
-```bash
-# Swift 6.2 strict concurrency enabled - expect warnings during rearchitecture
-swift build --strict-concurrency=complete
-```
+See @/Users/davidwilliams/Coding/01_ACTIVE_PROJECTS/ten_week_goal_app/swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md and keep updated while continuing to work on the project.
 
 ---
 
@@ -106,7 +71,7 @@ swift/Sources/
 ```
 
 **Dependencies**:
-- Models: SQLiteData only (no other modules)
+- Models: SQLiteData
 - Services: Models + SQLiteData
 - Logic: Models only
 - App: All modules + SQLiteData

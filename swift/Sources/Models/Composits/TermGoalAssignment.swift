@@ -25,8 +25,8 @@ public struct TermGoalAssignment: DomainComposit {
     // MARK: - Properties
 
     public var id: UUID
-    public var termId: UUID  // Renamed from termUUID for consistency
-    public var goalId: UUID  // Renamed from goalUUID for consistency
+    public var termId: UUID
+    public var goalId: UUID
     public var assignmentOrder: Int?
     public var createdAt: Date
 
@@ -46,22 +46,4 @@ public struct TermGoalAssignment: DomainComposit {
         self.createdAt = createdAt
     }
 
-    // MARK: - Legacy Support
-
-    /// Initialize with legacy field names (for migration)
-    public init(
-        id: UUID = UUID(),
-        termUUID: UUID,
-        goalUUID: UUID,
-        assignmentOrder: Int? = nil,
-        createdAt: Date = Date()
-    ) {
-        self.init(
-            id: id,
-            termId: termUUID,
-            goalId: goalUUID,
-            assignmentOrder: assignmentOrder,
-            createdAt: createdAt
-        )
-    }
 }
