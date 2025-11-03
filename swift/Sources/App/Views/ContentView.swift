@@ -16,11 +16,13 @@
 
       public var body: some View {
           TabView {
-              // Tab 1: Actions (Sprint 1 - Complete)
-              ActionsListView()
-                  .tabItem {
-                      Label("Actions", systemImage: "checkmark.circle")
-                  }
+              // Tab 1: Actions (Phase 1 Complete - Full CRUD)
+              NavigationStack {
+                  ActionsListView()
+              }
+              .tabItem {
+                  Label("Actions", systemImage: "checkmark.circle")
+              }
 
               // Tab 2: Terms (Phase 1 - Complete)
               NavigationStack {

@@ -1,24 +1,25 @@
 //
 // ActionsListView.swift
-// List view for displaying and managing actions
+// Written by Claude Code on 2025-11-02
 //
-// Written by Claude Code on 2025-11-01
+// PURPOSE: List view for Actions with measurements and goal contributions
+// PATTERN: @Fetch with ActionsWithMeasuresAndGoals, tap/swipe interactions
 //
-// PURPOSE:
-// Main list view for actions with date-based grouping, add/edit/delete.
-// Currently uses placeholder data - will connect to repository when persistence added.
 
 import SwiftUI
 import Models
+import Services
+import SQLiteData
 
-/// Main list view for actions
+/// Main list view for Actions
 ///
-/// Features:
-/// - Actions grouped by date (Today, Yesterday, This Week, Earlier)
-/// - Add new actions via sheet
-/// - Edit existing actions via NavigationLink
-/// - Swipe to delete
-/// - Empty state when no actions
+/// **Pattern**: @Fetch with custom FetchKeyRequest (like TermsListView)
+/// **Features**:
+/// - Displays actions with measurements and goal badges
+/// - Tap row to edit
+/// - Swipe right to delete
+/// - Swipe left to edit
+/// - Empty state with CTA
 ///
 /// **Usage**:
 /// ```swift
@@ -27,182 +28,125 @@ import Models
 /// }
 /// ```
 public struct ActionsListView: View {
-
     // MARK: - State
 
-    /// Placeholder actions (will be replaced with repository fetch)
-    @State private var actions: [Action] = []
+    @Fetch(wrappedValue: [], ActionsWithMeasuresAndGoals())
+    private var actions: [ActionWithDetails]
 
-    /// Measurements by action ID (pre-formatted for display)
-    /// In real implementation, this would be fetched from repository
-    @State private var measurementsByAction: [UUID: [MeasurementDisplay]] = [:]
-
-    /// Controls sheet presentation for new action form
-    @State private var showingForm = false
+    @State private var showingAddAction = false
+    @State private var actionToEdit: ActionWithDetails?
+    @State private var actionToDelete: ActionWithDetails?
 
     // MARK: - Body
 
+    public init() {}
+
     public var body: some View {
-        NavigationStack {
+        Group {
             if actions.isEmpty {
-                emptyStateView
+                emptyState
             } else {
                 actionsList
             }
         }
-    }
-
-    // MARK: - Views
-
-    /// Empty state shown when no actions exist
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "tray")
-                .font(.system(size: 60))
-                .foregroundStyle(.secondary)
-
-            Text("No Actions Yet")
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            Text("Tap the + button to log your first action")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding()
         .navigationTitle("Actions")
         .toolbar {
-            Button("Add", systemImage: "plus") {
-                showingForm = true
-            }
-        }
-        .sheet(isPresented: $showingForm) {
-            ActionFormView(onValidate: handleNewAction)
-        }
-    }
-
-    /// List of actions grouped by date
-    private var actionsList: some View {
-        List {
-            ForEach(groupedActions) { group in
-                Section(group.title) {
-                    ForEach(group.items) { action in
-                        NavigationLink {
-                            // TODO: Edit mode for ActionFormView
-                            ActionFormView(onValidate: { updatedData in
-                                handleEditAction(action, with: updatedData)
-                            })
-                        } label: {
-                            ActionRowView(
-                                action: action,
-                                measurements: measurementsByAction[action.id] ?? []
-                            )
-                        }
-                        .swipeActions {
-                            Button("Delete", role: .destructive) {
-                                deleteAction(action)
-                            }
-                        }
-                    }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingAddAction = true
+                } label: {
+                    Label("Add Action", systemImage: "plus")
                 }
             }
         }
-        .navigationTitle("Actions")
-        .toolbar {
-            Button("Add", systemImage: "plus") {
-                showingForm = true
+        .sheet(isPresented: $showingAddAction) {
+            NavigationStack {
+                ActionFormView()
             }
         }
-        .sheet(isPresented: $showingForm) {
-            ActionFormView(onValidate: handleNewAction)
+        .sheet(item: $actionToEdit) { actionDetails in
+            NavigationStack {
+                ActionFormView(actionToEdit: actionDetails)
+            }
+        }
+        .alert(
+            "Delete Action",
+            isPresented: .constant(actionToDelete != nil),
+            presenting: actionToDelete
+        ) { actionDetails in
+            Button("Cancel", role: .cancel) {
+                actionToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                delete(actionDetails)
+            }
+        } message: { actionDetails in
+            Text("Are you sure you want to delete '\(actionDetails.action.title ?? "this action")'?")
         }
     }
 
-    // MARK: - Date Grouping
+    // MARK: - Empty State
 
-    /// Actions grouped by date categories using DateGrouping utility from Agent 2
-    private var groupedActions: [DateGroup<Action>] {
-        // Use logTime as the grouping key (startTime is optional)
-        // When startTime exists, it's close enough to logTime for grouping purposes
-        DateGrouping.groupByDate(actions, dateKeyPath: \.logTime)
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label("No Actions Yet", systemImage: "checkmark.circle")
+        } description: {
+            Text("Track what you've done by adding your first action")
+        } actions: {
+            Button("Add Action") {
+                showingAddAction = true
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    // MARK: - Actions List
+
+    private var actionsList: some View {
+        List {
+            ForEach(actions) { actionDetails in
+                ActionRowView(actionDetails: actionDetails)
+                    .onTapGesture {
+                        edit(actionDetails)
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            actionToDelete = actionDetails
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                    .swipeActions(edge: .leading) {
+                        Button {
+                            edit(actionDetails)
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(.blue)
+                    }
+            }
+        }
     }
 
     // MARK: - Actions
 
-    /// Handle new action from form
-    private func handleNewAction(_ formData: ActionFormData) {
-        print("✅ Validated new action: \(formData.title)")
-        print("   - Description: \(formData.detailedDescription)")
-        print("   - Duration: \(formData.durationMinutes) minutes")
-        print("   - Start time: \(formData.startTime)")
-        print("   - Measurements: \(formData.measurements.count)")
-
-        // Later: save via coordinator
-        // let action = Action(...)
-        // let measuredActions = formData.measurements.map { ... }
-        // repository.save(action, with: measuredActions)
+    private func edit(_ actionDetails: ActionWithDetails) {
+        actionToEdit = actionDetails
     }
 
-    /// Handle edit action
-    private func handleEditAction(_ action: Action, with formData: ActionFormData) {
-        print("✅ Validated edit for action: \(action.id)")
-        print("   - New title: \(formData.title)")
-
-        // Later: update via coordinator
-        // repository.update(action.id, with: formData)
-    }
-
-    /// Delete an action
-    private func deleteAction(_ action: Action) {
-        print("🗑️ Deleting action: \(action.title ?? "Untitled")")
-        actions.removeAll { $0.id == action.id }
-        measurementsByAction.removeValue(forKey: action.id)
-
-        // Later: delete via coordinator
-        // repository.delete(action.id)
-    }
-}
-
-// Note: DateGroup and DateGrouping utility are provided by Agent 2 in Templates/DateGrouping.swift
-
-// MARK: - Previews
-
-#Preview("Empty State") {
-    ActionsListView()
-}
-
-#Preview("With Sample Data") {
-    struct PreviewWrapper: View {
-        @State var actions: [Action] = [
-            Action(
-                title: "Morning Run",
-                detailedDescription: "5K in the park",
-                durationMinutes: 28,
-                startTime: Date()
-            ),
-            Action(
-                title: "Team Meeting",
-                detailedDescription: "Weekly sync",
-                durationMinutes: 45,
-                startTime: Date().addingTimeInterval(-3600)
-            ),
-            Action(
-                title: "Guitar Practice",
-                durationMinutes: 30,
-                startTime: Date().addingTimeInterval(-86400)
-            )
-        ]
-
-        var body: some View {
-            // Note: In preview, we'd need to populate the actions state
-            // For now, showing the basic structure
-            ActionsListView()
-                .onAppear {
-                    // Would populate sample data here
-                }
+    private func delete(_ actionDetails: ActionWithDetails) {
+        Task {
+            // Create temporary ViewModel for delete operation
+            let viewModel = ActionFormViewModel()
+            do {
+                try await viewModel.delete(actionDetails: actionDetails)
+                actionToDelete = nil
+            } catch {
+                // Error handled by ViewModel.errorMessage
+                // Could show alert here if needed
+                print("Delete error: \(error)")
+                actionToDelete = nil
+            }
         }
     }
-
-    return PreviewWrapper()
 }

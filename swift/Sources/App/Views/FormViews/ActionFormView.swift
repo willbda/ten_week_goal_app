@@ -1,79 +1,116 @@
 //
 // ActionFormView.swift
-// Form for creating/editing actions (UI-only, no persistence yet)
+// Written by Claude Code on 2025-11-02
 //
-// Written by Claude Code on 2025-11-01
+// PURPOSE: Form for creating/editing Actions with measurements and goal contributions
+// PATTERN: Edit mode support via optional actionToEdit parameter (like TermFormView)
 //
-// PURPOSE:
-// Input form for actions using shared form components.
-// Currently validates but doesn't persist to database.
-// Uses FormScaffold, ValidationFeedback, and FormHelpers from Templates/.
 
 import SwiftUI
 import Models
+import Services
 
-/// Form view for action input (create/edit)
+/// Form view for Action input (create + edit)
 ///
-/// Currently UI-only - validates input but calls `onValidate` callback instead of saving.
-/// When persistence is added, will convert `onValidate` → `onSave`.
+/// **Pattern**: Single form for create and edit (like TermFormView)
+/// **Edit Mode**: Triggered by passing `actionToEdit` parameter
+/// **State Initialization**: In init() based on actionToEdit
 ///
 /// **Usage**:
 /// ```swift
-/// ActionFormView(onValidate: { formData in
-///     print("Valid action: \(formData.title)")
-///     // Later: save to database
-/// })
+/// // Create mode
+/// ActionFormView()
+///
+/// // Edit mode
+/// ActionFormView(actionToEdit: actionDetails)
 /// ```
 public struct ActionFormView: View {
+    // MARK: - Edit Mode
 
-    // MARK: - Properties
-
-    /// Callback when form is validated (placeholder for eventual onSave)
-    let onValidate: (ActionFormData) -> Void
+    let actionToEdit: ActionWithDetails?
+    var isEditMode: Bool { actionToEdit != nil }
+    var formTitle: String { isEditMode ? "Edit Action" : "New Action" }
 
     // MARK: - State
 
-    /// Form data (not persisted, just UI state)
-    @State private var formData = ActionFormData()
-
-    /// Available measures for picker (predefined catalog)
-    private let availableMeasures: [Measure] = [
-        .kilometers,
-        .hours,
-        .minutes,
-        .occasions
-    ]
-
-    /// Environment dismiss action
     @Environment(\.dismiss) private var dismiss
+    @State private var viewModel = ActionFormViewModel()
+
+    // Form fields
+    @State private var title: String
+    @State private var detailedDescription: String
+    @State private var freeformNotes: String
+    @State private var startTime: Date
+    @State private var durationMinutes: Double
+    @State private var measurements: [(id: UUID, measureId: UUID?, value: Double)]
+    @State private var selectedGoalIds: Set<UUID>
 
     // MARK: - Initialization
 
-    public init(onValidate: @escaping (ActionFormData) -> Void) {
-        self.onValidate = onValidate
+    public init(actionToEdit: ActionWithDetails? = nil) {
+        self.actionToEdit = actionToEdit
+
+        if let actionToEdit = actionToEdit {
+            // Edit mode - initialize from existing data
+            _title = State(initialValue: actionToEdit.action.title ?? "")
+            _detailedDescription = State(initialValue: actionToEdit.action.detailedDescription ?? "")
+            _freeformNotes = State(initialValue: actionToEdit.action.freeformNotes ?? "")
+            _startTime = State(initialValue: actionToEdit.action.startTime ?? actionToEdit.action.logTime)
+            _durationMinutes = State(initialValue: actionToEdit.action.durationMinutes ?? 0)
+
+            // Convert measurements to edit format
+            let existingMeasurements = actionToEdit.measurements.map { measurement in
+                (
+                    id: measurement.measuredAction.id,
+                    measureId: measurement.measuredAction.measureId as UUID?,
+                    value: measurement.measuredAction.value
+                )
+            }
+            _measurements = State(initialValue: existingMeasurements)
+
+            // Convert contributions to Set<UUID>
+            let existingGoalIds = Set(actionToEdit.contributions.map { $0.contribution.goalId })
+            _selectedGoalIds = State(initialValue: existingGoalIds)
+        } else {
+            // Create mode - defaults
+            _title = State(initialValue: "")
+            _detailedDescription = State(initialValue: "")
+            _freeformNotes = State(initialValue: "")
+            _startTime = State(initialValue: Date())
+            _durationMinutes = State(initialValue: 0)
+            _measurements = State(initialValue: [])
+            _selectedGoalIds = State(initialValue: [])
+        }
     }
 
     // MARK: - Body
 
     public var body: some View {
         FormScaffold(
-            title: "New Action",
-            canSubmit: formData.isValid,
+            title: formTitle,
+            canSubmit: !title.isEmpty && !viewModel.isSaving,
             onSubmit: handleSubmit,
-            onCancel: { dismiss() },
-            submitLabel: "Validate"
+            onCancel: { dismiss() }
         ) {
             DocumentableFields(
-                title: $formData.title,
-                detailedDescription: $formData.detailedDescription,
-                freeformNotes: $formData.freeformNotes
+                title: $title,
+                detailedDescription: $detailedDescription,
+                freeformNotes: $freeformNotes
             )
+
             timingSection
             measurementsSection
-            ValidationFeedback(
-                isValid: formData.isValid,
-                errors: formData.errors
-            )
+            goalContributionsSection
+
+            if let error = viewModel.errorMessage {
+                Section {
+                    Text(error)
+                        .foregroundStyle(.red)
+                }
+            }
+        }
+        .task {
+            await viewModel.loadOptions()
         }
     }
 
@@ -84,14 +121,14 @@ public struct ActionFormView: View {
         Section("Timing") {
             DatePicker(
                 "When",
-                selection: $formData.startTime,
+                selection: $startTime,
                 displayedComponents: [.date, .hourAndMinute]
             )
 
             HStack {
                 Text("Duration")
                 Spacer()
-                TextField("Minutes", value: $formData.durationMinutes, format: .number)
+                TextField("Minutes", value: $durationMinutes, format: .number)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 80)
                 Text("min")
@@ -103,12 +140,12 @@ public struct ActionFormView: View {
     /// Section 2: Measurements (repeating section with add/remove)
     private var measurementsSection: some View {
         Section {
-            ForEach($formData.measurements) { $measurement in
+            ForEach($measurements, id: \.id) { $measurement in
                 HStack {
                     // Measure picker
                     Picker("Measure", selection: $measurement.measureId) {
                         Text("Select measure").tag(nil as UUID?)
-                        ForEach(availableMeasures, id: \.id) { measure in
+                        ForEach(viewModel.availableMeasures, id: \.id) { measure in
                             Text(measure.unit).tag(measure.id as UUID?)
                         }
                     }
@@ -121,7 +158,7 @@ public struct ActionFormView: View {
 
                     // Remove button
                     Button(role: .destructive) {
-                        removeMeasurement(measurement)
+                        removeMeasurement(id: measurement.id)
                     } label: {
                         Image(systemName: "minus.circle.fill")
                             .foregroundStyle(.red)
@@ -143,70 +180,128 @@ public struct ActionFormView: View {
         }
     }
 
+    /// Section 3: Goal Contributions (multi-select)
+    private var goalContributionsSection: some View {
+        Section {
+            if viewModel.availableGoals.isEmpty {
+                Text("No goals available")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(viewModel.availableGoals, id: \.0.id) { (goal, title) in
+                    Toggle(isOn: binding(for: goal.id)) {
+                        Text(title)
+                    }
+                }
+            }
+        } header: {
+            Text("Goal Contributions")
+        } footer: {
+            Text("Select goals this action contributes toward")
+                .font(.caption)
+        }
+    }
+
     // MARK: - Actions
 
-    /// Handle form submission (validation only for now)
+    /// Handle form submission (create or update)
     private func handleSubmit() {
-        guard formData.isValid else { return }
+        Task {
+            do {
+                // Convert measurements to tuple format for ViewModel
+                let measurementTuples: [(UUID, Double)] = measurements.compactMap { measurement in
+                    guard let measureId = measurement.measureId, measurement.value > 0 else {
+                        return nil
+                    }
+                    return (measureId, measurement.value)
+                }
 
-        onValidate(formData)
-        dismiss()
+                if let actionToEdit = actionToEdit {
+                    // Update existing action
+                    _ = try await viewModel.update(
+                        actionDetails: actionToEdit,
+                        title: title,
+                        description: detailedDescription,
+                        notes: freeformNotes,
+                        durationMinutes: durationMinutes,
+                        startTime: startTime,
+                        measurements: measurementTuples,
+                        goalContributions: selectedGoalIds
+                    )
+                } else {
+                    // Create new action
+                    _ = try await viewModel.save(
+                        title: title,
+                        description: detailedDescription,
+                        notes: freeformNotes,
+                        durationMinutes: durationMinutes,
+                        startTime: startTime,
+                        measurements: measurementTuples,
+                        goalContributions: selectedGoalIds
+                    )
+                }
+                dismiss()
+            } catch {
+                // Error handled by viewModel.errorMessage
+            }
+        }
     }
 
     /// Add a new empty measurement
     private func addMeasurement() {
-        formData.measurements.append(MeasurementInput())
+        measurements.append((id: UUID(), measureId: nil, value: 0))
     }
 
-    /// Remove a measurement
-    private func removeMeasurement(_ measurement: MeasurementInput) {
-        formData.measurements.removeAll { $0.id == measurement.id }
+    /// Remove a measurement by ID
+    private func removeMeasurement(id: UUID) {
+        measurements.removeAll { $0.id == id }
+    }
+
+    /// Create a binding for goal toggle
+    private func binding(for goalId: UUID) -> Binding<Bool> {
+        Binding(
+            get: { selectedGoalIds.contains(goalId) },
+            set: { isSelected in
+                if isSelected {
+                    selectedGoalIds.insert(goalId)
+                } else {
+                    selectedGoalIds.remove(goalId)
+                }
+            }
+        )
     }
 }
 
-// MARK: - Previews
+// MARK: - Preview
 
 #Preview("New Action") {
-    ActionFormView { formData in
-        print("Validated action: \(formData.title)")
+    NavigationStack {
+        ActionFormView()
     }
 }
 
-#Preview("Pre-filled") {
-    struct PreviewWrapper: View {
-        @State var showForm = true
-
-        var body: some View {
-            Button("Show Form") {
-                showForm = true
-            }
-            .sheet(isPresented: $showForm) {
-                ActionFormView { formData in
-                    print("Validated: \(formData.title)")
-                }
-                .onAppear {
-                    // Simulate pre-filled data
-                    // Note: In actual usage, would pass initial data to form
-                }
-            }
-        }
+#Preview("Edit Action") {
+    NavigationStack {
+        ActionFormView(
+            actionToEdit: ActionWithDetails(
+                action: Action(
+                    title: "Morning run",
+                    detailedDescription: "Great weather",
+                    durationMinutes: 28,
+                    startTime: Date(),
+                    logTime: Date()
+                ),
+                measurements: [
+                    ActionMeasurement(
+                        measuredAction: MeasuredAction(
+                            actionId: UUID(),
+                            measureId: UUID(),
+                            value: 5.2
+                        ),
+                        measure: Measure(unit: "km", measureType: "distance", title: "Distance")
+                    )
+                ],
+                contributions: []
+            )
+        )
     }
-
-    return PreviewWrapper()
-}
-
-#Preview("With Measurements") {
-    struct PreviewWrapper: View {
-        var body: some View {
-            ActionFormView { formData in
-                print("Action with \(formData.measurements.count) measurements")
-                print("Title: \(formData.title)")
-                formData.measurements.forEach { measurement in
-                    print("  - Value: \(measurement.value)")
-                }
-            }
-        }
-    }
-
-    return PreviewWrapper()
 }
