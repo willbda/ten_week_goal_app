@@ -183,6 +183,89 @@ CREATE TABLE termGoalAssignments (
     FOREIGN KEY (termId) REFERENCES goalTerms(id) ON DELETE CASCADE,
     FOREIGN KEY (goalId) REFERENCES goals(id) ON DELETE CASCADE
 );
+
+-- =============================================================================
+-- PERFORMANCE INDEXES
+-- Written by Claude Code on 2025-11-03
+-- PURPOSE: Optimize JOIN queries and foreign key lookups
+-- =============================================================================
+
+-- ActionsQuery indexes (for measured_actions + measures JOIN)
+-- Used by: ActionsWithMeasuresAndGoals FetchKeyRequest
+-- Impact: Eliminates N+1 query problem (763 queries → 3 queries)
+CREATE INDEX IF NOT EXISTS idx_measured_actions_action_id ON measuredActions(actionId);
+CREATE INDEX IF NOT EXISTS idx_measured_actions_measure_id ON measuredActions(measureId);
+
+-- ActionsQuery indexes (for action_goal_contributions + goals JOIN)
+-- Used by: ActionsWithMeasuresAndGoals FetchKeyRequest
+-- Impact: Fast lookups for goal contributions per action
+CREATE INDEX IF NOT EXISTS idx_action_goal_contributions_action_id ON actionGoalContributions(actionId);
+CREATE INDEX IF NOT EXISTS idx_action_goal_contributions_goal_id ON actionGoalContributions(goalId);
+
+-- TermsQuery index (for goal_terms + time_periods JOIN)
+-- Used by: TermsWithPeriods FetchKeyRequest
+-- Impact: Fast lookups for term periods (already efficient, but ensures index usage)
+CREATE INDEX IF NOT EXISTS idx_goal_terms_time_period_id ON goalTerms(timePeriodId);
+
+-- GoalsQuery indexes (for future implementation in Phase 1)
+-- Used by: Upcoming GoalsWithExpectations FetchKeyRequest
+-- Impact: Fast lookups for goal details and targets
+CREATE INDEX IF NOT EXISTS idx_goals_expectation_id ON goals(expectationId);
+CREATE INDEX IF NOT EXISTS idx_expectation_measures_expectation_id ON expectationMeasures(expectationId);
+CREATE INDEX IF NOT EXISTS idx_expectation_measures_measure_id ON expectationMeasures(measureId);
+
+-- Value alignment indexes (for future goal-value queries)
+-- Used by: Upcoming value alignment features
+-- Impact: Fast filtering of goals by aligned values
+CREATE INDEX IF NOT EXISTS idx_goal_relevances_goal_id ON goalRelevances(goalId);
+CREATE INDEX IF NOT EXISTS idx_goal_relevances_value_id ON goalRelevances(valueId);
+
+-- Term assignment indexes (for goal planning queries)
+-- Used by: Term planning features showing assigned goals
+-- Impact: Fast lookups of goals per term and terms per goal
+CREATE INDEX IF NOT EXISTS idx_term_goal_assignments_term_id ON termGoalAssignments(termId);
+CREATE INDEX IF NOT EXISTS idx_term_goal_assignments_goal_id ON termGoalAssignments(goalId);
+
+-- =============================================================================
+-- INDEX USAGE NOTES
+-- =============================================================================
+--
+-- Query patterns these indexes support:
+--
+-- 1. "Show all measurements for action X"
+--    SELECT * FROM measuredActions WHERE actionId = ?
+--    → Uses idx_measured_actions_action_id
+--
+-- 2. "Show all actions using metric Y"
+--    SELECT * FROM measuredActions WHERE measureId = ?
+--    → Uses idx_measured_actions_measure_id
+--
+-- 3. "Show all goals this action contributes to"
+--    SELECT * FROM actionGoalContributions WHERE actionId = ?
+--    → Uses idx_action_goal_contributions_action_id
+--
+-- 4. "Show all actions contributing to goal Z"
+--    SELECT * FROM actionGoalContributions WHERE goalId = ?
+--    → Uses idx_action_goal_contributions_goal_id
+--
+-- 5. "Show term details with dates"
+--    SELECT * FROM goalTerms JOIN timePeriods ON goalTerms.timePeriodId = timePeriods.id
+--    → Uses idx_goal_terms_time_period_id
+--
+-- 6. "Show goal with expectation details"
+--    SELECT * FROM goals JOIN expectations ON goals.expectationId = expectations.id
+--    → Uses idx_goals_expectation_id
+--
+-- 7. "Show all goals aligned with value V"
+--    SELECT * FROM goalRelevances WHERE valueId = ?
+--    → Uses idx_goal_relevances_value_id
+--
+-- 8. "Show all goals in term T"
+--    SELECT * FROM termGoalAssignments WHERE termId = ?
+--    → Uses idx_term_goal_assignments_term_id
+--
+-- =============================================================================
+
 -- Apple Data Staging Table
 -- Written by Claude Code on 2025-10-31
 --

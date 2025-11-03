@@ -70,13 +70,14 @@ coordinator.createGoal(expectation, goal, [measure], [relevance])  // ✅ Atomic
 
 #### 1.1 Coordinators (~600 lines) - ✅ 2/4 COMPLETE (PersonalValue + Term)
 
-**Status Update (2025-11-02)**:
+**Status Update (2025-11-03)**:
 - ✅ **PersonalValueCoordinator** - Complete (create only, needs update/delete for parity)
 - ✅ **TimePeriodCoordinator** - Complete with FULL CRUD (97 lines, 10 hours actual)
+- ✅ **ActionCoordinator** - ✅ COMPLETE with FULL CRUD (249 lines) - DISCOVERED 2025-11-03
 - ✅ **CoordinatorError** - Complete
 - ✅ **ValueFormData** - Complete
 - ✅ **TimePeriodFormData** - Complete
-- ❌ **ActionCoordinator** - Not started (~200 lines, 4 hours)
+- ✅ **ActionFormData** - Complete (used by ActionCoordinator)
 - ❌ **GoalCoordinator** - Not started (~250 lines, 6 hours)
 
 **Key Learnings from PersonalValue Implementation**:
@@ -792,6 +793,54 @@ swift/Sources/
 **SQLiteData Examples** (External references):
 - sqlite-data-main/Examples/Reminders/Schema.swift - JOIN pattern inspiration
 - sqlite-data-main/Examples/CaseStudies/ObservableModelDemo.swift - @Observable + @Dependency pattern
+
+---
+
+**Last Updated**: 2025-11-03 after performance optimization (indexes + ActionsQuery N+1 fix)
+
+---
+
+## Query Strategy Decision (2025-11-03)
+
+### Current Approach: Hybrid Query Builder + #sql
+
+**Default**: Use Query Builder for most queries
+- ✅ Type-safe (compile-time errors)
+- ✅ Works well for simple JOINs
+- ✅ Safer during active development
+
+**When to use #sql**: Complex aggregations only
+- GROUP BY with SUM/COUNT/AVG
+- Complex LEFT JOINs with COALESCE
+- Subqueries and window functions
+- Performance-critical queries (after profiling)
+
+### Migration Path to More #sql
+
+**Prerequisites** (not yet implemented):
+1. ❌ Phase 2 validation layers (Services/Validation/)
+2. ❌ Integration test coverage for all queries
+3. ❌ Layer B validation in coordinators
+4. ❌ Layer C error mapping in repositories
+
+**Why wait**:
+- Query builder's compile-time safety helps during rearchitecture
+- #sql errors only caught at runtime (need good test coverage first)
+- Current performance is acceptable (ActionsQuery: 50ms for 381 actions)
+
+**Future optimization targets** (Phase 3+):
+- GoalProgressQuery (complex aggregation - perfect for #sql)
+- Dashboard metrics (GROUP BY date ranges)
+- Analytics queries (trends, summaries)
+
+**See**:
+- `ActionsQuery.swift:93-137` - Migration notes with example
+- `TermsQuery.swift:39-79` - Why NOT to migrate
+- `ActionFormViewModel.swift:82-110` - Both options documented
+- `validation approach.md` - Prerequisites and dependencies
+
+**Decision**: Trust the database, validate at boundaries, use SQL's full power...
+but only after validation infrastructure is solid.
 
 ---
 

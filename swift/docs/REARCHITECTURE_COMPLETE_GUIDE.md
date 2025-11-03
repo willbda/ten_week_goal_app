@@ -821,6 +821,138 @@ From original planning:
 
 ---
 
+# Query Strategy: Query Builder vs #sql Macro
+
+**Added**: 2025-11-03 after performance optimization and SQLiteData API audit
+
+## Decision: Hybrid Approach
+
+**Default to Query Builder**, migrate to `#sql` only when:
+1. Complex aggregations needed (GROUP BY, SUM, COUNT)
+2. Performance profiling shows bottleneck
+3. Validation infrastructure is complete
+
+## Rationale
+
+### Why Query Builder is Default
+
+✅ **Compile-time type safety** - Typos caught by compiler
+✅ **Safer during active development** - Errors before runtime
+✅ **Sufficient performance** - ActionsQuery: 50ms for 381 actions
+✅ **Works well for simple queries** - JOINs, WHERE, ORDER BY
+
+### Why #sql is Better for Aggregations
+
+✅ **Database does the work** - GROUP BY in SQLite (C code) not Swift
+✅ **Less data transfer** - Aggregate in DB, return summary
+✅ **Clearer intent** - SQL makes complex queries explicit
+✅ **Better scalability** - O(n) in DB vs O(n) in Swift
+
+### Trade-off Analysis
+
+| Aspect | Query Builder | #sql |
+|--------|---------------|------|
+| Type Safety | Compile-time ✅ | Runtime ⚠️ |
+| Aggregation | In Swift ❌ | In SQL ✅ |
+| Development Speed | Fast ✅ | Slower (no autocomplete) |
+| Performance | Good | Better ✅ |
+| Debugging | Easy ✅ | Medium |
+
+## Prerequisites for #sql Migration
+
+Before migrating queries to `#sql`, ensure:
+
+1. ❌ **Phase 2 Validation Complete** (`Services/Validation/`)
+   - ActionValidator with Layer B + C validation
+   - GoalValidator with complete graph validation
+   - Repository error mapping (DB errors → ValidationError)
+
+2. ❌ **Integration Test Coverage**
+   - Tests that execute actual queries
+   - Catch SQL typos at test time
+   - Test edge cases (empty results, NULLs)
+
+3. ❌ **Boundary Validation**
+   - Layer B (Coordinator): Business rules
+   - Layer C (Repository): Database constraints
+   - Trust validated data in queries
+
+4. ❌ **Error Handling Infrastructure**
+   - ValidationError types defined
+   - User-facing error messages
+   - Recovery mechanisms
+
+**Why these matter**: Without them, #sql errors only surface in production
+
+## Current State (2025-11-03)
+
+### Using Query Builder
+- ✅ **ActionsQuery** - 3 queries, ~50ms (acceptable)
+- ✅ **TermsQuery** - 1 query, simple JOIN (optimal)
+- ✅ **PersonalValuesListView** - ORDER BY + grouping
+
+### Future #sql Targets (Phase 3+)
+- **GoalProgressQuery** - Complex aggregation with SUM/GROUP BY
+- **Dashboard metrics** - Date range aggregations
+- **Analytics queries** - Trends, summaries, statistics
+
+### Migration Path
+
+**Step 1**: Implement validation infrastructure (Phase 2)
+**Step 2**: Add integration tests for all queries
+**Step 3**: Profile queries to identify bottlenecks
+**Step 4**: Migrate complex aggregations to #sql
+**Step 5**: Keep simple queries as query builder
+
+## Examples
+
+### Good Query Builder Use (TermsQuery)
+```swift
+// Simple 1:1 JOIN - query builder is optimal
+let results = try GoalTerm.all
+    .order { $0.termNumber.desc() }
+    .join(TimePeriod.all) { $0.timePeriodId.eq($1.id) }
+    .fetchAll(db)
+```
+
+### Good #sql Use (Future GoalProgressQuery)
+```swift
+// Complex aggregation - #sql is better
+let progress = try #sql(
+    """
+    SELECT
+        em.measureId, em.targetValue,
+        COALESCE(SUM(ma.value), 0) as actual,
+        ROUND(COALESCE(SUM(ma.value), 0) / em.targetValue * 100, 1) as pct
+    FROM expectationMeasures em
+    LEFT JOIN actionGoalContributions agc ON agc.goalId = \(goalId)
+    LEFT JOIN measuredActions ma ON ma.actionId = agc.actionId
+    WHERE em.expectationId = \(expectationId)
+    GROUP BY em.measureId, em.targetValue
+    """
+).fetchAll(db) as [ProgressRow]
+```
+
+## Decision Log
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2025-11-03 | Hybrid query strategy | Type safety during dev, performance when needed |
+| 2025-11-03 | Query builder for writes | Type safety matters more for mutations |
+| 2025-11-03 | Defer #sql migration | Wait for validation infrastructure |
+| 2025-11-03 | Use #sql for aggregations | DB better at GROUP BY than Swift |
+
+## See Also
+
+- `ActionsQuery.swift:93-137` - Migration notes with trade-offs
+- `TermsQuery.swift:39-79` - Why NOT to migrate example
+- `ActionFormViewModel.swift:82-110` - Both approaches documented
+- `VIEW_ARCHITECTURE.md` - Query Strategy Decision section
+- `validation approach.md` - Prerequisites and dependencies
+- `SQLITEDATA_API_AUDIT.md` - Full API usage audit
+
+---
+
 # Implementation Roadmap
 
 ## Phase Timeline (5-7 weeks total)
