@@ -168,16 +168,8 @@ public struct PersonalValuesFormView: View {
                     // Update existing value
                     _ = try await viewModel.update(value: valueToEdit, from: formData)
                 } else {
-                    // Create new value
-                    _ = try await viewModel.save(
-                        title: title,
-                        level: selectedLevel,
-                        priority: priority,
-                        description: description.isEmpty ? nil : description,
-                        notes: notes.isEmpty ? nil : notes,
-                        lifeDomain: lifeDomain.isEmpty ? nil : lifeDomain,
-                        alignmentGuidance: alignmentGuidance.isEmpty ? nil : alignmentGuidance
-                    )
+                    // Create new value (using formData instead of individual parameters)
+                    _ = try await viewModel.save(from: formData)
                 }
 
                 dismiss()

@@ -53,11 +53,76 @@ public struct RepeatingSection<Item: Identifiable, Content: View>: View {
     }
 
     public var body: some View {
-        // TODO: Implement section
-        // - Section with header and footer
-        // - ForEach over items with content closure
-        // - Add button at bottom
-        // - Proper spacing
-        Text("RepeatingSection - TODO")
+        Section {
+            // Dynamic content for each item
+            ForEach(items) { item in
+                content(item)
+                    .padding(.vertical, 4)
+            }
+
+            // Add button (consistent placement at bottom)
+            Button(action: onAdd) {
+                Label(addButtonLabel, systemImage: "plus.circle.fill")
+            }
+        } header: {
+            Text(title)
+        } footer: {
+            if let footer = footer {
+                Text(footer)
+                    .font(.caption)
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+
+private struct RepeatingSectionPreviewItem: Identifiable {
+    let id = UUID()
+    var name: String
+}
+
+#Preview("With Items") {
+    @Previewable @State var items = [
+        RepeatingSectionPreviewItem(name: "Item 1"),
+        RepeatingSectionPreviewItem(name: "Item 2"),
+        RepeatingSectionPreviewItem(name: "Item 3")
+    ]
+
+    Form {
+        RepeatingSection(
+            title: "Measurements",
+            items: items,
+            addButtonLabel: "Add Measurement",
+            footer: "Track distance, time, count, or other metrics",
+            onAdd: { items.append(RepeatingSectionPreviewItem(name: "New Item")) }
+        ) { item in
+            HStack {
+                Text(item.name)
+                Spacer()
+                Button(role: .destructive) {
+                    items.removeAll { $0.id == item.id }
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundStyle(.red)
+                }
+            }
+        }
+    }
+}
+
+#Preview("Empty State") {
+    @Previewable @State var items: [RepeatingSectionPreviewItem] = []
+
+    Form {
+        RepeatingSection(
+            title: "Measurements",
+            items: items,
+            addButtonLabel: "Add Measurement",
+            footer: "No measurements yet",
+            onAdd: { items.append(RepeatingSectionPreviewItem(name: "First Item")) }
+        ) { item in
+            Text(item.name)
+        }
     }
 }

@@ -44,11 +44,70 @@ public struct MultiSelectSection<Item: Identifiable>: View where Item.ID == UUID
     }
 
     public var body: some View {
-        // TODO: Implement section
-        // - Section with header
-        // - Empty state if no items
-        // - ForEach with Toggle for each item
-        // - Binding helper for Set<UUID> ↔ Bool
-        Text("MultiSelectSection - TODO")
+        Section {
+            if items.isEmpty {
+                Text("No \(title.lowercased()) available")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(items) { item in
+                    Toggle(isOn: binding(for: item.id)) {
+                        Text(itemLabel(item))
+                    }
+                }
+            }
+        } header: {
+            Text(title)
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// Creates a binding for individual item selection
+    ///
+    /// Synchronizes Set<UUID> with Toggle's Bool state
+    private func binding(for id: UUID) -> Binding<Bool> {
+        Binding(
+            get: { selectedIds.contains(id) },
+            set: { isSelected in
+                if isSelected {
+                    selectedIds.insert(id)
+                } else {
+                    selectedIds.remove(id)
+                }
+            }
+        )
+    }
+}
+
+// MARK: - Preview
+
+private struct MultiSelectPreviewItem: Identifiable {
+    let id = UUID()
+    let name: String
+}
+
+#Preview("With Items") {
+    Form {
+        MultiSelectSection(
+            items: [
+                MultiSelectPreviewItem(name: "Goal 1: Health"),
+                MultiSelectPreviewItem(name: "Goal 2: Career"),
+                MultiSelectPreviewItem(name: "Goal 3: Relationships")
+            ],
+            title: "Goal Contributions",
+            itemLabel: { $0.name },
+            selectedIds: .constant([])
+        )
+    }
+}
+
+#Preview("Empty State") {
+    Form {
+        MultiSelectSection(
+            items: [] as [MultiSelectPreviewItem],
+            title: "Goal Contributions",
+            itemLabel: { $0.name },
+            selectedIds: .constant([])
+        )
     }
 }

@@ -127,26 +127,31 @@ public final class ActionFormViewModel {
 
     // MARK: - Save (Create)
 
-    /// Creates new Action with measurements and goal contributions
+    /// Creates new Action from form data.
+    /// - Parameter formData: Validated form data
+    /// - Returns: Created Action
+    /// - Throws: CoordinatorError or database errors
     ///
-    /// - Parameters:
-    ///   - title: Action title (required)
-    ///   - description: Detailed description (optional)
-    ///   - notes: Freeform notes (optional)
-    ///   - durationMinutes: Duration in minutes (0 = not tracked)
-    ///   - startTime: When the action occurred
-    ///   - measurements: Array of (measureId, value) tuples
-    ///   - goalContributions: Set of goal IDs this action contributes to
+    /// PATTERN: FormData-based method (clean, template-ready)
+    public func save(from formData: ActionFormData) async throws -> Action {
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            let action = try await coordinator.create(from: formData)
+            errorMessage = nil
+            return action
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
+        }
+    }
+
+    /// Creates new Action from individual parameters.
     /// - Returns: Created Action
     /// - Throws: CoordinatorError if validation fails or database error occurs
     ///
-    /// 🔧 REFINEMENT NEEDED (2025-11-03):
-    /// This method takes 7 parameters - should take FormData instead:
-    /// ```
-    /// public func save(formData: ActionFormData) async throws -> Action
-    /// ```
-    /// View should call buildFormData() helper before passing here.
-    /// Pattern to follow: PersonalValueFormViewModel (when updated)
+    /// NOTE: Legacy method - prefer save(from:) for consistency
     public func save(
         title: String,
         description: String = "",
@@ -174,8 +179,36 @@ public final class ActionFormViewModel {
             goalContributions: goalContributions
         )
 
+        return try await save(from: formData)
+    }
+
+    // MARK: - Update
+
+    /// Updates existing Action from form data.
+    /// - Parameters:
+    ///   - actionDetails: Existing ActionWithDetails (from ActionsQuery)
+    ///   - formData: New form data
+    /// - Returns: Updated Action
+    /// - Throws: CoordinatorError or database errors
+    ///
+    /// PATTERN: FormData-based method (clean, template-ready)
+    public func update(
+        actionDetails: ActionWithDetails,
+        from formData: ActionFormData
+    ) async throws -> Action {
+        isSaving = true
+        defer { isSaving = false }
+
         do {
-            let action = try await coordinator.create(from: formData)
+            let existingMeasurements = actionDetails.measurements.map { $0.measuredAction }
+            let existingContributions = actionDetails.contributions.map { $0.contribution }
+
+            let action = try await coordinator.update(
+                action: actionDetails.action,
+                measurements: existingMeasurements,
+                contributions: existingContributions,
+                from: formData
+            )
             errorMessage = nil
             return action
         } catch {
@@ -184,29 +217,11 @@ public final class ActionFormViewModel {
         }
     }
 
-    // MARK: - Update
-
-    /// Updates existing Action with measurements and goal contributions
-    ///
-    /// - Parameters:
-    ///   - actionDetails: Existing ActionWithDetails (from ActionsQuery)
-    ///   - title: Updated title
-    ///   - description: Updated description
-    ///   - notes: Updated notes
-    ///   - durationMinutes: Updated duration
-    ///   - startTime: Updated start time
-    ///   - measurements: Updated measurements (replaces all)
-    ///   - goalContributions: Updated goal contributions (replaces all)
+    /// Updates existing Action from individual parameters.
     /// - Returns: Updated Action
     /// - Throws: CoordinatorError or database errors
     ///
-    /// 🔧 REFINEMENT NEEDED (2025-11-03):
-    /// This method takes 8 parameters - should take FormData instead:
-    /// ```
-    /// public func update(actionDetails: ActionWithDetails, formData: ActionFormData) async throws -> Action
-    /// ```
-    /// View should call buildFormData() helper before passing here.
-    /// Pattern to follow: PersonalValueFormViewModel (when updated)
+    /// NOTE: Legacy method - prefer update(actionDetails:from:) for consistency
     public func update(
         actionDetails: ActionWithDetails,
         title: String,
@@ -235,23 +250,7 @@ public final class ActionFormViewModel {
             goalContributions: goalContributions
         )
 
-        do {
-            // Extract existing relationships from actionDetails
-            let existingMeasurements = actionDetails.measurements.map { $0.measuredAction }
-            let existingContributions = actionDetails.contributions.map { $0.contribution }
-
-            let action = try await coordinator.update(
-                action: actionDetails.action,
-                measurements: existingMeasurements,
-                contributions: existingContributions,
-                from: formData
-            )
-            errorMessage = nil
-            return action
-        } catch {
-            errorMessage = error.localizedDescription
-            throw error
-        }
+        return try await update(actionDetails: actionDetails, from: formData)
     }
 
     // MARK: - Delete

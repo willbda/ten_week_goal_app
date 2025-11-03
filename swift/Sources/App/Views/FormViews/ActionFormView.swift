@@ -20,6 +20,23 @@ import Models
 import Services
 import SwiftUI
 
+// MARK: - Helper Types
+
+/// Wrapper for goal selection in MultiSelectSection
+private struct GoalOption: Identifiable {
+    let id: UUID
+    let goal: Goal
+    let title: String
+
+    init(goal: Goal, title: String) {
+        self.id = goal.id
+        self.goal = goal
+        self.title = title
+    }
+}
+
+// MARK: - Form View
+
 /// Form view for Action input (create + edit)
 ///
 /// **Pattern**: Single form for create and edit (like TermFormView)
@@ -52,7 +69,7 @@ public struct ActionFormView: View {
     @State private var freeformNotes: String
     @State private var startTime: Date
     @State private var durationMinutes: Double
-    @State private var measurements: [(id: UUID, measureId: UUID?, value: Double)]
+    @State private var measurements: [MeasurementInput]
     @State private var selectedGoalIds: Set<UUID>
 
     // MARK: - Initialization
@@ -72,9 +89,9 @@ public struct ActionFormView: View {
 
             // Convert measurements to edit format
             let existingMeasurements = actionToEdit.measurements.map { measurement in
-                (
+                MeasurementInput(
                     id: measurement.measuredAction.id,
-                    measureId: measurement.measuredAction.measureId as UUID?,
+                    measureId: measurement.measuredAction.measureId,
                     value: measurement.measuredAction.value
                 )
             }
@@ -110,9 +127,35 @@ public struct ActionFormView: View {
                 freeformNotes: $freeformNotes
             )
 
-            timingSection
-            measurementsSection
-            goalContributionsSection
+            // Replaced timingSection with component
+            TimingSection(
+                startTime: $startTime,
+                durationMinutes: $durationMinutes
+            )
+
+            // Replaced measurementsSection with components (fixes alignment issue!)
+            RepeatingSection(
+                title: "Measurements",
+                items: measurements,
+                addButtonLabel: "Add Measurement",
+                footer: "Track distance, time, count, or other metrics for this action",
+                onAdd: addMeasurement
+            ) { measurement in
+                MeasurementInputRow(
+                    measureId: bindingForMeasurement(measurement.id).measureId,
+                    value: bindingForMeasurement(measurement.id).value,
+                    availableMeasures: viewModel.availableMeasures,
+                    onRemove: { removeMeasurement(id: measurement.id) }
+                )
+            }
+
+            // Replaced goalContributionsSection with component
+            MultiSelectSection(
+                items: viewModel.availableGoals.map { GoalOption(goal: $0.0, title: $0.1) },
+                title: "Goal Contributions",
+                itemLabel: { $0.title },
+                selectedIds: $selectedGoalIds
+            )
 
             if let error = viewModel.errorMessage {
                 Section {
@@ -126,105 +169,7 @@ public struct ActionFormView: View {
         }
     }
 
-    // MARK: - Form Sections
-
-    /// Section 1: Timing (when and how long)
-    private var timingSection: some View {
-        Section("Timing") {
-            DatePicker(
-                "When",
-                selection: $startTime,
-                displayedComponents: [.date, .hourAndMinute]
-            )
-
-            HStack {
-                Text("Duration")
-                Spacer()
-                TextField("Minutes", value: $durationMinutes, format: .number)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 80)
-                Text("min")
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    /// Section 2: Measurements (repeating section with add/remove)
-    private var measurementsSection: some View {
-        Section {
-            ForEach(measurements.indices, id: \.self) { index in
-                let measurement = measurements[index]
-                HStack {
-                    // Measure picker
-                    // NOTE: Includes selected measure even if not in availableMeasures
-                    // (handles case where measure was deleted or not yet loaded)
-                    Picker("Measure", selection: $measurements[index].measureId) {
-                        Text("Select measure").tag(nil as UUID?)
-
-                        // Include currently selected measure if not in availableMeasures
-                        if let selectedId = measurement.measureId,
-                            !viewModel.availableMeasures.contains(where: { $0.id == selectedId })
-                        {
-                            Text("(Deleted measure)").tag(selectedId as UUID?)
-                        }
-
-                        ForEach(viewModel.availableMeasures, id: \.id) { measure in
-                            Text(measure.unit).tag(measure.id as UUID?)
-                        }
-                    }
-                    .labelsHidden()
-
-                    // Value field
-                    TextField("Value", value: $measurements[index].value, format: .number)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 80)
-
-                    // Remove button
-                    Button(role: .destructive) {
-                        removeMeasurement(id: measurement.id)
-                    } label: {
-                        Image(systemName: "minus.circle.fill")
-                            .foregroundStyle(.red)
-                    }
-                }
-            }
-
-            // Add measurement button
-            Button {
-                addMeasurement()
-            } label: {
-                Label("Add Measurement", systemImage: "plus.circle.fill")
-            }
-        } header: {
-            Text("Measurements")
-        } footer: {
-            Text("Track distance, time, count, or other metrics for this action")
-                .font(.caption)
-        }
-    }
-
-    /// Section 3: Goal Contributions (multi-select)
-    private var goalContributionsSection: some View {
-        Section {
-            if viewModel.availableGoals.isEmpty {
-                Text("No goals available")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(viewModel.availableGoals, id: \.0.id) { (goal, title) in
-                    Toggle(isOn: binding(for: goal.id)) {
-                        Text(title)
-                    }
-                }
-            }
-        } header: {
-            Text("Goal Contributions")
-        } footer: {
-            Text("Select goals this action contributes toward")
-                .font(.caption)
-        }
-    }
-
-    // MARK: - Actions
+    // MARK: - Helpers
 
     /// Handle form submission (create or update)
     ///
@@ -304,7 +249,7 @@ public struct ActionFormView: View {
 
     /// Add a new empty measurement
     private func addMeasurement() {
-        measurements.append((id: UUID(), measureId: nil, value: 0))
+        measurements.append(MeasurementInput(id: UUID(), measureId: nil, value: 0))
     }
 
     /// Remove a measurement by ID
@@ -312,17 +257,27 @@ public struct ActionFormView: View {
         measurements.removeAll { $0.id == id }
     }
 
-    /// Create a binding for goal toggle
-    private func binding(for goalId: UUID) -> Binding<Bool> {
-        Binding(
-            get: { selectedGoalIds.contains(goalId) },
-            set: { isSelected in
-                if isSelected {
-                    selectedGoalIds.insert(goalId)
-                } else {
-                    selectedGoalIds.remove(goalId)
-                }
-            }
+    /// Create bindings for measurement fields
+    ///
+    /// Returns a tuple of bindings for (measureId, value) for the given measurement ID
+    private func bindingForMeasurement(_ id: UUID) -> (measureId: Binding<UUID?>, value: Binding<Double>) {
+        guard let index = measurements.firstIndex(where: { $0.id == id }) else {
+            // Fallback for missing measurement (shouldn't happen in practice)
+            return (
+                measureId: .constant(nil),
+                value: .constant(0)
+            )
+        }
+
+        return (
+            measureId: Binding(
+                get: { measurements[index].measureId },
+                set: { measurements[index].measureId = $0 }
+            ),
+            value: Binding(
+                get: { measurements[index].value },
+                set: { measurements[index].value = $0 }
+            )
         )
     }
 }

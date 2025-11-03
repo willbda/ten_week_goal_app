@@ -45,11 +45,75 @@ public struct MeasurementInputRow: View {
     }
 
     public var body: some View {
-        // TODO: Implement layout
-        // - Full-width Picker (not cramped)
-        // - Value TextField with proper alignment
-        // - Unit label showing selected measure's unit
-        // - Remove button
-        Text("MeasurementInputRow - TODO")
+        VStack(alignment: .leading, spacing: 8) {
+            // Full-width Picker (not cramped in HStack)
+            Picker("Measure", selection: $measureId) {
+                Text("Select measure").tag(nil as UUID?)
+
+                ForEach(availableMeasures, id: \.id) { measure in
+                    Text(measure.unit).tag(measure.id as UUID?)
+                }
+            }
+
+            // Value field with unit label (proper spacing, not cramped)
+            HStack {
+                Text("Value")
+                    .foregroundStyle(.secondary)
+
+                Spacer()  // Push TextField to the right side
+
+                TextField("0", value: $value, format: .number)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 100)  // Consistent width
+
+                if let selectedMeasure = availableMeasures.first(where: { $0.id == measureId }) {
+                    Text(selectedMeasure.unit)
+                        .foregroundStyle(.secondary)
+                        .frame(minWidth: 60, alignment: .leading)  // Reserve space for unit
+                }
+            }
+
+            // Remove button (consistent placement)
+            Button(role: .destructive, action: onRemove) {
+                Label("Remove", systemImage: "minus.circle.fill")
+                    .foregroundStyle(.red)
+            }
+            .buttonStyle(.borderless)
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - Preview
+
+#Preview("With Selection") {
+    Form {
+        Section {
+            MeasurementInputRow(
+                measureId: .constant(UUID()),
+                value: .constant(5.2),
+                availableMeasures: [
+                    Measure(unit: "km", measureType: "distance", title: "Distance"),
+                    Measure(unit: "minutes", measureType: "time", title: "Time"),
+                    Measure(unit: "occasions", measureType: "count", title: "Occasions")
+                ],
+                onRemove: { print("Removed") }
+            )
+        }
+    }
+}
+
+#Preview("Empty") {
+    Form {
+        Section {
+            MeasurementInputRow(
+                measureId: .constant(nil),
+                value: .constant(0),
+                availableMeasures: [
+                    Measure(unit: "km", measureType: "distance", title: "Distance")
+                ],
+                onRemove: { print("Removed") }
+            )
+        }
     }
 }

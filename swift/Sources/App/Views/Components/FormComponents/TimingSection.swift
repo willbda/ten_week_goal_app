@@ -36,12 +36,44 @@ public struct TimingSection: View {
     }
 
     public var body: some View {
-        // TODO: Implement section
-        // - Section("Timing")
-        // - DatePicker with date + time components
-        // - Duration HStack with consistent spacing
-        // - TextField with .frame(width: 100)
-        // - Unit label
-        Text("TimingSection - TODO")
+        Section("Timing") {
+            // Date and time picker
+            DatePicker(
+                "When",
+                selection: $startTime,
+                displayedComponents: [.date, .hourAndMinute]
+            )
+
+            // Duration field with consistent styling
+            HStack {
+                Text("Duration")
+                Spacer()
+                TextField("Minutes", value: $durationMinutes, format: .number)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 100)  // Consistent with MeasurementInputRow
+                Text("min")
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview("Current Time") {
+    Form {
+        TimingSection(
+            startTime: .constant(Date()),
+            durationMinutes: .constant(0)
+        )
+    }
+}
+
+#Preview("With Duration") {
+    Form {
+        TimingSection(
+            startTime: .constant(Date()),
+            durationMinutes: .constant(28)
+        )
     }
 }

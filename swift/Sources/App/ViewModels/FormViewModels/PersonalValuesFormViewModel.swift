@@ -57,6 +57,32 @@ public final class PersonalValuesFormViewModel {
     //   - Better autocomplete in Xcode
     // TRADEOFF: Duplicates field definitions (two places to update when adding fields)
     // FUTURE: If fields exceed 7-8 parameters, consider switching to ValueFormData object
+    /// Creates new PersonalValue from form data.
+    /// - Parameter formData: Validated form data
+    /// - Returns: Created PersonalValue
+    /// - Throws: CoordinatorError or database errors
+    ///
+    /// PATTERN: FormData-based method (clean, template-ready)
+    public func save(from formData: ValueFormData) async throws -> PersonalValue {
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            let value = try await coordinator.create(from: formData)
+            errorMessage = nil
+            return value
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
+        }
+    }
+
+    /// Creates new PersonalValue from individual parameters.
+    /// - Parameters: Individual form fields
+    /// - Returns: Created PersonalValue
+    /// - Throws: CoordinatorError or database errors
+    ///
+    /// NOTE: Legacy method - prefer save(from:) for consistency
     public func save(
         title: String,
         level: ValueLevel,
@@ -66,9 +92,6 @@ public final class PersonalValuesFormViewModel {
         lifeDomain: String? = nil,
         alignmentGuidance: String? = nil
     ) async throws -> PersonalValue {
-        isSaving = true
-        defer { isSaving = false }
-
         let formData = ValueFormData(
             title: title,
             detailedDescription: description,
@@ -79,14 +102,7 @@ public final class PersonalValuesFormViewModel {
             alignmentGuidance: alignmentGuidance
         )
 
-        do {
-            let value = try await coordinator.create(from: formData)
-            errorMessage = nil
-            return value
-        } catch {
-            errorMessage = error.localizedDescription
-            throw error
-        }
+        return try await save(from: formData)
     }
 
     /// Updates existing PersonalValue from form data.
