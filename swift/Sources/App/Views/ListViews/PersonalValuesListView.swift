@@ -26,38 +26,42 @@ public struct PersonalValuesListView: View {
     public init() {}
 
     public var body: some View {
-        List {
-            // NOTE: Performance - Filtering on Every Render
-            // CURRENT: Filters values array 4 times (once per ValueLevel) on every body evaluation
-            // IMPACT: O(n × 4) complexity, but fine for <500 values
-            // OPTIMIZE: If performance issues arise in Phase 6, use Dictionary(grouping:by:)
-            // ALTERNATIVE: @Query(PersonalValue.order(by: \.valueLevel)) for DB-level sorting
-            ForEach(ValueLevel.allCases, id: \.self) { level in
-                let levelValues = values.filter { $0.valueLevel == level }
-                if !levelValues.isEmpty {
-                    Section(level.displayName) {
-                        ForEach(levelValues) { value in
-                            // TODO: Phase 4 - Add Edit Navigation
-                            // PATTERN: NavigationLink { PersonalValuesFormView(mode: .edit(value)) }
-                            // REQUIRES: Edit mode support in FormView
-                            PersonalValuesRowView(value: value)
+        Group {
+            if values.isEmpty {
+                // Empty state
+                ContentUnavailableView {
+                    Label("No Values Yet", systemImage: "heart")
+                } description: {
+                    Text("Define what matters to you by adding your first personal value")
+                } actions: {
+                    Button("Add Value") {
+                        showingAddValue = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            } else {
+                List {
+                    // NOTE: Performance - Filtering on Every Render
+                    // CURRENT: Filters values array 4 times (once per ValueLevel) on every body evaluation
+                    // IMPACT: O(n × 4) complexity, but fine for <500 values
+                    // OPTIMIZE: If performance issues arise in Phase 6, use Dictionary(grouping:by:)
+                    // ALTERNATIVE: @Query(PersonalValue.order(by: \.valueLevel)) for DB-level sorting
+                    ForEach(ValueLevel.allCases, id: \.self) { level in
+                        let levelValues = values.filter { $0.valueLevel == level }
+                        if !levelValues.isEmpty {
+                            Section(level.displayName) {
+                                ForEach(levelValues) { value in
+                                    // TODO: Phase 4 - Add Edit/Delete (like Terms)
+                                    // PATTERN: .onTapGesture for edit, .swipeActions for delete
+                                    // REQUIRES: Edit mode support in PersonalValuesFormView
+                                    PersonalValuesRowView(value: value)
+                                }
+                            }
                         }
-                        // TODO: Phase 4 - Add Delete Functionality
-                        // .onDelete { indexSet in
-                        //     Task { for index in indexSet { try? await viewModel.delete(levelValues[index]) } }
-                        // }
-                        // REQUIRES: delete() method in ViewModel + Coordinator
                     }
                 }
             }
         }
-        // TODO: Phase 5 - Add Empty State
-        // .overlay {
-        //     if values.isEmpty {
-        //         ContentUnavailableView("No Values Yet", systemImage: "heart.circle",
-        //                               description: Text("Tap + to add your first value"))
-        //     }
-        // }
         .navigationTitle("Values")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

@@ -16,8 +16,9 @@ public enum TimePeriodSpecialization: Sendable {
     // Future: case quarter(number: Int), case sprint(number: Int)
 }
 
-/// Form data for creating TimePeriod with appropriate specialization
+/// Form data for creating/updating TimePeriod with appropriate specialization
 public struct TimePeriodFormData: Sendable {
+    // TimePeriod fields
     public let title: String?
     public let detailedDescription: String?
     public let freeformNotes: String?
@@ -25,13 +26,21 @@ public struct TimePeriodFormData: Sendable {
     public let targetDate: Date
     public let specialization: TimePeriodSpecialization
 
+    // GoalTerm-specific fields (used when specialization = .term)
+    public let theme: String?
+    public let reflection: String?
+    public let status: TermStatus?
+
     public init(
         title: String? = nil,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         startDate: Date,
         targetDate: Date,
-        specialization: TimePeriodSpecialization
+        specialization: TimePeriodSpecialization,
+        theme: String? = nil,
+        reflection: String? = nil,
+        status: TermStatus? = nil
     ) {
         self.title = title
         self.detailedDescription = detailedDescription
@@ -39,5 +48,8 @@ public struct TimePeriodFormData: Sendable {
         self.startDate = startDate
         self.targetDate = targetDate
         self.specialization = specialization
+        self.theme = theme
+        self.reflection = reflection
+        self.status = status
     }
 }

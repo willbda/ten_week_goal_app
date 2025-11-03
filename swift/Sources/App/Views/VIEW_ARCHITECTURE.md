@@ -1,6 +1,6 @@
 # View Architecture - Parity Plan
 **Written by Claude Code on 2025-10-31**
-**Updated**: 2025-11-02 (PersonalValue Complete)
+**Updated**: 2025-11-02 (PersonalValue + Term Complete with Full CRUD)
 
 ## Current State Analysis
 
@@ -68,13 +68,14 @@ coordinator.createGoal(expectation, goal, [measure], [relevance])  // ✅ Atomic
 ### Phase 1: Core Infrastructure (Foundation) ⚠️ IN PROGRESS
 **Goal**: Enable coordinator pattern, validation, basic multi-model CRUD
 
-#### 1.1 Coordinators (~600 lines) - ✅ VALUE COMPLETE, 3 REMAINING
+#### 1.1 Coordinators (~600 lines) - ✅ 2/4 COMPLETE (PersonalValue + Term)
 
 **Status Update (2025-11-02)**:
-- ✅ **PersonalValueCoordinator** - Complete with @Observable pattern
+- ✅ **PersonalValueCoordinator** - Complete (create only, needs update/delete for parity)
+- ✅ **TimePeriodCoordinator** - Complete with FULL CRUD (97 lines, 10 hours actual)
 - ✅ **CoordinatorError** - Complete
 - ✅ **ValueFormData** - Complete
-- 🚧 **TimePeriodCoordinator** - Skeleton created (~80 lines, 3 hours)
+- ✅ **TimePeriodFormData** - Complete
 - ❌ **ActionCoordinator** - Not started (~200 lines, 4 hours)
 - ❌ **GoalCoordinator** - Not started (~250 lines, 6 hours)
 
@@ -183,6 +184,118 @@ public final class [Entity]Coordinator: ObservableObject {
 - Users never see "Time Period" terminology in v1.0
 **Result**: `TermFormView` pre-configures `specialization: .term(number)` when calling generic ViewModel
 
+---
+
+### Key Learnings from Term Implementation (2025-11-02)
+
+**Term proves the multi-model coordinator pattern at scale:**
+
+1. **Multi-Model Atomic Transactions** (2 models)
+   ```swift
+   return try await database.write { db in
+       // 1. Insert abstraction
+       let timePeriod = try TimePeriod.upsert { ... }.returning { $0 }.fetchOne(db)!
+
+       // 2. Insert specialization with FK
+       try GoalTerm.upsert {
+           GoalTerm.Draft(
+               timePeriodId: timePeriod.id,  // FK to abstraction
+               termNumber: number,
+               status: .planned
+           )
+       }.execute(db)
+
+       // 3. Return abstraction (caller accesses specialization via relationship)
+       return timePeriod
+   }
+   ```
+   - **Result**: Clean 1:1 relationship handling
+   - **Applies to**: Goal (Expectation + Goal), Action (Action + Measurements)
+
+2. **Full CRUD Lifecycle** (Decision Log Entry #9)
+   - `create()` - Insert TimePeriod + GoalTerm atomically
+   - `update()` - Update both entities, preserve IDs and logTime
+   - `delete()` - Delete specialization first (FK dependency), then abstraction
+   - **Pattern**: All future coordinators must implement full CRUD for parity
+
+3. **FetchKeyRequest for Performant JOINs** (Decision Log Entry #7)
+   ```swift
+   public struct TermsWithPeriods: FetchKeyRequest {
+       public func fetch(_ db: Database) throws -> [TermWithPeriod] {
+           let results = try GoalTerm.all
+               .join(TimePeriod.all) { $0.timePeriodId.eq($1.id) }
+               .fetchAll(db)
+           return results.map { (term, timePeriod) in
+               TermWithPeriod(term: term, timePeriod: timePeriod)
+           }
+       }
+   }
+   ```
+   - Single JOIN query (no N+1)
+   - Wrapper type (TermWithPeriod) for combined data
+   - @Fetch auto-updates on database changes
+   - Result: Performant, reactive list views
+
+6. **Wrapper Types for Multi-Model Display** (Decision Log Entry #8)
+   ```swift
+   public struct TermWithPeriod: Identifiable, Sendable {
+       public let term: GoalTerm
+       public let timePeriod: TimePeriod
+       public var id: UUID { term.id }
+   }
+   ```
+   - Combines related models for display
+   - Identifiable for List compatibility
+   - Sendable for concurrency safety
+
+5. **Edit Mode Pattern in Forms**
+   ```swift
+   public struct TermFormView: View {
+       let termToEdit: (TimePeriod, GoalTerm)?  // Optional for edit mode
+
+       var isEditMode: Bool { termToEdit != nil }
+       var formTitle: String { isEditMode ? "Edit Term" : "New Term" }
+
+       init(termToEdit: (TimePeriod, GoalTerm)? = nil) {
+           if let (timePeriod, goalTerm) = termToEdit {
+               // Initialize @State from existing data
+               _termNumber = State(initialValue: goalTerm.termNumber)
+               _startDate = State(initialValue: timePeriod.startDate)
+               // ...
+           } else {
+               // Initialize with defaults
+               _termNumber = State(initialValue: 1)
+               _startDate = State(initialValue: Date())
+               // ...
+           }
+       }
+   }
+   ```
+   - Single form for create + edit
+   - State initialization in init()
+   - Conditional sections (reflection only shows in edit mode)
+
+6. **List View Interactions Pattern**
+   ```swift
+   List {
+       ForEach(items) { item in
+           RowView(item)
+               .onTapGesture { edit(item) }         // Tap → edit
+               .swipeActions(edge: .trailing) {      // Right swipe → delete
+                   Button(role: .destructive) { delete(item) }
+               }
+               .swipeActions(edge: .leading) {       // Left swipe → edit
+                   Button { edit(item) }
+                       .tint(.blue)
+               }
+       }
+   }
+   ```
+   - Tap row to edit
+   - Swipe right for delete (destructive)
+   - Swipe left for edit (blue)
+   - Empty state with helpful CTA
+
 **Decision: Keep All Coordinators for Consistency**
 - Even simple entities use coordinators (PersonalValue)
 - Consistent pattern easier to understand than hybrid approach
@@ -191,12 +304,12 @@ public final class [Entity]Coordinator: ObservableObject {
 
 ---
 
-#### 1.2 ViewModels (~400 lines) - ✅ VALUE COMPLETE, 1 SKELETON, 2 REMAINING
+#### 1.2 ViewModels (~400 lines) - ✅ 2/4 COMPLETE (PersonalValue + Term)
 
 **Status Update (2025-11-02)**:
-- ✅ **PersonalValuesFormViewModel** - Complete with @Observable
-- 🚧 **TimePeriodFormViewModel** - Skeleton created (generic for all TimePeriod types)
-- ❌ **ActionFormViewModel** - Not started (ActionFormData exists, but no ViewModel)
+- ✅ **PersonalValuesFormViewModel** - Complete (save only, needs update/delete)
+- ✅ **TimePeriodFormViewModel** - Complete with save/update/delete (79 lines)
+- ❌ **ActionFormViewModel** - Not started
 - ❌ **GoalFormViewModel** - Not started
 
 **Key Learnings from PersonalValue Implementation**:
@@ -265,11 +378,11 @@ public final class [Entity]FormViewModel {
 
 ---
 
-#### 1.3 Form Views (~800 lines) - ✅ VALUE COMPLETE, 1 SKELETON, 2 REMAINING
+#### 1.3 Form Views (~800 lines) - ✅ 2/4 COMPLETE (PersonalValue + Term)
 
 **Status Update (2025-11-02)**:
-- ✅ **PersonalValuesFormView** - Complete with FormScaffold
-- 🚧 **TermFormView** - Skeleton created (type-specific wrapper of TimePeriodFormViewModel)
+- ✅ **PersonalValuesFormView** - Complete (create only, needs edit mode)
+- ✅ **TermFormView** - Complete with create + edit modes (184 lines)
 - ❌ **ActionFormView** - Exists but needs ViewModel integration
 - ❌ **GoalFormView** - Needs major refactor (multi-model)
 
@@ -319,11 +432,11 @@ public final class [Entity]FormViewModel {
 
 ---
 
-#### 1.4 List Views (~400 lines) - ✅ VALUE COMPLETE, 1 SKELETON, 2 REMAINING
+#### 1.4 List Views (~400 lines) - ✅ 2/4 COMPLETE (PersonalValue + Term)
 
 **Status Update (2025-11-02)**:
-- ✅ **PersonalValuesListView** - Complete with @FetchAll
-- 🚧 **TermsListView** - Skeleton created (filters TimePeriods with goalTerm join)
+- ✅ **PersonalValuesListView** - Complete (basic, needs tap/swipe)
+- ✅ **TermsListView** - Complete with JOIN query, tap/swipe, empty state (101 lines)
 - ❌ **ActionsListView** - Exists but needs refactor for measurements
 - ❌ **GoalsListView** - Exists but needs refactor for multi-model
 
@@ -363,11 +476,11 @@ public final class [Entity]FormViewModel {
 
 ---
 
-#### 1.5 Row Views (~200 lines) - ✅ VALUE COMPLETE, 1 SKELETON, 2 REMAINING
+#### 1.5 Row Views (~200 lines) - ✅ 2 COMPLETE, 2 REMAINING
 
 **Status Update (2025-11-02)**:
 - ✅ **PersonalValuesRowView** - Complete with BadgeView template
-- 🚧 **TermRowView** - Skeleton created (displays TimePeriod as Term via relationship)
+- ✅ **TermRowView** - Complete with multi-model display (term + timePeriod) (NEW)
 - ❌ **ActionRowView** - Needs measurement display
 - ❌ **GoalRowView** - Needs multi-metric display
 
@@ -388,46 +501,81 @@ public final class [Entity]FormViewModel {
 
 ### Phase 1 Progress Summary
 
-| Component | Complete | Remaining | Total Lines |
-|-----------|----------|-----------|-------------|
-| **Coordinators** | ✅ 1/4 (PersonalValue) | 3 (Term, Action, Goal) | ~600 |
-| **ViewModels** | ✅ 1/4 (PersonalValue) | 3 (Term, Action, Goal) | ~400 |
-| **Form Views** | ✅ 1/4 (PersonalValue) | 3 (Term, Action, Goal) | ~800 |
-| **List Views** | ✅ 1/4 (PersonalValue) | 3 (Term, Action, Goal) | ~400 |
-| **Row Views** | ✅ 1/4 (PersonalValue) | 3 (Term, Action, Goal) | ~200 |
-| **TOTAL** | **✅ ~500 lines** | **❌ ~2,000 lines** | **~2,400 lines** |
+| Component | PersonalValue | Term | Action | Goal | Total Lines |
+|-----------|---------------|------|--------|------|-------------|
+| **Coordinator** | ✅ Create only | ✅ Full CRUD | ❌ | ❌ | ~600 |
+| **ViewModel** | ✅ Save only | ✅ Save/Update/Delete | ❌ | ❌ | ~400 |
+| **FormView** | ✅ Create only | ✅ Create + Edit | ❌ | ❌ | ~800 |
+| **ListView** | ✅ Basic | ✅ + Tap/Swipe/Empty | ❌ | ❌ | ~400 |
+| **RowView** | ✅ Basic | ✅ Multi-model | ❌ | ❌ | ~200 |
+| **Query Helper** | N/A | ✅ JOIN FetchKeyRequest | ❌ | ❌ | ~200 |
 
-**Phase 1 Status**: 21% Complete (1/4 entities)
+**Lines Written**: ~1,100 lines ✅
+**Lines Remaining**: ~1,600 lines ❌
+**Phase 1 Status**: 50% Complete (2/4 entities)
+
+**CRUD Parity Status**:
+- **PersonalValue**: Create ✅ | Update ❌ | Delete ❌ | **Partial** (needs update/delete for parity)
+- **Term**: Create ✅ | Update ✅ | Delete ✅ | **FULL PARITY** ⭐
+- **Action**: Not started
+- **Goal**: Not started
+
+**Note**: Term achieves full parity with old app (create/edit/delete/list/empty state). PersonalValue needs update() and delete() added for full parity.
 
 ---
 
 ## Next Immediate Steps
 
-### Recommended Order (Based on Complexity)
+### ✅ Completed
+1. ~~**PersonalValueCoordinator + Vertical Slice**~~ ✅ COMPLETE (create only, ~6 hours)
+2. ~~**TermCoordinator + Full Vertical Slice**~~ ✅ COMPLETE (full CRUD, ~10 hours)
 
-1. **TermCoordinator + Full Vertical Slice** (~8 hours)
-   - TermCoordinator (2 models, simple FK)
-   - TermFormViewModel
-   - Update TermFormView to use ViewModel
-   - TermsListView (new)
-   - TermRowView (update)
-   - **Result**: Term CRUD working end-to-end
+### 🎯 Current Priority
 
-2. **ActionCoordinator + Full Vertical Slice** (~12 hours)
-   - ActionCoordinator (3 models, many-to-many)
-   - ActionFormViewModel
-   - Update ActionFormView to use ViewModel
-   - Update ActionsListView for measurements
-   - Update ActionRowView for measurements
-   - **Result**: Action CRUD with measurements working
+**Option A: Complete PersonalValue CRUD** (2-3 hours)
+- Add `update()` to PersonalValueCoordinator
+- Add `delete()` to PersonalValueCoordinator
+- Add `update()` and `delete()` to PersonalValuesFormViewModel
+- Add tap/swipe to PersonalValuesListView
+- Add edit mode to PersonalValuesFormView
+- **Benefit**: Achieves full parity for Values (consistency with Term)
+- **Drawback**: Delays Action/Goal progress
 
-3. **GoalCoordinator + Full Vertical Slice** (~18 hours)
-   - GoalCoordinator (5+ models, complex)
-   - GoalFormViewModel
-   - Major refactor GoalFormView (Expectation + targets + alignments)
-   - Update GoalsListView for multi-model
-   - Update GoalRowView for metrics
-   - **Result**: Goal CRUD with full SMART criteria working
+**Option B: Start ActionCoordinator** (12-15 hours)
+- More complex: 3 models (Action + MeasuredAction[] + ActionGoalContribution[])
+- Many-to-many relationships
+- Relationship validation needed
+- **Benefit**: Makes progress on complex entities
+- **Drawback**: PersonalValue stays incomplete
+
+**Recommendation**: Option A (complete PersonalValue) for consistency, THEN ActionCoordinator
+
+### Recommended Order (Remaining Work)
+
+1. **PersonalValue CRUD Completion** (~3 hours) - RECOMMENDED NEXT
+   - Add update()/delete() to Coordinator
+   - Add update()/delete() to ViewModel
+   - Add tap/swipe to ListView
+   - Add edit mode to FormView
+   - **Result**: 2/4 entities with full parity
+
+2. **ActionCoordinator + Full Vertical Slice** (~15 hours)
+   - ActionCoordinator (3 models: Action + MeasuredAction[] + ActionGoalContribution[])
+   - ActionFormViewModel (with update/delete)
+   - Update ActionFormView (metric selection, goal contribution)
+   - Update ActionsListView (measurement display, JOIN query)
+   - Create ActionsQuery.swift (FetchKeyRequest pattern)
+   - Update ActionRowView (display measurements)
+   - **Result**: Action CRUD with measurements and goal tracking
+
+3. **GoalCoordinator + Full Vertical Slice** (~20 hours)
+   - GoalCoordinator (5 models: Expectation + Goal + ExpectationMeasure[] + GoalRelevance[] + TermGoalAssignment?)
+   - GoalFormViewModel (with update/delete)
+   - Major refactor GoalFormView (multi-metric targets, value alignments, term assignment)
+   - Update GoalsListView (multi-model display, progress calculation)
+   - Create GoalsQuery.swift (complex JOIN for Goal + Expectation + Measures + Relevances)
+   - Update GoalRowView (multi-metric progress display)
+   - **Result**: Goal CRUD with full SMART criteria and progress tracking
 
 **Total Remaining Phase 1**: ~38 hours (~5 working days)
 
@@ -473,27 +621,178 @@ public final class [Entity]FormViewModel {
 - Complex entities (Goal) definitely need coordinators
 **Result**: Clear pattern: Always use coordinator for persistence
 
+### Decision #5: Ontological Purity in Data Layer (2025-11-02)
+**Context**: TimePeriod/Term implementation - how to handle abstractions vs specializations
+**Decision**: Coordinators work with abstractions (TimePeriod), not specializations (Term)
+**Rationale**:
+- TimePeriod is ontologically correct abstraction
+- Specializations (Term, Year, Quarter) via enum pattern
+- Views handle user-friendly naming ("Terms" not "Time Periods")
+- Future-extensible without refactoring data layer
+**Result**:
+- TimePeriodCoordinator with specialization enum
+- TermFormView wraps generic ViewModel with `.term(number)`
+- Can add YearFormView later without coordinator changes
+
+### Decision #6: Generic ViewModels + Type-Specific Views (2025-11-02)
+**Context**: How to handle multiple specializations of same abstraction
+**Decision**: Generic ViewModel, type-specific wrapper views
+**Rationale**:
+- TimePeriodFormViewModel works with ANY specialization
+- TermFormView/YearFormView pre-configure specialization
+- User never sees generic terminology in UI
+- Avoids duplicating ViewModel logic per type
+**Result**:
+- TimePeriodFormViewModel (generic, 79 lines)
+- TermFormView (specific, 184 lines, wraps generic)
+- Easy to add YearFormView by wrapping same ViewModel
+
+### Decision #7: FetchKeyRequest for JOIN Queries (2025-11-02)
+**Context**: How to efficiently fetch related data for list views
+**Decision**: Custom FetchKeyRequest types for multi-model queries
+**Rationale**:
+- Single JOIN query vs N+1 fetches (performant)
+- Encapsulates query logic (reusable)
+- Works with @Fetch for reactive updates
+- Pattern from SQLiteData Reminders example
+**Result**:
+- TermsQuery.swift with TermsWithPeriods FetchKeyRequest
+- TermWithPeriod wrapper type for combined data
+- TermsListView uses @Fetch(TermsWithPeriods())
+- Pattern to replicate for Actions/Goals
+
+### Decision #8: Wrapper Types for Multi-Model Display (2025-11-02)
+**Context**: How to pass related data to row views efficiently
+**Decision**: Create Identifiable wrapper types combining multiple models
+**Rationale**:
+- Parent fetches efficiently via JOIN
+- Child (row view) receives both models directly
+- No database access in display components
+- Type-safe, clear API
+**Result**:
+- TermWithPeriod struct wrapping GoalTerm + TimePeriod
+- TermRowView(term: term, timePeriod: timePeriod)
+- No relationship traversal or N+1 queries in row
+
+### Decision #9: Full CRUD in Coordinators (2025-11-02)
+**Context**: Initial implementation only had create(), missing update() and delete()
+**Decision**: All coordinators must implement full CRUD (create/update/delete)
+**Rationale**:
+- Matches old app parity requirement
+- Users need to edit and delete entities, not just create
+- Atomic updates critical for multi-model entities
+- Delete needs proper FK cascade handling
+**Result**:
+- TimePeriodCoordinator: create() + update() + delete()
+- PersonalValueCoordinator: Only create() so far (TODO: add update/delete)
+- Pattern: update() preserves IDs and logTime, delete() handles FK dependencies
+
 ---
 
 ## Testing Status
 
-**PersonalValue Tests**: ❌ Not written yet
-- Need unit tests for PersonalValueCoordinator
-- Need integration test for full create cycle
-- Pattern will apply to other coordinators
+**Automated Tests**: ❌ None written yet
+- PersonalValue: Need coordinator + ViewModel tests
+- Term: Need coordinator + ViewModel + FetchKeyRequest tests
+- Pattern will apply to Action/Goal
 
-**Remaining Tests**: ❌ All Phase 1 tests pending
+**Manual Testing Completed**:
+
+**PersonalValue** ✅ Partial
+- ✅ Create works via form
+- ✅ List displays with badges
+- ❌ Edit not implemented
+- ❌ Delete not implemented
+
+**Term** ✅ Full
+- ✅ Create term via form
+- ✅ Edit term via tap or swipe-left
+- ✅ Delete term via swipe-right
+- ✅ Empty state shows when no terms
+- ✅ Form populates correctly in edit mode
+- ✅ Theme/reflection/status fields work
+- ✅ List updates reactively on changes
+- ✅ Multi-model display (term number + dates + title)
+
+---
+
+## File Structure (Phase 1 Complete)
+
+### Completed (PersonalValue + Term):
+```
+swift/Sources/
+├── Services/Coordinators/
+│   ├── PersonalValueCoordinator.swift       ✅ Create only (TODO: add update/delete)
+│   ├── TimePeriodCoordinator.swift          ✅ Full CRUD (create/update/delete)
+│   ├── CoordinatorError.swift               ✅
+│   └── FormData/
+│       ├── ValueFormData.swift              ✅
+│       └── TimePeriodFormData.swift         ✅
+├── App/ViewModels/FormViewModels/
+│   ├── PersonalValuesFormViewModel.swift    ✅ Save only (TODO: add update/delete)
+│   └── TimePeriodFormViewModel.swift        ✅ Save/Update/Delete
+├── App/Views/
+│   ├── PersonalValues/
+│   │   ├── PersonalValuesFormView.swift     ✅ Create only (TODO: add edit mode)
+│   │   ├── PersonalValuesListView.swift     ✅ Basic (TODO: add tap/swipe)
+│   │   └── PersonalValuesRowView.swift      ✅
+│   └── TimePeriods/
+│       ├── TermFormView.swift               ✅ Create + Edit modes
+│       ├── TermsListView.swift              ✅ Tap/Swipe/Empty state
+│       ├── TermRowView.swift                ✅ Multi-model display
+│       └── TermsQuery.swift                 ✅ FetchKeyRequest JOIN pattern
+```
+
+### Remaining (Action + Goal):
+```
+swift/Sources/
+├── Services/Coordinators/
+│   ├── ActionCoordinator.swift              ❌ TODO (~200 lines)
+│   ├── GoalCoordinator.swift                ❌ TODO (~250 lines)
+│   └── FormData/
+│       ├── ActionFormData.swift             ✅ EXISTS (needs review)
+│       └── GoalFormData.swift               ❌ TODO
+├── App/ViewModels/FormViewModels/
+│   ├── ActionFormViewModel.swift            ❌ TODO
+│   └── GoalFormViewModel.swift              ❌ TODO
+├── App/Views/
+│   ├── Actions/
+│   │   ├── ActionFormView.swift             🚧 EXISTS (needs ViewModel integration)
+│   │   ├── ActionsListView.swift            🚧 EXISTS (needs measurement display)
+│   │   ├── ActionRowView.swift              🚧 EXISTS (needs measurement display)
+│   │   └── ActionsQuery.swift               ❌ TODO (JOIN Action+Measures)
+│   └── Goals/
+│       ├── GoalFormView.swift               🚧 EXISTS (needs major refactor)
+│       ├── GoalsListView.swift              🚧 EXISTS (needs multi-model)
+│       ├── GoalRowView.swift                🚧 EXISTS (needs metrics display)
+│       └── GoalsQuery.swift                 ❌ TODO (JOIN Goal+Expectation+Measures)
+```
 
 ---
 
 ## References
 
-- **ARCHITECTURE_EVALUATION_20251102.md** - Full analysis of @Observable vs ObservableObject, coordinator pattern
+**Reference Implementations** (Use these as templates):
+- **TimePeriodCoordinator.swift** ⭐ - Multi-model coordinator with FULL CRUD (create/update/delete)
+- **TermsQuery.swift** ⭐ - FetchKeyRequest JOIN pattern for performant multi-model queries
+- **TimePeriodFormViewModel.swift** ⭐ - Generic ViewModel with save/update/delete operations
+- **TermFormView.swift** ⭐ - Edit mode support, state initialization pattern
+- **TermsListView.swift** ⭐ - Tap/swipe interactions, empty state, @Fetch usage
+
+**Earlier Implementations** (Simpler patterns):
+- **PersonalValueCoordinator.swift** - Single-model coordinator (create only - needs update/delete)
+- **PersonalValuesFormViewModel.swift** - @Observable pattern basics (save only - needs update/delete)
+- **PersonalValuesFormView.swift** - FormScaffold usage (create only - needs edit mode)
+- **PersonalValuesListView.swift** - Basic @FetchAll usage (needs tap/swipe)
+
+**Architecture Documentation**:
+- **ARCHITECTURE_EVALUATION_20251102.md** - @Observable vs ObservableObject analysis
 - **REARCHITECTURE_COMPLETE_GUIDE.md** - Overall 7-phase roadmap
-- **PersonalValueCoordinator.swift** - Reference implementation with inline docs
-- **PersonalValuesFormViewModel.swift** - Reference ViewModel with @Observable pattern
-- **PersonalValuesFormView.swift** - Reference view with FormScaffold usage
+
+**SQLiteData Examples** (External references):
+- sqlite-data-main/Examples/Reminders/Schema.swift - JOIN pattern inspiration
+- sqlite-data-main/Examples/CaseStudies/ObservableModelDemo.swift - @Observable + @Dependency pattern
 
 ---
 
-**Last Updated**: 2025-11-02 after PersonalValue vertical slice completion
+**Last Updated**: 2025-11-02 after PersonalValue + Term vertical slice completion (Term has full CRUD parity)

@@ -24,29 +24,81 @@ import SwiftUI
 /// - No ViewModel needed (simple list)
 /// - TermRowView receives both models directly
 public struct TermsListView: View {
-    @State private var showingAddTerm = false
+    @State private var showingForm = false
+    @State private var viewModel = TimePeriodFormViewModel()
 
     // Query GoalTerms with TimePeriods via JOIN (single query)
     @Fetch(wrappedValue: [], TermsWithPeriods())
     private var termsWithPeriods: [TermWithPeriod]
 
+    /// Term being edited (nil = create mode)
+    @State private var termToEdit: (timePeriod: TimePeriod, goalTerm: GoalTerm)?
+
     public var body: some View {
-        List(termsWithPeriods) { item in
-            TermRowView(term: item.term, timePeriod: item.timePeriod)
+        Group {
+            if termsWithPeriods.isEmpty {
+                // Empty state
+                ContentUnavailableView {
+                    Label("No Terms Yet", systemImage: "calendar")
+                } description: {
+                    Text("Organize your goals by creating your first 10-week term")
+                } actions: {
+                    Button("Add Term") {
+                        termToEdit = nil
+                        showingForm = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            } else {
+                List {
+                    ForEach(termsWithPeriods) { item in
+                        TermRowView(term: item.term, timePeriod: item.timePeriod)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                // Tap row → edit
+                                termToEdit = (item.timePeriod, item.term)
+                                showingForm = true
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    Task {
+                                        try? await viewModel.delete(
+                                            timePeriod: item.timePeriod,
+                                            goalTerm: item.term
+                                        )
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                Button {
+                                    // Swipe left → edit
+                                    termToEdit = (item.timePeriod, item.term)
+                                    showingForm = true
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.blue)
+                            }
+                    }
+                }
+            }
         }
         .navigationTitle("Terms")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    showingAddTerm = true
+                    termToEdit = nil  // Create mode
+                    showingForm = true
                 } label: {
                     Label("Add Term", systemImage: "plus")
                 }
             }
         }
-        .sheet(isPresented: $showingAddTerm) {
+        .sheet(isPresented: $showingForm) {
             NavigationStack {
-                TermFormView()
+                TermFormView(termToEdit: termToEdit)
             }
         }
     }

@@ -48,12 +48,12 @@ public final class PersonalValueCoordinator: ObservableObject {
     /// - Returns: Persisted PersonalValue with generated ID
     /// - Throws: Database errors if constraints violated
     ///
-    /// IMPLEMENTATION NOTE: Uses `.upsert` pattern from SQLiteData examples
-    /// This matches the pattern in Reminders/SyncUps apps and enables future edit support
-    /// where we can use same method with existing ID to update instead of create
+    /// IMPLEMENTATION NOTE: Uses `.insert` for CREATE operations
+    /// This ensures CloudKit properly tracks new records vs updates
+    /// For updates, use `.upsert` with existing ID (see update() method in Phase 4)
     public func create(from formData: ValueFormData) async throws -> PersonalValue {
         return try await database.write { db in
-            try PersonalValue.upsert {
+            try PersonalValue.insert {
                 PersonalValue.Draft(
                     id: UUID(),
                     title: formData.title,

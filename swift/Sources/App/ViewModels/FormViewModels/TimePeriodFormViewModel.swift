@@ -50,7 +50,10 @@ public final class TimePeriodFormViewModel {
         specialization: TimePeriodSpecialization,
         title: String? = nil,
         description: String? = nil,
-        notes: String? = nil
+        notes: String? = nil,
+        theme: String? = nil,
+        reflection: String? = nil,
+        status: TermStatus? = nil
     ) async throws -> TimePeriod {
         isSaving = true
         defer { isSaving = false }
@@ -61,7 +64,10 @@ public final class TimePeriodFormViewModel {
             freeformNotes: notes,
             startDate: startDate,
             targetDate: targetDate,
-            specialization: specialization
+            specialization: specialization,
+            theme: theme,
+            reflection: reflection,
+            status: status
         )
 
         do {
@@ -74,5 +80,68 @@ public final class TimePeriodFormViewModel {
         }
     }
 
-    // TODO: Phase 4 - Add Update and Delete
+    /// Updates existing TimePeriod with specialization.
+    /// - Parameters: Existing entities + updated form fields
+    /// - Returns: Updated TimePeriod
+    /// - Throws: Database errors
+    public func update(
+        timePeriod: TimePeriod,
+        goalTerm: GoalTerm,
+        startDate: Date,
+        targetDate: Date,
+        specialization: TimePeriodSpecialization,
+        title: String? = nil,
+        description: String? = nil,
+        notes: String? = nil,
+        theme: String? = nil,
+        reflection: String? = nil,
+        status: TermStatus? = nil
+    ) async throws -> TimePeriod {
+        isSaving = true
+        defer { isSaving = false }
+
+        let formData = TimePeriodFormData(
+            title: title,
+            detailedDescription: description,
+            freeformNotes: notes,
+            startDate: startDate,
+            targetDate: targetDate,
+            specialization: specialization,
+            theme: theme,
+            reflection: reflection,
+            status: status
+        )
+
+        do {
+            let updatedTimePeriod = try await coordinator.update(
+                timePeriod: timePeriod,
+                goalTerm: goalTerm,
+                from: formData
+            )
+            errorMessage = nil
+            return updatedTimePeriod
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
+        }
+    }
+
+    /// Deletes TimePeriod and its specialization.
+    /// - Parameters: Entities to delete
+    /// - Throws: Database errors (e.g., if Term has goal assignments)
+    public func delete(
+        timePeriod: TimePeriod,
+        goalTerm: GoalTerm
+    ) async throws {
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            try await coordinator.delete(timePeriod: timePeriod, goalTerm: goalTerm)
+            errorMessage = nil
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
+        }
+    }
 }
