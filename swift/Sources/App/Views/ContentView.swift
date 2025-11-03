@@ -22,11 +22,13 @@
                       Label("Actions", systemImage: "checkmark.circle")
                   }
 
-              // Tab 2: Terms (UI only - no persistence)
-              TermsPlaceholder()
-                  .tabItem {
-                      Label("Terms", systemImage: "calendar")
-                  }
+              // Tab 2: Terms (Phase 1 - Complete)
+              NavigationStack {
+                  TermsListView()
+              }
+              .tabItem {
+                  Label("Terms", systemImage: "calendar")
+              }
 
               // Tab 3: Goals (Future Sprint 2)
               PlaceholderTab(
@@ -48,40 +50,6 @@
   }
 
   // MARK: - Placeholder Views
-
-  /// Placeholder for Terms tab (TermFormView exists but no list view yet)
-  private struct TermsPlaceholder: View {
-      @State private var showingForm = false
-
-      var body: some View {
-          NavigationStack {
-              VStack(spacing: 20) {
-                  Image(systemName: "calendar")
-                      .font(.system(size: 60))
-                      .foregroundStyle(.blue)
-
-                  Text("Terms")
-                      .font(.largeTitle)
-                      .fontWeight(.bold)
-
-                  Text("UI components ready")
-                      .font(.subheadline)
-                      .foregroundStyle(.secondary)
-
-                  Button("Try Term Form") {
-                      showingForm = true
-                  }
-                  .buttonStyle(.borderedProminent)
-              }
-              .navigationTitle("Terms")
-              .sheet(isPresented: $showingForm) {
-                  TermFormView { formData in
-                      print("Term validated: \(formData.termNumber)")
-                  }
-              }
-          }
-      }
-  }
 
   /// Generic placeholder for future tabs
   private struct PlaceholderTab: View {

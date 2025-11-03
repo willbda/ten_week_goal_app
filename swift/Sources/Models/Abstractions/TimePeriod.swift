@@ -97,3 +97,7 @@ public struct TimePeriod: DomainAbstraction {
         self.endDate = endDate
     }
 }
+
+// MARK: - Relationships
+// Note: SQLiteData doesn't have built-in relationship API like GRDB
+// Use @Fetch or manual queries to load related entities

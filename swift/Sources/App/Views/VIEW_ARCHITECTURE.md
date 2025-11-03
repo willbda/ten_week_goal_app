@@ -72,9 +72,9 @@ coordinator.createGoal(expectation, goal, [measure], [relevance])  // ✅ Atomic
 
 **Status Update (2025-11-02)**:
 - ✅ **PersonalValueCoordinator** - Complete with @Observable pattern
-- ✅ **CoordinatorError** - Renamed from CoordinatorErrorCoordinator
+- ✅ **CoordinatorError** - Complete
 - ✅ **ValueFormData** - Complete
-- ❌ **TermCoordinator** - Not started (~150 lines, 3 hours)
+- 🚧 **TimePeriodCoordinator** - Skeleton created (~80 lines, 3 hours)
 - ❌ **ActionCoordinator** - Not started (~200 lines, 4 hours)
 - ❌ **GoalCoordinator** - Not started (~250 lines, 6 hours)
 
@@ -162,6 +162,27 @@ public final class [Entity]Coordinator: ObservableObject {
    - 5+ models atomically
    - Full complexity test
 
+**Decision #5: Ontological Purity in Data Layer (2025-11-02)**
+**Context**: TimePeriod architecture design
+**Decision**: Data layer (Coordinator/ViewModel) works with abstractions (TimePeriod), View layer provides user-friendly specializations (Terms, Years)
+**Rationale**:
+- Coordinator: `TimePeriodCoordinator` creates TimePeriod + GoalTerm/Year atomically
+- ViewModel: `TimePeriodFormViewModel` accepts `TimePeriodSpecialization` enum
+- Views: `TermFormView` wraps generic ViewModel with pre-configured `.term(number)`
+- Navigation: Tab says "Terms" not "Time Periods" (user-friendly)
+**Result**: Clean separation - ontological purity in data, user clarity in UI
+**Pattern**: `TimePeriodSpecialization` enum with cases `.term(number)`, `.year(yearNumber)`, `.custom`
+
+**Decision #6: Type-Specific Views + Generic ViewModel (2025-11-02)**
+**Context**: How to handle TimePeriod specializations in UI
+**Decision**: Generic ViewModel (`TimePeriodFormViewModel`), type-specific wrapper views (`TermFormView`, future `YearFormView`)
+**Rationale**:
+- ViewModel stays generic, reusable for all TimePeriod types
+- Views provide user-friendly interface (no "select type" picker in v1.0)
+- Easy to add new types (YearFormView) without changing ViewModel
+- Users never see "Time Period" terminology in v1.0
+**Result**: `TermFormView` pre-configures `specialization: .term(number)` when calling generic ViewModel
+
 **Decision: Keep All Coordinators for Consistency**
 - Even simple entities use coordinators (PersonalValue)
 - Consistent pattern easier to understand than hybrid approach
@@ -170,11 +191,11 @@ public final class [Entity]Coordinator: ObservableObject {
 
 ---
 
-#### 1.2 ViewModels (~400 lines) - ✅ VALUE COMPLETE, 3 REMAINING
+#### 1.2 ViewModels (~400 lines) - ✅ VALUE COMPLETE, 1 SKELETON, 2 REMAINING
 
 **Status Update (2025-11-02)**:
 - ✅ **PersonalValuesFormViewModel** - Complete with @Observable
-- ❌ **TermFormViewModel** - Not started
+- 🚧 **TimePeriodFormViewModel** - Skeleton created (generic for all TimePeriod types)
 - ❌ **ActionFormViewModel** - Not started (ActionFormData exists, but no ViewModel)
 - ❌ **GoalFormViewModel** - Not started
 
@@ -244,11 +265,11 @@ public final class [Entity]FormViewModel {
 
 ---
 
-#### 1.3 Form Views (~800 lines) - ✅ VALUE COMPLETE, 3 REMAINING
+#### 1.3 Form Views (~800 lines) - ✅ VALUE COMPLETE, 1 SKELETON, 2 REMAINING
 
 **Status Update (2025-11-02)**:
 - ✅ **PersonalValuesFormView** - Complete with FormScaffold
-- ❌ **TermFormView** - Exists but needs ViewModel integration
+- 🚧 **TermFormView** - Skeleton created (type-specific wrapper of TimePeriodFormViewModel)
 - ❌ **ActionFormView** - Exists but needs ViewModel integration
 - ❌ **GoalFormView** - Needs major refactor (multi-model)
 
@@ -298,11 +319,11 @@ public final class [Entity]FormViewModel {
 
 ---
 
-#### 1.4 List Views (~400 lines) - ✅ VALUE COMPLETE, 3 REMAINING
+#### 1.4 List Views (~400 lines) - ✅ VALUE COMPLETE, 1 SKELETON, 2 REMAINING
 
 **Status Update (2025-11-02)**:
 - ✅ **PersonalValuesListView** - Complete with @FetchAll
-- ❌ **TermsListView** - Not started
+- 🚧 **TermsListView** - Skeleton created (filters TimePeriods with goalTerm join)
 - ❌ **ActionsListView** - Exists but needs refactor for measurements
 - ❌ **GoalsListView** - Exists but needs refactor for multi-model
 
@@ -342,11 +363,11 @@ public final class [Entity]FormViewModel {
 
 ---
 
-#### 1.5 Row Views (~200 lines) - ✅ VALUE COMPLETE, 3 REMAINING
+#### 1.5 Row Views (~200 lines) - ✅ VALUE COMPLETE, 1 SKELETON, 2 REMAINING
 
 **Status Update (2025-11-02)**:
 - ✅ **PersonalValuesRowView** - Complete with BadgeView template
-- ❌ **TermRowView** - Needs update
+- 🚧 **TermRowView** - Skeleton created (displays TimePeriod as Term via relationship)
 - ❌ **ActionRowView** - Needs measurement display
 - ❌ **GoalRowView** - Needs multi-metric display
 

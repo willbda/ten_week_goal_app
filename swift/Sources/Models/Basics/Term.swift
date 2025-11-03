@@ -138,3 +138,16 @@ public struct GoalTerm: DomainBasic {
         self.status = status
     }
 }
+
+// MARK: - Relationships
+//
+// JOIN queries defined in TermsQuery.swift for efficient data fetching
+//
+// Usage pattern (see TermsWithPeriods in TermsQuery.swift):
+//   GoalTerm.all
+//     .order(by: \.termNumber, .descending)
+//     .including(required: GoalTerm.timePeriod)
+//     .map { term, timePeriod in TermWithPeriod(term: term, timePeriod: timePeriod) }
+//
+// This enables efficient single-query fetches instead of N+1 queries
+// See sqlite-data-main/Examples/Reminders/Schema.swift for similar patterns
