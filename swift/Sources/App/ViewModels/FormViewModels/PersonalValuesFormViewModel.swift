@@ -89,9 +89,44 @@ public final class PersonalValuesFormViewModel {
         }
     }
 
-    // TODO: Phase 4 - Add Update and Delete Operations
-    // NEEDED: public func update(_ value: PersonalValue, with formData: ValueFormData) async throws
-    // NEEDED: public func delete(_ value: PersonalValue) async throws
-    // WHEN: Before editing existing values in ValueListView
-    // PATTERN: Same error handling and isSaving state as save()
+    /// Updates existing PersonalValue from form data.
+    /// - Parameters:
+    ///   - value: Existing PersonalValue to update
+    ///   - formData: New form data
+    /// - Returns: Updated PersonalValue
+    /// - Throws: CoordinatorError or database errors
+    ///
+    /// PATTERN: FormData-based method (establishes pattern for template)
+    public func update(
+        value: PersonalValue,
+        from formData: ValueFormData
+    ) async throws -> PersonalValue {
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            let updatedValue = try await coordinator.update(value: value, from: formData)
+            errorMessage = nil
+            return updatedValue
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
+        }
+    }
+
+    /// Deletes PersonalValue.
+    /// - Parameter value: PersonalValue to delete
+    /// - Throws: Database errors if constraints violated
+    public func delete(value: PersonalValue) async throws {
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            try await coordinator.delete(value: value)
+            errorMessage = nil
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
+        }
+    }
 }

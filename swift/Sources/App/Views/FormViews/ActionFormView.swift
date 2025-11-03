@@ -5,10 +5,20 @@
 // PURPOSE: Form for creating/editing Actions with measurements and goal contributions
 // PATTERN: Edit mode support via optional actionToEdit parameter (like TermFormView)
 //
+// PLANNED REFACTOR (2025-11-03):
+// This file will be refactored to use shared form components:
+// - Replace timingSection with TimingSection component
+// - Replace measurementsSection with RepeatingSection<MeasurementInputRow>
+// - Replace goalContributionsSection with MultiSelectSection
+// - Extract buildFormData() helper pattern for template
+//
+// ISSUE SOLVED: Measurement TextField alignment (pushed far right by picker in HStack)
+// See: Sources/App/Views/Components/FormComponents/README.md
+//
 
-import SwiftUI
 import Models
 import Services
+import SwiftUI
 
 /// Form view for Action input (create + edit)
 ///
@@ -53,9 +63,11 @@ public struct ActionFormView: View {
         if let actionToEdit = actionToEdit {
             // Edit mode - initialize from existing data
             _title = State(initialValue: actionToEdit.action.title ?? "")
-            _detailedDescription = State(initialValue: actionToEdit.action.detailedDescription ?? "")
+            _detailedDescription = State(
+                initialValue: actionToEdit.action.detailedDescription ?? "")
             _freeformNotes = State(initialValue: actionToEdit.action.freeformNotes ?? "")
-            _startTime = State(initialValue: actionToEdit.action.startTime ?? actionToEdit.action.logTime)
+            _startTime = State(
+                initialValue: actionToEdit.action.startTime ?? actionToEdit.action.logTime)
             _durationMinutes = State(initialValue: actionToEdit.action.durationMinutes ?? 0)
 
             // Convert measurements to edit format
@@ -140,11 +152,22 @@ public struct ActionFormView: View {
     /// Section 2: Measurements (repeating section with add/remove)
     private var measurementsSection: some View {
         Section {
-            ForEach($measurements, id: \.id) { $measurement in
+            ForEach(measurements.indices, id: \.self) { index in
+                let measurement = measurements[index]
                 HStack {
                     // Measure picker
-                    Picker("Measure", selection: $measurement.measureId) {
+                    // NOTE: Includes selected measure even if not in availableMeasures
+                    // (handles case where measure was deleted or not yet loaded)
+                    Picker("Measure", selection: $measurements[index].measureId) {
                         Text("Select measure").tag(nil as UUID?)
+
+                        // Include currently selected measure if not in availableMeasures
+                        if let selectedId = measurement.measureId,
+                            !viewModel.availableMeasures.contains(where: { $0.id == selectedId })
+                        {
+                            Text("(Deleted measure)").tag(selectedId as UUID?)
+                        }
+
                         ForEach(viewModel.availableMeasures, id: \.id) { measure in
                             Text(measure.unit).tag(measure.id as UUID?)
                         }
@@ -152,7 +175,7 @@ public struct ActionFormView: View {
                     .labelsHidden()
 
                     // Value field
-                    TextField("Value", value: $measurement.value, format: .number)
+                    TextField("Value", value: $measurements[index].value, format: .number)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 80)
 
@@ -204,6 +227,39 @@ public struct ActionFormView: View {
     // MARK: - Actions
 
     /// Handle form submission (create or update)
+    ///
+    /// REFINEMENT NEEDED (2025-11-03):
+    /// Should extract buildFormData() helper to reduce code duplication:
+    /// ```swift
+    /// private func buildFormData() -> ActionFormData {
+    ///     let measurementInputs = measurements.compactMap { m in
+    ///         guard let measureId = m.measureId, m.value > 0 else { return nil }
+    ///         return MeasurementInput(measureId: measureId, value: m.value)
+    ///     }
+    ///     return ActionFormData(
+    ///         title: title,
+    ///         detailedDescription: detailedDescription,
+    ///         freeformNotes: freeformNotes,
+    ///         durationMinutes: durationMinutes,
+    ///         startTime: startTime,
+    ///         measurements: measurementInputs,
+    ///         goalContributions: selectedGoalIds
+    ///     )
+    /// }
+    ///
+    /// private func handleSubmit() {
+    ///     Task {
+    ///         let formData = buildFormData()
+    ///         if let action = actionToEdit {
+    ///             try await viewModel.update(actionDetails: action, formData: formData)
+    ///         } else {
+    ///             try await viewModel.save(formData: formData)
+    ///         }
+    ///         dismiss()
+    ///     }
+    /// }
+    /// ```
+    /// Pattern to establish: PersonalValuesFormView (when updated)
     private func handleSubmit() {
         Task {
             do {

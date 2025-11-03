@@ -5,6 +5,13 @@
 // PURPOSE: User-friendly form for creating/editing Terms (wraps generic TimePeriodFormViewModel)
 // ARCHITECTURE: Type-specific view using generic ViewModel with specialization = .term
 //
+// FORM LAYOUT STATUS (2025-11-03):
+// This form has good layout and spacing - can serve as reference.
+// May benefit from TimingSection component if we add duration tracking.
+// Currently uses DatePicker fields directly which is fine.
+//
+// See: Sources/App/Views/Components/FormComponents/README.md
+//
 
 import Models
 import Services
@@ -76,7 +83,9 @@ public struct TermFormView: View {
             // Create mode - use defaults
             _termNumber = State(initialValue: 1)
             _startDate = State(initialValue: Date())
-            _targetDate = State(initialValue: Calendar.current.date(byAdding: .weekOfYear, value: 10, to: Date()) ?? Date())
+            _targetDate = State(
+                initialValue: Calendar.current.date(byAdding: .weekOfYear, value: 10, to: Date())
+                    ?? Date())
             _theme = State(initialValue: "")
             _reflection = State(initialValue: "")
             _status = State(initialValue: .planned)
@@ -108,8 +117,10 @@ public struct TermFormView: View {
             } header: {
                 Text("Theme")
             } footer: {
-                Text("Optional: What's the main focus? (e.g., \"Health & Fitness\", \"Career Growth\")")
-                    .font(.caption)
+                Text(
+                    "Optional: What's the main focus? (e.g., \"Health & Fitness\", \"Career Growth\")"
+                )
+                .font(.caption)
             }
 
             // Reflection section (edit mode only)

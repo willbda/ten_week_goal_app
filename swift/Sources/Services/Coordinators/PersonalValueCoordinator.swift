@@ -71,8 +71,56 @@ public final class PersonalValueCoordinator: ObservableObject {
         }
     }
 
-    // TODO: Phase 4 - Add Update and Delete
-    // PATTERN: update() accepts existing PersonalValue + FormData, preserves id and logTime
-    // PATTERN: delete() accepts PersonalValue, checks for dependencies before deleting
-    // SEE: GoalCoordinator for relationship handling when deleting
+    /// Updates existing PersonalValue from form data.
+    /// - Parameters:
+    ///   - value: Existing PersonalValue to update
+    ///   - formData: New form data (FormData pattern - not individual params!)
+    /// - Returns: Updated PersonalValue
+    /// - Throws: Database errors if constraints violated
+    ///
+    /// IMPLEMENTATION:
+    /// 1. Use .upsert (not .insert) with existing ID
+    /// 2. Preserve id and logTime from existing value
+    /// 3. Return updated value
+    ///
+    /// PATTERN: FormData-based method (follows ActionCoordinator pattern)
+    public func update(
+        value: PersonalValue,
+        from formData: ValueFormData
+    ) async throws -> PersonalValue {
+        return try await database.write { db in
+            try PersonalValue.upsert {
+                PersonalValue.Draft(
+                    id: value.id,  // Preserve ID
+                    title: formData.title,
+                    detailedDescription: formData.detailedDescription,
+                    freeformNotes: formData.freeformNotes,
+                    logTime: value.logTime,  // Preserve original logTime
+                    priority: formData.priority,
+                    valueLevel: formData.valueLevel,
+                    lifeDomain: formData.lifeDomain,
+                    alignmentGuidance: formData.alignmentGuidance
+                )
+            }
+            .returning { $0 }
+            .fetchOne(db)!  // Safe: successful upsert always returns value
+        }
+    }
+
+    /// Deletes PersonalValue.
+    /// - Parameter value: PersonalValue to delete
+    /// - Throws: Database errors if constraints violated (e.g., GoalRelevances exist)
+    ///
+    /// IMPLEMENTATION:
+    /// 1. Simple delete (no relationships to cascade for PersonalValue)
+    /// 2. Database FK constraints will prevent deletion if GoalRelevances exist
+    /// 3. For more complex entities (Action, Goal), see their coordinators for cascade pattern
+    ///
+    /// NOTE: If GoalRelevances reference this value, database will throw FK constraint error.
+    /// In future, could query for dependent goals and return helpful error message.
+    public func delete(value: PersonalValue) async throws {
+        try await database.write { db in
+            try PersonalValue.delete(value).execute(db)
+        }
+    }
 }
