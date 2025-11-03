@@ -35,6 +35,48 @@ public struct TermWithPeriod: Identifiable, Sendable {
 /// @Fetch(TermsWithPeriods())
 /// private var termsWithPeriods: [TermWithPeriod]
 /// ```
+///
+/// ---
+/// **QUERY STRATEGY: Keep Query Builder**
+/// ---
+/// **Why not migrate to #sql**:
+/// - Simple 1:1 JOIN (no aggregation needed)
+/// - Query builder is already optimal
+/// - Type safety helps during development
+/// - No performance benefit from #sql
+///
+/// **When #sql WOULD make sense**:
+/// - If we add aggregations (COUNT of goals per term)
+/// - If we need COALESCE for nullable fields
+/// - If we add complex filtering (date ranges, status)
+///
+/// **Example future #sql query** (if adding aggregations):
+/// ```swift
+/// struct TermWithStats: Decodable {
+///     let term: GoalTerm
+///     let timePeriod: TimePeriod
+///     let goalsCount: Int
+///     let completedGoalsCount: Int
+/// }
+///
+/// let stats = try #sql(
+///     """
+///     SELECT
+///         gt.*, tp.*,
+///         COUNT(DISTINCT tga.goalId) as goalsCount,
+///         COUNT(DISTINCT CASE WHEN g.status = 'completed' THEN tga.goalId END) as completedGoalsCount
+///     FROM goalTerms gt
+///     JOIN timePeriods tp ON gt.timePeriodId = tp.id
+///     LEFT JOIN termGoalAssignments tga ON tga.termId = gt.id
+///     LEFT JOIN goals g ON g.id = tga.goalId
+///     GROUP BY gt.id
+///     ORDER BY gt.termNumber DESC
+///     """
+/// ).fetchAll(db) as [TermWithStats]
+/// ```
+///
+/// **Decision**: Query builder is correct choice for this simple JOIN.
+///
 public struct TermsWithPeriods: FetchKeyRequest {
     public typealias Value = [TermWithPeriod]
 

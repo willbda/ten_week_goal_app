@@ -74,13 +74,40 @@ public final class ActionFormViewModel {
         do {
             // Read from database (captures local variables, not self)
             let (measures, goals) = try await database.read { db in
+                // Simple fetch - query builder is fine
                 let measures = try Measure.all
                     .order { $0.unit.asc() }
                     .fetchAll(db)
 
-                // Load goals with their expectation titles
-                // NOTE: This is a simplified version - production needs JOIN with Expectation
-                // For now, just loading goals (will show goal.id as fallback)
+                // TODO: Load goals with their expectation titles
+                // CURRENT: Simplified version - just loading goals (shows goal.id as fallback)
+                // NEEDED: JOIN with Expectation to get titles
+                //
+                // **Option A: Query Builder** (type-safe, good for development)
+                // let goalsWithTitles = try Goal.all
+                //     .join(Expectation.all) { $0.expectationId.eq($1.id) }
+                //     .select { (goal, expectation) in
+                //         (goal, expectation.title ?? "Untitled Goal")
+                //     }
+                //     .fetchAll(db)
+                //
+                // **Option B: #sql** (slightly cleaner with COALESCE)
+                // struct GoalWithTitle: Decodable {
+                //     let goal: Goal
+                //     let title: String
+                // }
+                // let goalsWithTitles = try #sql(
+                //     """
+                //     SELECT g.*, COALESCE(e.title, 'Untitled Goal') as title
+                //     FROM goals g
+                //     JOIN expectations e ON g.expectationId = e.id
+                //     ORDER BY e.title ASC
+                //     """
+                // ).fetchAll(db) as [GoalWithTitle]
+                //
+                // **Decision**: Either works. Query builder is safer during dev.
+                // #sql would be better if we add more goal filtering (status, date range).
+                //
                 let goals = try Goal.all.fetchAll(db)
 
                 return (measures, goals)
@@ -112,6 +139,14 @@ public final class ActionFormViewModel {
     ///   - goalContributions: Set of goal IDs this action contributes to
     /// - Returns: Created Action
     /// - Throws: CoordinatorError if validation fails or database error occurs
+    ///
+    /// 🔧 REFINEMENT NEEDED (2025-11-03):
+    /// This method takes 7 parameters - should take FormData instead:
+    /// ```
+    /// public func save(formData: ActionFormData) async throws -> Action
+    /// ```
+    /// View should call buildFormData() helper before passing here.
+    /// Pattern to follow: PersonalValueFormViewModel (when updated)
     public func save(
         title: String,
         description: String = "",
@@ -164,6 +199,14 @@ public final class ActionFormViewModel {
     ///   - goalContributions: Updated goal contributions (replaces all)
     /// - Returns: Updated Action
     /// - Throws: CoordinatorError or database errors
+    ///
+    /// 🔧 REFINEMENT NEEDED (2025-11-03):
+    /// This method takes 8 parameters - should take FormData instead:
+    /// ```
+    /// public func update(actionDetails: ActionWithDetails, formData: ActionFormData) async throws -> Action
+    /// ```
+    /// View should call buildFormData() helper before passing here.
+    /// Pattern to follow: PersonalValueFormViewModel (when updated)
     public func update(
         actionDetails: ActionWithDetails,
         title: String,
