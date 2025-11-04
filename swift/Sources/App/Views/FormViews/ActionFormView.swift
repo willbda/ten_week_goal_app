@@ -29,11 +29,13 @@ private struct GoalOption: Identifiable {
 
 // MARK: - Form View
 
-/// Form view for Action input (create + edit)
+/// Form view for Action input (create + edit + quick add)
 ///
 /// **Pattern**: Apple's direct Form approach (no FormScaffold wrapper)
-/// **Edit Mode**: Triggered by passing `actionToEdit` parameter
-/// **State Initialization**: In init() based on actionToEdit
+/// **Modes**:
+/// - Create: Default empty form
+/// - Edit: Pre-filled from existing ActionWithDetails
+/// - Quick Add: Pre-filled from ActionFormData (duplicate or log for goal)
 ///
 /// **Usage**:
 /// ```swift
@@ -45,6 +47,11 @@ private struct GoalOption: Identifiable {
 /// // Edit mode
 /// NavigationStack {
 ///     ActionFormView(actionToEdit: actionDetails)
+/// }
+///
+/// // Quick Add mode (from QuickAddSection)
+/// NavigationStack {
+///     ActionFormView(initialData: preFilledFormData)
 /// }
 /// ```
 public struct ActionFormView: View {
@@ -75,7 +82,28 @@ public struct ActionFormView: View {
 
     // MARK: - Initialization
 
-    public init(actionToEdit: ActionWithDetails? = nil) {
+    /// Initialize form for create, edit, or quick add mode
+    ///
+    /// **Modes**:
+    /// - Create: No parameters (defaults)
+    /// - Edit: Pass `actionToEdit` (existing action with relationships)
+    /// - Quick Add: Pass `initialData` (pre-filled form data from duplicate/goal)
+    ///
+    /// **Usage**:
+    /// ```swift
+    /// // Create mode
+    /// ActionFormView()
+    ///
+    /// // Edit mode
+    /// ActionFormView(actionToEdit: existingAction)
+    ///
+    /// // Quick Add mode (duplicate or log for goal)
+    /// ActionFormView(initialData: preFilledFormData)
+    /// ```
+    public init(
+        actionToEdit: ActionWithDetails? = nil,
+        initialData: ActionFormData? = nil
+    ) {
         self.actionToEdit = actionToEdit
 
         if let actionToEdit = actionToEdit {
@@ -101,6 +129,15 @@ public struct ActionFormView: View {
             // Convert contributions to Set<UUID>
             let existingGoalIds = Set(actionToEdit.contributions.map { $0.contribution.goalId })
             _selectedGoalIds = State(initialValue: existingGoalIds)
+        } else if let initialData = initialData {
+            // Quick Add mode - initialize from pre-filled form data
+            _title = State(initialValue: initialData.title)
+            _detailedDescription = State(initialValue: initialData.detailedDescription)
+            _freeformNotes = State(initialValue: initialData.freeformNotes)
+            _startTime = State(initialValue: initialData.startTime)
+            _durationMinutes = State(initialValue: initialData.durationMinutes)
+            _measurements = State(initialValue: initialData.measurements)
+            _selectedGoalIds = State(initialValue: initialData.goalContributions)
         } else {
             // Create mode - defaults
             _title = State(initialValue: "")
