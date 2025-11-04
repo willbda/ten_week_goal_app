@@ -53,6 +53,7 @@ public struct MultiSelectSection<Item: Identifiable>: View where Item.ID == UUID
                     Toggle(isOn: binding(for: item.id)) {
                         Text(itemLabel(item))
                     }
+                    .padding(.vertical, 4)  // Modern spacing for touch targets
                 }
             }
         } header: {

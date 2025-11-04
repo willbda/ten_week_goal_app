@@ -57,13 +57,14 @@ public struct RepeatingSection<Item: Identifiable, Content: View>: View {
             // Dynamic content for each item
             ForEach(items) { item in
                 content(item)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 8)  // Modern spacing (was 4, too tight)
             }
 
             // Add button (consistent placement at bottom)
             Button(action: onAdd) {
                 Label(addButtonLabel, systemImage: "plus.circle.fill")
             }
+            .padding(.top, 4)  // Extra space before add button
         } header: {
             Text(title)
         } footer: {

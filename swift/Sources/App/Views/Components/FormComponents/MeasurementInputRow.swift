@@ -45,7 +45,7 @@ public struct MeasurementInputRow: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {  // Modern spacing (was 8)
             // Full-width Picker (not cramped in HStack)
             Picker("Measure", selection: $measureId) {
                 Text("Select measure").tag(nil as UUID?)
@@ -80,7 +80,7 @@ public struct MeasurementInputRow: View {
             }
             .buttonStyle(.borderless)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 12)  // Modern spacing for better touch targets
     }
 }
 
