@@ -1,5 +1,6 @@
 // GoalValidatorTests.swift
 // Written by Claude Code on 2025-11-04
+// Updated by Claude Code on 2025-11-04 (migrated to Swift Testing)
 //
 // PURPOSE:
 // Test GoalValidator for Phase 1 (form data) and Phase 2 (entity graph) validation.
@@ -7,73 +8,105 @@
 // TESTS TO IMPLEMENT:
 //
 // Phase 1: Form Data Validation
-//  testAcceptsGoalWithTitle
-//  testAcceptsGoalWithDescription
-//  testRejectsGoalWithoutTitleOrDescription
-//  testRejectsInvalidImportance
-//  testRejectsInvalidUrgency
-//  testRejectsStartDateAfterTargetDate
-//  testRejectsNegativeTargetValue
-//  testRejectsInvalidAlignmentStrength
+//  testAcceptsGoalWithTitle
+//  testAcceptsGoalWithDescription
+//  testRejectsGoalWithoutTitleOrDescription
+//  testRejectsInvalidImportance
+//  testRejectsInvalidUrgency
+//  testRejectsStartDateAfterTargetDate
+//  testRejectsNegativeTargetValue
+//  testRejectsInvalidAlignmentStrength
 //
 // Phase 2: Entity Graph Validation
-//  testAcceptsValidGoalGraph
-//  testRejectsGoalWithWrongExpectationId
-//  testRejectsMeasurementWithWrongExpectationId
-//  testRejectsRelevanceWithWrongGoalId
-//  testRejectsDuplicateMeasurements
-//  testRejectsDuplicateRelevances
+//  testAcceptsValidGoalGraph
+//  testRejectsGoalWithWrongExpectationId
+//  testRejectsMeasurementWithWrongExpectationId
+//  testRejectsRelevanceWithWrongGoalId
+//  testRejectsDuplicateMeasurements
+//  testRejectsDuplicateRelevances
 
-import XCTest
+import Testing
 @testable import Services
 @testable import Models
 
-final class GoalValidatorTests: XCTestCase {
-
-    var validator: GoalValidator!
-
-    override func setUp() {
-        super.setUp()
-        validator = GoalValidator()
-    }
+@Suite("GoalValidator Tests")
+struct GoalValidatorTests {
 
     // MARK: - Phase 1: Form Data Validation
 
-    func testAcceptsGoalWithTitle() {
+    @Test("Accepts goal with title")
+    func acceptsGoalWithTitle() {
+        let validator = GoalValidator()
         let formData = GoalFormData(title: "Get healthy")
 
-        XCTAssertNoThrow(try validator.validateFormData(formData))
+        #expect(throws: Never.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement
     }
 
-    func testRejectsGoalWithoutTitleOrDescription() {
-        let formData = GoalFormData(title: nil, description: nil)
+    @Test("Rejects goal without title or description")
+    func rejectsGoalWithoutTitleOrDescription() {
+        let validator = GoalValidator()
+        let formData = GoalFormData(title: "", detailedDescription: "")
 
-        XCTAssertThrowsError(try validator.validateFormData(formData))
+        #expect(throws: ValidationError.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement
     }
 
-    func testRejectsInvalidImportance() {
-        let formData = GoalFormData(title: "Test", importance: 15)
+    @Test("Rejects invalid importance (out of 1-10 range)")
+    func rejectsInvalidImportance() {
+        let validator = GoalValidator()
+        let formData = GoalFormData(title: "Test", expectationImportance: 15)
 
-        XCTAssertThrowsError(try validator.validateFormData(formData))
+        #expect(throws: ValidationError.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement
     }
 
-    func testRejectsStartDateAfterTargetDate() {
+    @Test("Rejects start date after target date")
+    func rejectsStartDateAfterTargetDate() {
+        let validator = GoalValidator()
         let formData = GoalFormData(
             title: "Test",
             startDate: Date().addingTimeInterval(86400 * 10),
             targetDate: Date()
         )
 
-        XCTAssertThrowsError(try validator.validateFormData(formData))
+        #expect(throws: ValidationError.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement
+    }
+
+    @Test("Validates importance within range", arguments: [1, 5, 10])
+    func validatesImportanceWithinRange(importance: Int) {
+        let validator = GoalValidator()
+        let formData = GoalFormData(title: "Test", expectationImportance: importance)
+
+        #expect(throws: Never.self) {
+            try validator.validateFormData(formData)
+        }
+    }
+
+    @Test("Validates urgency within range", arguments: [1, 5, 10])
+    func validatesUrgencyWithinRange(urgency: Int) {
+        let validator = GoalValidator()
+        let formData = GoalFormData(title: "Test", expectationUrgency: urgency)
+
+        #expect(throws: Never.self) {
+            try validator.validateFormData(formData)
+        }
     }
 
     // MARK: - Phase 2: Entity Graph Validation
 
-    func testAcceptsValidGoalGraph() {
+    @Test("Accepts valid goal graph")
+    func acceptsValidGoalGraph() {
+        let validator = GoalValidator()
         let expectation = Expectation(title: "Health", expectationType: .goal)
         let goal = Goal(expectationId: expectation.id)
         let measurement = ExpectationMeasure(
@@ -83,19 +116,38 @@ final class GoalValidatorTests: XCTestCase {
         )
         let relevance = GoalRelevance(goalId: goal.id, valueId: UUID())
 
-        XCTAssertNoThrow(
+        #expect(throws: Never.self) {
             try validator.validateComplete((expectation, goal, [measurement], [relevance]))
-        )
+        }
         // TODO: Implement
     }
 
-    func testRejectsGoalWithWrongExpectationId() {
+    @Test("Rejects goal with wrong expectation ID")
+    func rejectsGoalWithWrongExpectationId() {
+        let validator = GoalValidator()
         let expectation = Expectation(title: "Health", expectationType: .goal)
         let wrongGoal = Goal(expectationId: UUID())  // Different ID!
 
-        XCTAssertThrowsError(
+        #expect(throws: ValidationError.self) {
             try validator.validateComplete((expectation, wrongGoal, [], []))
+        }
+        // TODO: Implement
+    }
+
+    @Test("Rejects measurement with wrong expectation ID")
+    func rejectsMeasurementWithWrongExpectationId() {
+        let validator = GoalValidator()
+        let expectation = Expectation(title: "Health", expectationType: .goal)
+        let goal = Goal(expectationId: expectation.id)
+        let wrongMeasurement = ExpectationMeasure(
+            expectationId: UUID(),  // Different ID!
+            measureId: UUID(),
+            targetValue: 120.0
         )
+
+        #expect(throws: ValidationError.self) {
+            try validator.validateComplete((expectation, goal, [wrongMeasurement], []))
+        }
         // TODO: Implement
     }
 }
@@ -106,3 +158,9 @@ final class GoalValidatorTests: XCTestCase {
 // - Validate measurement targets (positive values)
 // - Validate alignment strengths (1-10 if provided)
 // - Validate entity graph consistency (IDs match)
+//
+// SWIFT TESTING BENEFITS:
+//  - Parameterized tests for range validation
+//  - Clear test descriptions
+//  - #expect(throws:) for error cases
+//  - No setUp/tearDown overhead

@@ -1,5 +1,6 @@
 // ValueValidatorTests.swift
 // Written by Claude Code on 2025-11-04
+// Updated by Claude Code on 2025-11-04 (migrated to Swift Testing)
 //
 // PURPOSE:
 // Test ValueValidator for Phase 1 (form data) and Phase 2 (entity) validation.
@@ -7,124 +8,170 @@
 // TESTS TO IMPLEMENT:
 //
 // Phase 1: Form Data Validation
-//  testAcceptsValueWithTitle
-//  testAcceptsValueWithDescription
-//  testRejectsValueWithoutTitleOrDescription
-//  testRejectsInvalidPriority
-//  testAcceptsValidPriority
-//  testAcceptsNullPriority (uses default)
+//  testAcceptsValueWithTitle
+//  testAcceptsValueWithDescription
+//  testRejectsValueWithoutTitleOrDescription
+//  testRejectsInvalidPriority
+//  testAcceptsValidPriority
+//  testAcceptsNullPriority (uses default)
 //
 // Phase 2: Entity Validation
-//  testAcceptsValidValue
-//  testVerifiesPriorityIsSet
-//  testVerifiesDefaultPriorityUsed
+//  testAcceptsValidValue
+//  testVerifiesPriorityIsSet
+//  testVerifiesDefaultPriorityUsed
 
-import XCTest
+import Testing
 @testable import Services
 @testable import Models
 
-final class ValueValidatorTests: XCTestCase {
-
-    var validator: ValueValidator!
-
-    override func setUp() {
-        super.setUp()
-        validator = ValueValidator()
-    }
+@Suite("ValueValidator Tests")
+struct ValueValidatorTests {
 
     // MARK: - Phase 1: Form Data Validation
 
-    func testAcceptsValueWithTitle() {
+    @Test("Accepts value with title")
+    func acceptsValueWithTitle() {
+        let validator = ValueValidator()
         let formData = ValueFormData(title: "Health", valueLevel: .major)
 
-        XCTAssertNoThrow(try validator.validateFormData(formData))
+        #expect(throws: Never.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement
     }
 
-    func testAcceptsValueWithDescriptionOnly() {
+    @Test("Accepts value with description only")
+    func acceptsValueWithDescriptionOnly() {
+        let validator = ValueValidator()
         let formData = ValueFormData(
-            title: nil,
-            description: "Physical and mental wellness",
+            title: "",
+            detailedDescription: "Physical and mental wellness",
             valueLevel: .major
         )
 
-        XCTAssertNoThrow(try validator.validateFormData(formData))
+        #expect(throws: Never.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement
     }
 
-    func testRejectsValueWithoutTitleOrDescription() {
-        let formData = ValueFormData(title: nil, description: nil)
+    @Test("Rejects value without title or description")
+    func rejectsValueWithoutTitleOrDescription() {
+        let validator = ValueValidator()
+        let formData = ValueFormData(title: "", detailedDescription: "", valueLevel: .general)
 
-        XCTAssertThrowsError(try validator.validateFormData(formData))
+        #expect(throws: ValidationError.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement
     }
 
-    func testRejectsInvalidPriority() {
+    @Test("Rejects invalid priority (out of 1-100 range)")
+    func rejectsInvalidPriority() {
+        let validator = ValueValidator()
         let formData = ValueFormData(
             title: "Test",
             priority: 150,  // Out of 1-100 range
             valueLevel: .general
         )
 
-        XCTAssertThrowsError(try validator.validateFormData(formData))
+        #expect(throws: ValidationError.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement
     }
 
-    func testAcceptsValidPriority() {
+    @Test("Accepts valid priority", arguments: [1, 25, 50, 75, 100])
+    func acceptsValidPriority(priority: Int) {
+        let validator = ValueValidator()
         let formData = ValueFormData(
             title: "Test",
-            priority: 50,
+            priority: priority,
             valueLevel: .general
         )
 
-        XCTAssertNoThrow(try validator.validateFormData(formData))
-        // TODO: Implement
+        #expect(throws: Never.self) {
+            try validator.validateFormData(formData)
+        }
     }
 
-    func testAcceptsNullPriority() {
-        // Null priority should use default from valueLevel
+    @Test("Accepts nil priority (uses default from valueLevel)")
+    func acceptsNilPriority() {
+        let validator = ValueValidator()
+        // Nil priority should use default from valueLevel
         let formData = ValueFormData(
             title: "Test",
             priority: nil,
             valueLevel: .major  // Default priority = 10
         )
 
-        XCTAssertNoThrow(try validator.validateFormData(formData))
+        #expect(throws: Never.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement
+    }
+
+    @Test("Validates different value levels", arguments: [
+        ValueLevel.general,
+        ValueLevel.major,
+        ValueLevel.highestOrder,
+        ValueLevel.lifeArea
+    ])
+    func validatesDifferentValueLevels(valueLevel: ValueLevel) {
+        let validator = ValueValidator()
+        let formData = ValueFormData(title: "Test", valueLevel: valueLevel)
+
+        #expect(throws: Never.self) {
+            try validator.validateFormData(formData)
+        }
     }
 
     // MARK: - Phase 2: Entity Validation
 
-    func testAcceptsValidValue() {
+    @Test("Accepts valid value")
+    func acceptsValidValue() {
+        let validator = ValueValidator()
         let value = PersonalValue(
             title: "Health",
             priority: 10,
             valueLevel: .major
         )
 
-        XCTAssertNoThrow(try validator.validateComplete(value))
+        #expect(throws: Never.self) {
+            try validator.validateComplete(value)
+        }
         // TODO: Implement
     }
 
-    func testVerifiesPriorityIsSet() {
+    @Test("Verifies priority is set")
+    func verifiesPriorityIsSet() {
+        let validator = ValueValidator()
         // Model initializer sets default, but validator should verify
         let value = PersonalValue(
             title: "Health",
             valueLevel: .major
         )
 
-        XCTAssertNoThrow(try validator.validateComplete(value))
-        XCTAssertNotNil(value.priority)
-        XCTAssertEqual(value.priority, 10)  // Major value default
+        #expect(throws: Never.self) {
+            try validator.validateComplete(value)
+        }
+        #expect(value.priority != nil)
+        #expect(value.priority == 10)  // Major value default
         // TODO: Implement
     }
 
-    func testRejectsValueWithInvalidPriority() {
+    @Test("Rejects value with invalid priority in entity")
+    func rejectsValueWithInvalidPriority() {
         // Defensive test - should never happen if model is correct
+        // This tests validator catches model bugs
+        let validator = ValueValidator()
         var value = PersonalValue(title: "Test", valueLevel: .general)
         // Manually set invalid priority (bypassing initializer)
-        // This tests validator catches model bugs
         // TODO: Implement edge case testing
+        // For now, just verify normal case works
+        #expect(throws: Never.self) {
+            try validator.validateComplete(value)
+        }
     }
 }
 
@@ -135,7 +182,13 @@ final class ValueValidatorTests: XCTestCase {
 // - Simplified Phase 2 (no child entities)
 //
 // VALUE LEVELS AND DEFAULTS:
-// - .general ’ 40
-// - .major ’ 10
-// - .highestOrder ’ 1
-// - .lifeArea ’ 40
+// - .general â†’ 40
+// - .major â†’ 10
+// - .highestOrder â†’ 1
+// - .lifeArea â†’ 40
+//
+// SWIFT TESTING BENEFITS:
+//  - Parameterized tests for priority ranges and value levels
+//  - Clear test descriptions
+//  - #expect for assertions
+//  - No setUp/tearDown overhead

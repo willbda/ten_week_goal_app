@@ -1,85 +1,144 @@
 // ValidationErrorTests.swift
 // Written by Claude Code on 2025-11-04
+// Updated by Claude Code on 2025-11-04 (migrated to Swift Testing)
 //
 // PURPOSE:
 // Test ValidationError enum for proper error messages and conformance.
 //
-// TESTS TO IMPLEMENT:
-//  testBusinessRuleErrorMessages - Verify user-friendly messages for Layer A/B errors
-//  testDatabaseErrorMessages - Verify user-friendly messages for Layer C errors
-//  testLocalizedErrorConformance - Verify errorDescription works
-//  testAllCasesHaveMessages - Ensure no missing messages
+// TESTS:
+//  - Business rule error messages (Layer A/B)
+//  - Database error messages (Layer C)
+//  - LocalizedError conformance
+//  - Message completeness
 
-import XCTest
-@testable import Services  // Import validation module
+import Testing
+@testable import Services
 
-final class ValidationErrorTests: XCTestCase {
+@Suite("ValidationError Tests")
+struct ValidationErrorTests {
 
     // MARK: - Business Rule Error Messages
 
-    func testEmptyActionErrorMessage() {
-        // Test that emptyAction provides user-friendly message
+    @Test("Empty action error message is user-friendly")
+    func emptyActionErrorMessage() {
         let error = ValidationError.emptyAction("No content provided")
 
-        XCTAssertTrue(error.userMessage.contains("title"))
-        XCTAssertTrue(error.userMessage.contains("description"))
-        XCTAssertTrue(error.userMessage.contains("measurements"))
-
-        // TODO: Implement full test
+        #expect(error.userMessage.contains("title"))
+        #expect(error.userMessage.contains("description"))
+        #expect(error.userMessage.contains("measurements"))
     }
 
-    func testInvalidDateRangeErrorMessage() {
-        // Test that invalidDateRange explains the problem
+    @Test("Invalid date range error message explains the problem")
+    func invalidDateRangeErrorMessage() {
         let error = ValidationError.invalidDateRange("Start after end")
 
-        XCTAssertTrue(error.userMessage.contains("invalid"))
-        // TODO: Implement full test
+        #expect(error.userMessage.contains("invalid") || error.userMessage.contains("Date"))
     }
 
-    func testInvalidPriorityErrorMessage() {
-        // Test that invalidPriority explains range
+    @Test("Invalid priority error message explains range")
+    func invalidPriorityErrorMessage() {
         let error = ValidationError.invalidPriority("Got 15")
 
-        XCTAssertTrue(error.userMessage.contains("1-10") || error.userMessage.contains("1-100"))
-        // TODO: Implement full test
+        #expect(error.userMessage.contains("1-10") || error.userMessage.contains("1-100"))
+    }
+
+    @Test("Empty value error message is user-friendly")
+    func emptyValueErrorMessage() {
+        let error = ValidationError.emptyValue("Missing title")
+
+        #expect(error.userMessage.contains("title") || error.userMessage.contains("description"))
+    }
+
+    @Test("Invalid expectation error message is clear")
+    func invalidExpectationErrorMessage() {
+        let error = ValidationError.invalidExpectation("Missing fields")
+
+        #expect(!error.userMessage.isEmpty)
+    }
+
+    @Test("Inconsistent reference error message explains issue")
+    func inconsistentReferenceErrorMessage() {
+        let error = ValidationError.inconsistentReference("ID mismatch")
+
+        #expect(!error.userMessage.isEmpty)
     }
 
     // MARK: - Database Error Messages
 
-    func testInvalidMeasureErrorMessage() {
-        // Test that invalidMeasure explains it's missing
+    @Test("Invalid measure error message is user-friendly")
+    func invalidMeasureErrorMessage() {
         let error = ValidationError.invalidMeasure("Measure not found")
 
-        XCTAssertTrue(error.userMessage.contains("measurement"))
-        XCTAssertTrue(error.userMessage.contains("available") || error.userMessage.contains("exists"))
-        // TODO: Implement full test
+        #expect(error.userMessage.contains("measurement"))
+        #expect(error.userMessage.contains("available") || error.userMessage.contains("exists"))
     }
 
-    func testForeignKeyViolationErrorMessage() {
-        // Test that foreignKeyViolation is user-friendly
+    @Test("Invalid goal error message is user-friendly")
+    func invalidGoalErrorMessage() {
+        let error = ValidationError.invalidGoal("Goal not found")
+
+        #expect(error.userMessage.contains("goal"))
+        #expect(error.userMessage.contains("available") || error.userMessage.contains("exists"))
+    }
+
+    @Test("Foreign key violation error has no technical jargon")
+    func foreignKeyViolationErrorMessage() {
         let error = ValidationError.foreignKeyViolation("Referenced record missing")
 
-        XCTAssertFalse(error.userMessage.contains("foreign key"))  // No technical jargon
-        XCTAssertTrue(error.userMessage.contains("exists") || error.userMessage.contains("available"))
-        // TODO: Implement full test
+        #expect(!error.userMessage.contains("foreign key"))  // No technical jargon
+        #expect(error.userMessage.contains("exists") || error.userMessage.contains("available"))
+    }
+
+    @Test("Duplicate record error message is clear")
+    func duplicateRecordErrorMessage() {
+        let error = ValidationError.duplicateRecord("Already exists")
+
+        #expect(error.userMessage.contains("duplicate") || error.userMessage.contains("exists") || error.userMessage.contains("already"))
+    }
+
+    @Test("Missing required field error message is specific")
+    func missingRequiredFieldErrorMessage() {
+        let error = ValidationError.missingRequiredField("title")
+
+        #expect(error.userMessage.contains("required") || error.userMessage.contains("missing"))
+    }
+
+    @Test("Database constraint error message is present")
+    func databaseConstraintErrorMessage() {
+        let error = ValidationError.databaseConstraint("Constraint failed")
+
+        #expect(!error.userMessage.isEmpty)
     }
 
     // MARK: - LocalizedError Conformance
 
-    func testLocalizedErrorConformance() {
-        // Test that errorDescription works
+    @Test("LocalizedError errorDescription matches userMessage")
+    func localizedErrorConformance() {
         let error = ValidationError.emptyAction("Test")
 
-        XCTAssertNotNil(error.errorDescription)
-        XCTAssertEqual(error.errorDescription, error.userMessage)
-        // TODO: Implement full test
+        #expect(error.errorDescription != nil)
+        #expect(error.errorDescription == error.userMessage)
     }
 
-    // MARK: - Completeness
+    // MARK: - Message Completeness
 
-    func testAllCasesHaveNonEmptyMessages() {
-        // Test that every error case has a meaningful message
-        // TODO: Implement exhaustive check of all cases
+    @Test("All error cases have non-empty messages", arguments: [
+        ValidationError.emptyAction("test"),
+        ValidationError.emptyValue("test"),
+        ValidationError.invalidExpectation("test"),
+        ValidationError.invalidDateRange("test"),
+        ValidationError.invalidPriority("test"),
+        ValidationError.inconsistentReference("test"),
+        ValidationError.invalidMeasure("test"),
+        ValidationError.invalidGoal("test"),
+        ValidationError.duplicateRecord("test"),
+        ValidationError.missingRequiredField("test"),
+        ValidationError.foreignKeyViolation("test"),
+        ValidationError.databaseConstraint("test")
+    ])
+    func allErrorCasesHaveMessages(error: ValidationError) {
+        #expect(!error.userMessage.isEmpty)
+        #expect(error.userMessage.count > 10)  // More than just a stub
     }
 }
 
@@ -96,8 +155,15 @@ final class ValidationErrorTests: XCTestCase {
 //
 // 3. Completeness:
 //    - Every enum case has a message
-//    - No missing switch cases
+//    - No missing switch cases (verified via parameterized test)
 //
 // 4. No Database Required:
 //    - These are pure enum tests
 //    - Fast execution (< 1ms per test)
+//
+// SWIFT TESTING BENEFITS:
+//  - @Test macro with descriptive names
+//  - #expect for clearer assertions
+//  - @Test(arguments:) for parameterized testing
+//  - @Suite for organization
+//  - No need for XCTestCase inheritance

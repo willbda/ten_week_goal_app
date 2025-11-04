@@ -1,5 +1,6 @@
 // ActionValidatorTests.swift
 // Written by Claude Code on 2025-11-04
+// Updated by Claude Code on 2025-11-04 (migrated to Swift Testing)
 //
 // PURPOSE:
 // Test ActionValidator for Phase 1 (form data) and Phase 2 (entity graph) validation.
@@ -9,78 +10,88 @@
 // TESTS TO IMPLEMENT:
 //
 // Phase 1: Form Data Validation
-//  testAcceptsActionWithTitle
-//  testAcceptsActionWithMeasurementsOnly
-//  testAcceptsActionWithGoalLinksOnly
-//  testRejectsEmptyAction
-//  testRejectsNegativeDuration
-//  testRejectsStartTimeInFuture
+//  testAcceptsActionWithTitle
+//  testAcceptsActionWithMeasurementsOnly
+//  testAcceptsActionWithGoalLinksOnly
+//  testRejectsEmptyAction
+//  testRejectsNegativeDuration
+//  testRejectsStartTimeInFuture
 //
 // Phase 2: Entity Graph Validation
-//  testAcceptsValidEntityGraph
-//  testRejectsMeasurementWithWrongActionId
-//  testRejectsContributionWithWrongActionId
-//  testRejectsDuplicateMeasurements
+//  testAcceptsValidEntityGraph
+//  testRejectsMeasurementWithWrongActionId
+//  testRejectsContributionWithWrongActionId
+//  testRejectsDuplicateMeasurements
 
-import XCTest
+import Testing
 @testable import Services
 @testable import Models
 
-final class ActionValidatorTests: XCTestCase {
-
-    var validator: ActionValidator!
-
-    override func setUp() {
-        super.setUp()
-        validator = ActionValidator()
-    }
+@Suite("ActionValidator Tests")
+struct ActionValidatorTests {
 
     // MARK: - Phase 1: Form Data Validation
 
-    func testAcceptsActionWithTitle() {
+    @Test("Accepts action with title")
+    func acceptsActionWithTitle() {
+        let validator = ActionValidator()
         let formData = ActionFormData(title: "Morning run")
 
-        XCTAssertNoThrow(try validator.validateFormData(formData))
+        #expect(throws: Never.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement full test
     }
 
-    func testAcceptsActionWithMeasurementsOnly() {
+    @Test("Accepts action with measurements only")
+    func acceptsActionWithMeasurementsOnly() {
+        let validator = ActionValidator()
         let formData = ActionFormData(
-            title: nil,
+            title: "",
             measurements: [MeasurementInput(measureId: UUID(), value: 5.0)]
         )
 
-        XCTAssertNoThrow(try validator.validateFormData(formData))
+        #expect(throws: Never.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement full test
     }
 
-    func testRejectsEmptyAction() {
+    @Test("Rejects empty action")
+    func rejectsEmptyAction() {
+        let validator = ActionValidator()
         let emptyData = ActionFormData(
-            title: nil,
-            description: nil,
+            title: "",
+            detailedDescription: "",
             measurements: [],
-            goalLinks: []
+            goalContributions: []
         )
 
-        XCTAssertThrowsError(try validator.validateFormData(emptyData)) { error in
-            XCTAssertTrue(error is ValidationError)
-            // TODO: Check specific error type
+        #expect(throws: ValidationError.self) {
+            try validator.validateFormData(emptyData)
         }
+        // TODO: Check specific error type
     }
 
-    func testRejectsNegativeDuration() {
+    @Test("Rejects negative duration")
+    func rejectsNegativeDuration() {
+        let validator = ActionValidator()
         let formData = ActionFormData(
             title: "Test",
             durationMinutes: -10
         )
 
-        XCTAssertThrowsError(try validator.validateFormData(formData))
+        #expect(throws: ValidationError.self) {
+            try validator.validateFormData(formData)
+        }
         // TODO: Implement full test
     }
 
     // MARK: - Phase 2: Entity Graph Validation
 
-    func testAcceptsValidEntityGraph() {
+    @Test("Accepts valid entity graph")
+    func acceptsValidEntityGraph() {
+        let validator = ActionValidator()
         let action = Action(title: "Run")
         let measurement = MeasuredAction(
             actionId: action.id,
@@ -92,13 +103,15 @@ final class ActionValidatorTests: XCTestCase {
             goalId: UUID()
         )
 
-        XCTAssertNoThrow(
+        #expect(throws: Never.self) {
             try validator.validateComplete((action, [measurement], [contribution]))
-        )
+        }
         // TODO: Implement full test
     }
 
-    func testRejectsMeasurementWithWrongActionId() {
+    @Test("Rejects measurement with wrong action ID")
+    func rejectsMeasurementWithWrongActionId() {
+        let validator = ActionValidator()
         let action = Action(title: "Run")
         let wrongMeasurement = MeasuredAction(
             actionId: UUID(),  // Different ID!
@@ -106,26 +119,32 @@ final class ActionValidatorTests: XCTestCase {
             value: 5.0
         )
 
-        XCTAssertThrowsError(
+        do {
             try validator.validateComplete((action, [wrongMeasurement], []))
-        ) { error in
-            guard case ValidationError.inconsistentReference = error else {
-                XCTFail("Expected inconsistentReference error")
-                return
+            Issue.record("Expected ValidationError.inconsistentReference to be thrown")
+        } catch let error as ValidationError {
+            if case .inconsistentReference = error {
+                // Success
+            } else {
+                Issue.record("Expected inconsistentReference, got \(error)")
             }
+        } catch {
+            Issue.record("Expected ValidationError, got \(error)")
         }
         // TODO: Implement full test
     }
 
-    func testRejectsDuplicateMeasurements() {
+    @Test("Rejects duplicate measurements")
+    func rejectsDuplicateMeasurements() {
+        let validator = ActionValidator()
         let action = Action(title: "Run")
         let measureId = UUID()
         let measurement1 = MeasuredAction(actionId: action.id, measureId: measureId, value: 5.0)
         let measurement2 = MeasuredAction(actionId: action.id, measureId: measureId, value: 3.0)
 
-        XCTAssertThrowsError(
+        #expect(throws: ValidationError.self) {
             try validator.validateComplete((action, [measurement1, measurement2], []))
-        )
+        }
         // TODO: Implement full test
     }
 }
@@ -153,3 +172,10 @@ final class ActionValidatorTests: XCTestCase {
 //    - Valid minimal action
 //    - Valid complete action
 //    - All combinations of content
+//
+// SWIFT TESTING BENEFITS:
+//  - @Test macro with descriptive names
+//  - #expect for clearer assertions
+//  - #expect(throws:) for error validation
+//  - @Suite for organization
+//  - No need for setUp/tearDown - just create validator inline
