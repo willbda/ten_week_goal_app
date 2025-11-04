@@ -56,6 +56,8 @@ public struct ActionContribution: Identifiable, Sendable {
 ///     ActionRowView(actionDetails: actionDetails)
 /// }
 /// ```
+// TODO(human): Add Hashable conformance to enable List selection
+// Add `: Hashable` after `Sendable` and implement or synthesize hash/equality
 public struct ActionWithDetails: Identifiable, Sendable {
     public let action: Action
     public let measurements: [ActionMeasurement]
