@@ -33,13 +33,11 @@
               }
 
               // Tab 3: Goals (Future Sprint 2)
-              PlaceholderTab(
-                  icon: "target",
-                  title: "Goals",
-                  subtitle: "Coming in Sprint 2"
-              )
-              .tabItem {
+              NavigationStack {
+                  GoalsListView()
+              }.tabItem{
                   Label("Goals", systemImage: "target")
+                  
               }
 
               // Tab 4: Values (Phase 3 - Complete)
