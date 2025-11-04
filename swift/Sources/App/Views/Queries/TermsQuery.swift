@@ -11,7 +11,7 @@ import Models
 import SQLiteData
 
 /// Combined GoalTerm + TimePeriod for list display
-public struct TermWithPeriod: Identifiable, Sendable {
+public struct TermWithPeriod: Identifiable, Hashable, Sendable {
     public let term: GoalTerm
     public let timePeriod: TimePeriod
 

@@ -14,7 +14,7 @@ import Models
 ///
 /// Fetched efficiently via single JOIN query in GoalsQuery.
 /// Passed to GoalRowView to avoid N+1 queries in list display.
-public struct GoalWithDetails: Identifiable, Sendable {
+public struct GoalWithDetails: Identifiable, Hashable, Sendable {
     public let goal: Goal
     public let expectation: Expectation
     public let metricTargets: [ExpectationMeasureWithMetric]
@@ -39,7 +39,7 @@ public struct GoalWithDetails: Identifiable, Sendable {
 }
 
 /// Helper: ExpectationMeasure with its Measure
-public struct ExpectationMeasureWithMetric: Identifiable, Sendable {
+public struct ExpectationMeasureWithMetric: Identifiable, Hashable, Sendable {
     public let expectationMeasure: ExpectationMeasure
     public let measure: Measure
     public var id: UUID { expectationMeasure.id }
@@ -51,7 +51,7 @@ public struct ExpectationMeasureWithMetric: Identifiable, Sendable {
 }
 
 /// Helper: GoalRelevance with its PersonalValue
-public struct GoalRelevanceWithValue: Identifiable, Sendable {
+public struct GoalRelevanceWithValue: Identifiable, Hashable, Sendable {
     public let goalRelevance: GoalRelevance
     public let value: PersonalValue
     public var id: UUID { goalRelevance.id }

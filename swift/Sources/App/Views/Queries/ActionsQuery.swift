@@ -16,7 +16,7 @@ import SQLiteData
 ///
 /// Holds action, measurement value, and the measure catalog entry.
 /// Returned from ActionsWithMeasuresAndGoals query.
-public struct ActionMeasurement: Identifiable, Sendable {
+public struct ActionMeasurement: Identifiable, Hashable, Sendable {
     public let measuredAction: MeasuredAction
     public let measure: Measure
     public var id: UUID { measuredAction.id }
@@ -31,7 +31,7 @@ public struct ActionMeasurement: Identifiable, Sendable {
 ///
 /// Holds contribution record and the goal it contributes toward.
 /// Returned from ActionsWithMeasuresAndGoals query.
-public struct ActionContribution: Identifiable, Sendable {
+public struct ActionContribution: Identifiable, Hashable, Sendable {
     public let contribution: ActionGoalContribution
     public let goal: Goal
     public var id: UUID { contribution.id }
@@ -56,9 +56,7 @@ public struct ActionContribution: Identifiable, Sendable {
 ///     ActionRowView(actionDetails: actionDetails)
 /// }
 /// ```
-// TODO(human): Add Hashable conformance to enable List selection
-// Add `: Hashable` after `Sendable` and implement or synthesize hash/equality
-public struct ActionWithDetails: Identifiable, Sendable {
+public struct ActionWithDetails: Identifiable, Hashable, Sendable {
     public let action: Action
     public let measurements: [ActionMeasurement]
     public let contributions: [ActionContribution]

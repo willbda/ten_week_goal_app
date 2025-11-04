@@ -53,7 +53,7 @@ public protocol Timestamped {
 /// **Examples**: Expectation, TimePeriod, Action, Measure, PersonalValue
 ///
 /// **Fields**: id, title, detailedDescription, freeformNotes, logTime
-public protocol DomainAbstraction: Identifiable, Documentable, Timestamped, Equatable, Sendable
+public protocol DomainAbstraction: Identifiable, Documentable, Timestamped, Equatable, Hashable, Sendable
     where ID == UUID {}
 
 /// Concrete working entities that reference abstracts
@@ -64,7 +64,7 @@ public protocol DomainAbstraction: Identifiable, Documentable, Timestamped, Equa
 /// **Examples**: Goal, Milestone, Obligation, GoalTerm
 ///
 /// **Fields**: id + type-specific fields (startDate, deadline, etc.)
-public protocol DomainBasic: Identifiable, Equatable, Sendable
+public protocol DomainBasic: Identifiable, Equatable, Hashable, Sendable
     where ID == UUID {}
 
 /// Junction tables connecting entities
@@ -75,7 +75,7 @@ public protocol DomainBasic: Identifiable, Equatable, Sendable
 /// **Examples**: MeasuredAction, GoalRelevance, ActionGoalContribution
 ///
 /// **Fields**: id + FK references + relationship data
-public protocol DomainComposit: Identifiable, Equatable, Sendable
+public protocol DomainComposit: Identifiable, Equatable, Hashable, Sendable
     where ID == UUID {}
 
 /// Default equality for Identifiable entities: two entities are equal if they have the same UUID
