@@ -46,15 +46,15 @@
 //  No duplicate measurements for same measure
 //   Rationale: Should update existing, not create duplicate
 //
-// FORM DATA STRUCTURE:
+// FORM DATA STRUCTURE (from Coordinators/FormData/ActionFormData.swift):
 // struct ActionFormData {
-//     var title: String?
-//     var description: String?
-//     var notes: String?
-//     var durationMinutes: Double?
-//     var startTime: Date?
-//     var measurements: [MeasurementInput]  // (measureId, value)
-//     var goalLinks: [GoalLinkInput]        // (goalId, contributionAmount, measureId)
+//     let title: String                      // Empty string if not provided
+//     let detailedDescription: String        // Empty string if not provided
+//     let freeformNotes: String             // Empty string if not provided
+//     let durationMinutes: Double           // 0 if not provided
+//     let startTime: Date                   // Defaults to Date()
+//     let measurements: [MeasurementInput]  // (id, measureId?, value)
+//     let goalContributions: Set<UUID>      // Goal IDs this action contributes to
 // }
 //
 // USAGE EXAMPLE:
@@ -64,70 +64,29 @@
 // try validator.validateFormData(formData)
 //
 // // Assemble entities
-// let action = Action(title: formData.title, ...)
-// let measurements = formData.measurements.map { ... }
-// let contributions = formData.goalLinks.map { ... }
+// let action = Action(title: formData.title.isEmpty ? nil : formData.title, ...)
+// let measurements = formData.measurements.filter { $0.isValid }.map {
+//     MeasuredAction(actionId: action.id, measureId: $0.measureId!, value: $0.value)
+// }
+// let contributions = formData.goalContributions.map { goalId in
+//     ActionGoalContribution(actionId: action.id, goalId: goalId)
+// }
 //
 // // Phase 2: Validate complete graph
 // try validator.validateComplete((action, measurements, contributions))
 //
-// // Safe to persist
-// try await repository.save(action, measurements, contributions)
+// // Safe to persist (handled by ActionCoordinator)
+// try await coordinator.create(from: formData)
 
 import Foundation
+import Models
 
-/// Form data for action creation/update
-public struct ActionFormData {
-    public var title: String?
-    public var description: String?
-    public var notes: String?
-    public var durationMinutes: Double?
-    public var startTime: Date?
-    public var measurements: [MeasurementInput]
-    public var goalLinks: [GoalLinkInput]
-
-    public init(
-        title: String? = nil,
-        description: String? = nil,
-        notes: String? = nil,
-        durationMinutes: Double? = nil,
-        startTime: Date? = nil,
-        measurements: [MeasurementInput] = [],
-        goalLinks: [GoalLinkInput] = []
-    ) {
-        self.title = title
-        self.description = description
-        self.notes = notes
-        self.durationMinutes = durationMinutes
-        self.startTime = startTime
-        self.measurements = measurements
-        self.goalLinks = goalLinks
-    }
-}
-
-/// Measurement input from form
-public struct MeasurementInput {
-    public var measureId: UUID
-    public var value: Double
-
-    public init(measureId: UUID, value: Double) {
-        self.measureId = measureId
-        self.value = value
-    }
-}
-
-/// Goal link input from form
-public struct GoalLinkInput {
-    public var goalId: UUID
-    public var contributionAmount: Double?
-    public var measureId: UUID?
-
-    public init(goalId: UUID, contributionAmount: Double? = nil, measureId: UUID? = nil) {
-        self.goalId = goalId
-        self.contributionAmount = contributionAmount
-        self.measureId = measureId
-    }
-}
+// Import existing FormData types from Coordinators
+// ActionFormData, MeasurementInput defined in swift/Sources/Services/Coordinators/FormData/
+// Note: Using existing FormData pattern:
+//   - title, detailedDescription, freeformNotes: String (not String?)
+//   - durationMinutes: Double (not Double?)
+//   - goalContributions: Set<UUID> (not [GoalLinkInput])
 
 /// Validates Action entities and their relationships
 public struct ActionValidator: EntityValidator {
@@ -148,15 +107,16 @@ public struct ActionValidator: EntityValidator {
     /// - Duration must be positive (if provided)
     /// - StartTime must be before current time (if provided)
     ///
-    /// - Parameter formData: Raw form input from UI
+    /// - Parameter formData: Raw form input from UI (ActionFormData from Coordinators)
     /// - Throws: ValidationError if business rules violated
     public func validateFormData(_ formData: ActionFormData) throws {
         // Rule 1: Action must have SOME content
-        let hasText = formData.title?.isEmpty == false ||
-                     formData.description?.isEmpty == false ||
-                     formData.notes?.isEmpty == false
+        // Note: Existing FormData uses String (not String?), so check isEmpty
+        let hasText = !formData.title.isEmpty ||
+                     !formData.detailedDescription.isEmpty ||
+                     !formData.freeformNotes.isEmpty
         let hasMeasurements = !formData.measurements.isEmpty
-        let hasGoalLinks = !formData.goalLinks.isEmpty
+        let hasGoalLinks = !formData.goalContributions.isEmpty
 
         guard hasText || hasMeasurements || hasGoalLinks else {
             throw ValidationError.emptyAction(
@@ -164,15 +124,17 @@ public struct ActionValidator: EntityValidator {
             )
         }
 
-        // Rule 2: Duration must be positive
-        if let duration = formData.durationMinutes, duration <= 0 {
+        // Rule 2: Duration must be non-negative
+        // Note: Existing FormData uses Double (defaults to 0 = "not provided")
+        // Coordinator treats 0 as nil, so we only check for negative values
+        if formData.durationMinutes < 0 {
             throw ValidationError.invalidExpectation(
-                "Duration must be positive, got \(duration) minutes"
+                "Duration cannot be negative, got \(formData.durationMinutes) minutes"
             )
         }
 
         // Rule 3: StartTime should be reasonable (not in future)
-        if let startTime = formData.startTime, startTime > Date() {
+        if formData.startTime > Date() {
             throw ValidationError.invalidDateRange(
                 "Start time cannot be in the future"
             )

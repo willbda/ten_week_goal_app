@@ -43,91 +43,65 @@
 //  No duplicate goal assignments
 //   Rationale: Same goal shouldn't appear twice in term
 //
-// FORM DATA STRUCTURE:
-// struct TermFormData {
-//     // TimePeriod fields
-//     var title: String?
-//     var description: String?
-//     var startDate: Date
-//     var endDate: Date
+// FORM DATA STRUCTURE (from Coordinators/FormData/TimePeriodFormData.swift):
+// struct TimePeriodFormData {
+//     let title: String?                              // Optional
+//     let detailedDescription: String?                // Optional
+//     let freeformNotes: String?                      // Optional
+//     let startDate: Date                             // Required
+//     let targetDate: Date                            // Required (not endDate!)
+//     let specialization: TimePeriodSpecialization    // Enum: .term(number), .year(yearNumber), .custom
 //
-//     // GoalTerm fields
-//     var termNumber: Int
-//     var theme: String?
-//     var reflection: String?
-//     var status: TermStatus?
-//
-//     // Related entities
-//     var goalAssignments: [UUID]  // Goal IDs to assign
+//     // GoalTerm-specific fields (used when specialization = .term)
+//     let theme: String?                              // Optional
+//     let reflection: String?                         // Optional
+//     let status: TermStatus?                         // Optional
 // }
+//
+// Note: Goal assignments (TermGoalAssignment) are handled separately,
+// not part of creation FormData. They're added after term creation.
 //
 // USAGE EXAMPLE:
 // let validator = TermValidator()
 //
+// // Create FormData with term specialization
+// let formData = TimePeriodFormData(
+//     title: "Term 5",
+//     startDate: Date(),
+//     targetDate: Date().addingTimeInterval(86400 * 70),  // 10 weeks
+//     specialization: .term(number: 5),
+//     theme: "Health and momentum",
+//     status: .planned
+// )
+//
 // // Phase 1: Validate form
 // try validator.validateFormData(formData)
 //
-// // Assemble entities
-// let timePeriod = TimePeriod(startDate: formData.startDate, ...)
-// let goalTerm = GoalTerm(timePeriodId: timePeriod.id, ...)
-// let assignments = formData.goalAssignments.map { goalId in
-//     TermGoalAssignment(termId: goalTerm.id, goalId: goalId)
-// }
+// // Assemble entities (handled by TimePeriodCoordinator)
+// try await coordinator.create(from: formData)
 //
-// // Phase 2: Validate complete graph
+// // Goal assignments are added separately after term creation:
+// let assignment = TermGoalAssignment(termId: goalTerm.id, goalId: goalId)
+//
+// // Phase 2: Validate complete graph (with assignments)
 // try validator.validateComplete((timePeriod, goalTerm, assignments))
-//
-// // Safe to persist
-// try await repository.save(timePeriod, goalTerm, assignments)
 
 import Foundation
+import Models
 
-/// Form data for term creation/update
-public struct TermFormData {
-    // TimePeriod fields
-    public var title: String?
-    public var description: String?
-    public var startDate: Date
-    public var endDate: Date
-
-    // GoalTerm fields
-    public var termNumber: Int
-    public var theme: String?
-    public var reflection: String?
-    public var status: TermStatus?
-
-    // Related entities
-    public var goalAssignments: [UUID]
-
-    public init(
-        title: String? = nil,
-        description: String? = nil,
-        startDate: Date,
-        endDate: Date,
-        termNumber: Int,
-        theme: String? = nil,
-        reflection: String? = nil,
-        status: TermStatus? = nil,
-        goalAssignments: [UUID] = []
-    ) {
-        self.title = title
-        self.description = description
-        self.startDate = startDate
-        self.endDate = endDate
-        self.termNumber = termNumber
-        self.theme = theme
-        self.reflection = reflection
-        self.status = status
-        self.goalAssignments = goalAssignments
-    }
-}
+// Import existing FormData types from Coordinators
+// TimePeriodFormData, TimePeriodSpecialization defined in swift/Sources/Services/Coordinators/FormData/
+// Note: Using existing FormData pattern:
+//   - Works with TimePeriod + GoalTerm atomically via specialization enum
+//   - targetDate (not endDate) for consistency with Goal terminology
+//   - Goal assignments (TermGoalAssignment) handled separately after creation
 
 /// Validates Term entities and their relationships
 public struct TermValidator: EntityValidator {
 
     // MARK: - EntityValidator Conformance
 
-    public typealias FormData = TermFormData
+    public typealias FormData = TimePeriodFormData
     public typealias Entity = (TimePeriod, GoalTerm, [TermGoalAssignment])
 
     public init() {}
@@ -137,23 +111,33 @@ public struct TermValidator: EntityValidator {
     /// Validates raw form data before model creation
     ///
     /// Business Rules:
-    /// - StartDate must be before endDate
-    /// - Term number must be positive
+    /// - StartDate must be before targetDate
+    /// - Term number must be positive (extracted from specialization enum)
+    /// - Must be a term specialization (not year or custom)
     ///
-    /// - Parameter formData: Raw form input from UI
+    /// - Parameter formData: Raw form input from UI (TimePeriodFormData from Coordinators)
     /// - Throws: ValidationError if business rules violated
-    public func validateFormData(_ formData: TermFormData) throws {
-        // Rule 1: StartDate must be before endDate
-        guard formData.startDate < formData.endDate else {
+    public func validateFormData(_ formData: TimePeriodFormData) throws {
+        // Rule 1: StartDate must be before targetDate
+        // Note: Existing FormData uses targetDate (not endDate)
+        guard formData.startDate < formData.targetDate else {
             throw ValidationError.invalidDateRange(
-                "Start date must be before end date"
+                "Start date must be before target date"
             )
         }
 
-        // Rule 2: Term number must be positive
-        guard formData.termNumber > 0 else {
+        // Rule 2: Must be a term specialization with valid term number
+        // Extract term number from specialization enum
+        guard case .term(let termNumber) = formData.specialization else {
             throw ValidationError.invalidExpectation(
-                "Term number must be positive, got \(formData.termNumber)"
+                "TimePeriodFormData must have .term specialization for TermValidator"
+            )
+        }
+
+        // Rule 3: Term number must be positive
+        guard termNumber > 0 else {
+            throw ValidationError.invalidExpectation(
+                "Term number must be positive, got \(termNumber)"
             )
         }
     }
@@ -203,7 +187,7 @@ public struct TermValidator: EntityValidator {
 
 // WHY SEPARATE TIMEPERIOD AND GOALTERM?
 //
-// TimePeriod: Pure chronological fact (start ’ end)
+// TimePeriod: Pure chronological fact (start ï¿½ end)
 // GoalTerm: Planning scaffold with semantics (theme, status, reflection)
 //
 // This separation allows:

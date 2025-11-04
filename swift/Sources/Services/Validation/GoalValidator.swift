@@ -59,24 +59,25 @@
 //  No duplicate relevances for same value
 //   Rationale: Should update existing, not create duplicate
 //
-// FORM DATA STRUCTURE:
+// FORM DATA STRUCTURE (from Coordinators/FormData/GoalFormData.swift):
 // struct GoalFormData {
 //     // Expectation fields
-//     var title: String?
-//     var description: String?
-//     var notes: String?
-//     var importance: Int
-//     var urgency: Int
+//     let title: String                           // Empty string if not provided
+//     let detailedDescription: String             // Empty string if not provided
+//     let freeformNotes: String                   // Empty string if not provided
+//     let expectationImportance: Int              // Default: 8 for goals
+//     let expectationUrgency: Int                 // Default: 5 for goals
 //
 //     // Goal fields
-//     var startDate: Date?
-//     var targetDate: Date?
-//     var actionPlan: String?
-//     var expectedTermLength: Int?
+//     let startDate: Date?                        // Optional
+//     let targetDate: Date?                       // Optional
+//     let actionPlan: String?                     // Optional
+//     let expectedTermLength: Int?                // Optional
 //
 //     // Related entities
-//     var measurements: [MeasurementTargetInput]  // (measureId, targetValue)
-//     var valueAlignments: [ValueAlignmentInput]  // (valueId, strength, notes)
+//     let metricTargets: [MetricTargetInput]      // Metric targets (measureId, value, notes)
+//     let valueAlignments: [ValueAlignmentInput]  // Value alignments (valueId, strength, notes)
+//     let termId: UUID?                           // Optional term assignment
 // }
 //
 // USAGE EXAMPLE:
@@ -98,78 +99,14 @@
 // try await repository.save(expectation, goal, measurements, relevances)
 
 import Foundation
+import Models
 
-/// Form data for goal creation/update
-public struct GoalFormData {
-    // Expectation fields
-    public var title: String?
-    public var description: String?
-    public var notes: String?
-    public var importance: Int
-    public var urgency: Int
-
-    // Goal fields
-    public var startDate: Date?
-    public var targetDate: Date?
-    public var actionPlan: String?
-    public var expectedTermLength: Int?
-
-    // Related entities
-    public var measurements: [MeasurementTargetInput]
-    public var valueAlignments: [ValueAlignmentInput]
-
-    public init(
-        title: String? = nil,
-        description: String? = nil,
-        notes: String? = nil,
-        importance: Int = 8,  // Default for goals
-        urgency: Int = 5,     // Default for goals
-        startDate: Date? = nil,
-        targetDate: Date? = nil,
-        actionPlan: String? = nil,
-        expectedTermLength: Int? = nil,
-        measurements: [MeasurementTargetInput] = [],
-        valueAlignments: [ValueAlignmentInput] = []
-    ) {
-        self.title = title
-        self.description = description
-        self.notes = notes
-        self.importance = importance
-        self.urgency = urgency
-        self.startDate = startDate
-        self.targetDate = targetDate
-        self.actionPlan = actionPlan
-        self.expectedTermLength = expectedTermLength
-        self.measurements = measurements
-        self.valueAlignments = valueAlignments
-    }
-}
-
-/// Measurement target input from form
-public struct MeasurementTargetInput {
-    public var measureId: UUID
-    public var targetValue: Double
-    public var notes: String?
-
-    public init(measureId: UUID, targetValue: Double, notes: String? = nil) {
-        self.measureId = measureId
-        self.targetValue = targetValue
-        self.notes = notes
-    }
-}
-
-/// Value alignment input from form
-public struct ValueAlignmentInput {
-    public var valueId: UUID
-    public var alignmentStrength: Int?
-    public var relevanceNotes: String?
-
-    public init(valueId: UUID, alignmentStrength: Int? = nil, relevanceNotes: String? = nil) {
-        self.valueId = valueId
-        self.alignmentStrength = alignmentStrength
-        self.relevanceNotes = relevanceNotes
-    }
-}
+// Import existing FormData types from Coordinators
+// GoalFormData, MetricTargetInput, ValueAlignmentInput defined in swift/Sources/Services/Coordinators/FormData/
+// Note: Using existing FormData pattern:
+//   - title, detailedDescription, freeformNotes: String (not String?)
+//   - expectationImportance, expectationUrgency: Int (not importance/urgency)
+//   - metricTargets: [MetricTargetInput] (not measurements)
 
 /// Validates Goal entities and their relationships
 public struct GoalValidator: EntityValidator {
@@ -192,12 +129,13 @@ public struct GoalValidator: EntityValidator {
     /// - Target values must be positive
     /// - Alignment strengths must be 1-10
     ///
-    /// - Parameter formData: Raw form input from UI
+    /// - Parameter formData: Raw form input from UI (GoalFormData from Coordinators)
     /// - Throws: ValidationError if business rules violated
     public func validateFormData(_ formData: GoalFormData) throws {
         // Rule 1: Expectation must have title or description
-        let hasTitle = formData.title?.isEmpty == false
-        let hasDescription = formData.description?.isEmpty == false
+        // Note: Existing FormData uses String (not String?), so check isEmpty
+        let hasTitle = !formData.title.isEmpty
+        let hasDescription = !formData.detailedDescription.isEmpty
 
         guard hasTitle || hasDescription else {
             throw ValidationError.invalidExpectation(
@@ -206,16 +144,18 @@ public struct GoalValidator: EntityValidator {
         }
 
         // Rule 2: Importance must be 1-10
-        guard (1...10).contains(formData.importance) else {
+        // Note: Field name is expectationImportance (not importance)
+        guard (1...10).contains(formData.expectationImportance) else {
             throw ValidationError.invalidPriority(
-                "Importance must be 1-10, got \(formData.importance)"
+                "Importance must be 1-10, got \(formData.expectationImportance)"
             )
         }
 
         // Rule 3: Urgency must be 1-10
-        guard (1...10).contains(formData.urgency) else {
+        // Note: Field name is expectationUrgency (not urgency)
+        guard (1...10).contains(formData.expectationUrgency) else {
             throw ValidationError.invalidPriority(
-                "Urgency must be 1-10, got \(formData.urgency)"
+                "Urgency must be 1-10, got \(formData.expectationUrgency)"
             )
         }
 
@@ -229,10 +169,11 @@ public struct GoalValidator: EntityValidator {
         }
 
         // Rule 5: Target values must be positive
-        for measurement in formData.measurements {
-            guard measurement.targetValue > 0 else {
+        // Note: Field name is metricTargets (not measurements)
+        for target in formData.metricTargets {
+            guard target.targetValue > 0 else {
                 throw ValidationError.invalidExpectation(
-                    "Target value must be positive, got \(measurement.targetValue)"
+                    "Target value must be positive, got \(target.targetValue)"
                 )
             }
         }

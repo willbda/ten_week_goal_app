@@ -36,15 +36,15 @@
 //  Priority falls back to valueLevel default if not provided
 //   Rationale: Ensure priority is always set
 //
-// FORM DATA STRUCTURE:
+// FORM DATA STRUCTURE (from Coordinators/FormData/ValueFormData.swift):
 // struct ValueFormData {
-//     var title: String?
-//     var description: String?
-//     var notes: String?
-//     var priority: Int?
-//     var valueLevel: ValueLevel
-//     var lifeDomain: String?
-//     var alignmentGuidance: String?
+//     let title: String                    // Required (not optional)
+//     let detailedDescription: String?     // Optional
+//     let freeformNotes: String?           // Optional
+//     let valueLevel: ValueLevel           // Required
+//     let priority: Int?                   // Optional (uses valueLevel default if nil)
+//     let lifeDomain: String?              // Optional
+//     let alignmentGuidance: String?       // Optional
 // }
 //
 // USAGE EXAMPLE:
@@ -68,35 +68,14 @@
 // try await repository.save(value)
 
 import Foundation
+import Models
 
-/// Form data for value creation/update
-public struct ValueFormData {
-    public var title: String?
-    public var description: String?
-    public var notes: String?
-    public var priority: Int?
-    public var valueLevel: ValueLevel
-    public var lifeDomain: String?
-    public var alignmentGuidance: String?
-
-    public init(
-        title: String? = nil,
-        description: String? = nil,
-        notes: String? = nil,
-        priority: Int? = nil,
-        valueLevel: ValueLevel = .general,
-        lifeDomain: String? = nil,
-        alignmentGuidance: String? = nil
-    ) {
-        self.title = title
-        self.description = description
-        self.notes = notes
-        self.priority = priority
-        self.valueLevel = valueLevel
-        self.lifeDomain = lifeDomain
-        self.alignmentGuidance = alignmentGuidance
-    }
-}
+// Import existing FormData types from Coordinators
+// ValueFormData defined in swift/Sources/Services/Coordinators/FormData/
+// Note: Using existing FormData pattern:
+//   - title: String (required, not optional)
+//   - detailedDescription, freeformNotes: String? (optional)
+//   - priority: Int? (optional, defaults to valueLevel.defaultPriority)
 
 /// Validates PersonalValue entities
 public struct ValueValidator: EntityValidator {
@@ -116,12 +95,14 @@ public struct ValueValidator: EntityValidator {
     /// - Value must have title or description
     /// - Priority must be 1-100 (if provided)
     ///
-    /// - Parameter formData: Raw form input from UI
+    /// - Parameter formData: Raw form input from UI (ValueFormData from Coordinators)
     /// - Throws: ValidationError if business rules violated
     public func validateFormData(_ formData: ValueFormData) throws {
         // Rule 1: Value must have title or description
-        let hasTitle = formData.title?.isEmpty == false
-        let hasDescription = formData.description?.isEmpty == false
+        // Note: Existing FormData has title: String (required), so just check not empty
+        // detailedDescription is String? (optional)
+        let hasTitle = !formData.title.isEmpty
+        let hasDescription = formData.detailedDescription?.isEmpty == false
 
         guard hasTitle || hasDescription else {
             throw ValidationError.emptyValue(
@@ -181,10 +162,10 @@ public struct ValueValidator: EntityValidator {
 // WHY ALLOW NULL PRIORITY IN FORM?
 //
 // If user doesn't provide priority, we use the valueLevel default:
-// - .general ’ 40
-// - .major ’ 10
-// - .highestOrder ’ 1
-// - .lifeArea ’ 40
+// - .general ï¿½ 40
+// - .major ï¿½ 10
+// - .highestOrder ï¿½ 1
+// - .lifeArea ï¿½ 40
 //
 // This provides sensible defaults while allowing explicit override.
 
@@ -194,7 +175,7 @@ public struct ValueValidator: EntityValidator {
 // PersonalValue is a standalone entity. This simplifies validation significantly.
 //
 // Related entities:
-// - GoalRelevance: Links goals ’ values (validated in GoalValidator)
+// - GoalRelevance: Links goals ï¿½ values (validated in GoalValidator)
 // - Not part of value creation flow
 
 // SIMPLIFIED PHASE 2
