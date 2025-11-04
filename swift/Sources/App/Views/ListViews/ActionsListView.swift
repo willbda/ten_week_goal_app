@@ -36,6 +36,7 @@ public struct ActionsListView: View {
     @State private var showingAddAction = false
     @State private var actionToEdit: ActionWithDetails?
     @State private var actionToDelete: ActionWithDetails?
+    // @State private var selectedAction: ActionWithDetails?  // TODO: Enable after Hashable conformance
 
     // MARK: - Body
 
@@ -57,6 +58,7 @@ public struct ActionsListView: View {
                 } label: {
                     Label("Add Action", systemImage: "plus")
                 }
+                .keyboardShortcut("n", modifiers: .command)
             }
         }
         .sheet(isPresented: $showingAddAction) {
@@ -103,7 +105,7 @@ public struct ActionsListView: View {
     // MARK: - Actions List
 
     private var actionsList: some View {
-        List {
+        List {  // TODO: Add selection: $selectedAction after Hashable conformance
             ForEach(actions) { actionDetails in
                 ActionRowView(actionDetails: actionDetails)
                     .onTapGesture {
@@ -124,8 +126,31 @@ public struct ActionsListView: View {
                         }
                         .tint(.blue)
                     }
+                    // Context menu for mouse/trackpad users
+                    .contextMenu {
+                        Button {
+                            edit(actionDetails)
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+
+                        Divider()
+
+                        Button(role: .destructive) {
+                            actionToDelete = actionDetails
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                    // .tag(actionDetails)  // TODO: Enable after Hashable conformance
             }
         }
+        // TODO: Enable after Hashable conformance:
+        // .onDeleteCommand {
+        //     if let selected = selectedAction {
+        //         actionToDelete = selected
+        //     }
+        // }
     }
 
     // MARK: - Actions

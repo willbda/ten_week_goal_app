@@ -20,20 +20,20 @@ import SwiftUI
 // SEE: ActionListView for example of list WITH ViewModel (complex filtering)
 
 public struct PersonalValuesListView: View {
-    // Optimized 2025-11-03: Use ORDER BY for database-level sorting
-    // This ensures values are already sorted by level and priority
-    @FetchAll(PersonalValue.order { ($0.valueLevel.asc(), $0.priority.asc()) })
+    // Fetching all PersonalValues from the database
+    @FetchAll(wrappedValue: [], PersonalValue.all)
     private var values
 
     @State private var showingAddValue = false
     @State private var valueToEdit: PersonalValue?
     @State private var valueToDelete: PersonalValue?
+    @State private var selectedValue: PersonalValue?  // For keyboard navigation
 
     public init() {}
 
     // Computed property to avoid layout recursion
     private var groupedValues: [ValueLevel: [PersonalValue]] {
-        Dictionary(grouping: values, by: \.valueLevel)
+        Dictionary(grouping: values, by: \PersonalValue.valueLevel)
     }
 
     public var body: some View {
@@ -79,6 +79,22 @@ public struct PersonalValuesListView: View {
                                             }
                                             .tint(.blue)
                                         }
+                                        // Context menu for mouse/trackpad users
+                                        .contextMenu {
+                                            Button {
+                                                edit(value)
+                                            } label: {
+                                                Label("Edit", systemImage: "pencil")
+                                            }
+
+                                            Divider()
+
+                                            Button(role: .destructive) {
+                                                valueToDelete = value
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
                                 }
                             }
                         }
@@ -94,6 +110,7 @@ public struct PersonalValuesListView: View {
                 } label: {
                     Label("Add Value", systemImage: "plus")
                 }
+                .keyboardShortcut("n", modifiers: .command)
             }
         }
         .sheet(isPresented: $showingAddValue) {

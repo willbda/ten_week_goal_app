@@ -34,6 +34,12 @@ public struct TermsListView: View {
     /// Term being edited (nil = create mode)
     @State private var termToEdit: (timePeriod: TimePeriod, goalTerm: GoalTerm)?
 
+    // TODO: Enable after Hashable conformance
+    // @State private var selectedTerm: TermWithPeriod?  // For keyboard navigation
+
+    /// Term to delete (for confirmation)
+    @State private var termToDelete: TermWithPeriod?
+
     public var body: some View {
         Group {
             if termsWithPeriods.isEmpty {
@@ -50,7 +56,7 @@ public struct TermsListView: View {
                     .buttonStyle(.borderedProminent)
                 }
             } else {
-                List {
+                List {  // TODO: Add selection: $selectedTerm after Hashable conformance
                     ForEach(termsWithPeriods) { item in
                         TermRowView(term: item.term, timePeriod: item.timePeriod)
                             .contentShape(Rectangle())
@@ -61,12 +67,7 @@ public struct TermsListView: View {
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
-                                    Task {
-                                        try? await viewModel.delete(
-                                            timePeriod: item.timePeriod,
-                                            goalTerm: item.term
-                                        )
-                                    }
+                                    termToDelete = item
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -81,8 +82,32 @@ public struct TermsListView: View {
                                 }
                                 .tint(.blue)
                             }
+                            // Context menu for mouse/trackpad users
+                            .contextMenu {
+                                Button {
+                                    termToEdit = (item.timePeriod, item.term)
+                                    showingForm = true
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+
+                                Divider()
+
+                                Button(role: .destructive) {
+                                    termToDelete = item
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                            // .tag(item)  // TODO: Enable after Hashable conformance
                     }
                 }
+                // TODO: Enable after Hashable conformance:
+                // .onDeleteCommand {
+                //     if let selected = selectedTerm {
+                //         termToDelete = selected
+                //     }
+                // }
             }
         }
         .navigationTitle("Terms")
@@ -94,12 +119,33 @@ public struct TermsListView: View {
                 } label: {
                     Label("Add Term", systemImage: "plus")
                 }
+                .keyboardShortcut("n", modifiers: .command)
             }
         }
         .sheet(isPresented: $showingForm) {
             NavigationStack {
                 TermFormView(termToEdit: termToEdit)
             }
+        }
+        .alert(
+            "Delete Term",
+            isPresented: .constant(termToDelete != nil),
+            presenting: termToDelete
+        ) { item in
+            Button("Cancel", role: .cancel) {
+                termToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                Task {
+                    try? await viewModel.delete(
+                        timePeriod: item.timePeriod,
+                        goalTerm: item.term
+                    )
+                    termToDelete = nil
+                }
+            }
+        } message: { item in
+            Text("Are you sure you want to delete Term \(item.term.termNumber)?")
         }
     }
 }

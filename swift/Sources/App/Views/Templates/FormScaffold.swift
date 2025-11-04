@@ -10,11 +10,12 @@
 // for all entity forms (Terms, Goals, Actions, Values).
 //
 // DESIGN:
-// - NavigationStack wrapper for forms
+// - Form wrapper with consistent toolbar and structure
 // - Cancel button (leading, optional)
 // - Submit button (trailing, conditionally disabled)
 // - Form content injected via @ViewBuilder
 // - Highly customizable via parameters
+// - Navigation context provided by parent view
 //
 // CUSTOMIZATION KNOBS & DIALS:
 //
@@ -212,11 +213,9 @@ public struct ToolbarItemConfig: Identifiable {
     // MARK: - Body
 
     public var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                validationBannerView
-                formContent
-            }
+        VStack(spacing: 0) {
+            validationBannerView
+            formContent
         }
     }
 
