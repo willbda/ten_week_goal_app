@@ -1,10 +1,11 @@
 //
 // GoalFormView.swift
 // Written by Claude Code on 2025-11-03
+// Rewritten by Claude Code on 2025-11-03 to follow Apple's SwiftUI patterns
 //
 // PURPOSE: Form for creating/editing Goals with full relationship support
-// PATTERN: Edit mode via optional goalToEdit parameter (like TermFormView, ActionFormView)
-// COMPONENTS: DocumentableFields, Steppers, DatePickers, RepeatingSection, MultiSelectSection
+// PATTERN: Direct Form structure following Apple's documented SwiftUI patterns
+//          No wrapper components - navigation modifiers applied directly to Form
 //
 
 import Dependencies
@@ -243,6 +244,7 @@ public struct GoalFormView: View {
                 }
             }
         }
+        .formStyle(.grouped)
         .navigationTitle(formTitle)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -331,8 +333,34 @@ public struct GoalFormView: View {
 
 
 
-#Preview {
+#Preview("New Goal") {
     NavigationStack {
         GoalFormView()
+    }
+}
+
+#Preview("Edit Goal") {
+    NavigationStack {
+        GoalFormView(
+            goalToEdit: GoalWithDetails(
+                goal: Goal(
+                    expectationId: UUID(),
+                    startDate: Date(),
+                    targetDate: Calendar.current.date(byAdding: .weekOfYear, value: 10, to: Date()),
+                    actionPlan: "Run 3x per week, track distance",
+                    expectedTermLength: 10
+                ),
+                expectation: Expectation(
+                    title: "Spring into Running",
+                    detailedDescription: "Build a consistent running habit",
+                    expectationType: .goal,
+                    expectationImportance: 8,
+                    expectationUrgency: 7
+                ),
+                metricTargets: [],
+                valueAlignments: [],
+                termAssignment: nil
+            )
+        )
     }
 }

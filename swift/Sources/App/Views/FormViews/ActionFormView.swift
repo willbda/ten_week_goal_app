@@ -1,19 +1,11 @@
 //
 // ActionFormView.swift
 // Written by Claude Code on 2025-11-02
+// Rewritten by Claude Code on 2025-11-03 to follow Apple's SwiftUI patterns
 //
 // PURPOSE: Form for creating/editing Actions with measurements and goal contributions
-// PATTERN: Edit mode support via optional actionToEdit parameter (like TermFormView)
-//
-// PLANNED REFACTOR (2025-11-03):
-// This file will be refactored to use shared form components:
-// - Replace timingSection with TimingSection component
-// - Replace measurementsSection with RepeatingSection<MeasurementInputRow>
-// - Replace goalContributionsSection with MultiSelectSection
-// - Extract buildFormData() helper pattern for template
-//
-// ISSUE SOLVED: Measurement TextField alignment (pushed far right by picker in HStack)
-// See: Sources/App/Views/Components/FormComponents/README.md
+// PATTERN: Direct Form structure following Apple's documented SwiftUI patterns
+//          No wrapper components - navigation modifiers applied directly to Form
 //
 
 import Models
@@ -39,17 +31,21 @@ private struct GoalOption: Identifiable {
 
 /// Form view for Action input (create + edit)
 ///
-/// **Pattern**: Single form for create and edit (like TermFormView)
+/// **Pattern**: Apple's direct Form approach (no FormScaffold wrapper)
 /// **Edit Mode**: Triggered by passing `actionToEdit` parameter
 /// **State Initialization**: In init() based on actionToEdit
 ///
 /// **Usage**:
 /// ```swift
 /// // Create mode
-/// ActionFormView()
+/// NavigationStack {
+///     ActionFormView()
+/// }
 ///
 /// // Edit mode
-/// ActionFormView(actionToEdit: actionDetails)
+/// NavigationStack {
+///     ActionFormView(actionToEdit: actionDetails)
+/// }
 /// ```
 public struct ActionFormView: View {
     // MARK: - Edit Mode
@@ -71,6 +67,11 @@ public struct ActionFormView: View {
     @State private var durationMinutes: Double
     @State private var measurements: [MeasurementInput]
     @State private var selectedGoalIds: Set<UUID>
+
+    // Computed properties
+    private var canSubmit: Bool {
+        !title.isEmpty && !viewModel.isSaving
+    }
 
     // MARK: - Initialization
 
@@ -115,25 +116,18 @@ public struct ActionFormView: View {
     // MARK: - Body
 
     public var body: some View {
-        FormScaffold(
-            title: formTitle,
-            canSubmit: !title.isEmpty && !viewModel.isSaving,
-            onSubmit: handleSubmit,
-            onCancel: { dismiss() }
-        ) {
+        Form {
             DocumentableFields(
                 title: $title,
                 detailedDescription: $detailedDescription,
                 freeformNotes: $freeformNotes
             )
 
-            // Replaced timingSection with component
             TimingSection(
                 startTime: $startTime,
                 durationMinutes: $durationMinutes
             )
 
-            // Replaced measurementsSection with components (fixes alignment issue!)
             RepeatingSection(
                 title: "Measurements",
                 items: measurements,
@@ -149,7 +143,6 @@ public struct ActionFormView: View {
                 )
             }
 
-            // Replaced goalContributionsSection with component
             MultiSelectSection(
                 items: viewModel.availableGoals.map { GoalOption(goal: $0.0, title: $0.1) },
                 title: "Goal Contributions",
@@ -164,47 +157,42 @@ public struct ActionFormView: View {
                 }
             }
         }
+        .formStyle(.grouped)
+        .navigationTitle(formTitle)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    dismiss()
+                }
+            }
+
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    handleSubmit()
+                }
+                .disabled(!canSubmit)
+            }
+        }
         .task {
             await viewModel.loadOptions()
+
+            // Validate measurements after loading available measures
+            // Filter out any measurements referencing deleted measures
+            let validMeasureIds = Set(viewModel.availableMeasures.map { $0.id })
+            measurements.removeAll { measurement in
+                guard let measureId = measurement.measureId else { return false }
+                return !validMeasureIds.contains(measureId)
+            }
+
+            // Validate goal contributions - remove deleted goals
+            let validGoalIds = Set(viewModel.availableGoals.map { $0.0.id })
+            selectedGoalIds = selectedGoalIds.filter { validGoalIds.contains($0) }
         }
     }
 
     // MARK: - Helpers
 
     /// Handle form submission (create or update)
-    ///
-    /// REFINEMENT NEEDED (2025-11-03):
-    /// Should extract buildFormData() helper to reduce code duplication:
-    /// ```swift
-    /// private func buildFormData() -> ActionFormData {
-    ///     let measurementInputs = measurements.compactMap { m in
-    ///         guard let measureId = m.measureId, m.value > 0 else { return nil }
-    ///         return MeasurementInput(measureId: measureId, value: m.value)
-    ///     }
-    ///     return ActionFormData(
-    ///         title: title,
-    ///         detailedDescription: detailedDescription,
-    ///         freeformNotes: freeformNotes,
-    ///         durationMinutes: durationMinutes,
-    ///         startTime: startTime,
-    ///         measurements: measurementInputs,
-    ///         goalContributions: selectedGoalIds
-    ///     )
-    /// }
-    ///
-    /// private func handleSubmit() {
-    ///     Task {
-    ///         let formData = buildFormData()
-    ///         if let action = actionToEdit {
-    ///             try await viewModel.update(actionDetails: action, formData: formData)
-    ///         } else {
-    ///             try await viewModel.save(formData: formData)
-    ///         }
-    ///         dismiss()
-    ///     }
-    /// }
-    /// ```
-    /// Pattern to establish: PersonalValuesFormView (when updated)
     private func handleSubmit() {
         Task {
             do {
@@ -282,7 +270,7 @@ public struct ActionFormView: View {
     }
 }
 
-// MARK: - Preview
+// MARK: - Previews
 
 #Preview("New Action") {
     NavigationStack {

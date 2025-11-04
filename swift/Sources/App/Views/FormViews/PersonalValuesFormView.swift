@@ -1,59 +1,36 @@
+//
+// PersonalValuesFormView.swift
+// Written by Claude Code on 2025-11-01
+// Rewritten by Claude Code on 2025-11-03 to follow Apple's SwiftUI patterns
+//
+// PURPOSE: Form view for PersonalValue creation and editing
+// PATTERN: Direct Form structure following Apple's documented SwiftUI patterns
+//          No wrapper components - navigation modifiers applied directly to Form
+//
+
 import Models
 import Services
 import SwiftUI
 
-//
-// PersonalValuesFormView.swift
-// Form view for PersonalValue creation
-// Written by Claude Code on 2025-11-01
-//
-// PLANNED REFACTOR (2025-11-03):
-// This file will be reviewed for padding/spacing consistency:
-// - Ensure padding matches component library standards
-// - Layout is already good (uses DocumentableFields)
-// - May benefit from extracting value-specific sections to components
-//
-// ISSUE: Padding consistency (centered but needs standard spacing)
-// See: Sources/App/Views/Components/FormComponents/README.md
-//
-
-// ARCHITECTURE DECISION: Why @State instead of @StateObject?
-// CONTEXT: Swift 5.9+ changed how we initialize @Observable models in views
-// OLD PATTERN (ObservableObject):
-//   @StateObject private var viewModel = PersonalValuesFormViewModel()
-// NEW PATTERN (@Observable):
-//   @State private var viewModel = PersonalValuesFormViewModel()
-// WHY THE CHANGE:
-//   - @Observable doesn't need @StateObject wrapper
-//   - @State now works with @Observable classes (not just structs!)
-//   - Simpler, more consistent API
-// SEE: PersonalValuesFormViewModel.swift for why we use @Observable
-//
-// ARCHITECTURE DECISION: ViewModel uses @Dependency internally
-// PATTERN: From SQLiteData's ObservableModelDemo example
-// HOW IT WORKS:
-//   - ViewModel has @ObservationIgnored @Dependency(\.defaultDatabase)
-//   - View just creates ViewModel() with no parameters
-//   - Dependency injection happens automatically
-// SEE: sqlite-data-main/Examples/CaseStudies/ObservableModelDemo.swift:56-57
-
-// NEXT TASK (2025-11-03): Add Edit Mode Support
-//
-// PATTERN TO FOLLOW: ActionFormView edit mode
-// CHANGES NEEDED:
-// 1. Add optional parameter: let valueToEdit: PersonalValue?
-// 2. Add computed: var isEditMode: Bool { valueToEdit != nil }
-// 3. Add computed: var formTitle: String { isEditMode ? "Edit Value" : "New Value" }
-// 4. Update init() to populate @State vars from valueToEdit if present
-// 5. Add buildFormData() helper (establishes pattern for template)
-// 6. Update handleSubmit() to call update or save based on mode
-//
-// REFINED PATTERN:
-// - buildFormData() helper reduces duplication
-// - ViewModel takes FormData (not 7 parameters)
-// - Clean, template-ready structure
-//
-
+/// Form view for PersonalValue creation and editing
+///
+/// PATTERN: Apple's direct Form approach
+/// - Form directly inside NavigationStack
+/// - Navigation modifiers applied to Form itself
+/// - Edit mode support via optional valueToEdit parameter
+///
+/// **Usage**:
+/// ```swift
+/// // Create mode
+/// NavigationStack {
+///     PersonalValuesFormView()
+/// }
+///
+/// // Edit mode
+/// NavigationStack {
+///     PersonalValuesFormView(valueToEdit: existingValue)
+/// }
+/// ```
 public struct PersonalValuesFormView: View {
     // MARK: - Edit Mode
 
@@ -74,6 +51,11 @@ public struct PersonalValuesFormView: View {
     @State private var notes: String
     @State private var lifeDomain: String
     @State private var alignmentGuidance: String
+
+    // Computed properties
+    private var canSubmit: Bool {
+        !title.isEmpty && !viewModel.isSaving
+    }
 
     // MARK: - Initialization
 
@@ -104,12 +86,7 @@ public struct PersonalValuesFormView: View {
     // MARK: - Body
 
     public var body: some View {
-        FormScaffold(
-            title: formTitle,
-            canSubmit: !title.isEmpty && !viewModel.isSaving,
-            onSubmit: handleSubmit,
-            onCancel: { dismiss() }
-        ) {
+        Form {
             DocumentableFields(
                 title: $title,
                 detailedDescription: $description,
@@ -137,6 +114,22 @@ public struct PersonalValuesFormView: View {
                     Text(error)
                         .foregroundStyle(.red)
                 }
+            }
+        }
+        .formStyle(.grouped)
+        .navigationTitle(formTitle)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    dismiss()
+                }
+            }
+
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    handleSubmit()
+                }
+                .disabled(!canSubmit)
             }
         }
     }
@@ -178,13 +171,27 @@ public struct PersonalValuesFormView: View {
             }
         }
     }
+}
 
-    // TODO: Phase 5 - Add Success Animation
-    // PATTERN: .onChange(of: viewModel.successMessage) { _, newValue in
-    //     if newValue != nil {
-    //         withAnimation(.spring()) { /* show checkmark */ }
-    //     }
-    // }
-    // WHEN: If user feedback indicates they want success confirmation
-    // IMPL: Requires @Published var successMessage: String? in ViewModel
+// MARK: - Previews
+
+#Preview("New Value") {
+    NavigationStack {
+        PersonalValuesFormView()
+    }
+}
+
+#Preview("Edit Value") {
+    NavigationStack {
+        PersonalValuesFormView(
+            valueToEdit: PersonalValue(
+                title: "Health & Vitality",
+                detailedDescription: "Physical and mental well-being",
+                priority: 90,
+                valueLevel: .major,
+                lifeDomain: "Health",
+                alignmentGuidance: "Choose actions that improve energy and longevity"
+            )
+        )
+    }
 }

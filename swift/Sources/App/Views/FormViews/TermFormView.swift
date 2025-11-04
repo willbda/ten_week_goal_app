@@ -1,16 +1,11 @@
 //
 // TermFormView.swift
 // Written by Claude Code on 2025-11-02
+// Rewritten by Claude Code on 2025-11-03 to follow Apple's SwiftUI patterns
 //
 // PURPOSE: User-friendly form for creating/editing Terms (wraps generic TimePeriodFormViewModel)
-// ARCHITECTURE: Type-specific view using generic ViewModel with specialization = .term
-//
-// FORM LAYOUT STATUS (2025-11-03):
-// This form has good layout and spacing - can serve as reference.
-// May benefit from TimingSection component if we add duration tracking.
-// Currently uses DatePicker fields directly which is fine.
-//
-// See: Sources/App/Views/Components/FormComponents/README.md
+// PATTERN: Direct Form structure following Apple's documented SwiftUI patterns
+//          No wrapper components - navigation modifiers applied directly to Form
 //
 
 import Models
@@ -25,11 +20,10 @@ import SwiftUI
 /// - User never sees "Time Period" or "Specialization" in UI
 /// - Supports both create (termToEdit = nil) and edit (termToEdit != nil) modes
 ///
-/// PATTERN: Based on PersonalValuesFormView + old TermFormView
-/// - FormScaffold template
-/// - @State for ViewModel (not @StateObject)
-/// - Individual @State properties for form fields
-/// - Async save/update in Task
+/// PATTERN: Apple's direct Form approach
+/// - Form directly inside NavigationStack
+/// - Navigation modifiers applied to Form itself
+/// - Toolbar buttons defined inline
 public struct TermFormView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = TimePeriodFormViewModel()
@@ -61,6 +55,11 @@ public struct TermFormView: View {
     @State private var title: String
     @State private var description: String
     @State private var notes: String
+
+    // Computed properties
+    private var canSubmit: Bool {
+        !viewModel.isSaving
+    }
 
     // MARK: - Initialization
 
@@ -96,12 +95,7 @@ public struct TermFormView: View {
     }
 
     public var body: some View {
-        FormScaffold(
-            title: formTitle,
-            canSubmit: !viewModel.isSaving,
-            onSubmit: handleSubmit,
-            onCancel: { dismiss() }
-        ) {
+        Form {
             Section("Term Details") {
                 Stepper("Term Number: \(termNumber)", value: $termNumber, in: 1...52)
                     .accessibilityLabel("Term number")
@@ -160,6 +154,22 @@ public struct TermFormView: View {
                 }
             }
         }
+        .formStyle(.grouped)
+        .navigationTitle(formTitle)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    dismiss()
+                }
+            }
+
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    handleSubmit()
+                }
+                .disabled(!canSubmit)
+            }
+        }
     }
 
     private func handleSubmit() {
@@ -197,5 +207,34 @@ public struct TermFormView: View {
                 // Error already set in viewModel.errorMessage
             }
         }
+    }
+}
+
+// MARK: - Previews
+
+#Preview("New Term") {
+    NavigationStack {
+        TermFormView()
+    }
+}
+
+#Preview("Edit Term") {
+    NavigationStack {
+        TermFormView(
+            termToEdit: (
+                timePeriod: TimePeriod(
+                    title: "Spring Term",
+                    detailedDescription: "Focus on health and career",
+                    startDate: Date(),
+                    endDate: Calendar.current.date(byAdding: .weekOfYear, value: 10, to: Date())!
+                ),
+                goalTerm: GoalTerm(
+                    timePeriodId: UUID(),
+                    termNumber: 1,
+                    theme: "Health & Career Growth",
+                    status: .active
+                )
+            )
+        )
     }
 }
