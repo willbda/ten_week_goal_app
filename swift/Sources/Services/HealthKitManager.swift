@@ -21,12 +21,12 @@ import Observation
 /// ```
 @Observable
 @MainActor
-final class HealthKitManager {
+public final class HealthKitManager {
 
     // MARK: - Singleton
 
     /// Shared instance for app-wide access
-    static let shared = HealthKitManager()
+    public static let shared = HealthKitManager()
 
     // MARK: - Properties
 
@@ -34,18 +34,18 @@ final class HealthKitManager {
     private let healthStore = HKHealthStore()
 
     /// Current authorization status
-    private(set) var authorizationStatus: AuthorizationStatus = .notDetermined
+    public private(set) var authorizationStatus: AuthorizationStatus = .notDetermined
 
     /// Error from most recent operation
-    private(set) var error: Error?
+    public private(set) var error: Error?
 
     /// Whether HealthKit is available on this device
-    private(set) var isAvailable: Bool
+    public private(set) var isAvailable: Bool
 
     // MARK: - Types
 
     /// Authorization states for HealthKit access
-    enum AuthorizationStatus {
+    public enum AuthorizationStatus {
         case notDetermined
         case authorized
         case denied
@@ -53,12 +53,12 @@ final class HealthKitManager {
     }
 
     /// HealthKit-specific errors
-    enum HealthKitError: LocalizedError {
+    public enum HealthKitError: LocalizedError {
         case notAvailable
         case notAuthorized
         case invalidDate
 
-        var errorDescription: String? {
+        public var errorDescription: String? {
             switch self {
             case .notAvailable:
                 return "HealthKit is not available on this device"
@@ -89,23 +89,28 @@ final class HealthKitManager {
     /// property on completion.
     ///
     /// - Throws: `HealthKitError.notAvailable` if HealthKit unavailable on device
-    func requestAuthorization() async throws {
+    public func requestAuthorization() async throws {
         guard isAvailable else {
-            print("❌ HealthKit not available on this device")
             throw HealthKitError.notAvailable
         }
 
         let workoutType = HKObjectType.workoutType()
 
+        // Set up the types we want to read
+        let typesToRead: Set<HKObjectType> = [workoutType]
+
+        // Even though we're not writing, some iOS versions require non-nil write set
+        let typesToWrite: Set<HKSampleType> = []  // Empty but not nil
+
         do {
-            print("🏥 Requesting HealthKit authorization...")
             try await healthStore.requestAuthorization(
-                toShare: [],  // Not writing data in this stage
-                read: [workoutType]
+                toShare: typesToWrite,
+                read: typesToRead
             )
 
             // Check actual authorization status after request
             let status = healthStore.authorizationStatus(for: workoutType)
+
             switch status {
             case .sharingAuthorized:
                 authorizationStatus = .authorized
@@ -115,10 +120,10 @@ final class HealthKitManager {
                 print("⚠️ HealthKit authorization denied")
             case .notDetermined:
                 authorizationStatus = .notDetermined
-                print("⚠️ HealthKit authorization status still undetermined")
+                print("⚠️ HealthKit authorization not determined")
             @unknown default:
                 authorizationStatus = .notDetermined
-                print("⚠️ HealthKit authorization status unknown")
+                print("⚠️ HealthKit authorization unknown")
             }
         } catch {
             self.error = error
@@ -130,16 +135,33 @@ final class HealthKitManager {
     /// Check if authorization has been granted without requesting
     ///
     /// - Returns: True if user has authorized workout reading
-    func checkAuthorizationStatus() -> Bool {
+    public func checkAuthorizationStatus() -> Bool {
+        print("🔍 checkAuthorizationStatus called - isAvailable: \(isAvailable)")
         guard isAvailable else { return false }
 
         let workoutType = HKObjectType.workoutType()
         let status = healthStore.authorizationStatus(for: workoutType)
+        print("🔍 Authorization status: \(status)")
 
-        let isAuthorized = status == .sharingAuthorized
-        authorizationStatus = isAuthorized ? .authorized : .denied
-
-        return isAuthorized
+        // Map HKAuthorizationStatus to our AuthorizationStatus
+        switch status {
+        case .notDetermined:
+            authorizationStatus = .notDetermined
+            print("🔍 Status is notDetermined")
+            return false
+        case .sharingAuthorized:
+            authorizationStatus = .authorized
+            print("🔍 Status is authorized")
+            return true
+        case .sharingDenied:
+            authorizationStatus = .denied
+            print("🔍 Status is denied")
+            return false
+        @unknown default:
+            authorizationStatus = .notDetermined
+            print("🔍 Status is unknown: \(status.rawValue)")
+            return false
+        }
     }
 
     // MARK: - Queries
@@ -155,7 +177,7 @@ final class HealthKitManager {
     ///   - `HealthKitError.notAvailable` if HealthKit unavailable
     ///   - `HealthKitError.notAuthorized` if authorization not granted
     ///   - `HealthKitError.invalidDate` if date calculation fails
-    func fetchWorkouts(for date: Date) async throws -> [HKWorkout] {
+    public func fetchWorkouts(for date: Date) async throws -> [HKWorkout] {
         guard isAvailable else {
             throw HealthKitError.notAvailable
         }
@@ -215,7 +237,7 @@ final class HealthKitManager {
     ///   - endDate: End of date range (inclusive)
     /// - Returns: Array of HKWorkout objects in the range
     /// - Throws: Same errors as `fetchWorkouts(for:)`
-    func fetchWorkouts(from startDate: Date, to endDate: Date) async throws -> [HKWorkout] {
+    public func fetchWorkouts(from startDate: Date, to endDate: Date) async throws -> [HKWorkout] {
         guard isAvailable else {
             throw HealthKitError.notAvailable
         }
@@ -268,30 +290,30 @@ import Observation
 /// Stub implementation for macOS (HealthKit not available)
 @Observable
 @MainActor
-final class HealthKitManager {
-    static let shared = HealthKitManager()
+public final class HealthKitManager {
+    public static let shared = HealthKitManager()
 
     private init() {
         print("⚠️ HealthKit not available on macOS")
     }
 
-    var authorizationStatus: AuthorizationStatus = .unavailable
-    var isAvailable: Bool = false
-    var error: Error?
+    public private(set) var authorizationStatus: AuthorizationStatus = .unavailable
+    public private(set) var isAvailable: Bool = false
+    public private(set) var error: Error?
 
-    enum AuthorizationStatus {
+    public enum AuthorizationStatus {
         case unavailable
     }
 
-    enum HealthKitError: Error {
+    public enum HealthKitError: Error {
         case notAvailable
     }
 
-    func requestAuthorization() async throws {
+    public func requestAuthorization() async throws {
         throw HealthKitError.notAvailable
     }
 
-    func checkAuthorizationStatus() -> Bool {
+    public func checkAuthorizationStatus() -> Bool {
         return false
     }
 }
