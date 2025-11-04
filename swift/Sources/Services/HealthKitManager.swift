@@ -140,32 +140,50 @@ public final class HealthKitManager {
 
     /// Check if authorization has been granted without requesting
     ///
-    /// - Returns: True if user has authorized workout reading
+    /// Verifies authorization for all three data types: workouts, sleep, and mindfulness.
+    /// All three must be authorized for this method to return true.
+    ///
+    /// - Returns: True if user has authorized all HealthKit data types
     public func checkAuthorizationStatus() -> Bool {
         print("🔍 checkAuthorizationStatus called - isAvailable: \(isAvailable)")
         guard isAvailable else { return false }
 
         let workoutType = HKObjectType.workoutType()
-        let status = healthStore.authorizationStatus(for: workoutType)
-        print("🔍 Authorization status: \(status)")
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
+              let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            print("🔍 Failed to create category types")
+            authorizationStatus = .unavailable
+            return false
+        }
 
-        // Map HKAuthorizationStatus to our AuthorizationStatus
-        switch status {
-        case .notDetermined:
-            authorizationStatus = .notDetermined
-            print("🔍 Status is notDetermined")
-            return false
-        case .sharingAuthorized:
+        // Check authorization status for all three types
+        let workoutStatus = healthStore.authorizationStatus(for: workoutType)
+        let sleepStatus = healthStore.authorizationStatus(for: sleepType)
+        let mindfulStatus = healthStore.authorizationStatus(for: mindfulType)
+
+        print("🔍 Workout status: \(workoutStatus.rawValue), Sleep status: \(sleepStatus.rawValue), Mindful status: \(mindfulStatus.rawValue)")
+
+        // All three must be authorized
+        let allAuthorized = workoutStatus == .sharingAuthorized &&
+                            sleepStatus == .sharingAuthorized &&
+                            mindfulStatus == .sharingAuthorized
+
+        // Any one denied means overall denied
+        let anyDenied = workoutStatus == .sharingDenied ||
+                        sleepStatus == .sharingDenied ||
+                        mindfulStatus == .sharingDenied
+
+        if allAuthorized {
             authorizationStatus = .authorized
-            print("🔍 Status is authorized")
+            print("🔍 All types authorized ✅")
             return true
-        case .sharingDenied:
+        } else if anyDenied {
             authorizationStatus = .denied
-            print("🔍 Status is denied")
+            print("🔍 One or more types denied ❌")
             return false
-        @unknown default:
+        } else {
             authorizationStatus = .notDetermined
-            print("🔍 Status is unknown: \(status.rawValue)")
+            print("🔍 Authorization not determined")
             return false
         }
     }
