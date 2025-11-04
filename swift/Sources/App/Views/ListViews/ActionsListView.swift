@@ -15,6 +15,7 @@ import SQLiteData
 ///
 /// **Pattern**: @Fetch with custom FetchKeyRequest (like TermsListView)
 /// **Features**:
+/// - Quick Add section (duplicate recent actions, log for active goals)
 /// - Displays actions with measurements and goal badges
 /// - Tap row to edit
 /// - Swipe right to delete
@@ -33,10 +34,14 @@ public struct ActionsListView: View {
     @Fetch(wrappedValue: [], ActionsWithMeasuresAndGoals())
     private var actions: [ActionWithDetails]
 
+    @Fetch(wrappedValue: [], ActiveGoals())
+    private var activeGoals: [GoalWithDetails]
+
     @State private var showingAddAction = false
     @State private var actionToEdit: ActionWithDetails?
     @State private var actionToDelete: ActionWithDetails?
-    // @State private var selectedAction: ActionWithDetails?  // TODO: Enable after Hashable conformance
+    @State private var selectedAction: ActionWithDetails?
+    @State private var formData: ActionFormData?  // For Quick Add pre-filling
 
     // MARK: - Body
 
@@ -63,7 +68,19 @@ public struct ActionsListView: View {
         }
         .sheet(isPresented: $showingAddAction) {
             NavigationStack {
-                ActionFormView()
+                if let data = formData {
+                    // Quick Add mode (pre-filled from duplicate or goal)
+                    ActionFormView(initialData: data)
+                } else {
+                    // Create mode (empty form)
+                    ActionFormView()
+                }
+            }
+        }
+        .onChange(of: showingAddAction) { _, isShowing in
+            // Clear formData when sheet is dismissed
+            if !isShowing {
+                formData = nil
             }
         }
         .sheet(item: $actionToEdit) { actionDetails in
@@ -105,7 +122,23 @@ public struct ActionsListView: View {
     // MARK: - Actions List
 
     private var actionsList: some View {
-        List {  // TODO: Add selection: $selectedAction after Hashable conformance
+        List(selection: $selectedAction) {
+            // Quick Add Section
+            QuickAddSection(
+                recentActions: Array(actions.prefix(5)),
+                activeGoals: Array(activeGoals.prefix(5)),
+                onDuplicateAction: { preFilledData in
+                    formData = preFilledData
+                    showingAddAction = true
+                },
+                onLogActionForGoal: { goalDetail in
+                    // Pre-fill form with goal's first metric
+                    formData = buildFormDataForGoal(goalDetail)
+                    showingAddAction = true
+                }
+            )
+
+            // Actions List
             ForEach(actions) { actionDetails in
                 ActionRowView(actionDetails: actionDetails)
                     .onTapGesture {
@@ -142,15 +175,16 @@ public struct ActionsListView: View {
                             Label("Delete", systemImage: "trash")
                         }
                     }
-                    // .tag(actionDetails)  // TODO: Enable after Hashable conformance
+                    .tag(actionDetails)
             }
         }
-        // TODO: Enable after Hashable conformance:
-        // .onDeleteCommand {
-        //     if let selected = selectedAction {
-        //         actionToDelete = selected
-        //     }
-        // }
+        #if os(macOS)
+        .onDeleteCommand {
+            if let selected = selectedAction {
+                actionToDelete = selected
+            }
+        }
+        #endif
     }
 
     // MARK: - Actions
@@ -173,5 +207,27 @@ public struct ActionsListView: View {
                 actionToDelete = nil
             }
         }
+    }
+
+    // MARK: - Quick Add Helpers
+
+    /// Build ActionFormData for logging action toward a goal
+    ///
+    /// Pre-fills form with goal's first metric target (if any)
+    /// and pre-selects the goal for contribution tracking
+    private func buildFormDataForGoal(_ goalDetail: GoalWithDetails) -> ActionFormData {
+        // Pre-fill with goal's first metric (if any)
+        let measurements: [MeasurementInput] = goalDetail.metricTargets.prefix(1).map { target in
+            MeasurementInput(
+                measureId: target.measure.id,
+                value: 0  // User will enter actual value
+            )
+        }
+
+        return ActionFormData(
+            title: "",  // User will enter title
+            measurements: measurements,
+            goalContributions: [goalDetail.goal.id]  // Pre-select this goal
+        )
     }
 }

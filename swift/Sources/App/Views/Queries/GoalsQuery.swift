@@ -71,3 +71,63 @@ public struct GoalsQuery: FetchKeyRequest {
         }
     }
 }
+
+/// Fetches active goals (goals with target dates in the future or null)
+///
+/// USED BY: ActionsListView Quick Add section
+/// PATTERN: Filtered version of GoalsQuery
+public struct ActiveGoals: FetchKeyRequest {
+    public typealias Value = [GoalWithDetails]
+
+    public init() {}
+
+    public func fetch(_ db: Database) throws -> [GoalWithDetails] {
+        let now = Date()
+
+        // Fetch all goals with expectations, then filter/sort in-memory
+        // (Avoids Swift type-checker timeout with complex query builder closures)
+        let allGoalsWithExpectations = try Goal.all
+            .join(Expectation.all) { $0.expectationId.eq($1.id) }
+            .fetchAll(db)
+
+        // Filter to active goals (no target date OR target date in future)
+        let goalsWithExpectations = allGoalsWithExpectations
+            .filter { (goal, _) in
+                goal.targetDate == nil || goal.targetDate! >= now
+            }
+            .sorted { (a, b) in
+                let dateA = a.0.targetDate ?? Date.distantFuture
+                let dateB = b.0.targetDate ?? Date.distantFuture
+                return dateA < dateB
+            }
+
+        // For QuickAdd, we also need metric targets (to pre-fill form)
+        guard !goalsWithExpectations.isEmpty else { return [] }
+
+        // Collect expectation IDs for bulk fetch
+        let expectationIds = goalsWithExpectations.map { $0.0.expectationId }
+
+        // Bulk fetch ExpectationMeasures + Measures
+        let measuresWithTargets = try ExpectationMeasure
+            .where { expectationIds.contains($0.expectationId) }
+            .join(Measure.all) { $0.measureId.eq($1.id) }
+            .fetchAll(db)
+
+        // Group by expectation ID
+        let targetsByExpectation = Dictionary(grouping: measuresWithTargets) { $0.0.expectationId }
+
+        return goalsWithExpectations.map { (goal, expectation) in
+            let targets = targetsByExpectation[expectation.id]?.map { (measure, metric) in
+                ExpectationMeasureWithMetric(expectationMeasure: measure, measure: metric)
+            } ?? []
+
+            return GoalWithDetails(
+                goal: goal,
+                expectation: expectation,
+                metricTargets: targets,
+                valueAlignments: [],  // Not needed for Quick Add
+                termAssignment: nil   // Not needed for Quick Add
+            )
+        }
+    }
+}

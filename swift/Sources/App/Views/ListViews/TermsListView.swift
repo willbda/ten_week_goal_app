@@ -34,8 +34,8 @@ public struct TermsListView: View {
     /// Term being edited (nil = create mode)
     @State private var termToEdit: (timePeriod: TimePeriod, goalTerm: GoalTerm)?
 
-    // TODO: Enable after Hashable conformance
-    // @State private var selectedTerm: TermWithPeriod?  // For keyboard navigation
+    /// Selected term for keyboard navigation
+    @State private var selectedTerm: TermWithPeriod?
 
     /// Term to delete (for confirmation)
     @State private var termToDelete: TermWithPeriod?
@@ -56,7 +56,7 @@ public struct TermsListView: View {
                     .buttonStyle(.borderedProminent)
                 }
             } else {
-                List {  // TODO: Add selection: $selectedTerm after Hashable conformance
+                List(selection: $selectedTerm) {
                     ForEach(termsWithPeriods) { item in
                         TermRowView(term: item.term, timePeriod: item.timePeriod)
                             .contentShape(Rectangle())
@@ -99,15 +99,16 @@ public struct TermsListView: View {
                                     Label("Delete", systemImage: "trash")
                                 }
                             }
-                            // .tag(item)  // TODO: Enable after Hashable conformance
+                            .tag(item)
                     }
                 }
-                // TODO: Enable after Hashable conformance:
-                // .onDeleteCommand {
-                //     if let selected = selectedTerm {
-                //         termToDelete = selected
-                //     }
-                // }
+                #if os(macOS)
+                .onDeleteCommand {
+                    if let selected = selectedTerm {
+                        termToDelete = selected
+                    }
+                }
+                #endif
             }
         }
         .navigationTitle("Terms")
