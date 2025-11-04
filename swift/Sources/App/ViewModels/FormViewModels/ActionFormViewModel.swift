@@ -79,47 +79,21 @@ public final class ActionFormViewModel {
                     .order { $0.unit.asc() }
                     .fetchAll(db)
 
-                // TODO: Load goals with their expectation titles
-                // CURRENT: Simplified version - just loading goals (shows goal.id as fallback)
-                // NEEDED: JOIN with Expectation to get titles
-                //
-                // **Option A: Query Builder** (type-safe, good for development)
-                // let goalsWithTitles = try Goal.all
-                //     .join(Expectation.all) { $0.expectationId.eq($1.id) }
-                //     .select { (goal, expectation) in
-                //         (goal, expectation.title ?? "Untitled Goal")
-                //     }
-                //     .fetchAll(db)
-                //
-                // **Option B: #sql** (slightly cleaner with COALESCE)
-                // struct GoalWithTitle: Decodable {
-                //     let goal: Goal
-                //     let title: String
-                // }
-                // let goalsWithTitles = try #sql(
-                //     """
-                //     SELECT g.*, COALESCE(e.title, 'Untitled Goal') as title
-                //     FROM goals g
-                //     JOIN expectations e ON g.expectationId = e.id
-                //     ORDER BY e.title ASC
-                //     """
-                // ).fetchAll(db) as [GoalWithTitle]
-                //
-                // **Decision**: Either works. Query builder is safer during dev.
-                // #sql would be better if we add more goal filtering (status, date range).
-                //
-                let goals = try Goal.all.fetchAll(db)
+                // Load goals with their expectation titles via JOIN
+                // Using query builder for type safety
+                let goalsWithTitles = try Goal.all
+                    .join(Expectation.all) { $0.expectationId.eq($1.id) }
+                    .select { (goal, expectation) in
+                        (goal, expectation.title ?? "Untitled Goal")
+                    }
+                    .fetchAll(db)
 
-                return (measures, goals)
+                return (measures, goalsWithTitles)
             }
 
             // Assign to @MainActor properties outside closure
             self.availableMeasures = measures
-            self.availableGoals = goals.map { goal in
-                // TODO: JOIN with Expectation to get title
-                // For now, use placeholder
-                (goal, "Goal \(goal.id.uuidString.prefix(8))")
-            }
+            self.availableGoals = goals  // Already includes titles from JOIN
         } catch {
             self.errorMessage = "Failed to load options: \(error.localizedDescription)"
         }
