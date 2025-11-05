@@ -35,6 +35,7 @@ public struct HealthWorkout: Identifiable, Sendable {
     /// User-friendly activity name ("Running", "Cycling", etc.)
     public var activityName: String {
         switch activityType {
+        // Cardio
         case .running:
             return "Running"
         case .cycling:
@@ -45,22 +46,189 @@ public struct HealthWorkout: Identifiable, Sendable {
             return "Swimming"
         case .hiking:
             return "Hiking"
-        case .yoga:
-            return "Yoga"
+        case .rowing:
+            return "Rowing"
+        case .elliptical:
+            return "Elliptical"
+        case .stairClimbing:
+            return "Stair Climbing"
+        case .stepTraining:
+            return "Step Training"
+
+        // Strength
         case .functionalStrengthTraining:
             return "Strength Training"
         case .traditionalStrengthTraining:
             return "Weight Lifting"
-        case .elliptical:
-            return "Elliptical"
-        case .rowing:
-            return "Rowing"
-        case .stairClimbing:
-            return "Stair Climbing"
+        case .coreTraining:
+            return "Core Training"
+        case .flexibility:
+            return "Flexibility"
+        case .cooldown:
+            return "Cooldown"
+        case .highIntensityIntervalTraining:
+            return "HIIT"
+        case .jumpRope:
+            return "Jump Rope"
+
+        // Mind & Body
+        case .yoga:
+            return "Yoga"
+        case .barre:
+            return "Barre"
+        case .pilates:
+            return "Pilates"
+        case .taiChi:
+            return "Tai Chi"
+        case .mindAndBody:
+            return "Mind & Body"
+        case .mixedCardio:
+            return "Mixed Cardio"
+
+        // Dance
         case .dance:
             return "Dance"
-        default:
-            // Fallback for any activity type not explicitly handled
+        case .danceInspiredTraining:
+            return "Dance Training"
+
+        // Team Sports
+        case .americanFootball:
+            return "American Football"
+        case .australianFootball:
+            return "Australian Football"
+        case .baseball:
+            return "Baseball"
+        case .basketball:
+            return "Basketball"
+        case .cricket:
+            return "Cricket"
+        case .handball:
+            return "Handball"
+        case .hockey:
+            return "Hockey"
+        case .lacrosse:
+            return "Lacrosse"
+        case .rugby:
+            return "Rugby"
+        case .soccer:
+            return "Soccer"
+        case .softball:
+            return "Softball"
+        case .volleyball:
+            return "Volleyball"
+
+        // Racquet Sports
+        case .badminton:
+            return "Badminton"
+        case .tennis:
+            return "Tennis"
+        case .tableTennis:
+            return "Table Tennis"
+        case .racquetball:
+            return "Racquetball"
+        case .squash:
+            return "Squash"
+        case .pickleball:
+            return "Pickleball"
+
+        // Water Sports
+        case .surfingSports:
+            return "Surfing"
+        case .paddleSports:
+            return "Paddle Sports"
+        case .waterFitness:
+            return "Water Fitness"
+        case .waterPolo:
+            return "Water Polo"
+        case .waterSports:
+            return "Water Sports"
+
+        // Winter Sports
+        case .snowSports:
+            return "Snow Sports"
+        case .skiing:
+            return "Skiing"
+        case .snowboarding:
+            return "Snowboarding"
+        case .skating:
+            return "Skating"
+        case .crossCountrySkiing:
+            return "Cross Country Skiing"
+        case .downhillSkiing:
+            return "Downhill Skiing"
+        case .skatingSports:
+            return "Skating Sports"
+        case .curling:
+            return "Curling"
+
+        // Combat Sports
+        case .boxing:
+            return "Boxing"
+        case .kickboxing:
+            return "Kickboxing"
+        case .martialArts:
+            return "Martial Arts"
+        case .wrestling:
+            return "Wrestling"
+        case .fencing:
+            return "Fencing"
+
+        // Outdoor
+        case .climbing:
+            return "Climbing"
+        case .equestrianSports:
+            return "Equestrian"
+        case .fishing:
+            return "Fishing"
+        case .hunting:
+            return "Hunting"
+        case .golf:
+            return "Golf"
+
+        // Other Activities
+        case .archery:
+            return "Archery"
+        case .bowling:
+            return "Bowling"
+        case .cardioDance:
+            return "Cardio Dance"
+        case .discSports:
+            return "Disc Sports"
+        case .fitnessGaming:
+            return "Fitness Gaming"
+        case .gymnastics:
+            return "Gymnastics"
+        case .handCycling:
+            return "Hand Cycling"
+        case .play:
+            return "Play"
+        case .preparationAndRecovery:
+            return "Preparation & Recovery"
+        case .sailingAndBoating:
+            return "Sailing"
+        case .socialDance:
+            return "Social Dance"
+        case .stairs:
+            return "Stairs"
+        case .swimBikeRun:
+            return "Triathlon"
+        case .trackAndField:
+            return "Track & Field"
+        case .wheelchair:
+            return "Wheelchair"
+        case .wheelchairRunPace:
+            return "Wheelchair Run"
+        case .wheelchairWalkPace:
+            return "Wheelchair Walk"
+
+        // Transition & Misc
+        case .transition:
+            return "Transition"
+        case .other:
+            return "Other Activity"
+
+        @unknown default:
+            // Fallback for any future activity types
             return activityType.displayName
         }
     }
@@ -68,6 +236,7 @@ public struct HealthWorkout: Identifiable, Sendable {
     /// SF Symbols icon name for activity type
     public var iconName: String {
         switch activityType {
+        // Cardio
         case .running:
             return "figure.run"
         case .cycling:
@@ -78,19 +247,138 @@ public struct HealthWorkout: Identifiable, Sendable {
             return "figure.pool.swim"
         case .hiking:
             return "figure.hiking"
-        case .yoga:
-            return "figure.yoga"
-        case .functionalStrengthTraining, .traditionalStrengthTraining:
-            return "figure.strengthtraining.traditional"
-        case .elliptical:
-            return "figure.elliptical"
         case .rowing:
             return "figure.rowing"
-        case .stairClimbing:
+        case .elliptical:
+            return "figure.elliptical"
+        case .stairClimbing, .stairs, .stepTraining:
             return "figure.stairs"
-        case .dance:
+
+        // Strength & Training
+        case .functionalStrengthTraining, .traditionalStrengthTraining:
+            return "figure.strengthtraining.traditional"
+        case .coreTraining:
+            return "figure.core.training"
+        case .flexibility, .cooldown:
+            return "figure.flexibility"
+        case .highIntensityIntervalTraining:
+            return "figure.highintensity.intervaltraining"
+        case .jumpRope:
+            return "figure.jumprope"
+
+        // Mind & Body
+        case .yoga:
+            return "figure.yoga"
+        case .pilates, .barre:
+            return "figure.pilates"
+        case .taiChi, .mindAndBody:
+            return "figure.mind.and.body"
+        case .mixedCardio:
+            return "figure.mixed.cardio"
+
+        // Dance
+        case .dance, .danceInspiredTraining, .cardioDance, .socialDance:
             return "figure.dance"
-        default:
+
+        // Team Sports
+        case .americanFootball:
+            return "figure.american.football"
+        case .australianFootball, .rugby:
+            return "figure.rugby"
+        case .baseball, .softball:
+            return "figure.baseball"
+        case .basketball:
+            return "figure.basketball"
+        case .soccer:
+            return "figure.soccer"
+        case .volleyball:
+            return "figure.volleyball"
+        case .hockey:
+            return "figure.hockey"
+        case .cricket:
+            return "figure.cricket"
+        case .handball, .lacrosse:
+            return "figure.handball"
+
+        // Racquet Sports
+        case .badminton, .tennis, .tableTennis, .racquetball, .squash, .pickleball:
+            return "figure.tennis"
+
+        // Water Sports
+        case .surfingSports:
+            return "figure.surfing"
+        case .paddleSports:
+            return "figure.paddleboarding"
+        case .waterFitness, .waterPolo, .waterSports:
+            return "figure.water.fitness"
+
+        // Winter Sports
+        case .skiing, .downhillSkiing, .crossCountrySkiing:
+            return "figure.skiing.downhill"
+        case .snowboarding:
+            return "figure.snowboarding"
+        case .skating, .skatingSports:
+            return "figure.skating"
+        case .snowSports:
+            return "snowflake"
+        case .curling:
+            return "figure.curling"
+
+        // Combat Sports
+        case .boxing:
+            return "figure.boxing"
+        case .kickboxing:
+            return "figure.kickboxing"
+        case .martialArts:
+            return "figure.martial.arts"
+        case .wrestling:
+            return "figure.wrestling"
+        case .fencing:
+            return "figure.fencing"
+
+        // Outdoor
+        case .climbing:
+            return "figure.climbing"
+        case .equestrianSports:
+            return "figure.equestrian.sports"
+        case .fishing:
+            return "figure.fishing"
+        case .hunting:
+            return "figure.hunting"
+        case .golf:
+            return "figure.golf"
+
+        // Other Activities
+        case .archery:
+            return "figure.archery"
+        case .bowling:
+            return "figure.bowling"
+        case .discSports:
+            return "figure.disc.sports"
+        case .fitnessGaming, .play:
+            return "gamecontroller.fill"
+        case .gymnastics:
+            return "figure.gymnastics"
+        case .handCycling:
+            return "figure.hand.cycling"
+        case .preparationAndRecovery:
+            return "figure.cooldown"
+        case .sailingAndBoating:
+            return "sailboat.fill"
+        case .swimBikeRun:
+            return "figure.open.water.swim"
+        case .trackAndField:
+            return "figure.track.and.field"
+        case .wheelchair, .wheelchairRunPace, .wheelchairWalkPace:
+            return "figure.roll"
+
+        // Misc
+        case .transition:
+            return "arrow.triangle.2.circlepath"
+        case .other:
+            return "figure.mixed.cardio"
+
+        @unknown default:
             return "heart.fill"
         }
     }

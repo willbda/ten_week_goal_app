@@ -83,7 +83,7 @@ public final class HealthKitManager {
 
     // MARK: - Authorization
 
-    /// Request authorization to read workout data from HealthKit
+    /// Request authorization to read workout, sleep, and mindfulness data from HealthKit
     ///
     /// Presents system authorization dialog to user. Updates `authorizationStatus`
     /// property on completion.
@@ -96,8 +96,14 @@ public final class HealthKitManager {
 
         let workoutType = HKObjectType.workoutType()
 
+        // Category types for sleep and mindfulness
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
+              let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            throw HealthKitError.notAvailable
+        }
+
         // Set up the types we want to read
-        let typesToRead: Set<HKObjectType> = [workoutType]
+        let typesToRead: Set<HKObjectType> = [workoutType, sleepType, mindfulType]
 
         // Even though we're not writing, some iOS versions require non-nil write set
         let typesToWrite: Set<HKSampleType> = []  // Empty but not nil
@@ -134,32 +140,50 @@ public final class HealthKitManager {
 
     /// Check if authorization has been granted without requesting
     ///
-    /// - Returns: True if user has authorized workout reading
+    /// Verifies authorization for all three data types: workouts, sleep, and mindfulness.
+    /// All three must be authorized for this method to return true.
+    ///
+    /// - Returns: True if user has authorized all HealthKit data types
     public func checkAuthorizationStatus() -> Bool {
         print("🔍 checkAuthorizationStatus called - isAvailable: \(isAvailable)")
         guard isAvailable else { return false }
 
         let workoutType = HKObjectType.workoutType()
-        let status = healthStore.authorizationStatus(for: workoutType)
-        print("🔍 Authorization status: \(status)")
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
+              let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            print("🔍 Failed to create category types")
+            authorizationStatus = .unavailable
+            return false
+        }
 
-        // Map HKAuthorizationStatus to our AuthorizationStatus
-        switch status {
-        case .notDetermined:
-            authorizationStatus = .notDetermined
-            print("🔍 Status is notDetermined")
-            return false
-        case .sharingAuthorized:
+        // Check authorization status for all three types
+        let workoutStatus = healthStore.authorizationStatus(for: workoutType)
+        let sleepStatus = healthStore.authorizationStatus(for: sleepType)
+        let mindfulStatus = healthStore.authorizationStatus(for: mindfulType)
+
+        print("🔍 Workout status: \(workoutStatus.rawValue), Sleep status: \(sleepStatus.rawValue), Mindful status: \(mindfulStatus.rawValue)")
+
+        // All three must be authorized
+        let allAuthorized = workoutStatus == .sharingAuthorized &&
+                            sleepStatus == .sharingAuthorized &&
+                            mindfulStatus == .sharingAuthorized
+
+        // Any one denied means overall denied
+        let anyDenied = workoutStatus == .sharingDenied ||
+                        sleepStatus == .sharingDenied ||
+                        mindfulStatus == .sharingDenied
+
+        if allAuthorized {
             authorizationStatus = .authorized
-            print("🔍 Status is authorized")
+            print("🔍 All types authorized ✅")
             return true
-        case .sharingDenied:
+        } else if anyDenied {
             authorizationStatus = .denied
-            print("🔍 Status is denied")
+            print("🔍 One or more types denied ❌")
             return false
-        @unknown default:
+        } else {
             authorizationStatus = .notDetermined
-            print("🔍 Status is unknown: \(status.rawValue)")
+            print("🔍 Authorization not determined")
             return false
         }
     }
@@ -275,6 +299,247 @@ public final class HealthKitManager {
                 let workouts = samples as? [HKWorkout] ?? []
                 print("✅ Found \(workouts.count) workouts")
                 continuation.resume(returning: workouts)
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    // MARK: - Sleep Queries
+
+    /// Fetch all sleep samples for a specific date
+    ///
+    /// Queries HealthKit for sleep analysis data that overlaps with the given date.
+    /// Returns samples sorted by start time (most recent first).
+    ///
+    /// - Parameter date: The date to query sleep data for
+    /// - Returns: Array of HKCategorySample objects for sleep analysis
+    /// - Throws: Same errors as `fetchWorkouts(for:)`
+    public func fetchSleep(for date: Date) async throws -> [HKCategorySample] {
+        guard isAvailable else {
+            throw HealthKitError.notAvailable
+        }
+
+        guard authorizationStatus == .authorized else {
+            throw HealthKitError.notAuthorized
+        }
+
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            throw HealthKitError.notAvailable
+        }
+
+        // Create date range for entire day
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+            throw HealthKitError.invalidDate
+        }
+
+        print("🏥 Querying sleep data from \(startOfDay) to \(endOfDay)")
+
+        // Use .strictStartDate to get samples that start within the date range
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startOfDay,
+            end: endOfDay,
+            options: []
+        )
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: sleepType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [
+                    NSSortDescriptor(
+                        key: HKSampleSortIdentifierStartDate,
+                        ascending: false
+                    )
+                ]
+            ) { query, samples, error in
+                if let error = error {
+                    print("❌ Sleep query failed: \(error)")
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                let sleepSamples = samples as? [HKCategorySample] ?? []
+                print("✅ Found \(sleepSamples.count) sleep samples")
+                continuation.resume(returning: sleepSamples)
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    /// Fetch sleep samples for a date range
+    ///
+    /// - Parameters:
+    ///   - startDate: Start of date range (inclusive)
+    ///   - endDate: End of date range (inclusive)
+    /// - Returns: Array of HKCategorySample objects for sleep analysis
+    /// - Throws: Same errors as `fetchWorkouts(for:)`
+    public func fetchSleep(from startDate: Date, to endDate: Date) async throws -> [HKCategorySample] {
+        guard isAvailable else {
+            throw HealthKitError.notAvailable
+        }
+
+        guard authorizationStatus == .authorized else {
+            throw HealthKitError.notAuthorized
+        }
+
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            throw HealthKitError.notAvailable
+        }
+
+        print("🏥 Querying sleep data from \(startDate) to \(endDate)")
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startDate,
+            end: endDate,
+            options: []
+        )
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: sleepType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [
+                    NSSortDescriptor(
+                        key: HKSampleSortIdentifierStartDate,
+                        ascending: false
+                    )
+                ]
+            ) { query, samples, error in
+                if let error = error {
+                    print("❌ Sleep query failed: \(error)")
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                let sleepSamples = samples as? [HKCategorySample] ?? []
+                print("✅ Found \(sleepSamples.count) sleep samples")
+                continuation.resume(returning: sleepSamples)
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    // MARK: - Mindfulness Queries
+
+    /// Fetch all mindfulness sessions for a specific date
+    ///
+    /// Queries HealthKit for mindful session data that started on the given date.
+    /// Returns sessions sorted by start time (most recent first).
+    ///
+    /// - Parameter date: The date to query mindfulness data for
+    /// - Returns: Array of HKCategorySample objects for mindful sessions
+    /// - Throws: Same errors as `fetchWorkouts(for:)`
+    public func fetchMindfulness(for date: Date) async throws -> [HKCategorySample] {
+        guard isAvailable else {
+            throw HealthKitError.notAvailable
+        }
+
+        guard authorizationStatus == .authorized else {
+            throw HealthKitError.notAuthorized
+        }
+
+        guard let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            throw HealthKitError.notAvailable
+        }
+
+        // Create date range for entire day
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+            throw HealthKitError.invalidDate
+        }
+
+        print("🏥 Querying mindfulness data from \(startOfDay) to \(endOfDay)")
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startOfDay,
+            end: endOfDay,
+            options: [.strictStartDate]
+        )
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: mindfulType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [
+                    NSSortDescriptor(
+                        key: HKSampleSortIdentifierStartDate,
+                        ascending: false
+                    )
+                ]
+            ) { query, samples, error in
+                if let error = error {
+                    print("❌ Mindfulness query failed: \(error)")
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                let mindfulSamples = samples as? [HKCategorySample] ?? []
+                print("✅ Found \(mindfulSamples.count) mindfulness sessions")
+                continuation.resume(returning: mindfulSamples)
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    /// Fetch mindfulness sessions for a date range
+    ///
+    /// - Parameters:
+    ///   - startDate: Start of date range (inclusive)
+    ///   - endDate: End of date range (inclusive)
+    /// - Returns: Array of HKCategorySample objects for mindful sessions
+    /// - Throws: Same errors as `fetchWorkouts(for:)`
+    public func fetchMindfulness(from startDate: Date, to endDate: Date) async throws -> [HKCategorySample] {
+        guard isAvailable else {
+            throw HealthKitError.notAvailable
+        }
+
+        guard authorizationStatus == .authorized else {
+            throw HealthKitError.notAuthorized
+        }
+
+        guard let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            throw HealthKitError.notAvailable
+        }
+
+        print("🏥 Querying mindfulness data from \(startDate) to \(endDate)")
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startDate,
+            end: endDate,
+            options: [.strictStartDate]
+        )
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: mindfulType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [
+                    NSSortDescriptor(
+                        key: HKSampleSortIdentifierStartDate,
+                        ascending: false
+                    )
+                ]
+            ) { query, samples, error in
+                if let error = error {
+                    print("❌ Mindfulness query failed: \(error)")
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                let mindfulSamples = samples as? [HKCategorySample] ?? []
+                print("✅ Found \(mindfulSamples.count) mindfulness sessions")
+                continuation.resume(returning: mindfulSamples)
             }
 
             healthStore.execute(query)
