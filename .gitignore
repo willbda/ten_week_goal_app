@@ -1,6 +1,7 @@
 *.DS_Store
 *.db
 .*
+.env
 */__pycache__/*
 __pycache__/*
 *logs/
@@ -28,3 +29,37 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
+build.log
+# Xcode - User-specific files (DO NOT COMMIT)
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Xcode - Build artifacts (DO NOT COMMIT)
+build/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Provisioning & Signing (DO NOT COMMIT)
+*.mobileprovision
+*.provisionprofile
+*.p12
+*.cer
+*.certSigningRequest
+
+# macOS
+.DS_Store
+
+# Xcode Breakpoints (User-specific)
+*.xcbkptlist
+
+# DO COMMIT: project.pbxproj (the actual project configuration)
+!*.xcodeproj/project.pbxproj
+!*.xcworkspace/contents.xcworkspacedata
