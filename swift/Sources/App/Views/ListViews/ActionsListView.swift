@@ -42,6 +42,7 @@ public struct ActionsListView: View {
     @State private var actionToDelete: ActionWithDetails?
     @State private var selectedAction: ActionWithDetails?
     @State private var formData: ActionFormData?  // For Quick Add pre-filling
+    @State private var refreshID = UUID()  // Force refresh after edits/deletes
 
     // MARK: - Body
 
@@ -55,6 +56,7 @@ public struct ActionsListView: View {
                 actionsList
             }
         }
+        .id(refreshID)  // Force re-render when refreshID changes
         .navigationTitle("Actions")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -81,11 +83,18 @@ public struct ActionsListView: View {
             // Clear formData when sheet is dismissed
             if !isShowing {
                 formData = nil
+                refreshID = UUID()  // Refresh list after creating action
             }
         }
         .sheet(item: $actionToEdit) { actionDetails in
             NavigationStack {
                 ActionFormView(actionToEdit: actionDetails)
+            }
+        }
+        .onChange(of: actionToEdit) { oldValue, newValue in
+            // Refresh list when edit sheet is dismissed
+            if newValue == nil && oldValue != nil {
+                refreshID = UUID()
             }
         }
         .alert(
@@ -200,6 +209,7 @@ public struct ActionsListView: View {
             do {
                 try await viewModel.delete(actionDetails: actionDetails)
                 actionToDelete = nil
+                refreshID = UUID()  // Refresh list after delete
             } catch {
                 // Error handled by ViewModel.errorMessage
                 // Could show alert here if needed

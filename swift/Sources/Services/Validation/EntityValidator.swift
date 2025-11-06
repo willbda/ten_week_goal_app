@@ -71,7 +71,7 @@
 import Foundation
 
 /// Protocol for entity validators
-/// Defines two-phase validation: form data ’ complete entity graph
+/// Defines two-phase validation: form data then complete entity graph
 public protocol EntityValidator {
 
     // MARK: - Associated Types

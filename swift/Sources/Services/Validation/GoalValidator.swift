@@ -25,38 +25,38 @@
 // VALIDATION RULES:
 //
 // Phase 1: validateFormData() - Business Rules
-//  Expectation must have title OR description
+//Expectation must have title OR description
 //   Rationale: Goals need textual definition
 //
-//  Importance must be 1-10
+//Importance must be 1-10
 //   Rationale: Eisenhower matrix bounds
 //
-//  Urgency must be 1-10
+//Urgency must be 1-10
 //   Rationale: Eisenhower matrix bounds
 //
-//  StartDate must be before targetDate (if both provided)
+//StartDate must be before targetDate (if both provided)
 //   Rationale: Can't achieve goal before starting
 //
-//  TargetValue must be positive (for measurements)
+//TargetValue must be positive (for measurements)
 //   Rationale: Negative targets are nonsensical
 //
-//  AlignmentStrength must be 1-10 (if provided)
+//AlignmentStrength must be 1-10 (if provided)
 //   Rationale: Standard alignment scale
 //
 // Phase 2: validateComplete() - Referential Integrity
-//  Goal references correct expectationId
+//Goal references correct expectationId
 //   Rationale: Catch assembly bugs (wrong ID assigned)
 //
-//  All measurements reference correct expectationId
+//All measurements reference correct expectationId
 //   Rationale: Measurements belong to expectation, not goal
 //
-//  All relevances reference correct goalId
+//All relevances reference correct goalId
 //   Rationale: Catch assembly bugs (wrong ID assigned)
 //
-//  No duplicate measurements for same measure
+//No duplicate measurements for same measure
 //   Rationale: Should update existing, not create duplicate
 //
-//  No duplicate relevances for same value
+//No duplicate relevances for same value
 //   Rationale: Should update existing, not create duplicate
 //
 // FORM DATA STRUCTURE (from Coordinators/FormData/GoalFormData.swift):
@@ -178,14 +178,12 @@ public struct GoalValidator: EntityValidator {
             }
         }
 
-        // Rule 6: Alignment strengths must be 1-10 (if provided)
+        // Rule 6: Alignment strengths must be 1-10
         for alignment in formData.valueAlignments {
-            if let strength = alignment.alignmentStrength {
-                guard (1...10).contains(strength) else {
-                    throw ValidationError.invalidPriority(
-                        "Alignment strength must be 1-10, got \(strength)"
-                    )
-                }
+            guard (1...10).contains(alignment.alignmentStrength) else {
+                throw ValidationError.invalidPriority(
+                    "Alignment strength must be 1-10, got \(alignment.alignmentStrength)"
+                )
             }
         }
     }

@@ -24,26 +24,26 @@
 // VALIDATION RULES:
 //
 // Phase 1: validateFormData() - Business Rules
-//  Action must have SOME content:
+//Action must have SOME content:
 //   - title OR description OR notes (textual content)
 //   - OR measurements (quantitative data)
 //   - OR goal contributions (purpose/intent)
 //   Rationale: Empty actions provide no value
 //
-//  Duration must be positive (if provided)
+//Duration must be positive (if provided)
 //   Rationale: Negative duration is nonsensical
 //
-//  StartTime must be before logTime (if both provided)
+//StartTime must be before logTime (if both provided)
 //   Rationale: Can't start after logging
 //
 // Phase 2: validateComplete() - Referential Integrity
-//  All measurements reference correct actionId
+//All measurements reference correct actionId
 //   Rationale: Catch assembly bugs (wrong ID assigned)
 //
-//  All contributions reference correct actionId
+//All contributions reference correct actionId
 //   Rationale: Catch assembly bugs (wrong ID assigned)
 //
-//  No duplicate measurements for same measure
+//No duplicate measurements for same measure
 //   Rationale: Should update existing, not create duplicate
 //
 // FORM DATA STRUCTURE (from Coordinators/FormData/ActionFormData.swift):
@@ -112,9 +112,9 @@ public struct ActionValidator: EntityValidator {
     public func validateFormData(_ formData: ActionFormData) throws {
         // Rule 1: Action must have SOME content
         // Note: Existing FormData uses String (not String?), so check isEmpty
-        let hasText = !formData.title.isEmpty ||
-                     !formData.detailedDescription.isEmpty ||
-                     !formData.freeformNotes.isEmpty
+        let hasText =
+            !formData.title.isEmpty || !formData.detailedDescription.isEmpty
+            || !formData.freeformNotes.isEmpty
         let hasMeasurements = !formData.measurements.isEmpty
         let hasGoalLinks = !formData.goalContributions.isEmpty
 

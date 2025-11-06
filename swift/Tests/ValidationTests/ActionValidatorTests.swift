@@ -23,6 +23,7 @@
 //  testRejectsContributionWithWrongActionId
 //  testRejectsDuplicateMeasurements
 
+import Foundation
 import Testing
 @testable import Services
 @testable import Models

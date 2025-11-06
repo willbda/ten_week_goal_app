@@ -23,12 +23,12 @@ import Foundation
 /// Container for all validation issues
 public struct ValidationState: Codable {
     /// Blocking errors (must resolve before commit)
-    public var errors: [ValidationError]
+    public var errors: [ImportValidationError]
 
     /// Non-blocking warnings (informational)
     public var warnings: [ValidationWarning]
 
-    public init(errors: [ValidationError] = [], warnings: [ValidationWarning] = []) {
+    public init(errors: [ImportValidationError] = [], warnings: [ValidationWarning] = []) {
         self.errors = errors
         self.warnings = warnings
         }
@@ -44,8 +44,8 @@ public struct ValidationState: Codable {
     }
 }
 
-/// Blocking validation error
-public struct ValidationError: Codable, Identifiable {
+/// Blocking validation error during import
+public struct ImportValidationError: Codable, Identifiable {
     public let id: UUID
     public let entityType: EntityType
     public let entityId: UUID

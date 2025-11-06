@@ -1,3 +1,4 @@
+import Foundation
 // ValueValidatorTests.swift
 // Written by Claude Code on 2025-11-04
 // Updated by Claude Code on 2025-11-04 (migrated to Swift Testing)
@@ -71,8 +72,8 @@ struct ValueValidatorTests {
         let validator = ValueValidator()
         let formData = ValueFormData(
             title: "Test",
-            priority: 150,  // Out of 1-100 range
-            valueLevel: .general
+            valueLevel: .general,
+            priority: 150  // Out of 1-100 range
         )
 
         #expect(throws: ValidationError.self) {
@@ -86,8 +87,8 @@ struct ValueValidatorTests {
         let validator = ValueValidator()
         let formData = ValueFormData(
             title: "Test",
-            priority: priority,
-            valueLevel: .general
+            valueLevel: .general,
+            priority: priority
         )
 
         #expect(throws: Never.self) {
@@ -101,8 +102,8 @@ struct ValueValidatorTests {
         // Nil priority should use default from valueLevel
         let formData = ValueFormData(
             title: "Test",
-            priority: nil,
-            valueLevel: .major  // Default priority = 10
+            valueLevel: .major,
+            priority: nil  // Default priority = 10
         )
 
         #expect(throws: Never.self) {

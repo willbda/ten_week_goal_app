@@ -109,6 +109,16 @@ let package = Package(
         // TESTS
         // =========================================================================
 
+        // Validation Tests - Test validators before wiring to coordinators
+        .testTarget(
+            name: "ValidationTests",
+            dependencies: [
+                "Services",
+                "Models",
+            ],
+            path: "Tests/ValidationTests"
+        ),
+
         // View Tests - Disabled until Tests/ViewTests directory created
         // .testTarget(
         //     name: "ViewTests",

@@ -22,18 +22,18 @@
 // VALIDATION RULES:
 //
 // Phase 1: validateFormData() - Business Rules
-//  Value must have title OR description
+//Value must have title OR description
 //   Rationale: Values need textual definition
 //
-//  Priority must be 1-100 (if provided)
+//Priority must be 1-100 (if provided)
 //   Rationale: Standard priority scale (1 = highest, 100 = lowest)
 //
-//  ValueLevel must be valid enum (handled by Swift type system)
+//ValueLevel must be valid enum (handled by Swift type system)
 //   Note: This is compile-time checked, kept here for completeness
 //
 // Phase 2: validateComplete() - Referential Integrity
 // (No child entities to validate for PersonalValue - simplified validator)
-//  Priority falls back to valueLevel default if not provided
+//Priority falls back to valueLevel default if not provided
 //   Rationale: Ensure priority is always set
 //
 // FORM DATA STRUCTURE (from Coordinators/FormData/ValueFormData.swift):
@@ -162,10 +162,10 @@ public struct ValueValidator: EntityValidator {
 // WHY ALLOW NULL PRIORITY IN FORM?
 //
 // If user doesn't provide priority, we use the valueLevel default:
-// - .general � 40
-// - .major � 10
-// - .highestOrder � 1
-// - .lifeArea � 40
+// - .general -> 40
+// - .major -> 10
+// - .highestOrder -> 1
+// - .lifeArea -> 40
 //
 // This provides sensible defaults while allowing explicit override.
 
@@ -175,7 +175,7 @@ public struct ValueValidator: EntityValidator {
 // PersonalValue is a standalone entity. This simplifies validation significantly.
 //
 // Related entities:
-// - GoalRelevance: Links goals � values (validated in GoalValidator)
+// - GoalRelevance: Links goals to values (validated in GoalValidator)
 // - Not part of value creation flow
 
 // SIMPLIFIED PHASE 2

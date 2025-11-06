@@ -26,7 +26,10 @@ import Services
 ///
 /// Future: Expand to full-featured workout viewer with details, charts, etc.
 public struct WorkoutsTestView: View {
-    @State private var healthManager = HealthKitManager.shared
+    // Don't use @State for singleton - just observe it directly
+    // HealthKitManager is @Observable, so SwiftUI will track changes automatically
+    private let healthManager = HealthKitManager.shared
+
     @State private var selectedDate: Date = Date()
     @State private var workouts: [HealthWorkout] = []
     @State private var isLoading = false
@@ -35,14 +38,14 @@ public struct WorkoutsTestView: View {
     public init() {}
 
     public var body: some View {
-        VStack{
-            // Date Picker
+        VStack(spacing: 0) {
+            // Date Picker at top
             DatePicker(
                 "Select Date",
                 selection: $selectedDate,
                 displayedComponents: [.date]
             )
-            .datePickerStyle(.compact)
+            .datePickerStyle(.automatic)
             .padding()
             .background(Color(.systemGroupedBackground))
             .onChange(of: selectedDate) { _, newDate in
@@ -51,43 +54,54 @@ public struct WorkoutsTestView: View {
                 }
             }
 
-
-
-            // Content
+            // Content fills remaining space
             contentView
         }
         .navigationTitle("Workouts")
         .task {
-            // Check authorization on appear
-            print("📱 WorkoutsTestView appeared - checking status...")
-            print("📱 Current authorizationStatus: \(healthManager.authorizationStatus)")
-            if healthManager.checkAuthorizationStatus() {
-                print("📱 Already authorized, loading workouts...")
+            // Check authorization status first
+            let hasAuth = healthManager.checkAuthorizationStatus()
+
+            // Only try to load workouts if we think we might have permission
+            // If auth is .notDetermined, we'll show the prompt instead
+            if hasAuth {
                 await loadWorkouts(for: selectedDate)
-            } else {
-                print("📱 Not authorized, status: \(healthManager.authorizationStatus)")
             }
         }
     }
 
     @ViewBuilder
     private var contentView: some View {
-        switch healthManager.authorizationStatus {
-        case .notDetermined:
-            authorizationNeededView
-        case .denied:
-            deniedView
-        case .unavailable:
-            unavailableView
-        case .authorized:
-            if isLoading {
-                loadingView
-            } else if let error = errorMessage {
-                errorView(error)
-            } else if workouts.isEmpty {
-                emptyView
+        // Prioritize actual data over authorization status
+        // If we have workouts or are loading, show that state
+        if isLoading {
+            loadingView
+        } else if !workouts.isEmpty {
+            // We have workouts - show them!
+            workoutsList
+        } else if let error = errorMessage {
+            // Query failed with error
+            // Check if it's an authorization error
+            if error.contains("Authorization not determined") || error.contains("not authorized") {
+                // Show authorization prompt instead of error
+                authorizationNeededView
+            } else if healthManager.authorizationStatus == .unavailable {
+                unavailableView
             } else {
-                workoutsList
+                errorView(error)
+            }
+        } else {
+            // No workouts, no errors - check authorization
+            switch healthManager.authorizationStatus {
+            case .notDetermined:
+                authorizationNeededView
+            case .denied:
+                deniedView
+            case .unavailable:
+                unavailableView
+            case .authorized:
+                // Authorized but no workouts for this date
+                emptyView
             }
         }
     }
@@ -95,167 +109,189 @@ public struct WorkoutsTestView: View {
     // MARK: - Authorization States
 
     private var authorizationNeededView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "heart.text.square")
-                .font(.system(size: 60))
-                .foregroundStyle(.red)
+        ScrollView {
+            VStack(spacing: 20) {
+                Image(systemName: "heart.text.square")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.red)
 
-            Text("HealthKit Authorization Required")
-                .font(.title2)
-                .fontWeight(.semibold)
+                Text("HealthKit Authorization Required")
+                    .font(.title2)
+                    .fontWeight(.semibold)
 
-            Text("Grant access to view your workout history")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("Grant access to view your workout history")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
 
-            Button {
-                print("🔘 Grant Access button tapped")
-                Task {
-                    print("📱 Starting authorization task...")
-                    do {
-                        print("📱 Calling requestAuthorization...")
-                        try await healthManager.requestAuthorization()
-                        print("📱 Authorization request completed")
-                        // If successful, load workouts
-                        if healthManager.authorizationStatus == .authorized {
+                Button {
+                    print("🔘 Grant Access button tapped")
+                    Task {
+                        print("📱 Starting authorization task...")
+
+                        // Clear any previous error messages
+                        errorMessage = nil
+
+                        do {
+                            print("📱 Calling requestAuthorization...")
+                            try await healthManager.requestAuthorization()
+                            print("📱 Authorization request completed, status: \(healthManager.authorizationStatus)")
+
+                            // Try loading workouts regardless of status
+                            // If permission was granted, it will work
+                            // If denied, we'll get a proper error
                             await loadWorkouts(for: selectedDate)
+                        } catch {
+                            print("❌ Authorization failed: \(error)")
+                            errorMessage = error.localizedDescription
                         }
-                    } catch {
-                        print("❌ Authorization failed: \(error)")
-                        errorMessage = error.localizedDescription
                     }
+                } label: {
+                    Label("Grant Access", systemImage: "lock.open")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.red)
+                        .cornerRadius(10)
                 }
-            } label: {
-                Label("Grant Access", systemImage: "lock.open")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.red)
-                    .cornerRadius(10)
+                .padding(.horizontal, 40)
+
+                Text("If you previously denied access, go to Settings > Health > Data Access & Devices")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
             }
-            .padding(.horizontal, 40)
+            .padding()
         }
-        .padding()
     }
 
     private var deniedView: some View {
-        VStack(spacing: 20) {
+        ScrollView {
+            VStack(spacing: 20) {
 
-            Text("Access Denied")
-                .font(.title2)
-                .fontWeight(.semibold)
+                Text("Access Denied")
+                    .font(.title2)
+                    .fontWeight(.semibold)
 
-            Text("Enable HealthKit access in Settings to view workouts")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("Enable HealthKit access in Settings to view workouts")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
 
-            Button {
-                // Open Settings
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
+                Button {
+                    // Open Settings
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Label("Open Settings", systemImage: "gearshape")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.red)
+                        .cornerRadius(10)
                 }
-            } label: {
-                Label("Open Settings", systemImage: "gearshape")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.red)
-                    .cornerRadius(10)
+                .padding(.horizontal, 40)
             }
-            .padding(.horizontal, 40)
+            .padding()
         }
-        .padding()
     }
 
     private var unavailableView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "heart.slash")
-                .font(.system(size: 60))
-                .foregroundStyle(.gray)
+        ScrollView {
+            VStack(spacing: 20) {
+                Image(systemName: "heart.slash")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.gray)
 
-            Text("HealthKit Unavailable")
-                .font(.title2)
-                .fontWeight(.semibold)
+                Text("HealthKit Unavailable")
+                    .font(.title2)
+                    .fontWeight(.semibold)
 
-            Text("HealthKit is not available on this device")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Text("HealthKit is not available on this device")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
         }
-        .padding()
     }
 
     // MARK: - Content States
 
     private var loadingView: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.5)
+        ScrollView {
+            VStack(spacing: 20) {
+                ProgressView()
+                    .scaleEffect(1.5)
 
-            Text("Loading workouts...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Text("Loading workouts...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
         }
-        .frame(maxHeight: .infinity)
     }
 
     private func errorView(_ message: String) -> some View {
-        VStack(spacing: 20) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 60))
-                .foregroundStyle(.orange)
+        ScrollView {
+            VStack(spacing: 20) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.orange)
 
-            Text("Error Loading Workouts")
-                .font(.title2)
-                .fontWeight(.semibold)
+                Text("Error Loading Workouts")
+                    .font(.title2)
+                    .fontWeight(.semibold)
 
-            Text(message)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
 
-            Button {
-                Task {
-                    await loadWorkouts(for: selectedDate)
+                Button {
+                    Task {
+                        await loadWorkouts(for: selectedDate)
+                    }
+                } label: {
+                    Label("Retry", systemImage: "arrow.clockwise")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 30)
+                        .padding(.vertical, 12)
+                        .background(Color.blue)
+                        .cornerRadius(10)
                 }
-            } label: {
-                Label("Retry", systemImage: "arrow.clockwise")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 30)
-                    .padding(.vertical, 12)
-                    .background(Color.blue)
-                    .cornerRadius(10)
             }
+            .padding()
         }
-        .padding()
     }
 
     private var emptyView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "figure.run.circle")
-                .font(.system(size: 60))
-                .foregroundStyle(.gray)
+        ScrollView {
+            VStack(spacing: 20) {
+                Image(systemName: "figure.run.circle")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.gray)
 
-            Text("No Workouts")
-                .font(.title2)
-                .fontWeight(.semibold)
+                Text("No Workouts")
+                    .font(.title2)
+                    .fontWeight(.semibold)
 
-            Text("No workouts found for \(formattedDate)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("No workouts found for \(formattedDate)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
 
-            Text("Try selecting a different date or add workouts in the Health app")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("Try selecting a different date or add workouts in the Health app")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding()
         }
-        .padding()
-        .frame(maxHeight: .infinity)
     }
 
     private var workoutsList: some View {
@@ -281,9 +317,9 @@ public struct WorkoutsTestView: View {
     }
 
     private func loadWorkouts(for date: Date) async {
-        guard healthManager.authorizationStatus == HealthKitManager.AuthorizationStatus.authorized else {
-            return
-        }
+        // Don't check authorization status - just try to query
+        // HealthKit will return an error if permission was actually denied
+        // This is the recommended approach for read-only HealthKit access
 
         isLoading = true
         errorMessage = nil
@@ -291,11 +327,12 @@ public struct WorkoutsTestView: View {
         do {
             let hkWorkouts = try await healthManager.fetchWorkouts(for: date)
             workouts = hkWorkouts.map { HealthWorkout(from: $0) }
-            isLoading = false
+            // HealthKitManager automatically updates authorizationStatus when query succeeds
         } catch {
             errorMessage = error.localizedDescription
-            isLoading = false
         }
+
+        isLoading = false
     }
 }
 

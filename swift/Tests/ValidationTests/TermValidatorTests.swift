@@ -1,3 +1,4 @@
+import Foundation
 // TermValidatorTests.swift
 // Written by Claude Code on 2025-11-04
 // Updated by Claude Code on 2025-11-04 (migrated to Swift Testing)

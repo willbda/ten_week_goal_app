@@ -83,6 +83,15 @@ public final class HealthKitManager {
 
     // MARK: - Authorization
 
+    /// Mark that a query succeeded, indicating we have authorization
+    /// This is the most reliable way to determine HealthKit access for read-only permissions
+    internal func markQuerySucceeded() {
+        if authorizationStatus != .authorized {
+            print("✅ Query succeeded - marking as authorized")
+            authorizationStatus = .authorized
+        }
+    }
+
     /// Request authorization to read workout, sleep, and mindfulness data from HealthKit
     ///
     /// Presents system authorization dialog to user. Updates `authorizationStatus`
@@ -114,76 +123,62 @@ public final class HealthKitManager {
                 read: typesToRead
             )
 
-            // Check actual authorization status after request
-            let status = healthStore.authorizationStatus(for: workoutType)
+            // After requesting, check workout authorization (most reliable indicator)
+            let workoutStatus = healthStore.authorizationStatus(for: workoutType)
 
-            switch status {
-            case .sharingAuthorized:
+            if workoutStatus == .sharingAuthorized {
+                // If workouts are authorized, assume sleep/mindfulness are too
+                // (HealthKit shows all three in one dialog)
                 authorizationStatus = .authorized
-                print("✅ HealthKit authorization granted")
-            case .sharingDenied:
-                authorizationStatus = .denied
-                print("⚠️ HealthKit authorization denied")
-            case .notDetermined:
+                print("✅ HealthKit authorization granted (workout status: authorized)")
+            } else {
+                // User either denied or closed the dialog
+                // Try a query to verify - if it works, we have permission despite the status
                 authorizationStatus = .notDetermined
-                print("⚠️ HealthKit authorization not determined")
-            @unknown default:
-                authorizationStatus = .notDetermined
-                print("⚠️ HealthKit authorization unknown")
+                print("⚠️ Workout authorization status unclear (status: \(workoutStatus.rawValue))")
+                print("   This is normal for category types. Try querying data to verify.")
             }
         } catch {
             self.error = error
             print("❌ HealthKit authorization failed: \(error)")
+            authorizationStatus = .denied
             throw error
         }
     }
 
     /// Check if authorization has been granted without requesting
     ///
-    /// Verifies authorization for all three data types: workouts, sleep, and mindfulness.
-    /// All three must be authorized for this method to return true.
+    /// NOTE: For privacy, HealthKit returns `.sharingDenied` for category types (sleep, mindfulness)
+    /// even when permission hasn't been determined. This makes it unreliable for read-only access.
     ///
-    /// - Returns: True if user has authorized all HealthKit data types
+    /// For read-only HealthKit access, the recommended approach is:
+    /// 1. Call requestAuthorization()
+    /// 2. Attempt to query data
+    /// 3. If query succeeds (even with 0 results), you have permission
+    /// 4. If query fails with permission error, you're actually denied
+    ///
+    /// - Returns: True if we believe we have authorization (may be optimistic)
     public func checkAuthorizationStatus() -> Bool {
         print("🔍 checkAuthorizationStatus called - isAvailable: \(isAvailable)")
         guard isAvailable else { return false }
 
         let workoutType = HKObjectType.workoutType()
-        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
-              let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
-            print("🔍 Failed to create category types")
-            authorizationStatus = .unavailable
-            return false
-        }
 
-        // Check authorization status for all three types
+        // Only check workout status - it's more reliable
         let workoutStatus = healthStore.authorizationStatus(for: workoutType)
-        let sleepStatus = healthStore.authorizationStatus(for: sleepType)
-        let mindfulStatus = healthStore.authorizationStatus(for: mindfulType)
+        print("🔍 Workout status: \(workoutStatus.rawValue)")
 
-        print("🔍 Workout status: \(workoutStatus.rawValue), Sleep status: \(sleepStatus.rawValue), Mindful status: \(mindfulStatus.rawValue)")
-
-        // All three must be authorized
-        let allAuthorized = workoutStatus == .sharingAuthorized &&
-                            sleepStatus == .sharingAuthorized &&
-                            mindfulStatus == .sharingAuthorized
-
-        // Any one denied means overall denied
-        let anyDenied = workoutStatus == .sharingDenied ||
-                        sleepStatus == .sharingDenied ||
-                        mindfulStatus == .sharingDenied
-
-        if allAuthorized {
+        // For read-only access, we treat "not determined" and "denied" the same way:
+        // - If explicitly authorized, great!
+        // - Otherwise, assume we need to request (or have been denied)
+        if workoutStatus == .sharingAuthorized {
             authorizationStatus = .authorized
-            print("🔍 All types authorized ✅")
+            print("🔍 Workouts authorized ✅ (assuming sleep/mindfulness also granted)")
             return true
-        } else if anyDenied {
-            authorizationStatus = .denied
-            print("🔍 One or more types denied ❌")
-            return false
         } else {
-            authorizationStatus = .notDetermined
-            print("🔍 Authorization not determined")
+            // Could be denied OR not determined - can't tell the difference for category types
+            authorizationStatus = workoutStatus == .sharingDenied ? .denied : .notDetermined
+            print("🔍 Not authorized (status: \(authorizationStatus))")
             return false
         }
     }
@@ -206,9 +201,8 @@ public final class HealthKitManager {
             throw HealthKitError.notAvailable
         }
 
-        guard authorizationStatus == .authorized else {
-            throw HealthKitError.notAuthorized
-        }
+        // Don't check authorization status - just try to query
+        // If user denied permission, HealthKit will return empty results or error
 
         // Create date range for entire day
         let calendar = Calendar.current
@@ -247,6 +241,7 @@ public final class HealthKitManager {
 
                 let workouts = samples as? [HKWorkout] ?? []
                 print("✅ Found \(workouts.count) workouts")
+                self.markQuerySucceeded()  // Query succeeded, we have permission
                 continuation.resume(returning: workouts)
             }
 
@@ -266,9 +261,7 @@ public final class HealthKitManager {
             throw HealthKitError.notAvailable
         }
 
-        guard authorizationStatus == .authorized else {
-            throw HealthKitError.notAuthorized
-        }
+        // Don't check authorization status - just try to query
 
         print("🏥 Querying workouts from \(startDate) to \(endDate)")
 
@@ -298,6 +291,7 @@ public final class HealthKitManager {
 
                 let workouts = samples as? [HKWorkout] ?? []
                 print("✅ Found \(workouts.count) workouts")
+                self.markQuerySucceeded()  // Query succeeded, we have permission
                 continuation.resume(returning: workouts)
             }
 
@@ -320,9 +314,7 @@ public final class HealthKitManager {
             throw HealthKitError.notAvailable
         }
 
-        guard authorizationStatus == .authorized else {
-            throw HealthKitError.notAuthorized
-        }
+        // Don't check authorization status - just try to query
 
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
             throw HealthKitError.notAvailable
@@ -364,6 +356,7 @@ public final class HealthKitManager {
 
                 let sleepSamples = samples as? [HKCategorySample] ?? []
                 print("✅ Found \(sleepSamples.count) sleep samples")
+                self.markQuerySucceeded()  // Query succeeded, we have permission
                 continuation.resume(returning: sleepSamples)
             }
 
@@ -383,9 +376,7 @@ public final class HealthKitManager {
             throw HealthKitError.notAvailable
         }
 
-        guard authorizationStatus == .authorized else {
-            throw HealthKitError.notAuthorized
-        }
+        // Don't check authorization status - just try to query
 
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
             throw HealthKitError.notAvailable
@@ -419,6 +410,7 @@ public final class HealthKitManager {
 
                 let sleepSamples = samples as? [HKCategorySample] ?? []
                 print("✅ Found \(sleepSamples.count) sleep samples")
+                self.markQuerySucceeded()  // Query succeeded, we have permission
                 continuation.resume(returning: sleepSamples)
             }
 
@@ -441,9 +433,7 @@ public final class HealthKitManager {
             throw HealthKitError.notAvailable
         }
 
-        guard authorizationStatus == .authorized else {
-            throw HealthKitError.notAuthorized
-        }
+        // Don't check authorization status - just try to query
 
         guard let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
             throw HealthKitError.notAvailable
@@ -484,6 +474,7 @@ public final class HealthKitManager {
 
                 let mindfulSamples = samples as? [HKCategorySample] ?? []
                 print("✅ Found \(mindfulSamples.count) mindfulness sessions")
+                self.markQuerySucceeded()  // Query succeeded, we have permission
                 continuation.resume(returning: mindfulSamples)
             }
 
@@ -503,9 +494,7 @@ public final class HealthKitManager {
             throw HealthKitError.notAvailable
         }
 
-        guard authorizationStatus == .authorized else {
-            throw HealthKitError.notAuthorized
-        }
+        // Don't check authorization status - just try to query
 
         guard let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
             throw HealthKitError.notAvailable
@@ -539,6 +528,7 @@ public final class HealthKitManager {
 
                 let mindfulSamples = samples as? [HKCategorySample] ?? []
                 print("✅ Found \(mindfulSamples.count) mindfulness sessions")
+                self.markQuerySucceeded()  // Query succeeded, we have permission
                 continuation.resume(returning: mindfulSamples)
             }
 

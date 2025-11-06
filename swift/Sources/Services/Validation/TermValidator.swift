@@ -24,23 +24,23 @@
 // VALIDATION RULES:
 //
 // Phase 1: validateFormData() - Business Rules
-//  TimePeriod must have startDate before endDate
+//TimePeriod must have startDate before endDate
 //   Rationale: Temporal boundary must be logically consistent
 //
-//  Term number must be positive
+//Term number must be positive
 //   Rationale: Terms are sequentially numbered (Term 1, 2, 3...)
 //
-//  Status must be valid enum value (handled by Swift type system)
+//Status must be valid enum value (handled by Swift type system)
 //   Note: This is compile-time checked, kept here for completeness
 //
 // Phase 2: validateComplete() - Referential Integrity
-//  GoalTerm references correct timePeriodId
+//GoalTerm references correct timePeriodId
 //   Rationale: Catch assembly bugs (wrong ID assigned)
 //
-//  All assignments reference correct termId
+//All assignments reference correct termId
 //   Rationale: Catch assembly bugs (wrong ID assigned)
 //
-//  No duplicate goal assignments
+//No duplicate goal assignments
 //   Rationale: Same goal shouldn't appear twice in term
 //
 // FORM DATA STRUCTURE (from Coordinators/FormData/TimePeriodFormData.swift):
@@ -187,7 +187,7 @@ public struct TermValidator: EntityValidator {
 
 // WHY SEPARATE TIMEPERIOD AND GOALTERM?
 //
-// TimePeriod: Pure chronological fact (start � end)
+// TimePeriod: Pure chronological fact (start to end)
 // GoalTerm: Planning scaffold with semantics (theme, status, reflection)
 //
 // This separation allows:

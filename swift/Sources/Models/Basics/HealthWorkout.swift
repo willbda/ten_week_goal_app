@@ -143,24 +143,6 @@ public struct HealthWorkout: Identifiable, Sendable {
         case .waterSports:
             return "Water Sports"
 
-        // Winter Sports
-        case .snowSports:
-            return "Snow Sports"
-        case .skiing:
-            return "Skiing"
-        case .snowboarding:
-            return "Snowboarding"
-        case .skating:
-            return "Skating"
-        case .crossCountrySkiing:
-            return "Cross Country Skiing"
-        case .downhillSkiing:
-            return "Downhill Skiing"
-        case .skatingSports:
-            return "Skating Sports"
-        case .curling:
-            return "Curling"
-
         // Combat Sports
         case .boxing:
             return "Boxing"
@@ -204,8 +186,6 @@ public struct HealthWorkout: Identifiable, Sendable {
             return "Play"
         case .preparationAndRecovery:
             return "Preparation & Recovery"
-        case .sailingAndBoating:
-            return "Sailing"
         case .socialDance:
             return "Social Dance"
         case .stairs:
@@ -214,8 +194,6 @@ public struct HealthWorkout: Identifiable, Sendable {
             return "Triathlon"
         case .trackAndField:
             return "Track & Field"
-        case .wheelchair:
-            return "Wheelchair"
         case .wheelchairRunPace:
             return "Wheelchair Run"
         case .wheelchairWalkPace:
@@ -311,66 +289,6 @@ public struct HealthWorkout: Identifiable, Sendable {
             return "figure.paddleboarding"
         case .waterFitness, .waterPolo, .waterSports:
             return "figure.water.fitness"
-
-        // Winter Sports
-        case .skiing, .downhillSkiing, .crossCountrySkiing:
-            return "figure.skiing.downhill"
-        case .snowboarding:
-            return "figure.snowboarding"
-        case .skating, .skatingSports:
-            return "figure.skating"
-        case .snowSports:
-            return "snowflake"
-        case .curling:
-            return "figure.curling"
-
-        // Combat Sports
-        case .boxing:
-            return "figure.boxing"
-        case .kickboxing:
-            return "figure.kickboxing"
-        case .martialArts:
-            return "figure.martial.arts"
-        case .wrestling:
-            return "figure.wrestling"
-        case .fencing:
-            return "figure.fencing"
-
-        // Outdoor
-        case .climbing:
-            return "figure.climbing"
-        case .equestrianSports:
-            return "figure.equestrian.sports"
-        case .fishing:
-            return "figure.fishing"
-        case .hunting:
-            return "figure.hunting"
-        case .golf:
-            return "figure.golf"
-
-        // Other Activities
-        case .archery:
-            return "figure.archery"
-        case .bowling:
-            return "figure.bowling"
-        case .discSports:
-            return "figure.disc.sports"
-        case .fitnessGaming, .play:
-            return "gamecontroller.fill"
-        case .gymnastics:
-            return "figure.gymnastics"
-        case .handCycling:
-            return "figure.hand.cycling"
-        case .preparationAndRecovery:
-            return "figure.cooldown"
-        case .sailingAndBoating:
-            return "sailboat.fill"
-        case .swimBikeRun:
-            return "figure.open.water.swim"
-        case .trackAndField:
-            return "figure.track.and.field"
-        case .wheelchair, .wheelchairRunPace, .wheelchairWalkPace:
-            return "figure.roll"
 
         // Misc
         case .transition:
