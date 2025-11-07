@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		38534FEB2EBECA3E0035A8F9 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 38534FEA2EBECA3E0035A8F9 /* SQLiteData */; };
 		388F12B22EB6C2DB00A8CED4 /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = 388F12B12EB6C2DB00A8CED4 /* Models */; };
 		388F12B42EB6C2DB00A8CED4 /* Services in Frameworks */ = {isa = PBXBuildFile; productRef = 388F12B32EB6C2DB00A8CED4 /* Services */; };
 		38CFEB872EB9C8BF0019A0FD /* App in Frameworks */ = {isa = PBXBuildFile; productRef = 38CFEB862EB9C8BF0019A0FD /* App */; };
@@ -79,6 +80,7 @@
 				38CFEB872EB9C8BF0019A0FD /* App in Frameworks */,
 				388F12B42EB6C2DB00A8CED4 /* Services in Frameworks */,
 				388F12B22EB6C2DB00A8CED4 /* Models in Frameworks */,
+				38534FEB2EBECA3E0035A8F9 /* SQLiteData in Frameworks */,
 				38CFEB892EB9C8BF0019A0FD /* Logic in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -154,6 +156,7 @@
 				38CFEB882EB9C8BF0019A0FD /* Logic */,
 				38CFEB8A2EB9C8BF0019A0FD /* Models */,
 				38CFEB8C2EB9C8BF0019A0FD /* Services */,
+				38534FEA2EBECA3E0035A8F9 /* SQLiteData */,
 			);
 			productName = GoalTrackerII;
 			productReference = 388F12792EB6BEDE00A8CED4 /* HappyToHaveLivedApp.app */;
@@ -239,6 +242,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				38CFEB852EB9C8BF0019A0FD /* XCLocalSwiftPackageReference "../../swift" */,
+				38534FE92EBECA3E0035A8F9 /* XCRemoteSwiftPackageReference "sqlite-data" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 388F127A2EB6BEDE00A8CED4 /* Products */;
@@ -465,6 +469,7 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GoalTrackerApp/Info.plist;
@@ -537,6 +542,7 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GoalTrackerApp/Info.plist;
@@ -586,6 +592,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -596,6 +603,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerIITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -613,6 +621,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -623,6 +632,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = WilliamsBD.GoalTrackerIITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -736,7 +746,23 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		38534FE92EBECA3E0035A8F9 /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/sqlite-data";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		38534FEA2EBECA3E0035A8F9 /* SQLiteData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 38534FE92EBECA3E0035A8F9 /* XCRemoteSwiftPackageReference "sqlite-data" */;
+			productName = SQLiteData;
+		};
 		388F12B12EB6C2DB00A8CED4 /* Models */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Models;

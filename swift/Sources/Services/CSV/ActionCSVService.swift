@@ -1,40 +1,32 @@
 //
 // ActionCSVService.swift
 // Written by Claude Code on 2025-11-06
+// Updated: 2025-11-06 - Single-file template with embedded reference data
 //
 // PURPOSE:
-// CSV import/export for Actions with reference sheets for measures and goals.
+// CSV import/export for Actions with embedded reference data in single file.
 //
-// EXPORT FORMAT (3 files):
-// 1. actions_template.csv - Blank form OR filled with existing data
-// 2. available_measures.csv - All measures from catalog (for reference)
-// 3. available_goals.csv - All goals with titles (for reference)
+// TEMPLATE STRUCTURE (single file):
+// 1. UNITS section - Reference table of available measures
+// 2. GOALS section - Reference table of available goals
+// 3. IMPORT section - Actual data entry rows with numbered lines
 //
-// CSV STRUCTURE:
-// - Header row: Column names
-// - Required row: Indicates which fields are required (REQUIRED vs optional)
-// - Sample row: Example data (import ignores this row)
-// - Data rows: Actual actions
+// IMPORT SECTION:
+// - Fields row: Column names
+// - Optionality row: REQUIRED vs optional indicator
+// - Sample row: Example data (skipped during import)
+// - Numbered data rows (1-10): User fills these in
 //
-// COLUMNS (name-based, not positional):
+// COLUMNS:
 // - title, description, notes, duration_minutes, start_time
-// - measure_1_unit, measure_1_value, measure_2_unit, measure_2_value, measure_3_unit, measure_3_value
-// - goal_1_title, goal_2_title, goal_3_title
+// - goal_1_title, measure_1_unit, measure_1_value, measure_2_unit, measure_2_value
 //
-// DATE FORMAT: ISO 8601 (2025-11-06T07:00:00Z) - matches Swift Date encoding
+// DATE FORMAT: ISO 8601 (2025-11-06T07:00:00Z)
 //
 // EMPTY FIELDS:
 // - Empty title → Error (required)
 // - Empty start_time → Auto-assigned to current Date()
-// - Empty measurements → No measurements added
-// - Empty goals → No goal contributions
-// - Empty duration_minutes → Treated as 0 (no duration tracked)
-//
-// DUPLICATE DETECTION:
-// - If multiple rows have identical non-empty fields, warn and confirm
-// - User chooses: "Add all" or "Add one per unique set"
-// - Common case: Same title, different dates = NOT duplicates
-// - Edge case: Same title, empty dates = Likely duplicates
+// - Empty measurements/goals → Skipped
 //
 
 import Foundation
@@ -55,52 +47,24 @@ public final class ActionCSVService {
 
     // MARK: - Export Template
 
-    /// Export blank template with reference sheets
-    /// Creates 3 files: template, measures reference, goals reference
-    public func exportTemplate(to directory: URL) async throws -> ExportResult {
-        // 1. Export blank template with header, required indicator, and sample row
+    /// Export blank template with embedded reference data (single file)
+    public func exportTemplate(to directory: URL) async throws -> URL {
         let templatePath = directory.appendingPathComponent("actions_template.csv")
         try await exportBlankTemplate(to: templatePath)
-
-        // 2. Export measures reference sheet
-        let measuresPath = directory.appendingPathComponent("available_measures.csv")
-        try await exportMeasuresReference(to: measuresPath)
-
-        // 3. Export goals reference sheet
-        let goalsPath = directory.appendingPathComponent("available_goals.csv")
-        try await exportGoalsReference(to: goalsPath)
-
-        return ExportResult(
-            templatePath: templatePath,
-            measuresPath: measuresPath,
-            goalsPath: goalsPath
-        )
+        return templatePath
     }
 
-    /// Export all existing actions to CSV (filled template)
-    public func exportActions(to directory: URL) async throws -> ExportResult {
-        let templatePath = directory.appendingPathComponent("actions_export.csv")
-        try await exportFilledTemplate(to: templatePath)
-
-        // Still include reference sheets
-        let measuresPath = directory.appendingPathComponent("available_measures.csv")
-        try await exportMeasuresReference(to: measuresPath)
-
-        let goalsPath = directory.appendingPathComponent("available_goals.csv")
-        try await exportGoalsReference(to: goalsPath)
-
-        return ExportResult(
-            templatePath: templatePath,
-            measuresPath: measuresPath,
-            goalsPath: goalsPath
-        )
+    /// Export all existing actions to CSV (filled template with reference data)
+    public func exportActions(to directory: URL) async throws -> URL {
+        let exportPath = directory.appendingPathComponent("actions_export.csv")
+        try await exportFilledTemplate(to: exportPath)
+        return exportPath
     }
 
     // MARK: - Import
 
     /// Import actions from CSV file
-    /// - Parameter csvPath: Path to actions CSV
-    /// - Returns: Import result with successes and failures
+    /// Parses rows in IMPORT section (starts after "IMPORT" marker)
     public func importActions(from csvPath: URL) async throws -> ImportResult {
         // Parse CSV
         let rows = try parseCSV(from: csvPath)
@@ -108,27 +72,17 @@ public final class ActionCSVService {
         // Build lookup tables for resolution
         let lookup = try await buildLookupTables()
 
-        // Detect duplicates
-        if let duplicates = detectDuplicates(in: rows) {
-            // TODO: Show confirmation dialog
-            // For now, import all
-            print("⚠️ Warning: Detected \(duplicates.count) potential duplicate groups")
-        }
-
         // Import each row
         var successes = 0
         var failures: [(row: Int, error: String)] = []
 
         for (index, row) in rows.enumerated() {
             do {
-                // Convert CSV row to ActionFormData
                 let formData = try convertToFormData(row, lookup: lookup)
-
-                // Use coordinator to create
                 _ = try await coordinator.create(from: formData)
                 successes += 1
             } catch {
-                failures.append((index + 1, error.localizedDescription))
+                failures.append((row.lineNumber, error.localizedDescription))
             }
         }
 
@@ -140,20 +94,91 @@ public final class ActionCSVService {
     private func exportBlankTemplate(to path: URL) async throws {
         var csv = ""
 
-        // Header row
-        csv += "title,description,notes,duration_minutes,start_time,"
-        csv += "measure_1_unit,measure_1_value,measure_2_unit,measure_2_value,measure_3_unit,measure_3_value,"
-        csv += "goal_1_title,goal_2_title,goal_3_title\n"
+        // UNITS Section (reference data)
+        csv += ",UNITS,,,,,,,GOALS,,,\n"
+        csv += ",unit,type,description,,,,,title,target,unit,description\n"
 
-        // Required indicator row
-        csv += "REQUIRED,optional,optional,optional,optional,"
-        csv += "optional,optional,optional,optional,optional,optional,"
-        csv += "optional,optional,optional\n"
+        // Query measures and goals for reference data
+        let (measures, goalsData) = try await database.read { db in
+            let measures = try Measure.all.fetchAll(db)
 
-        // Sample row
-        csv += "Morning run,Beautiful weather today,Saw three deer,28,2025-11-06T07:00:00Z,"
-        csv += "km,5.2,minutes,28,,,,"
-        csv += "Spring into Running,,\n"
+            // Fetch all Goals + Expectations for reference
+            let goalsWithExpectations = try Goal.all
+                .join(Expectation.all) { $0.expectationId.eq($1.id) }
+                .fetchAll(db)
+
+            guard !goalsWithExpectations.isEmpty else {
+                return (measures, [(Goal, Expectation, [(ExpectationMeasure, Measure)])]())
+            }
+
+            let expectationIds = goalsWithExpectations.map { $0.1.id }
+
+            let measuresWithTargets = try ExpectationMeasure
+                .where { expectationIds.contains($0.expectationId) }
+                .join(Measure.all) { $0.measureId.eq($1.id) }
+                .fetchAll(db)
+
+            let targetsByExpectation = Dictionary(grouping: measuresWithTargets) { $0.0.expectationId }
+
+            let goalsData = goalsWithExpectations.map { (goal, expectation) in
+                let targets = targetsByExpectation[expectation.id] ?? []
+                return (goal, expectation, targets)
+            }
+
+            return (measures, goalsData)
+        }
+
+        // Write reference rows (units on left, goals on right)
+        let maxRows = max(measures.count, goalsData.count)
+        for i in 0..<maxRows {
+            // Units column
+            if i < measures.count {
+                let measure = measures[i]
+                let unit = escapeCSV(measure.unit)
+                let type = escapeCSV(measure.measureType)
+                let description = escapeCSV(measure.detailedDescription ?? "")
+                csv += ",\(unit),\(type),\(description),"
+            } else {
+                csv += ",,,,"
+            }
+
+            csv += ",,,"  // Empty columns between sections
+
+            // Goals column
+            if i < goalsData.count {
+                let (_, expectation, targets) = goalsData[i]
+                let title = escapeCSV(expectation.title ?? "Untitled Goal")
+                let description = escapeCSV(expectation.detailedDescription ?? "")
+
+                if targets.isEmpty {
+                    csv += ",\(title),,,\(description)\n"
+                } else {
+                    // Use first target for reference display
+                    let (measure, metric) = targets[0]
+                    let target = measure.targetValue
+                    let unit = escapeCSV(metric.unit)
+                    csv += ",\(title),\(target),\(unit),\(description)\n"
+                }
+            } else {
+                csv += ",,,,\n"
+            }
+        }
+
+        // Add blank rows between sections
+        for _ in 0..<6 {
+            csv += ",,,,,,,,,,,\n"
+        }
+
+        // IMPORT Section
+        csv += ",IMPORT,,,,,,,,,,\n"
+        csv += "Fields,title,description,notes,duration_minutes,start_time,goal_1_title,measure_1_unit,measure_1_value,measure_2_unit,measure_2_value,\n"
+        csv += "Optionality,REQUIRED,optional,optional,optional,optional,optional,optional,optional,optional,optional,\n"
+        csv += "Sample,Morning run,Beautiful weather today,Saw three deer,28,2025-11-06T07:00:00Z,,km,5.2,minutes,28,\n"
+
+        // Numbered data rows (1-10)
+        for i in 1...10 {
+            csv += "\(i),,,,,,,,,,,\n"
+        }
 
         try csv.write(to: path, atomically: true, encoding: .utf8)
     }
@@ -161,94 +186,75 @@ public final class ActionCSVService {
     private func exportFilledTemplate(to path: URL) async throws {
         var csv = ""
 
-        // Header row
-        csv += "title,description,notes,duration_minutes,start_time,"
-        csv += "measure_1_unit,measure_1_value,measure_2_unit,measure_2_value,measure_3_unit,measure_3_value,"
-        csv += "goal_1_title,goal_2_title,goal_3_title\n"
+        // Same reference sections as blank template
+        csv += ",UNITS,,,,,,,GOALS,,,\n"
+        csv += ",unit,type,description,,,,,title,target,unit,description\n"
 
-        // Required indicator row
-        csv += "REQUIRED,optional,optional,optional,optional,"
-        csv += "optional,optional,optional,optional,optional,optional,"
-        csv += "optional,optional,optional\n"
+        let (measures, goalsData, actions) = try await database.read { db in
+            let measures = try Measure.all.fetchAll(db)
 
-        // Sample row
-        csv += "Morning run,Beautiful weather today,Saw three deer,28,2025-11-06T07:00:00Z,"
-        csv += "km,5.2,minutes,28,,,,"
-        csv += "Spring into Running,,\n"
-
-        // TODO: Query all actions with measurements and goals
-        // TODO: Format each action as CSV row
-        // TODO: Handle variable number of measurements (up to 3)
-
-        try csv.write(to: path, atomically: true, encoding: .utf8)
-    }
-
-    private func exportMeasuresReference(to path: URL) async throws {
-        var csv = "unit,type,description\n"
-
-        // Query all measures
-        let measures = try await database.read { db in
-            try Measure.all.fetchAll(db)
-        }
-
-        // Format each measure
-        for measure in measures {
-            let unit = escapeCSV(measure.unit)
-            let type = escapeCSV(measure.measureType)
-            let description = escapeCSV(measure.detailedDescription ?? "")
-            csv += "\(unit),\(type),\(description)\n"
-        }
-
-        try csv.write(to: path, atomically: true, encoding: .utf8)
-    }
-
-    private func exportGoalsReference(to path: URL) async throws {
-        var csv = "title,target,unit,description\n"
-
-        // Query all goals with expectations and measures
-        let goalsData = try await database.read { db in
-            // Fetch all Goals + Expectations
             let goalsWithExpectations = try Goal.all
                 .join(Expectation.all) { $0.expectationId.eq($1.id) }
                 .fetchAll(db)
 
-            guard !goalsWithExpectations.isEmpty else { return [(Goal, Expectation, [(ExpectationMeasure, Measure)])]() }
-
-            // Collect expectation IDs for bulk fetch
             let expectationIds = goalsWithExpectations.map { $0.1.id }
-
-            // Bulk fetch ExpectationMeasures + Measures
-            let measuresWithTargets = try ExpectationMeasure
+            let measuresWithTargets = goalsWithExpectations.isEmpty ? [] : try ExpectationMeasure
                 .where { expectationIds.contains($0.expectationId) }
                 .join(Measure.all) { $0.measureId.eq($1.id) }
                 .fetchAll(db)
 
-            // Group by expectation ID
             let targetsByExpectation = Dictionary(grouping: measuresWithTargets) { $0.0.expectationId }
+            let goalsData = goalsWithExpectations.map { (goal, expectation) in
+                (goal, expectation, targetsByExpectation[expectation.id] ?? [])
+            }
 
-            // Combine into result
-            return goalsWithExpectations.map { (goal, expectation) in
-                let targets = targetsByExpectation[expectation.id] ?? []
-                return (goal, expectation, targets)
+            // Fetch all actions with measurements and goals
+            let actions = try Action.all.order { $0.logTime.desc() }.fetchAll(db)
+            // TODO: Fetch measurements and goal contributions for each action
+
+            return (measures, goalsData, actions)
+        }
+
+        // Write reference rows
+        let maxRows = max(measures.count, goalsData.count)
+        for i in 0..<maxRows {
+            if i < measures.count {
+                let measure = measures[i]
+                csv += ",\(escapeCSV(measure.unit)),\(escapeCSV(measure.measureType)),\(escapeCSV(measure.detailedDescription ?? "")),"
+            } else {
+                csv += ",,,,"
+            }
+
+            csv += ",,,"
+
+            if i < goalsData.count {
+                let (_, expectation, targets) = goalsData[i]
+                let title = escapeCSV(expectation.title ?? "Untitled Goal")
+                let description = escapeCSV(expectation.detailedDescription ?? "")
+                if targets.isEmpty {
+                    csv += ",\(title),,,\(description)\n"
+                } else {
+                    let (measure, metric) = targets[0]
+                    csv += ",\(title),\(measure.targetValue),\(escapeCSV(metric.unit)),\(description)\n"
+                }
+            } else {
+                csv += ",,,,\n"
             }
         }
 
-        // Format each goal (one row per metric target)
-        for (_, expectation, targets) in goalsData {
-            let title = escapeCSV(expectation.title ?? "Untitled Goal")
-            let description = escapeCSV(expectation.detailedDescription ?? "")
+        for _ in 0..<6 {
+            csv += ",,,,,,,,,,,\n"
+        }
 
-            if targets.isEmpty {
-                // Goal without metrics
-                csv += "\(title),,,\(description)\n"
-            } else {
-                // One row per metric target
-                for (measure, metric) in targets {
-                    let target = measure.targetValue
-                    let unit = escapeCSV(metric.unit)
-                    csv += "\(title),\(target),\(unit),\(description)\n"
-                }
-            }
+        // IMPORT Section with actual data
+        csv += ",IMPORT,,,,,,,,,,\n"
+        csv += "Fields,title,description,notes,duration_minutes,start_time,goal_1_title,measure_1_unit,measure_1_value,measure_2_unit,measure_2_value,\n"
+        csv += "Optionality,REQUIRED,optional,optional,optional,optional,optional,optional,optional,optional,optional,\n"
+        csv += "Sample,Morning run,Beautiful weather today,Saw three deer,28,2025-11-06T07:00:00Z,,km,5.2,minutes,28,\n"
+
+        // TODO: Write actual action data rows
+        for (index, action) in actions.enumerated() {
+            csv += "\(index + 1),\(escapeCSV(action.title ?? "Untitled")),,,,,,,,,,\n"
         }
 
         try csv.write(to: path, atomically: true, encoding: .utf8)
@@ -260,35 +266,53 @@ public final class ActionCSVService {
         let content = try String(contentsOf: path, encoding: .utf8)
         let lines = content.split(separator: "\n").map { String($0) }
 
-        guard lines.count >= 3 else {
-            throw CSVError.invalidFormat("CSV must have at least header, required, and sample rows")
+        // Find the IMPORT section
+        guard let importIndex = lines.firstIndex(where: { $0.contains("IMPORT") }) else {
+            throw CSVError.invalidFormat("CSV must contain 'IMPORT' section marker")
         }
 
-        // Parse header to get column indices
-        let header = lines[0].split(separator: ",").map { String($0) }
+        // Import section starts after IMPORT marker
+        // Line 0: ",IMPORT,..."
+        // Line 1: "Fields,title,description,..."
+        // Line 2: "Optionality,REQUIRED,..."
+        // Line 3: "Sample,Morning run,..."
+        // Line 4+: Data rows
 
-        // Skip required indicator row (line 1) and sample row (line 2)
-        let dataLines = lines.dropFirst(3)
+        let importSection = Array(lines.dropFirst(importIndex))
 
-        // Parse each data row
+        guard importSection.count >= 4 else {
+            throw CSVError.invalidFormat("IMPORT section must have Fields, Optionality, Sample, and data rows")
+        }
+
+        // Parse header from Fields row
+        let fieldsLine = importSection[1]
+        let fields = fieldsLine.split(separator: ",", omittingEmptySubsequences: false).map { String($0) }
+
+        // Skip Fields, Optionality, Sample rows → data starts at index 3
+        let dataLines = importSection.dropFirst(3)
+
         return try dataLines.enumerated().compactMap { (index, line) -> CSVRow? in
-            guard !line.trimmingCharacters(in: .whitespaces).isEmpty else {
-                return nil  // Skip empty rows
-            }
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { return nil }
 
             let values = line.split(separator: ",", omittingEmptySubsequences: false).map { String($0) }
 
-            guard values.count == header.count else {
-                throw CSVError.columnMismatch(row: index + 4, expected: header.count, got: values.count)
+            guard values.count >= fields.count else {
+                throw CSVError.columnMismatch(row: importIndex + 4 + index, expected: fields.count, got: values.count)
             }
 
-            // Build dictionary of column name → value
+            // Check if row number is just a number (empty data row)
+            let firstValue = values[0].trimmingCharacters(in: .whitespaces)
+            if Int(firstValue) != nil && values.dropFirst().allSatisfy({ $0.trimmingCharacters(in: .whitespaces).isEmpty }) {
+                return nil  // Skip empty numbered rows
+            }
+
             var rowData: [String: String] = [:]
-            for (col, value) in zip(header, values) {
+            for (col, value) in zip(fields, values) {
                 rowData[col] = value.trimmingCharacters(in: .whitespaces)
             }
 
-            return CSVRow(lineNumber: index + 4, data: rowData)
+            return CSVRow(lineNumber: importIndex + 4 + index, data: rowData)
         }
     }
 
@@ -296,14 +320,12 @@ public final class ActionCSVService {
 
     private func buildLookupTables() async throws -> LookupTables {
         return try await database.read { db in
-            // Build measure unit → UUID map
             let measures = try Measure.all.fetchAll(db)
             var measureMap: [String: UUID] = [:]
             for measure in measures {
                 measureMap[measure.unit] = measure.id
             }
 
-            // Build goal title → UUID map (Goal → Expectation)
             let goalsWithExpectations = try Goal.all
                 .join(Expectation.all) { $0.expectationId.eq($1.id) }
                 .fetchAll(db)
@@ -322,24 +344,19 @@ public final class ActionCSVService {
     // MARK: - Row Conversion
 
     private func convertToFormData(_ row: CSVRow, lookup: LookupTables) throws -> ActionFormData {
-        // Required: title
         guard let title = row.data["title"], !title.isEmpty else {
             throw CSVError.missingRequiredField(row: row.lineNumber, field: "title")
         }
 
-        // Optional: description, notes
         let description = row.data["description"] ?? ""
         let notes = row.data["notes"] ?? ""
-
-        // Optional: duration_minutes (default 0)
         let durationString = row.data["duration_minutes"] ?? ""
         let duration = Double(durationString) ?? 0
 
-        // Optional: start_time (default to now if empty)
         let startTimeString = row.data["start_time"] ?? ""
         let startTime: Date
         if startTimeString.isEmpty {
-            startTime = Date()  // Auto-assign current date if empty
+            startTime = Date()
         } else {
             guard let parsed = parseDate(startTimeString) else {
                 throw CSVError.invalidDate(row: row.lineNumber, value: startTimeString)
@@ -347,19 +364,18 @@ public final class ActionCSVService {
             startTime = parsed
         }
 
-        // Parse measurements (up to 3)
+        // Parse measurements (up to 2 in new format)
         var measurements: [MeasurementInput] = []
-        for i in 1...3 {
+        for i in 1...2 {
             let unitKey = "measure_\(i)_unit"
             let valueKey = "measure_\(i)_value"
 
             guard let unit = row.data[unitKey], !unit.isEmpty,
                   let valueString = row.data[valueKey], !valueString.isEmpty,
                   let value = Double(valueString) else {
-                continue  // Skip empty measurements
+                continue
             }
 
-            // Lookup measureId by unit
             guard let measureId = lookup.measuresByUnit[unit] else {
                 let available = Array(lookup.measuresByUnit.keys.sorted().prefix(5)).joined(separator: ", ")
                 throw CSVError.measureNotFound(row: row.lineNumber, unit: unit, available: available)
@@ -368,21 +384,13 @@ public final class ActionCSVService {
             measurements.append(MeasurementInput(measureId: measureId, value: value))
         }
 
-        // Parse goal contributions (up to 3)
+        // Parse goal contributions (just 1 in new format)
         var goalContributions: Set<UUID> = []
-        for i in 1...3 {
-            let titleKey = "goal_\(i)_title"
-
-            guard let goalTitle = row.data[titleKey], !goalTitle.isEmpty else {
-                continue  // Skip empty goals
-            }
-
-            // Lookup goalId by title
+        if let goalTitle = row.data["goal_1_title"], !goalTitle.isEmpty {
             guard let goalId = lookup.goalsByTitle[goalTitle] else {
                 let available = Array(lookup.goalsByTitle.keys.sorted().prefix(5)).joined(separator: ", ")
                 throw CSVError.goalNotFound(row: row.lineNumber, title: goalTitle, available: available)
             }
-
             goalContributions.insert(goalId)
         }
 
@@ -395,37 +403,6 @@ public final class ActionCSVService {
             measurements: measurements,
             goalContributions: goalContributions
         )
-    }
-
-    // MARK: - Duplicate Detection
-
-    private func detectDuplicates(in rows: [CSVRow]) -> [DuplicateGroup]? {
-        // Group rows by title
-        var groups: [String: [CSVRow]] = [:]
-        for row in rows {
-            if let title = row.data["title"], !title.isEmpty {
-                groups[title, default: []].append(row)
-            }
-        }
-
-        // Find groups with multiple rows
-        let duplicates = groups.filter { $0.value.count > 1 }
-
-        if duplicates.isEmpty {
-            return nil
-        }
-
-        // Check if they're true duplicates (all fields match)
-        return duplicates.compactMap { (title, rows) in
-            // Check if all rows in this group have identical data
-            let first = rows[0].data
-            let allIdentical = rows.dropFirst().allSatisfy { $0.data == first }
-
-            if allIdentical {
-                return DuplicateGroup(title: title, rows: rows.map { $0.lineNumber })
-            }
-            return nil
-        }
     }
 
     // MARK: - Helpers
@@ -447,8 +424,8 @@ public final class ActionCSVService {
 
 public struct ExportResult {
     public let templatePath: URL
-    public let measuresPath: URL
-    public let goalsPath: URL
+    public let measuresPath: URL?
+    public let goalsPath: URL?
 }
 
 public struct ImportResult {
@@ -470,17 +447,12 @@ public struct ImportResult {
 
 struct CSVRow {
     let lineNumber: Int
-    let data: [String: String]  // Column name → value
+    let data: [String: String]
 }
 
 struct LookupTables {
     let measuresByUnit: [String: UUID]
     let goalsByTitle: [String: UUID]
-}
-
-struct DuplicateGroup {
-    let title: String
-    let rows: [Int]
 }
 
 // MARK: - Errors

@@ -110,13 +110,12 @@ struct CSVExportImportView: View {
                     in: .userDomainMask
                 )[0]
 
-                let result = try await service.exportTemplate(to: downloadsDir)
+                let path = try await service.exportTemplate(to: downloadsDir)
 
                 exportResult = """
-                ✓ Exported 3 files to Downloads:
-                - actions_template.csv
-                - available_measures.csv
-                - available_goals.csv
+                ✓ Exported template to Downloads:
+                - \(path.lastPathComponent)
+                (Includes Units and Goals reference sections)
                 """
             } catch {
                 exportResult = "⚠️ Export failed: \(error.localizedDescription)"
@@ -138,13 +137,12 @@ struct CSVExportImportView: View {
                     in: .userDomainMask
                 )[0]
 
-                let result = try await service.exportActions(to: downloadsDir)
+                let path = try await service.exportActions(to: downloadsDir)
 
                 exportResult = """
                 ✓ Exported all actions to Downloads:
-                - actions_export.csv
-                - available_measures.csv
-                - available_goals.csv
+                - \(path.lastPathComponent)
+                (Includes Units and Goals reference sections)
                 """
             } catch {
                 exportResult = "⚠️ Export failed: \(error.localizedDescription)"
