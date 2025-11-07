@@ -1,47 +1,45 @@
 *.DS_Store
 *.db
-.*
 .env
+
+# Python
 */__pycache__/*
 __pycache__/*
 *logs/
 *.backup
-
-# Test data
-test_data/
-
-# Python build artifacts
 *.egg-info/
 *.pyc
 shared/database/application_data.db-shm
 shared/database/application_data.db-wal
 
+# Test data
+test_data/
+
 # Swift/Xcode build artifacts
 .build/
 DerivedData/
-*.swiftpm/
-.swiftpm/
 *.hmap
 *.ipa
 *.dSYM.zip
 *.dSYM
 build.log
+*.xcodeproj/**/build/
+**/xcuserdata/
+
 # Xcode - User-specific files (DO NOT COMMIT)
 *.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
 *.xcworkspace/xcuserdata/
 
-# Xcode - Build artifacts (DO NOT COMMIT)
-build/
-DerivedData/
-*.pbxuser
-*.mode1v3
-*.mode2v3
-*.perspectivev3
+# BUT DO COMMIT these critical Xcode files:
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+!*.xcodeproj/project.xcworkspace/xcshareddata/
+!*.xcodeproj/xcshareddata/
 
-# Swift Package Manager
-.build/
-.swiftpm/
+
+
+
 
 # Provisioning & Signing (DO NOT COMMIT)
 *.mobileprovision
@@ -56,6 +54,3 @@ DerivedData/
 # Xcode Breakpoints (User-specific)
 *.xcbkptlist
 
-# DO COMMIT: project.pbxproj (the actual project configuration)
-!*.xcodeproj/project.pbxproj
-!*.xcworkspace/contents.xcworkspacedata
