@@ -1,7 +1,8 @@
 # Ten Week Goal App - Complete Rearchitecture Guide
 **Created**: 2025-10-31
 **Written by**: Claude Code (merged from MASTER_REARCHITECTURE_PLAN, REARCHITECTURE_ISSUE, CLEAN_REARCHITECTURE_PLAN)
-**Status**: Phase 1-2 Complete, Phase 3 Ready to Start
+**Status**: Phases 1-3 Complete, Phase 4 Ready to Start
+**Last Updated**: 2025-11-06
 
 ---
 
@@ -60,10 +61,13 @@ The 3NF normalization has intentionally broken several parts of the app:
 3. **ActionsViewModel** - Expects JSON measuresByUnit
 4. **GoalsViewModel** - References removed `goal.isSmart()` method
 
-These are expected and will be fixed in Phases 3-6 as we build the service layer and update views.
+These are expected and will be fixed in Phases 4-6 as we build the validation layer and update views.
 
-## 🚧 Next Priority (Phase 3)
-Repository/Service layer to make the normalized models usable
+## ✅ Phase 3 Complete (Coordinator Pattern)
+All 4 coordinators implemented with full CRUD operations
+
+## 🚧 Next Priority (Phase 4)
+Validation layer to enforce business rules
 
 ---
 
@@ -163,7 +167,7 @@ ORDER BY priority;
 **NEW SCHEMA (1 table)**:
 ```sql
 SELECT id, title, priority, valueLevel
-FROM "values"
+FROM personalValues
 ORDER BY priority;
 ```
 
@@ -171,8 +175,8 @@ ORDER BY priority;
 **Issue**: No explicit relationship tables for queryability
 
 Missing tables:
-- No `action_goal_contributions` → can't query "which goals does this action serve?"
-- No `goal_value_alignments` → can't query "which values does this goal align with?"
+- No `actionGoalContributions` → can't query "which goals does this action serve?"
+- No `goalRelevances` → can't query "which values does this goal align with?"
 
 **Impact**: Impossible to answer core relationship queries without application-layer parsing
 
@@ -195,15 +199,15 @@ ORDER BY CAST(json_extract(measuresByUnit, '$.km') AS REAL) DESC;
 **NEW SCHEMA (with metrics table)**:
 ```sql
 -- Simple join, fully indexed!
-SELECT a.title, am.value as km, a.logTime
+SELECT a.title, ma.value as km, a.logTime
 FROM actions a
-JOIN action_metrics am ON a.id = am.actionId
-JOIN metrics m ON am.metricId = m.id
+JOIN measuredActions ma ON a.id = ma.actionId
+JOIN measures m ON ma.measureId = m.id
 WHERE m.unit = 'km'
-ORDER BY am.value DESC;
+ORDER BY ma.value DESC;
 ```
 - ✅ No JSON parsing
-- ✅ Indexed joins (idx_action_metrics_metric)
+- ✅ Indexed joins on measuredActions
 - ✅ Type-safe (REAL in database)
 - ✅ Queryable metric metadata
 
@@ -264,17 +268,19 @@ Minimal fields - just relationships:
 ```sql
 -- Sum all km actions contributing to "Spring into Running" goal (120km target)
 SELECT
-  g.title as goal,
-  g.measurementTarget as target,
-  COALESCE(SUM(am.value), 0) as actual,
-  ROUND(COALESCE(SUM(am.value), 0) / g.measurementTarget * 100, 1) as progress_pct
+  e.title as goal,
+  em.targetValue as target,
+  COALESCE(SUM(ma.value), 0) as actual,
+  ROUND(COALESCE(SUM(ma.value), 0) / em.targetValue * 100, 1) as progress_pct
 FROM goals g
-LEFT JOIN action_goal_contributions agc ON g.id = agc.goalId
-LEFT JOIN action_metrics am ON agc.actionId = am.actionId AND agc.metricId = am.metricId
-LEFT JOIN metrics m ON am.metricId = m.id
-WHERE g.title = 'Spring into Running'
+JOIN expectations e ON g.expectationId = e.id
+JOIN expectationMeasures em ON e.id = em.expectationId
+LEFT JOIN actionGoalContributions agc ON g.id = agc.goalId
+LEFT JOIN measuredActions ma ON agc.actionId = ma.actionId AND agc.measureId = ma.measureId
+LEFT JOIN measures m ON ma.measureId = m.id
+WHERE e.title = 'Spring into Running'
   AND m.unit = 'km'
-GROUP BY g.id;
+GROUP BY g.id, em.targetValue;
 ```
 
 **This query would show**:
@@ -355,9 +361,53 @@ See [Sources/Database/SCHEMA_FINAL.md](swift/Sources/Database/SCHEMA_FINAL.md) f
 
 ---
 
-# Repository/Service Layer (Phase 3) 🚧 NEXT
+# Coordinator Pattern (Phase 3) ✅ COMPLETE
 
-## Critical Missing Pieces
+**Status**: All 4 coordinators implemented with full CRUD operations (2025-11-03)
+
+## What Was Built
+
+### Completed Coordinators
+
+#### ✅ PersonalValueCoordinator
+- **Status**: Create only (update/delete TODO)
+- **Complexity**: Simple (1 model)
+- **File**: [PersonalValueCoordinator.swift](../Sources/Services/Coordinators/PersonalValueCoordinator.swift)
+
+#### ✅ TimePeriodCoordinator
+- **Status**: Full CRUD (reference implementation)
+- **Complexity**: Medium (2 models: TimePeriod + GoalTerm)
+- **File**: [TimePeriodCoordinator.swift](../Sources/Services/Coordinators/TimePeriodCoordinator.swift)
+
+#### ✅ ActionCoordinator
+- **Status**: Full CRUD
+- **Complexity**: High (3 models: Action + MeasuredAction[] + ActionGoalContribution[])
+- **File**: [ActionCoordinator.swift](../Sources/Services/Coordinators/ActionCoordinator.swift)
+
+#### ✅ GoalCoordinator
+- **Status**: Full CRUD (most complex)
+- **Complexity**: Highest (5+ models: Expectation + Goal + ExpectationMeasure[] + GoalRelevance[] + TermGoalAssignment?)
+- **File**: [GoalCoordinator.swift](../Sources/Services/Coordinators/GoalCoordinator.swift)
+- **Created**: 2025-11-03
+- **Lines**: 357
+
+### Pattern: Multi-Model Atomic Transactions
+
+All coordinators follow this pattern:
+1. Validate foreign keys exist
+2. Insert/update base entity
+3. Insert/update related entities atomically
+4. Return persisted entity
+
+**Key Decisions**:
+- ❌ No business logic validation in coordinators (trust caller)
+- ✅ Database enforces constraints (NOT NULL, foreign keys, CHECK)
+- ✅ Full CRUD required (create, update, delete)
+- ✅ Force unwrap after insert is safe (insert throws or returns)
+
+## Future: Repository/Query Layer Needed
+
+The coordinators handle **writes**, but we still need **query/read** optimization:
 
 ### Core Repositories Needed
 
@@ -442,9 +492,28 @@ class MetricAggregationService {
 
 ---
 
-# Protocol Redesign (Phase 4) ❌ NOT STARTED
+# Validation Layer (Phase 4) 🚧 NEXT
 
-**Status**: Waiting for Phase 3 completion
+**Status**: ActionValidator in progress, ready to expand
+
+## Three-Layer Validation Strategy
+
+See [Services/Validation/validation approach.md](../Sources/Services/Validation/validation%20approach.md) for complete strategy.
+
+**Layer A**: Real-time UI validation (SwiftUI views)
+**Layer B**: Coordination validation (before database write)
+**Layer C**: Database validation (constraints, error mapping)
+
+## Current Progress
+- ✅ ActionValidator exists ([ActionValidator.swift](../Sources/Services/Validation/ActionValidator.swift))
+- ❌ GoalValidator not started
+- ❌ Repository error mapping not started
+
+---
+
+# Protocol Redesign (Phase 5) ❌ NOT STARTED
+
+**Status**: Waiting for Phase 4 completion
 
 ## Current Protocols ([Protocols.swift](swift/Sources/Models/Protocols.swift))
 
@@ -462,7 +531,7 @@ protocol Measurable { ... }       // ? Review - measurement-capable entities
 ## Design Questions for Phase 4
 
 1. **Do we need Completable?**
-   - Now that measurements are in `goal_metrics`, what does Completable provide?
+   - Now that measurements are in `expectationMeasures`, what does Completable provide?
    - Is it just a marker: "has target dates"?
 
 2. **Do we need Measurable?**
@@ -485,9 +554,9 @@ protocol Measurable { ... }       // ? Review - measurement-capable entities
 
 ---
 
-# ViewModel Layer (Phase 5) ❌ NOT STARTED
+# ViewModel Layer (Phase 6) ❌ NOT STARTED
 
-**Status**: Waiting for Phase 4 completion
+**Status**: Waiting for Phases 4-5 completion
 
 ## Current Problems
 - Expect `measuresByUnit` JSON field
@@ -576,9 +645,9 @@ class TermPlanningViewModel: ObservableObject {
 
 ---
 
-# View Updates (Phase 6) ❌ NOT STARTED
+# View Updates (Phase 7) ❌ NOT STARTED
 
-**Status**: Waiting for Phase 5 completion
+**Status**: Waiting for Phases 4-6 completion
 
 ## Current Problems
 - Reference removed Goal fields (measurementUnit, measurementTarget)
@@ -955,31 +1024,35 @@ let progress = try #sql(
 
 # Implementation Roadmap
 
-## Phase Timeline (5-7 weeks total)
+## Phase Timeline (7-9 weeks total)
 
 | Phase | Focus | Duration | Status |
 |-------|-------|----------|--------|
-| **1-2** | Schema & Models | Complete | ✅ Done |
-| **3** | Repositories | 1 week | 🚧 Next |
-| **4** | Protocols | 3 days | ⏳ Waiting |
-| **5** | ViewModels | 1 week | ⏳ Waiting |
-| **6** | Views | 1 week | ⏳ Waiting |
-| **7** | Testing & Migration | 1-2 weeks | ⏳ Waiting |
+| **1-2** | Schema & Models | 2 weeks | ✅ Done (2025-10-30) |
+| **3** | Coordinators (CRUD) | 1 week | ✅ Done (2025-11-03) |
+| **4** | Validation Layer | 1 week | 🚧 Next |
+| **5** | Protocol Redesign | 3 days | ⏳ Waiting |
+| **6** | ViewModels | 1 week | ⏳ Waiting |
+| **7** | Views | 1 week | ⏳ Waiting |
+| **8** | Testing & Migration | 1-2 weeks | ⏳ Waiting |
 
 ## Critical Path
-1. **Repositories** (enables everything else)
-2. **ViewModels** (connects data to UI)
-3. **Views** (user interaction)
-4. **Migration** (production deployment)
+1. **Validation Layer** (business rules)
+2. **Protocol Redesign** (clean contracts)
+3. **ViewModels** (connects data to UI)
+4. **Views** (user interaction)
+5. **Migration** (production deployment)
 
 ## Success Criteria
-- [ ] All models compile without errors
-- [ ] Repository tests pass
-- [ ] ViewModels handle relationships
-- [ ] Views display normalized data
-- [ ] Migration preserves all data
-- [ ] Performance meets or exceeds current
-- [ ] Accessibility standards met
+- [x] All models compile without errors (Phase 1-2) ✅
+- [x] Coordinators handle multi-model writes (Phase 3) ✅
+- [ ] Validation layer enforces business rules (Phase 4)
+- [ ] Protocols provide clean contracts (Phase 5)
+- [ ] ViewModels handle relationships (Phase 6)
+- [ ] Views display normalized data (Phase 7)
+- [ ] Migration preserves all data (Phase 8)
+- [ ] Performance meets or exceeds current (Phase 8)
+- [ ] Accessibility standards met (Phase 8)
 
 ---
 
@@ -1119,6 +1192,7 @@ swift/docs/archive/
 - Schema definition: [Sources/Database/SCHEMA_FINAL.md](swift/Sources/Database/SCHEMA_FINAL.md)
 - Migration results: [Sources/Database/3NF_MIGRATION_COMPLETE.md](swift/Sources/Database/3NF_MIGRATION_COMPLETE.md)
 - Challenges faced: [Sources/Database/NORMALIZATION_CHALLENGES.md](swift/Sources/Database/NORMALIZATION_CHALLENGES.md)
+- **Concurrency strategy**: [docs/CONCURRENCY_STRATEGY.md](swift/docs/CONCURRENCY_STRATEGY.md) - Actor isolation, parallel operations, query patterns
 
 ## Archived Planning Documents
 - Master plan: [docs/archive/MASTER_REARCHITECTURE_PLAN.md](swift/docs/archive/MASTER_REARCHITECTURE_PLAN.md)

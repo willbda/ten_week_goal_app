@@ -16,6 +16,29 @@ The Swift implementation is undergoing a complete rearchitecture to 3NF normaliz
 
 **Breaking**: Some components intentionally broken during migration (MatchingService, ViewModels).
 
+## Technology Stack
+
+### Swift Implementation (Active Development)
+- **Swift 6.2** (Released September 15, 2025) - Strict concurrency, modern syntax
+- **SwiftUI** - Declarative UI with @Observable pattern
+- **SQLiteData 1.2+** - Type-safe database operations (@Table macro, query builder)
+- **iOS 26+ / macOS Tahoe 26+ / visionOS 26+** - Modern platform targets
+- **Key Patterns**: Actor isolation (@MainActor), Sendable types, structured concurrency (async let)
+
+**Documentation**:
+- [MODERN_SWIFT_REFERENCE.md](swift/docs/MODERN_SWIFT_REFERENCE.md) - Swift 6.2 patterns quick reference
+- [DOCUMENTATION_REFRESH_GUIDE.md](swift/docs/DOCUMENTATION_REFRESH_GUIDE.md) - Keeping docs current
+- [CONCURRENCY_STRATEGY.md](swift/docs/CONCURRENCY_STRATEGY.md) - Actor patterns and parallel queries
+
+### Python Implementation (Archived)
+- **Python 3.9+** - Type hints, dataclasses
+- **Flask** - RESTful API (27 endpoints)
+- **SQLite3** - Direct database access
+- **Click** - CLI framework (25 commands)
+- **Status**: Tagged as v1.0-python, effectively archived
+
+---
+
 ## Project Structure: Multi-Language Implementation
 
 This project maintains the same architectural principles across multiple language implementations:
@@ -166,11 +189,13 @@ The storage layer (`politica/`) knows nothing about specific entities:
 
 - **Python**: Effectively archived (v1.0-python tag)
 - **Swift**: Active development (v0.5.0-rearchitecture)
-  - ✅ Phases 1-2: Database schema & models complete
-  - 🚧 Phase 3: Repository/Service layer next
-  - ⏳ Phases 4-7: Protocols, ViewModels, Views, Testing
+  - ✅ Phases 1-2: Database schema & models complete (3NF normalization)
+  - ✅ Phase 3: Coordinator pattern complete (All 4 coordinators: PersonalValue, Term, Action, Goal)
+  - 🚧 Phase 4: Validation layer (ActionValidator in progress) - Next priority
+  - ⏳ Phases 5-7: Protocol redesign, ViewModels, Views, Testing
 - **Database**: Complete 3NF rearchitecture (clean break migration)
-- **Last Updated**: 2025-10-31
+- **Platform**: Swift 6.2 on iOS/macOS/visionOS 26+ (Released September 15, 2025)
+- **Last Updated**: 2025-11-06
 
 ## Contributing
 
