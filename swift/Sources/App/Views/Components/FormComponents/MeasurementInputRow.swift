@@ -50,6 +50,12 @@ public struct MeasurementInputRow: View {
             Picker("Measure", selection: $measureId) {
                 Text("Select measure").tag(nil as UUID?)
 
+                if availableMeasures.isEmpty {
+                    Text("Loading measures...")
+                        .foregroundStyle(.secondary)
+                        .tag(nil as UUID?)
+                }
+
                 ForEach(availableMeasures, id: \.id) { measure in
                     Text(measure.unit).tag(measure.id as UUID?)
                 }
