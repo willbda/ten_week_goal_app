@@ -50,7 +50,7 @@
 
               // Tab 5: Import (your addition - working)
               NavigationStack {
-                  ImportWizardView()
+                  CSVExportImportView()
               }
               .tabItem {
                   Label("Import", systemImage: "arrow.2.circlepath.circle")
