@@ -18,10 +18,6 @@ shared/database/application_data.db-wal
 
 # Swift/Xcode build artifacts
 .build/
-*.xcodeproj/*
-!*.xcodeproj/project.pbxproj
-*.xcworkspace
-xcuserdata/
 DerivedData/
 *.swiftpm/
 .swiftpm/
