@@ -35,6 +35,14 @@ public struct WorkoutsTestView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
 
+    // Selection mode for saving workouts
+    @State private var isSelecting = false
+    @State private var selectedWorkouts: Set<UUID> = []
+    @State private var importService = HealthKitImportService()
+    @State private var isSaving = false
+    @State private var showingSaveSuccess = false
+    @State private var savedCount = 0
+
     public init() {}
 
     public var body: some View {
@@ -58,6 +66,58 @@ public struct WorkoutsTestView: View {
             contentView
         }
         .navigationTitle("Workouts")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if !workouts.isEmpty {
+                    if isSelecting {
+                        Button("Cancel") {
+                            isSelecting = false
+                            selectedWorkouts.removeAll()
+                        }
+                    } else {
+                        Button("Select") {
+                            isSelecting = true
+                        }
+                    }
+                }
+            }
+
+            // Note: Changed from .bottomBar to avoid conflicts with TabView's floating tab bar in iOS 26
+            // Using navigationBarLeading keeps the save button accessible without layout conflicts
+            // Removed .borderedProminent to avoid layout conflicts during iOS 26 nav bar animations
+            ToolbarItem(placement: .navigationBarLeading) {
+                if isSelecting && !selectedWorkouts.isEmpty {
+                    Button {
+                        Task {
+                            await saveSelectedWorkouts()
+                        }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Label("Save \(selectedWorkouts.count)", systemImage: "square.and.arrow.down")
+                        }
+                    }
+                    .disabled(isSaving)
+                }
+            }
+        }
+        .alert("Saved Successfully", isPresented: $showingSaveSuccess) {
+            Button("OK") {
+                showingSaveSuccess = false
+                isSelecting = false
+                selectedWorkouts.removeAll()
+            }
+        } message: {
+            Text("\(savedCount) workout\(savedCount == 1 ? "" : "s") saved to your Actions")
+        }
+        // FIX: Add bottom safe area inset for iOS 26 floating tab bar
+        // The "Liquid Glass" tab bar floats above content, so we need to ensure
+        // scrollable content doesn't get occluded by it
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: 0)
+        }
         .task {
             // Check authorization status first
             let hasAuth = healthManager.checkAuthorizationStatus()
@@ -298,13 +358,35 @@ public struct WorkoutsTestView: View {
         List {
             Section {
                 ForEach(workouts) { workout in
-                    WorkoutRowView(workout: workout)
+                    if isSelecting {
+                        // Selection mode: show checkbox
+                        Button {
+                            toggleSelection(workout)
+                        } label: {
+                            HStack {
+                                Image(systemName: selectedWorkouts.contains(workout.id) ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(selectedWorkouts.contains(workout.id) ? .blue : .gray)
+                                    .imageScale(.large)
+
+                                WorkoutRowView(workout: workout)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        // Normal mode: navigation link
+                        NavigationLink {
+                            WorkoutDetailView(workout: workout)
+                        } label: {
+                            WorkoutRowView(workout: workout)
+                        }
+                    }
                 }
             } header: {
                 Text("\(workouts.count) workout\(workouts.count == 1 ? "" : "s") on \(formattedDate)")
             }
         }
         .listStyle(.insetGrouped)
+        .environment(\.editMode, isSelecting ? .constant(.active) : .constant(.inactive))
     }
 
     // MARK: - Helpers
@@ -333,6 +415,32 @@ public struct WorkoutsTestView: View {
         }
 
         isLoading = false
+    }
+
+    private func toggleSelection(_ workout: HealthWorkout) {
+        if selectedWorkouts.contains(workout.id) {
+            selectedWorkouts.remove(workout.id)
+        } else {
+            selectedWorkouts.insert(workout.id)
+        }
+    }
+
+    private func saveSelectedWorkouts() async {
+        isSaving = true
+        defer { isSaving = false }
+
+        // Get selected workout objects
+        let workoutsToSave = workouts.filter { selectedWorkouts.contains($0.id) }
+
+        do {
+            let savedActions = try await importService.importWorkouts(workoutsToSave)
+            savedCount = savedActions.count
+            showingSaveSuccess = true
+            print("✅ Saved \(savedCount) workouts as Actions")
+        } catch {
+            errorMessage = "Failed to save workouts: \(error.localizedDescription)"
+            print("❌ Failed to save workouts: \(error)")
+        }
     }
 }
 
