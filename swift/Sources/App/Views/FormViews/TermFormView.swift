@@ -33,6 +33,10 @@ public struct TermFormView: View {
     /// Term being edited (nil = create mode, not nil = edit mode)
     private let termToEdit: (timePeriod: TimePeriod, goalTerm: GoalTerm)?
 
+    /// Suggested next term number (from TermsListView's @Fetch data)
+    /// Used only in create mode to auto-increment from existing terms
+    private let suggestedTermNumber: Int?
+
     /// Whether in create or edit mode
     private var isEditMode: Bool {
         termToEdit != nil
@@ -63,8 +67,16 @@ public struct TermFormView: View {
 
     // MARK: - Initialization
 
-    public init(termToEdit: (timePeriod: TimePeriod, goalTerm: GoalTerm)? = nil) {
+    /// Initialize form for create or edit mode
+    /// - Parameters:
+    ///   - termToEdit: Existing term to edit (nil = create mode)
+    ///   - suggestedTermNumber: Next term number from TermsListView (create mode only)
+    public init(
+        termToEdit: (timePeriod: TimePeriod, goalTerm: GoalTerm)? = nil,
+        suggestedTermNumber: Int? = nil
+    ) {
         self.termToEdit = termToEdit
+        self.suggestedTermNumber = suggestedTermNumber
 
         // Initialize state from termToEdit or defaults
         if let (timePeriod, goalTerm) = termToEdit {
@@ -79,8 +91,8 @@ public struct TermFormView: View {
             _description = State(initialValue: timePeriod.detailedDescription ?? "")
             _notes = State(initialValue: timePeriod.freeformNotes ?? "")
         } else {
-            // Create mode - use defaults
-            _termNumber = State(initialValue: 1)
+            // Create mode - use suggested number or default to 1
+            _termNumber = State(initialValue: suggestedTermNumber ?? 1)
             _startDate = State(initialValue: Date())
             _targetDate = State(
                 initialValue: Calendar.current.date(byAdding: .weekOfYear, value: 10, to: Date())

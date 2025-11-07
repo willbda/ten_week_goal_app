@@ -40,6 +40,15 @@ public struct TermsListView: View {
     /// Term to delete (for confirmation)
     @State private var termToDelete: TermWithPeriod?
 
+    /// Trigger for manual refresh (increment to force @Fetch to re-query)
+    @State private var refreshTrigger = 0
+
+    /// Calculate next term number from existing terms
+    private var nextTermNumber: Int {
+        let maxTermNumber = termsWithPeriods.map { $0.term.termNumber }.max() ?? 0
+        return maxTermNumber + 1
+    }
+
     public var body: some View {
         Group {
             if termsWithPeriods.isEmpty {
@@ -125,9 +134,23 @@ public struct TermsListView: View {
         }
         .sheet(isPresented: $showingForm) {
             NavigationStack {
-                TermFormView(termToEdit: termToEdit)
+                TermFormView(
+                    termToEdit: termToEdit,
+                    suggestedTermNumber: termToEdit == nil ? nextTermNumber : nil
+                )
+            }
+            // Force sheet to recreate when termToEdit changes
+            // Fixes bug: clicking same term twice showed "New Term" instead of edit
+            .id(termToEdit?.goalTerm.id)
+        }
+        .onChange(of: showingForm) { _, isShowing in
+            // When sheet dismisses, force list to refresh
+            // Fixes bug: list not updating after save
+            if !isShowing {
+                refreshTrigger += 1
             }
         }
+        .id(refreshTrigger)  // Force view recreation when refreshTrigger changes
         .alert(
             "Delete Term",
             isPresented: .constant(termToDelete != nil),
