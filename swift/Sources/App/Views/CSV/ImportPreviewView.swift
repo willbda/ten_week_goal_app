@@ -84,7 +84,11 @@ struct ImportPreviewView<Preview: CSVPreviewable>: View {
                 sectionHeader
             }
         }
+        #if os(macOS)
         .listStyle(.inset(alternatesRowBackgrounds: true))
+        #else
+        .listStyle(.insetGrouped)
+        #endif
     }
 
     // DESIGN: Extracted header to reduce complexity
@@ -219,7 +223,7 @@ struct PreviewRow<Preview: CSVPreviewable>: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(Color(nsColor: .systemGray).opacity(0.2))
+                .background(Color.gray.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 4))
         }
         .padding(.vertical, 6) // DESIGN: More breathing room (iOS 18 spacing)
