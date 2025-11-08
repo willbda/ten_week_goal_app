@@ -90,7 +90,7 @@ public final class GoalCSVService {
 
         for preview in previews {
             do {
-                let formData = try convertPreviewToFormData(preview, lookup: lookup)
+                let formData = try await convertPreviewToFormData(preview, lookup: lookup)
                 _ = try await coordinator.create(from: formData)
                 successes += 1
             } catch {
@@ -241,7 +241,7 @@ public final class GoalCSVService {
 
         // Parse header from Fields row
         let fieldsLine = importSection[1]
-        let fields = fieldsLine.split(separator: ",", omittingEmptySubsequences: false).map { String($0) }
+        let fields = parseCSVLine(fieldsLine)
 
         // Skip Fields, Optionality, Sample rows → data starts at index 3
         let dataLines = importSection.dropFirst(3)
@@ -250,7 +250,7 @@ public final class GoalCSVService {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { return nil }
 
-            let values = line.split(separator: ",", omittingEmptySubsequences: false).map { String($0) }
+            let values = parseCSVLine(line)
 
             guard values.count >= fields.count else {
                 throw CSVError.columnMismatch(row: importIndex + 4 + index, expected: fields.count, got: values.count)
@@ -269,6 +269,39 @@ public final class GoalCSVService {
 
             return CSVRow(lineNumber: importIndex + 4 + index, data: rowData)
         }
+    }
+
+    /// Parse a CSV line respecting quoted fields
+    /// Handles: `"field with, comma",other field`
+    private func parseCSVLine(_ line: String) -> [String] {
+        var fields: [String] = []
+        var currentField = ""
+        var insideQuotes = false
+        var previousChar: Character? = nil
+
+        for char in line {
+            if char == "\"" {
+                if insideQuotes && previousChar == "\"" {
+                    // Escaped quote ("")
+                    currentField.append(char)
+                    previousChar = nil
+                    continue
+                } else {
+                    insideQuotes.toggle()
+                }
+            } else if char == "," && !insideQuotes {
+                fields.append(currentField)
+                currentField = ""
+            } else {
+                currentField.append(char)
+            }
+            previousChar = char
+        }
+
+        // Add last field
+        fields.append(currentField)
+
+        return fields
     }
 
     // MARK: - Lookup Tables
@@ -314,11 +347,10 @@ public final class GoalCSVService {
            let unit = row.data["target_unit"], !unit.isEmpty {
 
             if lookup.measuresByUnit[unit] == nil {
-                let available = Array(lookup.measuresByUnit.keys.sorted().prefix(5)).joined(separator: ", ")
-                validationStatus = .error("Measure '\(unit)' not found. Available: \(available)")
-            } else {
-                targets.append((unit: unit, value: targetValue))
+                // Warning: measure will be auto-created during import
+                validationStatus = .warning("Measure '\(unit)' will be created automatically")
             }
+            targets.append((unit: unit, value: targetValue))
         }
 
         // Parse value names
@@ -358,12 +390,16 @@ public final class GoalCSVService {
         )
     }
 
-    private func convertPreviewToFormData(_ preview: GoalPreview, lookup: GoalLookupTables) throws -> GoalFormData {
-        // Convert metric targets
+    private func convertPreviewToFormData(_ preview: GoalPreview, lookup: GoalLookupTables) async throws -> GoalFormData {
+        // Convert metric targets (auto-create missing measures)
         var metricTargets: [MetricTargetInput] = []
         for (unit, value) in preview.targets {
-            guard let measureId = lookup.measuresByUnit[unit] else {
-                throw CSVError.measureNotFound(row: preview.rowNumber, unit: unit, available: "")
+            let measureId: UUID
+            if let existingId = lookup.measuresByUnit[unit] {
+                measureId = existingId
+            } else {
+                // Auto-create missing measure
+                measureId = try await createMeasure(unit: unit)
             }
             metricTargets.append(MetricTargetInput(measureId: measureId, targetValue: value, notes: nil))
         }
@@ -412,6 +448,59 @@ public final class GoalCSVService {
     }
 
     // MARK: - Helpers
+
+    /// Auto-create a measure if it doesn't exist
+    /// Attempts to infer measureType from common units
+    private func createMeasure(unit: String) async throws -> UUID {
+        let measureType = inferMeasureType(from: unit)
+        let measureId = UUID()
+
+        try await database.write { db in
+            try Measure.insert {
+                Measure.Draft(
+                    id: measureId,
+                    logTime: Date(),
+                    title: unit.capitalized,
+                    detailedDescription: "Auto-created from CSV import",
+                    freeformNotes: nil,
+                    unit: unit,
+                    measureType: measureType,
+                    canonicalUnit: unit,
+                    conversionFactor: nil
+                )
+            }.execute(db)
+        }
+
+        return measureId
+    }
+
+    /// Infer measure type from unit name
+    private func inferMeasureType(from unit: String) -> String {
+        let lowercased = unit.lowercased()
+
+        // Distance units
+        if ["km", "kilometers", "mi", "miles", "m", "meters", "ft", "feet"].contains(lowercased) {
+            return "distance"
+        }
+
+        // Time units
+        if ["hours", "minutes", "seconds", "min", "sec", "hr", "h"].contains(lowercased) {
+            return "time"
+        }
+
+        // Mass/weight units
+        if ["kg", "kilograms", "lbs", "pounds", "g", "grams"].contains(lowercased) {
+            return "mass"
+        }
+
+        // Energy units
+        if ["kcal", "calories", "cal", "kj", "kilojoules"].contains(lowercased) {
+            return "energy"
+        }
+
+        // Count units (default for unknown)
+        return "count"
+    }
 
     private func parseDate(_ string: String) -> Date? {
         let formatter = ISO8601DateFormatter()
