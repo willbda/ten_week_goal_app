@@ -1,0 +1,254 @@
+//
+// FormTemplate.swift
+// Template for creating new entity forms
+// Written by Claude Code on 2025-11-03
+//
+// PURPOSE: Copy/paste starting point for new form views
+// USAGE: Copy this file, replace "Entity" with your entity name, customize sections
+//
+// PATTERNS SHOWN:
+// - Edit mode support (optional parameter)
+// - buildFormData() helper
+// - Component usage (DocumentableFields, TimingSection, RepeatingSection, MultiSelectSection)
+// - FormScaffold wrapper
+// - ViewModel with @Observable + @Dependency
+//
+
+import SwiftUI
+import Models
+import Services
+
+// MARK: - Helper Types (if needed)
+
+// Example: Wrapper for related entity selection
+// private struct EntityOption: Identifiable {
+//     let id: UUID
+//     let entity: SomeEntity
+//     let title: String
+// }
+
+// MARK: - Form View
+
+/// Form view for Entity input (create + edit)
+///
+/// **Pattern**: Single form for create and edit
+/// **Edit Mode**: Triggered by passing `entityToEdit` parameter
+/// **State Initialization**: In init() based on entityToEdit
+///
+/// **Usage**:
+/// ```swift
+/// // Create mode
+/// EntityFormView()
+///
+/// // Edit mode
+/// EntityFormView(entityToEdit: entityDetails)
+/// ```
+public struct EntityFormView: View {
+    // MARK: - Edit Mode
+
+    let entityToEdit: Entity?  // Replace Entity with your type
+    var isEditMode: Bool { entityToEdit != nil }
+    var formTitle: String { isEditMode ? "Edit Entity" : "New Entity" }
+
+    // MARK: - State
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var viewModel = EntityFormViewModel()  // Replace with your ViewModel
+
+    // Form fields (customize these)
+    @State private var title: String
+    @State private var detailedDescription: String
+    @State private var freeformNotes: String
+    @State private var startTime: Date
+    @State private var durationMinutes: Double
+
+    // Example: Repeating section items
+    // @State private var measurements: [MeasurementInput]
+
+    // Example: Multi-select
+    // @State private var selectedIds: Set<UUID>
+
+    // MARK: - Initialization
+
+    public init(entityToEdit: Entity? = nil) {
+        self.entityToEdit = entityToEdit
+
+        if let entity = entityToEdit {
+            // Edit mode - initialize from existing data
+            _title = State(initialValue: entity.title ?? "")
+            _detailedDescription = State(initialValue: entity.detailedDescription ?? "")
+            _freeformNotes = State(initialValue: entity.freeformNotes ?? "")
+            _startTime = State(initialValue: entity.startTime ?? Date())
+            _durationMinutes = State(initialValue: entity.durationMinutes ?? 0)
+
+            // Initialize repeating sections
+            // _measurements = State(initialValue: entity.measurements.map { ... })
+
+            // Initialize multi-select
+            // _selectedIds = State(initialValue: Set(entity.relatedIds))
+        } else {
+            // Create mode - defaults
+            _title = State(initialValue: "")
+            _detailedDescription = State(initialValue: "")
+            _freeformNotes = State(initialValue: "")
+            _startTime = State(initialValue: Date())
+            _durationMinutes = State(initialValue: 0)
+
+            // _measurements = State(initialValue: [])
+            // _selectedIds = State(initialValue: [])
+        }
+    }
+
+    // MARK: - Body
+
+    public var body: some View {
+        FormScaffold(
+            title: formTitle,
+            canSubmit: !title.isEmpty && !viewModel.isSaving,
+            onSubmit: handleSubmit,
+            onCancel: { dismiss() }
+        ) {
+            // SECTION 1: Documentable fields (title/description/notes)
+            // Use this for DomainAbstraction entities (Action, Value, TimePeriod)
+            // Skip for DomainBasic entities (Term, Goal)
+            DocumentableFields(
+                title: $title,
+                detailedDescription: $detailedDescription,
+                freeformNotes: $freeformNotes
+            )
+
+            // SECTION 2: Entity-specific fields
+            Section("Entity Details") {
+                // Add your custom fields here
+                // TextField, Picker, DatePicker, etc.
+            }
+
+            // SECTION 3: Timing fields (optional)
+            // Use if entity has startTime + duration
+            TimingSection(
+                startTime: $startTime,
+                durationMinutes: $durationMinutes
+            )
+
+            // SECTION 4: Repeating items (optional)
+            // Use for measurements, targets, etc.
+            // RepeatingSection(
+            //     title: "Measurements",
+            //     items: measurements,
+            //     addButtonLabel: "Add Measurement",
+            //     footer: "Track metrics for this entity",
+            //     onAdd: addMeasurement
+            // ) { measurement in
+            //     MeasurementInputRow(
+            //         measureId: bindingForMeasurement(measurement.id).measureId,
+            //         value: bindingForMeasurement(measurement.id).value,
+            //         availableMeasures: viewModel.availableMeasures,
+            //         onRemove: { removeMeasurement(id: measurement.id) }
+            //     )
+            // }
+
+            // SECTION 5: Multi-select (optional)
+            // Use for relationships (goal contributions, value alignments, etc.)
+            // MultiSelectSection(
+            //     items: viewModel.availableItems,
+            //     title: "Related Items",
+            //     itemLabel: { $0.title },
+            //     selectedIds: $selectedIds
+            // )
+
+            // SECTION 6: Error display
+            if let error = viewModel.errorMessage {
+                Section {
+                    Text(error)
+                        .foregroundStyle(.red)
+                }
+            }
+        }
+        .task {
+            // Load options for pickers/multi-selects
+            await viewModel.loadOptions()
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// Builds FormData from current @State variables.
+    ///
+    /// PATTERN: buildFormData() helper reduces duplication
+    /// This keeps ViewModel calls clean and consistent
+    private func buildFormData() -> EntityFormData {
+        return EntityFormData(
+            title: title,
+            detailedDescription: detailedDescription.isEmpty ? nil : detailedDescription,
+            freeformNotes: freeformNotes.isEmpty ? nil : freeformNotes,
+            startTime: startTime,
+            durationMinutes: durationMinutes
+            // Add your other fields here
+        )
+    }
+
+    private func handleSubmit() {
+        Task {
+            do {
+                let formData = buildFormData()
+
+                if let entity = entityToEdit {
+                    // Update existing entity
+                    _ = try await viewModel.update(entity: entity, from: formData)
+                } else {
+                    // Create new entity
+                    _ = try await viewModel.save(from: formData)
+                }
+
+                dismiss()
+            } catch {
+                // Error handled by viewModel.errorMessage
+            }
+        }
+    }
+
+    // MARK: - Item Management Helpers (if using repeating sections)
+
+    // Example: Add measurement
+    // private func addMeasurement() {
+    //     measurements.append(MeasurementInput(id: UUID(), measureId: nil, value: 0))
+    // }
+
+    // Example: Remove measurement
+    // private func removeMeasurement(id: UUID) {
+    //     measurements.removeAll { $0.id == id }
+    // }
+
+    // Example: Create bindings for repeating items
+    // private func bindingForMeasurement(_ id: UUID) -> (measureId: Binding<UUID?>, value: Binding<Double>) {
+    //     guard let index = measurements.firstIndex(where: { $0.id == id }) else {
+    //         return (measureId: .constant(nil), value: .constant(0))
+    //     }
+    //     return (
+    //         measureId: Binding(
+    //             get: { measurements[index].measureId },
+    //             set: { measurements[index].measureId = $0 }
+    //         ),
+    //         value: Binding(
+    //             get: { measurements[index].value },
+    //             set: { measurements[index].value = $0 }
+    //         )
+    //     )
+    // }
+}
+
+// MARK: - Preview
+
+#Preview("New Entity") {
+    NavigationStack {
+        EntityFormView()
+    }
+}
+
+// #Preview("Edit Entity") {
+//     NavigationStack {
+//         EntityFormView(
+//             entityToEdit: Entity(/* sample data */)
+//         )
+//     }
+// }

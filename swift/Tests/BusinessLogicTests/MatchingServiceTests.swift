@@ -1,408 +1,410 @@
-// MatchingServiceTests.swift
-// Tests for MatchingService business logic
 //
-// Written by Claude Code on 2025-10-22
+// MatchingServiceTests.swift
+// Written by Claude Code on 2025-11-03
+//
+// PURPOSE: Unit tests for MatchingService (3NF schema version)
+// PATTERN: Swift Testing (@Test), pure function testing (no database needed)
+//
 
-import Testing
 import Foundation
+import Testing
+@testable import Services
 @testable import Models
-@testable import BusinessLogic
 
 @Suite("MatchingService Tests")
 struct MatchingServiceTests {
 
     // MARK: - Period Matching Tests
 
-    @Test("Period match: action within goal timeframe")
-    func periodMatchWithinTimeframe() {
+    @Test("Period matching - action within goal timeframe")
+    func testPeriodMatchWithinRange() {
         let action = Action(
-            title: "Run 5km",
-            logTime: Date(timeIntervalSince1970: 1_000_000) // Oct 1970
+            title: "Morning run",
+            logTime: Date()  // Today
         )
 
         let goal = Goal(
-            title: "Marathon training",
-            startDate: Date(timeIntervalSince1970: 500_000),  // Before action
-            targetDate: Date(timeIntervalSince1970: 1_500_000) // After action
+            expectationId: UUID(),
+            startDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),  // 7 days ago
+            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())   // 7 days from now
         )
 
-        let matches = MatchingService.matchesOnPeriod(action: action, goal: goal)
-        #expect(matches == true)
+        let match = MatchingService.matchesOnPeriod(action: action, goal: goal)
+
+        #expect(match == true)
     }
 
-    @Test("Period match: action before goal timeframe")
-    func periodMatchBeforeTimeframe() {
+    @Test("Period matching - action outside goal timeframe")
+    func testPeriodMatchOutsideRange() {
         let action = Action(
-            title: "Run 5km",
-            logTime: Date(timeIntervalSince1970: 100_000) // Early
+            title: "Old run",
+            logTime: Calendar.current.date(byAdding: .day, value: -30, to: Date())!  // 30 days ago
         )
 
         let goal = Goal(
-            title: "Marathon training",
-            startDate: Date(timeIntervalSince1970: 1_000_000),  // After action
-            targetDate: Date(timeIntervalSince1970: 2_000_000)
+            expectationId: UUID(),
+            startDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),  // 7 days ago
+            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())   // 7 days from now
         )
 
-        let matches = MatchingService.matchesOnPeriod(action: action, goal: goal)
-        #expect(matches == false)
+        let match = MatchingService.matchesOnPeriod(action: action, goal: goal)
+
+        #expect(match == false)
     }
 
-    @Test("Period match: action after goal timeframe")
-    func periodMatchAfterTimeframe() {
+    @Test("Period matching - goal with no dates always matches")
+    func testPeriodMatchNoDateConstraints() {
         let action = Action(
-            title: "Run 5km",
-            logTime: Date(timeIntervalSince1970: 3_000_000) // Late
-        )
-
-        let goal = Goal(
-            title: "Marathon training",
-            startDate: Date(timeIntervalSince1970: 1_000_000),
-            targetDate: Date(timeIntervalSince1970: 2_000_000) // Before action
-        )
-
-        let matches = MatchingService.matchesOnPeriod(action: action, goal: goal)
-        #expect(matches == false)
-    }
-
-    @Test("Period match: goal with no dates accepts all actions")
-    func periodMatchNoDates() {
-        let action = Action(
-            title: "Run 5km",
+            title: "Any action",
             logTime: Date()
         )
 
         let goal = Goal(
-            title: "Get healthier"
-            // No dates
+            expectationId: UUID(),
+            startDate: nil,  // No date constraints
+            targetDate: nil
         )
 
-        let matches = MatchingService.matchesOnPeriod(action: action, goal: goal)
-        #expect(matches == true)
+        let match = MatchingService.matchesOnPeriod(action: action, goal: goal)
+
+        #expect(match == true)
     }
 
-    @Test("Period match: action exactly on start date")
-    func periodMatchOnStartDate() {
-        let date = Date(timeIntervalSince1970: 1_000_000)
+    // MARK: - Metric Matching Tests
+
+    @Test("Metric matching - perfect overlap (1 metric)")
+    func testMetricMatchPerfectOverlap() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+
+        let actionMeasures = [(kmMeasure, 5.0)]
+        let goalTargets = [(kmMeasure, 120.0)]
+
+        let result = MatchingService.matchesOnMetrics(
+            actionMeasures: actionMeasures,
+            goalTargets: goalTargets
+        )
+
+        #expect(result.hasOverlap == true)
+        #expect(result.contribution == 5.0)
+        #expect(result.confidence == 1.0)
+        #expect(result.sharedMetrics.count == 1)
+        #expect(result.sharedMetrics.first?.id == kmMeasure.id)
+    }
+
+    @Test("Metric matching - partial overlap (2 of 2 goal metrics)")
+    func testMetricMatchPartialOverlap() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let sessionsMeasure = Measure(id: UUID(), unit: "sessions", metricType: "count")
+        let minutesMeasure = Measure(id: UUID(), unit: "minutes", metricType: "time")
+
+        // Action has km + minutes
+        let actionMeasures = [(kmMeasure, 5.0), (minutesMeasure, 30.0)]
+
+        // Goal targets km + sessions (only km overlaps)
+        let goalTargets = [(kmMeasure, 120.0), (sessionsMeasure, 20.0)]
+
+        let result = MatchingService.matchesOnMetrics(
+            actionMeasures: actionMeasures,
+            goalTargets: goalTargets
+        )
+
+        #expect(result.hasOverlap == true)
+        #expect(result.contribution == 5.0)  // Only km contributes
+        #expect(result.sharedMetrics.count == 1)
+        #expect(result.confidence == 0.5)  // 1 of 2 goal metrics matched
+    }
+
+    @Test("Metric matching - no overlap")
+    func testMetricMatchNoOverlap() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let pagesMeasure = Measure(id: UUID(), unit: "pages", metricType: "count")
+
+        let actionMeasures = [(pagesMeasure, 25.0)]
+        let goalTargets = [(kmMeasure, 120.0)]
+
+        let result = MatchingService.matchesOnMetrics(
+            actionMeasures: actionMeasures,
+            goalTargets: goalTargets
+        )
+
+        #expect(result.hasOverlap == false)
+        #expect(result.contribution == nil)
+        #expect(result.confidence == 0.0)
+        #expect(result.sharedMetrics.isEmpty)
+    }
+
+    @Test("Metric matching - empty action measurements")
+    func testMetricMatchEmptyActionMeasurements() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+
+        let actionMeasures: [(Measure, Double)] = []
+        let goalTargets = [(kmMeasure, 120.0)]
+
+        let result = MatchingService.matchesOnMetrics(
+            actionMeasures: actionMeasures,
+            goalTargets: goalTargets
+        )
+
+        #expect(result.hasOverlap == false)
+        #expect(result.contribution == nil)
+    }
+
+    @Test("Metric matching - multiple shared metrics sum contribution")
+    func testMetricMatchMultipleSharedMetrics() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let sessionsMeasure = Measure(id: UUID(), unit: "sessions", metricType: "count")
+
+        // Action has both km and sessions
+        let actionMeasures = [(kmMeasure, 5.0), (sessionsMeasure, 1.0)]
+
+        // Goal targets both
+        let goalTargets = [(kmMeasure, 120.0), (sessionsMeasure, 20.0)]
+
+        let result = MatchingService.matchesOnMetrics(
+            actionMeasures: actionMeasures,
+            goalTargets: goalTargets
+        )
+
+        #expect(result.hasOverlap == true)
+        #expect(result.contribution == 6.0)  // 5.0 + 1.0
+        #expect(result.sharedMetrics.count == 2)
+        #expect(result.confidence == 1.0)  // 2 of 2 matched
+    }
+
+    // MARK: - Keyword Matching Tests
+
+    @Test("Keyword matching - title contains keyword")
+    func testKeywordMatchContainsInTitle() {
+        let action = Action(title: "Morning run in the park")
+        let keywords = ["run", "jog", "sprint"]
+
+        let match = MatchingService.matchesOnKeywords(action: action, keywords: keywords)
+
+        #expect(match == true)
+    }
+
+    @Test("Keyword matching - description contains keyword")
+    func testKeywordMatchContainsInDescription() {
+        let action = Action(
+            title: "Exercise",
+            detailedDescription: "Went for a nice jog around the lake"
+        )
+        let keywords = ["run", "jog", "sprint"]
+
+        let match = MatchingService.matchesOnKeywords(action: action, keywords: keywords)
+
+        #expect(match == true)
+    }
+
+    @Test("Keyword matching - no match")
+    func testKeywordMatchNoMatch() {
+        let action = Action(title: "Yoga class")
+        let keywords = ["run", "jog", "sprint"]
+
+        let match = MatchingService.matchesOnKeywords(action: action, keywords: keywords)
+
+        #expect(match == false)
+    }
+
+    @Test("Keyword matching - empty keywords always matches")
+    func testKeywordMatchEmptyKeywords() {
+        let action = Action(title: "Any action")
+        let keywords: [String] = []
+
+        let match = MatchingService.matchesOnKeywords(action: action, keywords: keywords)
+
+        #expect(match == true)  // Empty keywords means no filtering
+    }
+
+    @Test("Keyword matching - case insensitive")
+    func testKeywordMatchCaseInsensitive() {
+        let action = Action(title: "Morning RUN")
+        let keywords = ["run"]
+
+        let match = MatchingService.matchesOnKeywords(action: action, keywords: keywords)
+
+        #expect(match == true)
+    }
+
+    @Test("Keyword matching - empty action text")
+    func testKeywordMatchEmptyActionText() {
+        let action = Action(title: nil, detailedDescription: nil)
+        let keywords = ["run"]
+
+        let match = MatchingService.matchesOnKeywords(action: action, keywords: keywords)
+
+        #expect(match == false)
+    }
+
+    // MARK: - Combined Matching Tests
+
+    @Test("Combined matching - full match (period + metrics + keywords)")
+    func testCombinedMatchSuccess() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
 
         let action = Action(
-            title: "Run 5km",
-            logTime: date
+            title: "Morning run",
+            logTime: Date()
         )
 
         let goal = Goal(
-            title: "Marathon training",
-            startDate: date,
-            targetDate: Date(timeIntervalSince1970: 2_000_000)
+            expectationId: UUID(),
+            startDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),
+            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())
         )
 
-        let matches = MatchingService.matchesOnPeriod(action: action, goal: goal)
-        #expect(matches == true)
+        let result = MatchingService.matches(
+            action: action,
+            actionMeasures: [(kmMeasure, 5.0)],
+            goal: goal,
+            goalTargets: [(kmMeasure, 120.0)],
+            keywords: ["run", "jog"]
+        )
+
+        #expect(result.isMatch == true)
+        #expect(result.periodMatch == true)
+        #expect(result.metricMatch.hasOverlap == true)
+        #expect(result.keywordMatch == true)
+        #expect(result.overallConfidence > 0.8)  // High confidence
     }
 
-    @Test("Period match: action exactly on target date")
-    func periodMatchOnTargetDate() {
-        let date = Date(timeIntervalSince1970: 2_000_000)
+    @Test("Combined matching - fails on period mismatch")
+    func testCombinedMatchFailsPeriod() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
 
         let action = Action(
-            title: "Run 5km",
-            logTime: date
+            title: "Old run",
+            logTime: Calendar.current.date(byAdding: .day, value: -30, to: Date())!
         )
 
         let goal = Goal(
-            title: "Marathon training",
-            startDate: Date(timeIntervalSince1970: 1_000_000),
-            targetDate: date
+            expectationId: UUID(),
+            startDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),
+            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())
         )
 
-        let matches = MatchingService.matchesOnPeriod(action: action, goal: goal)
-        #expect(matches == true)
+        let result = MatchingService.matches(
+            action: action,
+            actionMeasures: [(kmMeasure, 5.0)],
+            goal: goal,
+            goalTargets: [(kmMeasure, 120.0)],
+            keywords: ["run"]
+        )
+
+        #expect(result.isMatch == false)  // Period mismatch fails entire match
+        #expect(result.periodMatch == false)
+        #expect(result.overallConfidence == 0.0)
     }
 
-    // MARK: - Unit Matching Tests
+    @Test("Combined matching - fails on metric mismatch")
+    func testCombinedMatchFailsMetrics() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let pagesMeasure = Measure(id: UUID(), unit: "pages", metricType: "count")
 
-    @Test("Unit match: exact unit match")
-    func unitMatchExact() {
         let action = Action(
-            title: "Run 5km",
-            measuresByUnit: ["km": 5.0]
+            title: "Reading",
+            logTime: Date()
         )
 
         let goal = Goal(
-            title: "Run 100km",
-            measurementUnit: "km",
-            measurementTarget: 100.0
+            expectationId: UUID(),
+            startDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),
+            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())
         )
 
-        let (matched, key, value) = MatchingService.matchesOnUnit(action: action, goal: goal)
-        #expect(matched == true)
-        #expect(key == "km")
-        #expect(value == 5.0)
+        let result = MatchingService.matches(
+            action: action,
+            actionMeasures: [(pagesMeasure, 25.0)],
+            goal: goal,
+            goalTargets: [(kmMeasure, 120.0)],
+            keywords: nil
+        )
+
+        #expect(result.isMatch == false)  // Metric mismatch fails entire match
+        #expect(result.metricMatch.hasOverlap == false)
+        #expect(result.overallConfidence == 0.0)
     }
 
-    @Test("Unit match: partial unit match")
-    func unitMatchPartial() {
+    @Test("Combined matching - keywords are optional (nil is ok)")
+    func testCombinedMatchNoKeywords() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+
         let action = Action(
-            title: "Run 5km",
-            measuresByUnit: ["distance_km": 5.0]
+            title: "Exercise",
+            logTime: Date()
         )
 
         let goal = Goal(
-            title: "Run 100km",
-            measurementUnit: "km",
-            measurementTarget: 100.0
+            expectationId: UUID(),
+            startDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),
+            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())
         )
 
-        let (matched, key, value) = MatchingService.matchesOnUnit(action: action, goal: goal)
-        #expect(matched == true)
-        #expect(key == "distance_km")
-        #expect(value == 5.0)
+        let result = MatchingService.matches(
+            action: action,
+            actionMeasures: [(kmMeasure, 5.0)],
+            goal: goal,
+            goalTargets: [(kmMeasure, 120.0)],
+            keywords: nil  // No keywords provided
+        )
+
+        #expect(result.isMatch == true)
+        #expect(result.keywordMatch == nil)  // Not checked
+        #expect(result.overallConfidence > 0.5)  // Lower without keyword boost
     }
 
-    @Test("Unit match: no match different units")
-    func unitMatchNoMatch() {
+    @Test("Combined matching - keyword mismatch reduces confidence but doesn't fail match")
+    func testCombinedMatchKeywordMismatchReducesConfidence() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+
         let action = Action(
-            title: "Bike 20km",
-            measuresByUnit: ["km": 20.0]
+            title: "Yoga class",  // Doesn't contain "run"
+            logTime: Date()
         )
 
         let goal = Goal(
-            title: "Write 50 pages",
-            measurementUnit: "pages",
-            measurementTarget: 50.0
+            expectationId: UUID(),
+            startDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),
+            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())
         )
 
-        let (matched, key, value) = MatchingService.matchesOnUnit(action: action, goal: goal)
-        #expect(matched == false)
-        #expect(key == nil)
-        #expect(value == nil)
+        let result = MatchingService.matches(
+            action: action,
+            actionMeasures: [(kmMeasure, 5.0)],
+            goal: goal,
+            goalTargets: [(kmMeasure, 120.0)],
+            keywords: ["run", "jog"]  // Action doesn't match these
+        )
+
+        #expect(result.isMatch == true)  // Still matches (period + metrics ok)
+        #expect(result.keywordMatch == false)
+        #expect(result.overallConfidence < 0.7)  // Lower confidence without keyword match
     }
 
-    @Test("Unit match: action has no measurements")
-    func unitMatchNoMeasurements() {
+    @Test("Combined matching - contribution amount is accessible")
+    func testCombinedMatchContributionAmount() {
+        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+
         let action = Action(
-            title: "Think about running"
-            // No measurements
+            title: "Run",
+            logTime: Date()
         )
 
         let goal = Goal(
-            title: "Run 100km",
-            measurementUnit: "km",
-            measurementTarget: 100.0
+            expectationId: UUID(),
+            startDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),
+            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())
         )
 
-        let (matched, key, value) = MatchingService.matchesOnUnit(action: action, goal: goal)
-        #expect(matched == false)
-        #expect(key == nil)
-        #expect(value == nil)
-    }
-
-    @Test("Unit match: goal has no unit")
-    func unitMatchNoGoalUnit() {
-        let action = Action(
-            title: "Run 5km",
-            measuresByUnit: ["km": 5.0]
+        let result = MatchingService.matches(
+            action: action,
+            actionMeasures: [(kmMeasure, 8.5)],
+            goal: goal,
+            goalTargets: [(kmMeasure, 120.0)],
+            keywords: nil
         )
 
-        let goal = Goal(
-            title: "Get healthier"
-            // No measurement unit
-        )
-
-        let (matched, key, value) = MatchingService.matchesOnUnit(action: action, goal: goal)
-        #expect(matched == false)
-        #expect(key == nil)
-        #expect(value == nil)
-    }
-
-    // MARK: - Actionability Matching Tests
-
-    @Test("Actionability match: both unit and keyword match")
-    func actionabilityMatchBothMatch() {
-        let action = Action(
-            title: "Yoga class",
-            measuresByUnit: ["minutes": 30.0]
-        )
-
-        let goal = Goal(
-            title: "Practice yoga regularly",
-            measurementUnit: "minutes",
-            measurementTarget: 300.0,
-            howGoalIsActionable: #"{"units": ["minutes"], "keywords": ["yoga", "pilates"]}"#
-        )
-
-        let (matched, contribution) = MatchingService.matchesWithActionability(action: action, goal: goal)
-        #expect(matched == true)
-        #expect(contribution == 30.0)
-    }
-
-    @Test("Actionability match: unit matches but keyword doesn't")
-    func actionabilityMatchUnitOnlyNoKeyword() {
-        let action = Action(
-            title: "Writing session",
-            measuresByUnit: ["minutes": 30.0]
-        )
-
-        let goal = Goal(
-            title: "Practice yoga regularly",
-            measurementUnit: "minutes",
-            measurementTarget: 300.0,
-            howGoalIsActionable: #"{"units": ["minutes"], "keywords": ["yoga", "pilates"]}"#
-        )
-
-        let (matched, contribution) = MatchingService.matchesWithActionability(action: action, goal: goal)
-        #expect(matched == false)
-        #expect(contribution == nil)
-    }
-
-    @Test("Actionability match: keyword matches but unit doesn't")
-    func actionabilityMatchKeywordOnlyNoUnit() {
-        let action = Action(
-            title: "Yoga reading",
-            measuresByUnit: ["pages": 10.0]
-        )
-
-        let goal = Goal(
-            title: "Practice yoga regularly",
-            measurementUnit: "minutes",
-            measurementTarget: 300.0,
-            howGoalIsActionable: #"{"units": ["minutes"], "keywords": ["yoga", "pilates"]}"#
-        )
-
-        let (matched, contribution) = MatchingService.matchesWithActionability(action: action, goal: goal)
-        #expect(matched == false)
-        #expect(contribution == nil)
-    }
-
-    @Test("Actionability match: no hints fallback to unit matching")
-    func actionabilityMatchNoHints() {
-        let action = Action(
-            title: "Run 5km",
-            measuresByUnit: ["km": 5.0]
-        )
-
-        let goal = Goal(
-            title: "Run 100km",
-            measurementUnit: "km",
-            measurementTarget: 100.0
-            // No howGoalIsActionable
-        )
-
-        let (matched, contribution) = MatchingService.matchesWithActionability(action: action, goal: goal)
-        #expect(matched == true)
-        #expect(contribution == 5.0)
-    }
-
-    @Test("Actionability match: empty hints fallback to unit matching")
-    func actionabilityMatchEmptyHints() {
-        let action = Action(
-            title: "Run 5km",
-            measuresByUnit: ["km": 5.0]
-        )
-
-        let goal = Goal(
-            title: "Run 100km",
-            measurementUnit: "km",
-            measurementTarget: 100.0,
-            howGoalIsActionable: #"{"units": [], "keywords": []}"#
-        )
-
-        let (matched, contribution) = MatchingService.matchesWithActionability(action: action, goal: goal)
-        #expect(matched == true)
-        #expect(contribution == 5.0)
-    }
-
-    @Test("Actionability match: malformed JSON fallback to unit matching")
-    func actionabilityMatchMalformedJSON() {
-        let action = Action(
-            title: "Run 5km",
-            measuresByUnit: ["km": 5.0]
-        )
-
-        let goal = Goal(
-            title: "Run 100km",
-            measurementUnit: "km",
-            measurementTarget: 100.0,
-            howGoalIsActionable: #"{"units": ["km", broken json"#
-        )
-
-        let (matched, contribution) = MatchingService.matchesWithActionability(action: action, goal: goal)
-        #expect(matched == true) // Falls back to unit matching
-        #expect(contribution == 5.0)
-    }
-
-    @Test("Actionability match: wildcard keywords stripped")
-    func actionabilityMatchWildcardKeywords() {
-        let action = Action(
-            title: "Running outside",
-            measuresByUnit: ["km": 5.0]
-        )
-
-        let goal = Goal(
-            title: "Run regularly",
-            measurementUnit: "km",
-            measurementTarget: 100.0,
-            howGoalIsActionable: #"{"units": ["km"], "keywords": ["run*", "jog*"]}"#
-        )
-
-        let (matched, contribution) = MatchingService.matchesWithActionability(action: action, goal: goal)
-        #expect(matched == true) // "running" contains "run"
-        #expect(contribution == 5.0)
-    }
-
-    @Test("Actionability match: case insensitive keyword matching")
-    func actionabilityMatchCaseInsensitive() {
-        let action = Action(
-            title: "YOGA CLASS",
-            measuresByUnit: ["minutes": 30.0]
-        )
-
-        let goal = Goal(
-            title: "Practice yoga",
-            measurementUnit: "minutes",
-            measurementTarget: 300.0,
-            howGoalIsActionable: #"{"units": ["minutes"], "keywords": ["yoga"]}"#
-        )
-
-        let (matched, contribution) = MatchingService.matchesWithActionability(action: action, goal: goal)
-        #expect(matched == true)
-        #expect(contribution == 30.0)
-    }
-
-    // MARK: - Confidence Calculation Tests
-
-    @Test("Confidence: period + actionability = 0.9")
-    func confidenceHighMatch() {
-        let confidence = MatchingService.calculateConfidence(
-            periodMatch: true,
-            actionabilityMatch: true
-        )
-        #expect(confidence == 0.9)
-    }
-
-    @Test("Confidence: no period match = 0.0")
-    func confidenceNoPeriod() {
-        let confidence = MatchingService.calculateConfidence(
-            periodMatch: false,
-            actionabilityMatch: true
-        )
-        #expect(confidence == 0.0)
-    }
-
-    @Test("Confidence: no actionability match = 0.0")
-    func confidenceNoActionability() {
-        let confidence = MatchingService.calculateConfidence(
-            periodMatch: true,
-            actionabilityMatch: false
-        )
-        #expect(confidence == 0.0)
-    }
-
-    @Test("Confidence: neither match = 0.0")
-    func confidenceNoMatch() {
-        let confidence = MatchingService.calculateConfidence(
-            periodMatch: false,
-            actionabilityMatch: false
-        )
-        #expect(confidence == 0.0)
+        #expect(result.isMatch == true)
+        #expect(result.metricMatch.contribution == 8.5)
     }
 }

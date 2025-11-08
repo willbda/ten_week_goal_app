@@ -2,785 +2,651 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Build & Development Commands
 
-Swift implementation of the Ten Week Goal App using Swift 6.2 strict concurrency and GRDB for type-safe database operations. This port leverages Swift's protocol system and modern concurrency features while maintaining data compatibility with the Python version.
-
-**Key Architectural Decision**: Uses GRDB's Codable integration for direct database-to-domain-model mapping, eliminating the need for a translation layer (Rhetorica).
-
-The Swift and Python implementations share the same SQLite database format, ensuring data compatibility between languages.
-
-## Essential Commands
-
-### Building and Running
+### Building and Testing
 ```bash
-# Build the project
+# Build the Swift package (from swift/ directory)
 swift build
 
-# Build without warnings
+# Build without warnings (common during development)
 swift build -Xswiftc -suppress-warnings
 
 # Run tests
 swift test
 
-# Run tests verbosely
-swift test --verbose
-
 # Run specific test
-swift test --filter ActionTests
+swift test --filter [TestName]
 
-# Clean build artifacts
-swift package clean
+# Build via Xcode (if using GoalTracker.xcodeproj)
+xcodebuild -scheme GoalTrackerApp -configuration Debug
 ```
 
-### Development Workflow
+### Database Operations
 ```bash
-# Update dependencies
-swift package update
+# Query the 3NF database directly (app sandbox location)
+sqlite3 '/Users/davidwilliams/Library/Containers/WilliamsBD.GoalTrackerApp/Data/Library/Application Support/GoalTracker/application_data.db'
 
-# Show resolved package dependencies
-swift package show-dependencies
-
-# Generate Xcode project (optional)
-swift package generate-xcodeproj
+# Example: View all terms with their goals
+sqlite3 '/Users/davidwilliams/Library/Containers/WilliamsBD.GoalTrackerApp/Data/Library/Application Support/GoalTracker/application_data.db' "SELECT * FROM goalTerms;"
 ```
 
-## Project Structure
+---
+
+## Architecture Overview
+
+### Three-Layer Model Ontology
+
+This app uses a **trait-based model architecture** with strict ontological layers:
+
+**Abstractions/** (`Sources/Models/Abstractions/`)
+- Protocol: `DomainAbstraction` (full metadata: title, description, notes, logTime)
+- Purpose: Abstract entities that define **what could exist**
+- Examples: `Expectation`, `Action`, `Measure`, `TimePeriod`, `PersonalValue`
+- Fields: `id`, `title`, `detailedDescription`, `freeformNotes`, `logTime` + type-specific fields
+
+**Basics/** (`Sources/Models/Basics/`)
+- Protocol: `DomainBasic` (lightweight: id + foreign keys)
+- Purpose: Concrete working entities that define **what does exist**
+- Examples: `Goal` (references Expectation), `Term` (references TimePeriod)
+- Fields: `id` + FK to abstraction + minimal type-specific fields
+
+**Composits/** (`Sources/Models/Composits/`)
+- Protocol: `DomainComposit` (minimal: id + 2+ foreign keys)
+- Purpose: Pure junction tables that define **how things relate**
+- Examples: `MeasuredAction`, `GoalRelevance`, `ActionGoalContribution`
+- Fields: `id` + FK references + relationship-specific data only
+- **NO business logic** - pure database artifacts
+
+### Why This Hierarchy?
+- Abstractions = ontological foundation (what could be)
+- Basics = concrete instances (what is)
+- Composits = relationships (how they connect)
+- Separation enables: proper relationship modeling, clean querying, type-safe APIs
+
+---
+
+## Module Structure & Dependencies
 
 ```
-swift/
-├── Sources/
-│   ├── App/                  # SwiftUI views and UI layer
-│   │   ├── DesignSystem.swift      # ✅ Central design tokens
-│   │   ├── ContentView.swift       # ✅ Root navigation (macOS)
-│   │   ├── Views/                  # Feature views
-│   │   │   ├── Actions/            # Actions list/forms
-│   │   │   ├── Goals/              # Goals list/forms
-│   │   │   ├── Values/             # Values list/forms
-│   │   │   └── Terms/              # Terms list/forms
-│   │   └── GoalDocument.swift      # Document-based architecture
-│   ├── Models/              # Domain entities (protocol-oriented)
-│   │   ├── Protocols.swift  # Core ontological protocols (public)
-│   │   └── Kinds/           # Entity implementations
-│   │       ├── Actions.swift      # ✅ GRDB integrated
-│   │       ├── Goals.swift        # ✅ GRDB integrated
-│   │       ├── Values.swift       # Needs GRDB integration
-│   │       └── Terms.swift        # Needs GRDB integration
-│   ├── Database/            # Infrastructure (Database operations)
-│   │   ├── DatabaseManager.swift      # ✅ Actor with generic CRUD
-│   │   ├── DatabaseConfiguration.swift # ✅ Path management
-│   │   └── DatabaseError.swift        # ✅ Typed errors
-│   └── BusinessLogic/       # Business logic (planned)
-├── iOS-docs/                # ✅ iOS implementation planning docs
-│   ├── iOS_IMPLEMENTATION_PLAN.md  # Complete iOS migration strategy
-│   ├── LIQUID_GLASS_DESIGN.md      # iOS design philosophy
-│   ├── LIQUID_GLASS_IMPLEMENTATION.md # Technical implementation guide
-│   └── example-code/               # Reference iOS implementations
-│       ├── ContentView_iOS.swift       # TabView navigation
-│       ├── GoalProgressActivity.swift  # Live Activities
-│       ├── LiquidGlassDesignSystem.swift # iOS design tokens
-│       └── LiquidGlassFormView.swift   # Adaptive forms
-├── Tests/
-│   ├── ActionTests.swift    # 5 tests passing
-│   └── GoalTests.swift      # 9 tests passing
-├── Package.swift            # SPM configuration
-├── SWIFTROADMAP.md          # Complete project roadmap
-├── DESIGN_SYSTEM.md         # ✅ UI design system guide
-└── CLAUDE.md                # This file
+swift/Sources/
+├── Models/              # Domain entities (SQLiteData @Table structs)
+│   ├── Abstractions/    # DomainAbstraction (Action, Expectation, etc.)
+│   ├── Basics/          # DomainBasic (Goal, Term, etc.)
+│   └── Composits/       # DomainComposit (MeasuredAction, GoalRelevance, etc.)
+├── Services/            # Data access, coordinators, platform services
+│   ├── Coordinators/    # Multi-model atomic transactions (Phase 1)
+│   ├── Import/          # Legacy data import system
+│   └── Validation/      # Three-layer validation (Phase 2 - TODO)
+├── Logic/               # Business rules (validators, LLM integration)
+└── App/                 # SwiftUI views, ViewModels, queries
+    ├── ViewModels/      # @Observable ViewModels (FormViewModels, ImportViewModels)
+    ├── Views/           # SwiftUI views organized by entity
+    │   ├── Queries/     # FetchKeyRequest helpers for performant JOINs
+    │   ├── FormViews/   # Entity creation/editing forms
+    │   ├── ListViews/   # Entity list views with @Fetch
+    │   ├── RowViews/    # List row display components
+    │   ├── Components/  # Reusable UI components (FormScaffold, BadgeView, etc.)
+    │   └── Templates/   # Shared UI patterns (DocumentableFields, ValidationFeedback)
+    └── ContentView.swift
 ```
 
-## Architecture: GRDB-Native Design
+**Dependency Rules**:
+- Models: SQLiteData only (no other modules)
+- Services: Models + SQLiteData
+- Logic: Models only (no database access)
+- App: All modules + SQLiteData
 
-### Core Principle
+---
 
-**Embrace GRDB's type system** instead of Python's dictionary-based approach:
+## Database: 3NF Normalized Architecture
 
-**Python**:
-```python
-Database → dict[str, Any] → StorageService → Domain Entity
-           ↑ Runtime types, not Sendable
-```
+**Current State**: Undergoing active rearchitecture from JSON-based to fully normalized 3NF schema.
 
-**Swift**:
+### Key Schema Principles
+- ✅ **No JSON fields** - All values atomic (old `measuresByUnit` eliminated)
+- ✅ **Single source of truth** - No redundant data
+- ✅ **Pure junction tables** - Minimal fields, just relationships
+- ✅ **Proper foreign keys** - Referential integrity enforced
+- ✅ **Indexed for performance** - Common queries optimized
+
+### Schema Files
+- `Sources/Database/Schemas/schema_current.sql` - Production schema
+- `Sources/Database/Schemas/README.md` - Schema layer explanation
+
+### Example: Multi-Metric Goals
+**Old schema (broken)**: `goal.measurementUnit = "km"`, `goal.measurementTarget = 120`
+**New schema (normalized)**:
+- Goal references Expectation (abstract)
+- ExpectationMeasure table: `(expectationId, measureId, targetValue)`
+- Enables: "Run 100km AND 20 sessions" (multi-metric goals)
+
+---
+
+## Coordinator Pattern (Phase 1 - In Progress)
+
+**Purpose**: Atomically create multi-model entity graphs in single transactions.
+
+### Pattern Structure
 ```swift
-Database → GRDB Row → Domain Entity (via Codable)
-           ↑ Compile-time types, Sendable
-```
+@MainActor
+public final class [Entity]Coordinator: ObservableObject {
+    private let database: any DatabaseWriter
 
-### No Rhetorica Layer Needed
+    // Create: Insert abstraction + concrete + relationships atomically
+    public func create(from formData: [Entity]FormData) async throws -> [Entity] {
+        return try await database.write { db in
+            // 1. Insert abstraction (if needed)
+            let abstraction = try [Abstraction].insert { ... }.returning { $0 }.fetchOne(db)!
 
-**Key Insight**: GRDB's `FetchableRecord` + `PersistableRecord` + `Codable` provides automatic serialization. Domain models communicate directly with the database.
+            // 2. Insert concrete entity with FK
+            let entity = try [Entity].insert { ... }.returning { $0 }.fetchOne(db)!
 
-```swift
-// Old approach (would need translation layer):
-let storage = ActionStorageService(database: db)
-let actions = try await storage.getAll()
+            // 3. Insert relationships
+            try [Relationship].insert { ... }.execute(db)
 
-// New approach (direct GRDB):
-let actions: [Action] = try await db.fetchAll()
-```
-
-## Core Ontology Protocols
-
-All protocols are now **public** for cross-module access.
-
-### Temporal Protocols
-
-**Persistable** - Things that exist in the database (ONGOING)
-```swift
-public protocol Persistable: Identifiable, Equatable {
-    var id: UUID { get set }
-    var friendlyName: String? { get set }
-    var detailedDescription: String? { get set }
-    var freeformNotes: String? { get set }
-    var logTime: Date { get set }  // Non-optional: all entities have creation time
-}
-```
-
-**Achievable** - Future-oriented targets (FUTURE)
-```swift
-public protocol Achievable {
-    var targetDate: Date? { get set }
-    var measurementUnit: String? { get set }
-    var measurementTarget: Double? { get set }
-    var startDate: Date? { get set }
-}
-```
-
-**Performed** - Past-oriented actions (PAST)
-```swift
-public protocol Performed {
-    var measurements: [String: Double]? { get set }
-    var durationMinutes: Double? { get set }
-    var startTime: Date? { get set }
-}
-```
-
-**Motivating** - Values and priorities (TIMELESS)
-```swift
-public protocol Motivating {
-    var priority: Int { get set }
-    var lifeDomain: String? { get set }
-}
-```
-
-### Infrastructure Protocols
-
-- **Validatable**: Structural self-validation (`isValid()`)
-- **TypeIdentifiable**: Polymorphic storage support (goalType, incentiveType)
-- **Serializable**, **JSONSerializable**: API support
-- **Archivable**: Soft-delete capability
-
-### What Doesn't Belong in Protocols
-
-❌ Calculations (progress, completion percentage) → Ethica layer
-❌ Matching logic (action-goal relationships) → Ethica layer
-❌ Business rules (is active? days remaining?) → Ethica layer
-❌ Relationships between entities → Separate relationship entities
-
-## Current Implementation Status
-
-### ✅ Phase 1-4: Foundation Complete (Oct 18, 2025)
-
-**Models Layer**:
-- ✅ 9 public protocols (Persistable, Achievable, Performed, Motivating, etc.)
-- ✅ Action with GRDB conformance (FetchableRecord, PersistableRecord, TableRecord)
-- ✅ Goal hierarchy (Goal, SmartGoal, Milestone) - domain models ready
-- ✅ Values hierarchy (Values, MajorValues, HighestOrderValues) - domain models ready
-- ✅ Terms (GoalTerm, LifeTime) - domain models ready
-
-**Politica Layer (Database)**:
-- ✅ DatabaseManager actor with generic CRUD operations
-- ✅ DatabaseConfiguration with Sendable conformance
-- ✅ DatabaseError with typed, Sendable errors
-- ✅ Schema initialization from `shared/schemas/` directory
-- ✅ Automatic archiving (preserves old versions before updates/deletes)
-- ✅ Swift 6.2 strict concurrency compliance
-- ✅ 380 lines vs Python's 527 lines (simpler!)
-
-**GRDB Integration**:
-- ✅ GRDB.swift 7.8.0 dependency added
-- ✅ Action conforms to FetchableRecord, PersistableRecord, TableRecord
-- ✅ CodingKeys for snake_case ↔ camelCase mapping
-- ✅ JSON serialization for `measurements` dictionary
-- ✅ TableRecord.databaseTableName = "actions"
-
-**Testing**:
-- ✅ 14/14 tests passing (5 Action + 9 Goal)
-- ✅ Zero build errors
-- ✅ Zero Swift 6 concurrency warnings
-- ✅ In-memory database support for fast testing
-
-**Cleanup**:
-- ✅ Deleted StorageService.swift (GRDB provides this)
-- ✅ Deleted ActionStorageService.swift (direct database access)
-- ✅ Deleted DatabaseValue.swift (GRDB handles Sendable types)
-
-### 🚧 Phase 5-8: Next Steps
-
-**Immediate**:
-1. Write database integration tests for Action CRUD
-2. Add GRDB conformance to Goal hierarchy (polymorphic storage)
-3. Add GRDB conformance to Values hierarchy
-4. Add GRDB conformance to Terms
-
-**Business Logic**:
-5. Port Ethica layer (progress calculations, matching algorithms)
-6. Write Ethica tests (30+ tests)
-
-**Target**: 90+ tests matching Python implementation
-
-## GRDB Patterns
-
-### Entity with GRDB Conformance
-
-```swift
-import Foundation
-import GRDB
-
-struct Action: Persistable, Performed, Codable, Sendable,
-               FetchableRecord, PersistableRecord, TableRecord {
-    var id: UUID
-    var friendlyName: String?
-    var measurements: [String: Double]?
-    var durationMinutes: Double?
-    var startTime: Date?
-    var logTime: Date
-
-    // TableRecord
-    static let databaseTableName = "actions"
-
-    // Codable keys for snake_case mapping
-    enum CodingKeys: String, CodingKey {
-        case id
-        case friendlyName = "friendly_name"
-        case measurements = "measurement_units_by_amount"
-        case durationMinutes = "duration_minutes"
-        case startTime = "start_time"
-        case logTime = "log_time"
+            return entity
+        }
     }
 
-    func isValid() -> Bool {
-        // Validation logic
+    // Update: Update all related entities, preserve IDs and logTime
+    public func update(...) async throws -> [Entity] { ... }
+
+    // Delete: Handle FK dependencies (delete children first)
+    public func delete(...) async throws { ... }
+}
+```
+
+### Key Decisions
+- **No validation in coordinators** - Trust caller (ViewModel)
+- **Database enforces constraints** - NOT NULL, foreign keys, CHECK constraints
+- **Full CRUD required** - create(), update(), delete() for parity with old app
+- **Force unwrap after insert is safe** - insert() either throws or returns value
+
+### Status
+- ✅ **PersonalValueCoordinator** - Create only (TODO: add update/delete)
+- ✅ **TimePeriodCoordinator** - Full CRUD (reference implementation)
+- ✅ **ActionCoordinator** - Full CRUD (3 models atomically)
+- ✅ **GoalCoordinator** - Full CRUD (most complex: 5+ models atomically)
+
+**Reference**: `TimePeriodCoordinator.swift` for full CRUD pattern
+
+---
+
+## ViewModel Pattern (Modern @Observable)
+
+**Use @Observable, NOT ObservableObject** (Swift 5.9+ pattern)
+
+```swift
+@Observable  // Not ObservableObject!
+@MainActor
+public final class [Entity]FormViewModel {
+    var isSaving: Bool = false      // No @Published needed
+    var errorMessage: String?
+
+    @ObservationIgnored
+    @Dependency(\.defaultDatabase) var database
+
+    // Computed property for coordinator (no lazy with @Observable)
+    private var coordinator: [Entity]Coordinator {
+        [Entity]Coordinator(database: database)
     }
-}
-```
 
-### DatabaseManager Usage
+    public init() {}
 
-```swift
-import Politica
-import Models
+    // Individual parameters (ergonomic for SwiftUI), assemble FormData internally
+    public func save(/* individual params */) async throws -> [Entity] {
+        isSaving = true
+        defer { isSaving = false }
 
-// Initialize (in-memory for tests, file-based for production)
-let db = try await DatabaseManager(configuration: .inMemory)
+        let formData = [Entity]FormData(/* assemble */)
 
-// Fetch all
-let actions: [Action] = try await db.fetchAll()
-
-// Fetch by ID
-if let action = try await db.fetchOne(Action.self, id: someUUID) {
-    print(action.friendlyName ?? "")
-}
-
-// Save (generates UUID if new)
-var action = Action(friendlyName: "Run")
-try await db.save(&action)
-print(action.id) // Now has UUID
-
-// Update (automatically archives old version)
-action.measurements = ["km": 10.0]
-try await db.save(&action) // Detects existing ID, updates
-
-// Delete (automatically archives before deletion)
-try await db.delete(Action.self, id: action.id)
-```
-
-### Custom SQL Queries
-
-```swift
-// Fetch with custom SQL
-let runs: [Action] = try await db.fetch(
-    Action.self,
-    sql: "SELECT * FROM actions WHERE friendly_name LIKE ?",
-    arguments: ["%run%"]
-)
-```
-
-### Polymorphic Storage (Goals)
-
-```swift
-// Custom Decodable init for polymorphism
-extension Goal {
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let goalType = try container.decode(String.self, forKey: .goalType)
-
-        switch goalType {
-        case "SmartGoal":
-            // Decode as SmartGoal (all SMART fields required)
-            self = try SmartGoal(from: decoder)
-        case "Milestone":
-            // Decode as Milestone (targetDate required, no startDate)
-            self = try Milestone(from: decoder)
-        default:
-            // Decode as base Goal (all fields optional)
-            // ... base Goal decoding
+        do {
+            let entity = try await coordinator.create(from: formData)
+            errorMessage = nil
+            return entity
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
         }
     }
 }
 ```
 
-## Database Compatibility
-
-### Shared Database Format
-
-**Location**: `../python/politica/data_storage/application_data.db`
-**Schemas**: `../shared/schemas/*.sql`
-
-### Field Mappings
-
-**Naming Convention**:
-- Swift: camelCase (`friendlyName`, `logTime`, `measurements`)
-- Database: snake_case (`friendly_name`, `log_time`, `measurement_units_by_amount`)
-- Mapping: CodingKeys enum
-
-**Data Types**:
-- UUID: TEXT in database (`.uuidString` for storage)
-- Date: TEXT in database (ISO8601 via `JSONEncoder.dateEncodingStrategy`)
-- JSON: TEXT in database (automatic Codable serialization)
-
-**Example**:
+**In Views**: Use `@State`, not `@StateObject`
 ```swift
-enum CodingKeys: String, CodingKey {
-    case id
-    case friendlyName = "friendly_name"
-    case logTime = "log_time"
-    case measurements = "measurement_units_by_amount" // JSON field
-}
+@State private var viewModel = PersonalValuesFormViewModel()
 ```
-
-### JSON Fields
-
-GRDB automatically serializes/deserializes JSON fields with Codable:
-
-```swift
-// In Swift
-var measurements: [String: Double]? = ["km": 5.0, "minutes": 30]
-
-// In database
-measurement_units_by_amount TEXT: '{"km":5.0,"minutes":30}'
-
-// Automatic bidirectional conversion!
-```
-
-## Testing Patterns
-
-### Unit Tests (Domain Models)
-
-```swift
-import XCTest
-@testable import Models
-
-final class ActionTests: XCTestCase {
-    func testMinimalActionCreation() {
-        let action = Action(friendlyName: "Morning run")
-
-        XCTAssertEqual(action.friendlyName, "Morning run")
-        XCTAssertNotNil(action.id) // UUID auto-generated
-        XCTAssertNotNil(action.logTime) // Defaults to Date()
-    }
-
-    func testMeasurementValidation() {
-        var action = Action(friendlyName: "Run")
-        action.measurements = ["km": -5.0]
-        XCTAssertFalse(action.isValid()) // Negative values invalid
-    }
-}
-```
-
-### Integration Tests (Database)
-
-```swift
-import XCTest
-@testable import Models
-@testable import Politica
-
-final class DatabaseIntegrationTests: XCTestCase {
-    var database: DatabaseManager!
-
-    override func setUp() async throws {
-        // In-memory database for fast, isolated tests
-        database = try await DatabaseManager(configuration: .inMemory)
-    }
-
-    func testActionRoundTrip() async throws {
-        // Create and save
-        var action = Action(friendlyName: "Test run")
-        action.measurements = ["km": 5.0]
-        try await database.save(&action)
-
-        let savedID = action.id
-
-        // Fetch back
-        let retrieved = try await database.fetchOne(Action.self, id: savedID)
-
-        XCTAssertNotNil(retrieved)
-        XCTAssertEqual(retrieved?.friendlyName, "Test run")
-        XCTAssertEqual(retrieved?.measurements?["km"], 5.0)
-    }
-
-    func testUpdateArchivesPreviousVersion() async throws {
-        // Save initial version
-        var action = Action(friendlyName: "Original")
-        try await database.save(&action)
-
-        // Update
-        action.friendlyName = "Updated"
-        try await database.save(&action)
-
-        // TODO: Verify old version in archive table
-    }
-}
-```
-
-**Current Status**: 14/14 tests passing (unit tests only, integration tests planned)
-
-## Code Style Conventions
-
-### File Headers
-```swift
-// FileName.swift
-// Brief description of purpose
-//
-// Written by Claude Code on YYYY-MM-DD
-// Refactored by Claude Code on YYYY-MM-DD for GRDB integration
-// Ported from Python implementation (path/to/python/file.py)
-```
-
-### Documentation
-- Use Swift's doc comments (`///`) for public APIs
-- Mark sections with `// MARK: -` for clarity
-- Include parameter descriptions and return values
-- Document protocol conformances
-
-### Naming
-- Classes/Structs: PascalCase (Action, Goal, SmartGoal)
-- Properties: camelCase (friendlyName, measurementTarget)
-- Functions: camelCase (isValid, fetchAll)
-- Protocols: Adjectives (Persistable, Achievable, Performed, Motivating)
-
-### Swift 6.2 Concurrency Patterns (CRITICAL)
-
-**All `@Observable` UI state MUST use `@MainActor` for thread safety.**
-
-**Correct Pattern** (UI-related singletons):
-```swift
-@MainActor
-@Observable
-class ZoomManager {
-    var zoomLevel: CGFloat = 1.0
-    func zoomIn() { /* mutations on main thread */ }
-}
-```
-
-**Access from synchronous contexts**:
-```swift
-// In computed properties that can't be async (e.g., design tokens):
-private static var zoom: CGFloat {
-    MainActor.assumeIsolated {
-        ZoomManager.shared.zoomLevel  // Safe: SwiftUI runs on main thread
-    }
-}
-```
-
-**What NOT To Do**:
-```swift
-// ❌ NEVER use @unchecked Sendable - disables ALL safety checks
-@Observable
-class BadManager: @unchecked Sendable {
-    var state: Int  // Data race! No protection!
-}
-
-// ❌ NEVER put @MainActor on methods only
-@Observable
-class PartiallyWrong {
-    @MainActor func update() { }  // Class should be @MainActor
-}
-```
-
-**When To Use Each**:
-- `@MainActor` on class: UI state, ViewModels, singletons (ZoomManager, AppViewModel)
-- `actor`: Background work, database operations (InferenceService, ImageCache)
-- `MainActor.assumeIsolated`: Synchronous access to main-actor state (design tokens)
-- `@unchecked Sendable`: **Almost never** - only for custom synchronization primitives
-
-**Audit Command** (find unsafe patterns):
-```bash
-grep -r "@unchecked Sendable" Sources/  # Should return ZERO results
-grep -r "@Observable" Sources/ | grep -v "@MainActor"  # Check coverage
-```
-
-See `DESIGN_SYSTEM.md` "Swift 6.2 Concurrency Patterns" section for full explanation.
-
-### Design System (CRITICAL)
-
-**All UI code MUST use the centralized design system (`DesignSystem.swift`).**
-
-See `DESIGN_SYSTEM.md` for complete guide. Quick reference:
-
-**Never hard-code spacing or colors:**
-```swift
-// ❌ DON'T
-.padding(16)
-.background(Color.red)
-
-// ✅ DO
-.padding(DesignSystem.Spacing.md)
-.background(DesignSystem.Colors.error)
-```
-
-**Common tokens:**
-```swift
-// Spacing
-DesignSystem.Spacing.xxs          // 4pt - Badges
-DesignSystem.Spacing.xs           // 8pt - Row spacing
-DesignSystem.Spacing.md           // 16pt - Section padding
-DesignSystem.Spacing.formPadding  // 20pt - Forms (macOS)
-
-// Colors
-DesignSystem.Colors.actions       // Red
-DesignSystem.Colors.goals         // Orange
-DesignSystem.Colors.values        // Blue
-DesignSystem.Colors.terms         // Purple
-DesignSystem.Colors.error         // Error states
-DesignSystem.Colors.success       // Success states
-
-// Materials
-DesignSystem.Materials.sidebar    // .ultraThinMaterial
-DesignSystem.Materials.modal      // .regularMaterial
-```
-
-**Form views pattern:**
-```swift
-NavigationStack {
-    Form { }
-        .formStyle(.grouped)
-        #if os(macOS)
-        .padding(DesignSystem.Spacing.formPadding)
-        .frame(minWidth: 500, minHeight: 400)
-        #endif
-        .toolbar { }
-}
-.presentationBackground(DesignSystem.Materials.modal)
-```
-
-**Row views pattern:**
-```swift
-VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-    Text("Title").font(.headline)
-    Text("Subtitle").foregroundStyle(.secondary)
-}
-.padding(.vertical, DesignSystem.Spacing.xxs)
-```
-
-## Platform Support
-
-**Current**:
-- macOS 26.0+ (primary development platform)
-- iOS 26.0+ (unified platform convergence)
-- Swift 6.2+ required
-
-**Platform Convergence**: iOS 26 and macOS 26 share unified APIs (`.sidebarAdaptable`, `.glassEffect()`, etc.), enabling single-codebase development with automatic platform adaptation. All domain models, business logic, and database code are 100% platform-agnostic.
-
-## Dependencies
-
-```swift
-// Package.swift
-dependencies: [
-    .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.8.0")
-]
-```
-
-**Why GRDB over raw SQLite**:
-- ✅ Built for Swift 6 concurrency
-- ✅ Codable integration (automatic serialization)
-- ✅ Connection pooling (better performance)
-- ✅ Type-safe queries
-- ✅ Migration support
-
-## References
-
-### Python Implementation
-See `../python/` for the authoritative Python implementation with:
-- 90 passing tests
-- Complete CLI (25 commands)
-- Flask API (27 endpoints)
-- Full layer implementation
-
-### Documentation
-- **docs/ROADMAP.md**: Current status and project phases
-- **docs/ARCHITECTURE.md**: System design and patterns
-- **docs/IOS26_CONFORMANCE.md**: iOS 26 / macOS 26 conformance strategy
-- **docs/DESIGN_SYSTEM.md**: UI design reference
-- **docs/SWIFT_6_2.md**: Swift language features
-- **../CLAUDE.md**: Project-level documentation
-- **../shared/schemas/**: Database schemas
-
-### External Resources
-- [GRDB Documentation](https://github.com/groue/GRDB.swift)
-- [Swift 6.2 Concurrency](https://docs.swift.org/swift-book/LanguageGuide/Concurrency.html)
-- [Codable](https://developer.apple.com/documentation/swift/codable)
-
-## Development Notes
-
-### Recent Changes (2025-10-24)
-
-**iOS 26 / macOS 26 Conformance Plan**:
-- ✅ Created comprehensive conformance plan based on official Apple documentation
-- ✅ Deleted 10 outdated planning docs (iOS 18+ targets, pre-Apple Liquid Glass)
-- ✅ Documented 4-phase migration strategy (~8-12 hours)
-- ✅ Aligned all documentation with iOS 26+ / macOS 26+ platform targets
-- ✅ Established authoritative documentation structure
-
-**Key Insight**: Apple's official "Liquid Glass" (June 2025) differs from our October 2024 design system. Apple's guidelines specify Liquid Glass should ONLY be used for navigation/controls, NOT content layers. Conformance plan provides migration path to native APIs.
-
-### Previous Changes (2025-10-23)
-
-**Design System & UI Architecture Complete**:
-- ✅ Centralized design system (`DesignSystem.swift`) with semantic tokens
-- ✅ Spacing tokens (xxs→xxl) replace all hard-coded padding values
-- ✅ Semantic color system (actions/goals/values/terms + error/success/info)
-- ✅ Material constants for consistent Liquid Glass usage
-- ✅ ViewModifiers for reusable styling patterns
-- ✅ All row views updated (GoalRowView, ActionRowView, ValueRowView, TermRowView)
-- ✅ All form views updated with proper padding (ActionFormView, GoalFormView)
-- ✅ Document-based architecture (GoalDocument.swift) for file-based workflows
-- ✅ Infinite sidebar smoothness with continuous icon scaling
-- ✅ Comprehensive design documentation (DESIGN_SYSTEM.md)
-
-**Key UI Patterns**:
-> SwiftUI uses ViewModifiers (not inheritance) for reusable styling. The design system provides semantic tokens that make the entire app's spacing/colors changeable from one file. This follows Apple HIG principles: semantic over literal, consistent over custom, maintainable over perfect.
-
-**Code Metrics**:
-- DesignSystem.swift: 200+ lines of reusable design infrastructure
-- 6 view files updated with design tokens
-- Net change: ~400 lines (design system + documentation)
-
-**Files Created**:
-- `DesignSystem.swift` - Central design tokens and modifiers
-- `GoalDocument.swift` - Document-based architecture
-- `DESIGN_SYSTEM.md` - Complete usage guide
-
-### Previous Changes (2025-10-18)
-
-**GRDB Architecture Refactoring Complete**:
-- ✅ Eliminated StorageService translation layer (GRDB provides this)
-- ✅ DatabaseManager uses generic `fetchAll<T>()`, `save<T>()` methods
-- ✅ Action conforms to FetchableRecord, PersistableRecord, TableRecord
-- ✅ All protocols made public for cross-module access
-- ✅ CodingKeys for snake_case ↔ camelCase mapping
-- ✅ Zero Swift 6 concurrency warnings
-- ✅ 14/14 tests passing
-
-**Key Architectural Insight**:
-> GRDB's Codable integration eliminates the need for a translation layer. Domain models communicate directly with the database through protocol conformance. This makes the Swift version simpler than the Python version while being safer (compile-time types) and more concurrent (actor-based).
-
-**Code Metrics**:
-- DatabaseManager: 380 lines vs Python's 527 lines
-- Net change: +782 lines (mostly documentation)
-- Files deleted: 3 (StorageService, ActionStorageService, DatabaseValue)
-
-### Current Focus
-
-**Foundation Complete**:
-- Protocol-oriented domain design ✅
-- GRDB database integration ✅
-- Swift 6.2 strict concurrency ✅
-- Automatic archiving ✅
-
-**Next Phase**:
-1. Database integration tests
-2. Polymorphic Goal storage
-3. Values and Terms GRDB integration
-4. Business logic layer (Ethica)
-
-### Key Principles
-
-- **Protocol-oriented ontology**: Define "ways of being" not "things to do"
-- **Embrace GRDB**: Use native types instead of fighting the framework
-- **Actor isolation**: Thread safety without manual locking
-- **Codable everywhere**: Automatic serialization is powerful
-- **Database compatibility**: Swift/Python can share the same database
-- **Type safety**: Compile-time checking prevents runtime errors
-
-### Timeline Estimate
-
-See `SWIFTROADMAP.md` for detailed breakdown:
-- **MVP**: 18-26 hours total (4 hours complete, 14-22 remaining)
-- **stable**: 24-34 hours
-
-## iOS 26 / macOS 26 Conformance (In Progress)
-
-**Status**: Conformance plan complete, awaiting implementation (Phase 1-4, ~8-12 hours)
-
-### Conformance Strategy
-
-See **`docs/IOS26_CONFORMANCE.md`** for the complete 4-phase migration strategy based on official Apple guidelines.
-
-### Key Changes
-
-1. **Liquid Glass Usage** - Aligning with Apple's official guidelines
-   - ✅ Use Liquid Glass ONLY for navigation/controls (tab bars, sidebars, buttons)
-   - ✅ Use standard materials for content layer (cards, list rows, forms)
-   - ✅ Migrate to native `.glassEffect()` API
-
-2. **Platform Convergence** - Leveraging iOS 26 / macOS 26 unified APIs
-   - ✅ `.tabViewStyle(.sidebarAdaptable)` for automatic platform adaptation
-   - ✅ Remove `#if os()` guards where APIs are unified
-   - ✅ Single codebase for both platforms
-
-3. **Deployment Targets** - Simplified platform support
-   - ✅ iOS 26.0+ / macOS 26.0+ (no backward compatibility)
-   - ✅ Remove all `@available` guards for older platforms
-   - ✅ Embrace latest design language features
-
-### Implementation Phases
-
-**Phase 1: Foundation** (1-2 hours)
-- Update Package.swift to iOS 26.0+ / macOS 26.0+
-- Remove backward compatibility guards
-- Update documentation
-
-**Phase 2: Design System** (2-3 hours)
-- Create `LiquidGlassSystem.swift` (navigation/controls only)
-- Create `ContentMaterials.swift` (standard materials for content)
-- Refactor DesignSystem.swift
-
-**Phase 3: View Updates** (3-4 hours)
-- Update row views to use `.contentMaterial()`
-- Update navigation to use `.navigationGlass()`
-- Migrate to `.sidebarAdaptable` for tabs
-
-**Phase 4: Cleanup** (1 hour)
-- Remove deprecated code
-- Update all documentation
-- Final testing
-
-### Example Code
-
-**Live Activities** (iOS 16.1+):
-- Example implementations available in project history (see git log for GoalProgressActivity.swift)
-
-### Platform-Agnostic Code
-
-~80% of the codebase works on both iOS 26 and macOS 26 without modification:
-- ✅ All domain models (Action, Goal, Value, Term, Relationships)
-- ✅ All business logic (MatchingService, InferenceService)
-- ✅ Database layer (DatabaseManager, GRDB integration)
-- ✅ Core ViewModels (ActionsViewModel, GoalsViewModel, etc.)
-- ✅ Design system tokens
 
 ---
 
-Last Updated: October 24, 2025
+## Query Strategy: Hybrid Query Builder + #sql
+
+**Default**: Use SQLiteData Query Builder for type safety during active development
+```swift
+// Type-safe, compile-time errors, great for JOINs
+let results = try GoalTerm.all
+    .order { $0.termNumber.desc() }
+    .join(TimePeriod.all) { $0.timePeriodId.eq($1.id) }
+    .fetchAll(db)
+```
+
+**When to use #sql**: Complex aggregations (GROUP BY, SUM) after validation infrastructure complete
+```swift
+// Better performance for aggregations, but runtime errors only
+let progress = try #sql(
+    """
+    SELECT em.measureId, COALESCE(SUM(ma.value), 0) as actual
+    FROM expectationMeasures em
+    LEFT JOIN actionGoalContributions agc ON agc.goalId = \(goalId)
+    LEFT JOIN measuredActions ma ON ma.actionId = agc.actionId
+    GROUP BY em.measureId
+    """
+).fetchAll(db)
+```
+
+**Migration Prerequisites** (not yet ready):
+- ❌ Phase 2 validation layers (Services/Validation/)
+- ❌ Integration test coverage
+- ❌ Layer B validation in coordinators
+- ❌ Layer C error mapping in repositories
+
+**See**: `ActionsQuery.swift:93-137` for detailed migration notes
+
+---
+
+## FetchKeyRequest Pattern for Performant JOINs
+
+**Purpose**: Single query instead of N+1 fetches, works with @Fetch for reactivity
+
+```swift
+// Define FetchKeyRequest
+public struct TermsWithPeriods: FetchKeyRequest {
+    public func fetch(_ db: Database) throws -> [TermWithPeriod] {
+        let results = try GoalTerm.all
+            .join(TimePeriod.all) { $0.timePeriodId.eq($1.id) }
+            .fetchAll(db)
+        return results.map { (term, timePeriod) in
+            TermWithPeriod(term: term, timePeriod: timePeriod)
+        }
+    }
+}
+
+// Wrapper type for combined data
+public struct TermWithPeriod: Identifiable, Sendable {
+    public let term: GoalTerm
+    public let timePeriod: TimePeriod
+    public var id: UUID { term.id }
+}
+
+// Use in SwiftUI view with @Fetch
+@Fetch(TermsWithPeriods()) private var termsWithPeriods
+```
+
+**Benefits**:
+- Single JOIN query (performant)
+- Reactive updates (@Fetch auto-refreshes)
+- Encapsulated query logic (reusable)
+
+**Examples**: `TermsQuery.swift`, `ActionsQuery.swift`
+
+---
+
+## Form Patterns
+
+### FormScaffold Template
+```swift
+FormScaffold(
+    title: "New [Entity]",
+    canSubmit: !title.isEmpty && !viewModel.isSaving,
+    onSubmit: handleSubmit,
+    onCancel: { dismiss() }
+) {
+    DocumentableFields(title: $title, detailedDescription: $description, freeformNotes: $notes)
+    // ... additional sections
+}
+
+private func handleSubmit() {
+    Task {
+        do {
+            _ = try await viewModel.save(/* params */)
+            dismiss()
+        } catch {
+            // Error already set in viewModel.errorMessage
+        }
+    }
+}
+```
+
+### Edit Mode Pattern
+```swift
+public struct [Entity]FormView: View {
+    let entityToEdit: ([Abstraction], [Entity])?  // Optional for edit mode
+
+    var isEditMode: Bool { entityToEdit != nil }
+    var formTitle: String { isEditMode ? "Edit [Entity]" : "New [Entity]" }
+
+    init(entityToEdit: ([Abstraction], [Entity])? = nil) {
+        if let (abstraction, entity) = entityToEdit {
+            // Initialize @State from existing data
+            _title = State(initialValue: abstraction.title ?? "")
+            // ...
+        } else {
+            // Initialize with defaults
+            _title = State(initialValue: "")
+            // ...
+        }
+    }
+}
+```
+
+### List View Interactions
+```swift
+List {
+    ForEach(items) { item in
+        RowView(item)
+            .onTapGesture { edit(item) }         // Tap → edit
+            .swipeActions(edge: .trailing) {      // Right swipe → delete
+                Button(role: .destructive) { delete(item) }
+            }
+            .swipeActions(edge: .leading) {       // Left swipe → edit
+                Button { edit(item) }
+                    .tint(.blue)
+            }
+    }
+}
+```
+
+---
+
+## Three-Layer Validation Strategy (Phase 2 - TODO)
+
+### Layer A: Real-time UI Validation
+- **Where**: SwiftUI views, ViewModels
+- **When**: As user types, before submission
+- **Purpose**: Immediate feedback, enable/disable submit
+
+### Layer B: Coordination Validation
+- **Where**: Coordinator services
+- **When**: After form submission, before database write
+- **Purpose**: Enforce business rules, multi-model consistency
+- **Services**: `ActionValidator`, `GoalValidator` in `Services/Validation/`
+
+### Layer C: Database Validation
+- **Where**: Repository layer
+- **When**: During database.write()
+- **Purpose**: Catch constraints, translate database errors to user-facing messages
+
+**See**: `Services/Validation/validation approach.md` for complete strategy
+
+---
+
+## Rearchitecture Status (v0.5.0)
+
+**Current Phase**: Phase 4 (Validation Layer) - Ready to Start
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| 1-2 | ✅ Done | Schema & Models (3NF normalization complete) |
+| 3 | ✅ Done | Coordinators (All 4 complete: PersonalValue, Term, Action, Goal) |
+| 4 | 🚧 Next | Validation Layer (Services/Validation/) |
+| 5 | ⏳ | Protocol Redesign |
+| 6 | ⏳ | ViewModel Layer |
+| 7 | ⏳ | View Updates |
+
+**Reference Documentation**:
+- `docs/REARCHITECTURE_COMPLETE_GUIDE.md` - Complete 7-phase roadmap
+- `docs/CONCURRENCY_STRATEGY.md` - Actor isolation, parallel operations, query patterns
+- `docs/SQLITEDATA_API_AUDIT.md` - Query performance analysis
+- `docs/API_AUDIT_2025-11-03.md` - API usage audit
+- `docs/MODERN_SWIFT_REFERENCE.md` - Swift 6.2 patterns quick reference
+
+---
+
+## Common Patterns
+
+### Creating New Coordinators
+1. Define FormData struct in `Services/Coordinators/FormData/`
+2. Implement Coordinator with create(), update(), delete()
+3. Use database.write { } for atomic transactions
+4. Insert abstraction first, then concrete entity with FK
+5. Force unwrap after insert is safe: `.fetchOne(db)!`
+
+**Reference**: `TimePeriodCoordinator.swift` (97 lines, full CRUD)
+
+### Creating New ViewModels
+1. Use `@Observable` (not ObservableObject)
+2. Use `@Dependency(\.defaultDatabase)` with `@ObservationIgnored`
+3. Computed property for coordinator (no lazy)
+4. Individual parameters in save(), assemble FormData internally
+5. Handle errors with errorMessage property
+
+**Reference**: `TimePeriodFormViewModel.swift`
+
+### Creating New Forms
+1. Use FormScaffold template
+2. Edit mode via optional `entityToEdit` parameter
+3. Initialize @State in init() based on edit mode
+4. Use DocumentableFields for standard fields
+5. Handle async save in Task block
+
+**Reference**: `TermFormView.swift` (184 lines, create + edit)
+
+### Creating New List Views
+1. Use @Fetch with FetchKeyRequest for related data
+2. Create wrapper type for multi-model display
+3. ForEach with tap and swipe actions
+4. Empty state with helpful CTA
+
+**Reference**: `TermsListView.swift` (101 lines)
+
+---
+
+## Authorship Convention
+
+When creating **new** files, add header comment:
+```swift
+//
+// FileName.swift
+// Written by Claude Code on 2025-MM-DD
+//
+// PURPOSE:
+// Brief description of what this file does
+//
+```
+
+Not needed for small edits to existing files.
+
+---
+
+## Important: What NOT to Do
+
+### ❌ Don't Add Business Logic to Models
+```swift
+// ❌ Bad - models are data structures only
+extension Goal {
+    func calculateProgress() async -> Double { ... }
+}
+
+// ✅ Good - logic in services
+class ProgressCalculationService {
+    func calculateGoalProgress(_ goal: Goal) async -> Double { ... }
+}
+```
+
+### ❌ Don't Validate in Coordinators
+```swift
+// ❌ Bad - coordinators trust callers
+func create(from formData: GoalFormData) async throws -> Goal {
+    guard !formData.title.isEmpty else { throw ValidationError.emptyTitle }
+    // ...
+}
+
+// ✅ Good - validation in ViewModels or Validators (Phase 2)
+// Coordinators only enforce: assemble entity graphs, atomic transactions
+```
+
+### ❌ Don't Use ObservableObject
+```swift
+// ❌ Bad - legacy Combine pattern
+class MyViewModel: ObservableObject {
+    @Published var title: String = ""
+}
+
+// ✅ Good - modern Swift 5.9+ pattern
+@Observable
+class MyViewModel {
+    var title: String = ""  // No @Published needed
+}
+```
+
+### ❌ Don't Create Forms Without Edit Mode Support
+```swift
+// ❌ Bad - separate create/edit forms (duplication)
+struct CreateGoalForm: View { ... }
+struct EditGoalForm: View { ... }
+
+// ✅ Good - single form with optional edit mode
+struct GoalFormView: View {
+    let goalToEdit: (Expectation, Goal)?
+    var isEditMode: Bool { goalToEdit != nil }
+}
+```
+
+---
+
+## Key Files to Reference
+
+**Coordinator Patterns**:
+- `TimePeriodCoordinator.swift` ⭐ - Full CRUD, 2 models (reference implementation)
+- `ActionCoordinator.swift` - Full CRUD, 3 models (Action + MeasuredAction[] + ActionGoalContribution[])
+- `GoalCoordinator.swift` ⭐ - Full CRUD, 5+ models (most complex: Expectation + Goal + ExpectationMeasure[] + GoalRelevance[] + TermGoalAssignment?)
+- `PersonalValueCoordinator.swift` - Create only, 1 model (needs update/delete added)
+
+**ViewModel Patterns**:
+- `TimePeriodFormViewModel.swift` ⭐ - @Observable, save/update/delete
+- `PersonalValuesFormViewModel.swift` - Basic @Observable pattern
+
+**View Patterns**:
+- `TermFormView.swift` ⭐ - Edit mode support, state initialization
+- `TermsListView.swift` ⭐ - Tap/swipe interactions, empty state, @Fetch usage
+- `TermsQuery.swift` ⭐ - FetchKeyRequest JOIN pattern
+
+**Model Examples**:
+- `Protocols.swift` - Trait-based protocol composition
+- `Expectation.swift` - DomainAbstraction example
+- `Goal.swift` - DomainBasic example
+- `MeasuredAction.swift` - DomainComposit example
+
+---
+
+## Breaking Changes & Migration
+
+**Status**: Intentional breaking changes during rearchitecture (v0.5.0)
+
+**What's Broken**:
+- ❌ **MatchingService** - References removed `measuresByUnit` JSON field
+- ❌ **Old GoalFormView** - References removed flat `measurementUnit`, `measurementTarget` fields
+- ❌ **ActionsViewModel** - Expects JSON measuresByUnit (being replaced)
+- ❌ **GoalsViewModel** - References removed `isSmart()` method
+
+**Why**: Transitioning from JSON-based to fully normalized 3NF schema. These will be rebuilt in Phases 3-6 with proper multi-model support.
+
+**Migration Strategy**: Clean break (no backward compatibility) - simpler than maintaining dual schemas.
+
+---
+
+## Testing
+
+### Run Tests
+```bash
+# All tests
+swift test
+
+# Specific test target
+swift test --filter ValidationTests
+swift test --filter BusinessLogicTests
+
+# Single test
+swift test --filter MatchingServiceTests
+```
+
+### Test Status
+- **Validation Tests**: Placeholder directory (`Tests/ValidationTests/`)
+- **Business Logic Tests**: Some exist (`Tests/BusinessLogicTests/`)
+- **UI Tests**: Via Xcode project (`GoalTracker/GoalTrackerUITests/`)
+
+**TODO**: Integration tests for coordinators, FetchKeyRequest queries, multi-model transactions
+
+---
+
+## Platform & Version Requirements
+
+### Current Platform Targets
+- **iOS**: 26+ (Released September 15, 2025)
+- **macOS**: Tahoe 26+ (Released September 15, 2025)
+- **visionOS**: 26+ (Released September 15, 2025)
+- **Swift**: 6.2 (Released September 15, 2025)
+
+### Key Dependencies
+- **SQLiteData**: 1.2.0+ (Point-Free's type-safe GRDB wrapper)
+  - Documentation: https://swiftpackageindex.com/pointfreeco/sqlite-data
+  - Uses `@Table` macro for compile-time schema generation
+  - Query builder for type-safe queries
+  - `#sql` macro for complex aggregations (used selectively)
+
+### Swift 6.2 Features Used
+- ✅ **Strict Concurrency** - All models are `Sendable`, actor isolation enforced
+- ✅ **@MainActor** - ViewModels and Coordinators isolated to main thread
+- ✅ **@Observable Macro** - Modern state management (not ObservableObject)
+- ✅ **Structured Concurrency** - `async let` for parallel operations
+- ✅ **nonisolated** - Database helper methods callable from any context
+- ⏳ **InlineArray** - Future optimization for fixed-size collections (Swift 6.2 feature)
+- ⏳ **Span** - Future safe memory access (Swift 6.2 feature)
+
+### When to Fetch Current Documentation
+
+**IMPORTANT**: Claude's training data may not include the latest iOS 26/Swift 6.2 patterns. When uncertain about:
+- SwiftUI APIs or view modifiers
+- Swift 6.2 concurrency patterns
+- SQLiteData query syntax
+- Platform-specific behaviors
+
+**Use the doc-fetcher skill**:
+```bash
+# From project root
+cd ~/.claude/skills/doc-fetcher
+python doc_fetcher.py search "your query here"
+```
+
+**Pre-approved documentation sources**:
+- `developer.apple.com` - Apple Developer Documentation
+- `docs.swift.org` - Swift Language Guide
+- `swiftpackageindex.com` - Swift package documentation (including SQLiteData)
+
+See `swift/docs/DOCUMENTATION_REFRESH_GUIDE.md` for detailed guidance on when and how to fetch fresh documentation.
+
+---
+
+## Documentation Navigation
+
+**Start Here**:
+- `docs/REARCHITECTURE_COMPLETE_GUIDE.md` - Complete roadmap and design rationale
+- `docs/MODERN_SWIFT_REFERENCE.md` - Swift 6.2 patterns quick reference
+- `docs/DOCUMENTATION_REFRESH_GUIDE.md` - When/how to fetch current docs
+- `Sources/Models/Abstractions/Protocols.swift` - Model architecture explanation
+
+**Architecture & Patterns**:
+- `docs/CONCURRENCY_STRATEGY.md` - Actor isolation, parallel operations, query patterns
+- `Services/Validation/validation approach.md` - Three-layer validation strategy (Phase 2)
+- `Sources/Database/Schemas/README.md` - Schema layer explanation
+- `docs/SQLITEDATA_API_AUDIT.md` - Query strategy and performance
+
+**Implementation Guides**:
+- `docs/TERMS_UI_ENHANCEMENTS.md` - Term implementation patterns
+- `docs/TERM_AUTO_INCREMENT_IMPLEMENTATION.md` - Auto-increment strategy
+- `docs/HEALTHKIT_IMPLEMENTATION.md` - HealthKit integration
+- `docs/INLINE_REFINEMENT_GUIDE.md` - Code review and refinement practices
+
+**Archived Context**:
+- `docs/archive/` - Historical planning documents (consolidated into COMPLETE_GUIDE)

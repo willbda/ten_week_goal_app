@@ -2,6 +2,43 @@
 
 A personal development tracking system exploring clean architecture through a philosophical lens. Track daily actions, define goals with varying specificity, establish personal values, and monitor progress over time with automatic relationship inference.
 
+## 🚧 Major Rearchitecture in Progress (v0.5.0)
+
+**Current Status**: Database schema and Swift models complete (Phases 1-2), Repository layer next (Phase 3)
+
+The Swift implementation is undergoing a complete rearchitecture to 3NF normalized database with clean break migration. See [swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md](swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md) for details.
+
+**Key Changes**:
+- JSON fields eliminated (measuresByUnit → MeasuredAction junction table)
+- Unified values table (4 tables → 1 with ValueLevel enum)
+- Metrics as first-class entities
+- Clean separation: Models → Services → ViewModels → Views
+
+**Breaking**: Some components intentionally broken during migration (MatchingService, ViewModels).
+
+## Technology Stack
+
+### Swift Implementation (Active Development)
+- **Swift 6.2** (Released September 15, 2025) - Strict concurrency, modern syntax
+- **SwiftUI** - Declarative UI with @Observable pattern
+- **SQLiteData 1.2+** - Type-safe database operations (@Table macro, query builder)
+- **iOS 26+ / macOS Tahoe 26+ / visionOS 26+** - Modern platform targets
+- **Key Patterns**: Actor isolation (@MainActor), Sendable types, structured concurrency (async let)
+
+**Documentation**:
+- [MODERN_SWIFT_REFERENCE.md](swift/docs/MODERN_SWIFT_REFERENCE.md) - Swift 6.2 patterns quick reference
+- [DOCUMENTATION_REFRESH_GUIDE.md](swift/docs/DOCUMENTATION_REFRESH_GUIDE.md) - Keeping docs current
+- [CONCURRENCY_STRATEGY.md](swift/docs/CONCURRENCY_STRATEGY.md) - Actor patterns and parallel queries
+
+### Python Implementation (Archived)
+- **Python 3.9+** - Type hints, dataclasses
+- **Flask** - RESTful API (27 endpoints)
+- **SQLite3** - Direct database access
+- **Click** - CLI framework (25 commands)
+- **Status**: Tagged as v1.0-python, effectively archived
+
+---
+
 ## Project Structure: Multi-Language Implementation
 
 This project maintains the same architectural principles across multiple language implementations:
@@ -32,20 +69,21 @@ ten_week_goal_app/
 - Polymorphic storage for class hierarchies
 - **See:** [python/README.md](python/README.md)
 
-**Swift** (`swift/`): Active development
-- Protocol-oriented architecture matching Python layers
-- SQLite integration with GRDB.swift
-- Native macOS/iOS planned with SwiftUI
-- **See:** [swift/SWIFTROADMAP.md](swift/SWIFTROADMAP.md)
+**Swift** (`swift/`): Active development (v0.5.0-rearchitecture)
+- 3NF normalized database with SQLiteData (CloudKit sync)
+- Clean architecture: Models → Services → ViewModels → Views
+- Native macOS/iOS apps with SwiftUI (functional, in rearchitecture)
+- **See:** [swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md](swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md)
 
 ## Core Concepts
 
 **What This Tracks:**
-- **Actions**: Daily activities with optional measurements (distance, duration, reps, etc.)
-- **Goals**: Objectives with varying specificity (Goal → Milestone → SmartGoal)
-- **Values**: Personal motivators organized by hierarchy and life domains
+- **Actions**: Daily activities linked to metrics via junction tables (distance, duration, count)
+- **Goals**: Objectives with multi-metric targets and value alignments
+- **Values**: Personal motivators with unified priority levels (general → major → highest order)
 - **Terms**: Ten-week time periods for focused goal pursuit
-- **Relationships**: Automatic inference connecting actions to relevant goals
+- **Metrics**: First-class catalog of units (km, hours, occasions) for measurements and targets
+- **Relationships**: Explicit junction tables for queryable action-goal-value connections
 
 **Why This Architecture:**
 
@@ -149,10 +187,15 @@ The storage layer (`politica/`) knows nothing about specific entities:
 
 ## Project Status
 
-- **Python**: On pause
-- **Swift**: Active development (protocol-oriented refactor complete)
-- **Shared**: Database schemas stable
-- **Last Updated**: 2025-10-18
+- **Python**: Effectively archived (v1.0-python tag)
+- **Swift**: Active development (v0.5.0-rearchitecture)
+  - ✅ Phases 1-2: Database schema & models complete (3NF normalization)
+  - ✅ Phase 3: Coordinator pattern complete (All 4 coordinators: PersonalValue, Term, Action, Goal)
+  - 🚧 Phase 4: Validation layer (ActionValidator in progress) - Next priority
+  - ⏳ Phases 5-7: Protocol redesign, ViewModels, Views, Testing
+- **Database**: Complete 3NF rearchitecture (clean break migration)
+- **Platform**: Swift 6.2 on iOS/macOS/visionOS 26+ (Released September 15, 2025)
+- **Last Updated**: 2025-11-06
 
 ## Contributing
 
