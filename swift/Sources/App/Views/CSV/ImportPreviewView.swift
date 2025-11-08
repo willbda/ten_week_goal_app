@@ -1,19 +1,22 @@
 //
 // ImportPreviewView.swift
 // Written by Claude Code on 2025-11-06
+// Updated by Claude Code on 2025-11-07 - Made generic over CSVPreviewable
 //
 // PURPOSE:
 // Preview and confirm CSV import before committing to database.
-// Shows parsed actions with checkbox selection.
+// Shows parsed items (Actions, Goals, etc.) with checkbox selection.
+// Generic over any CSVPreviewable type.
 //
 
 import SwiftUI
 import Services
 
-struct ImportPreviewView: View {
-    let parseResult: ParseResult
-    let onConfirm: ([ActionPreview]) -> Void
+struct ImportPreviewView<Preview: CSVPreviewable>: View {
+    let parseResult: CSVParseResult<Preview>
+    let onConfirm: ([Preview]) -> Void
     let onCancel: () -> Void
+    let entityName: String  // "Action", "Goal", etc.
 
     @State private var selectedPreviews: Set<UUID> = []
     @State private var selectAll: Bool = true
@@ -87,7 +90,7 @@ struct ImportPreviewView: View {
     // DESIGN: Extracted header to reduce complexity
     private var sectionHeader: some View {
         HStack {
-            Text("Actions to Import")
+            Text("\(entityName)s to Import")
                 .font(.headline)
             Text("(\(selectedCount) of \(parseResult.previews.count) selected)")
                 .font(.caption)
@@ -167,8 +170,8 @@ struct ImportPreviewView: View {
 
 // MARK: - Preview Row
 
-struct PreviewRow: View {
-    let preview: ActionPreview
+struct PreviewRow<Preview: CSVPreviewable>: View {
+    let preview: Preview
     let isSelected: Bool
 
     var body: some View {
@@ -188,39 +191,11 @@ struct PreviewRow: View {
                     .font(.headline)
                     .lineLimit(2)
 
-                // DESIGN: Metadata with icons
-                VStack(alignment: .leading, spacing: 4) {
-                    // Measurements
-                    if !preview.measurements.isEmpty {
-                        HStack(spacing: 4) {
-                            Image(systemName: "ruler")
-                                .font(.caption2)
-                            Text(preview.measurements.map { "\($0.value) \($0.unit)" }.joined(separator: ", "))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    // Goals
-                    if !preview.goalTitles.isEmpty {
-                        HStack(spacing: 4) {
-                            Image(systemName: "target")
-                                .font(.caption2)
-                            Text(preview.goalTitles.joined(separator: ", "))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    // Date
-                    HStack(spacing: 4) {
-                        Image(systemName: "calendar")
-                            .font(.caption2)
-                        Text(preview.startTime, style: .date)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                // DESIGN: Summary text (entity-specific details)
+                Text(preview.summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
 
                 // DESIGN: Validation status with appropriate semantic color
                 if let message = preview.validationStatus.message {
@@ -261,19 +236,48 @@ struct PreviewRow: View {
 
 // MARK: - Preview
 
-#Preview {
+#Preview("Actions") {
     ImportPreviewView(
-        parseResult: ParseResult(previews:[
-            ActionPreview(rowNumber: 1, title: "test",description: "test",measurements: [("test", 1)],goalTitles: ["test"])]),
-
-onConfirm: { selected in
-    print("Importing \(selected.count) actions")
-},
-onCancel: {
-    print("Cancelled")
+        parseResult: CSVParseResult(previews: [
+            ActionPreview(
+                rowNumber: 1,
+                title: "Morning run",
+                description: "Beautiful weather",
+                measurements: [("km", 5.2), ("minutes", 28)],
+                goalTitles: ["Spring into Running"]
+            )
+        ]),
+        onConfirm: { selected in
+            print("Importing \(selected.count) actions")
+        },
+        onCancel: {
+            print("Cancelled")
+        },
+        entityName: "Action"
+    )
+    .frame(width: 700, height: 600)
 }
-)
-.frame(width: 700, height: 600)
+
+#Preview("Goals") {
+    ImportPreviewView(
+        parseResult: CSVParseResult(previews: [
+            GoalPreview(
+                rowNumber: 1,
+                title: "Run 120km",
+                description: "Spring training",
+                targets: [("km", 120)],
+                valueNames: ["Health", "Movement"]
+            )
+        ]),
+        onConfirm: { selected in
+            print("Importing \(selected.count) goals")
+        },
+        onCancel: {
+            print("Cancelled")
+        },
+        entityName: "Goal"
+    )
+    .frame(width: 700, height: 600)
 }
 
 
