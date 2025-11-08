@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "388F12782EB6BEDE00A8CED4"
-               BuildableName = "HappyToHaveLivedApp.app"
-               BlueprintName = "HappyToHaveLivedApp"
+               BuildableName = "Happy to Have Lived.app"
+               BlueprintName = "Happy to Have Lived"
                ReferencedContainer = "container:GoalTracker.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -125,8 +125,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "388F12782EB6BEDE00A8CED4"
-            BuildableName = "HappyToHaveLivedApp.app"
-            BlueprintName = "HappyToHaveLivedApp"
+            BuildableName = "Happy to Have Lived.app"
+            BlueprintName = "Happy to Have Lived"
             ReferencedContainer = "container:GoalTracker.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -149,8 +149,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "388F12782EB6BEDE00A8CED4"
-            BuildableName = "HappyToHaveLivedApp.app"
-            BlueprintName = "HappyToHaveLivedApp"
+            BuildableName = "Happy to Have Lived.app"
+            BlueprintName = "Happy to Have Lived"
             ReferencedContainer = "container:GoalTracker.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

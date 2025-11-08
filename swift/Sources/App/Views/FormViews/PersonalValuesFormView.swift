@@ -93,20 +93,31 @@ public struct PersonalValuesFormView: View {
                 freeformNotes: $notes
             )
 
+            // DESIGN: Title-case section headers (iOS 18+ pattern)
             Section("Value Properties") {
                 Picker("Level", selection: $selectedLevel) {
                     ForEach(ValueLevel.allCases, id: \.self) { level in
                         Text(level.displayName).tag(level)
                     }
                 }
+                .accessibilityLabel("Value level") // ACCESSIBILITY: VoiceOver support
+                .accessibilityHint("Select the importance level of this value")
 
                 Stepper("Priority: \(priority)", value: $priority, in: 1...100)
+                    .accessibilityLabel("Priority") // ACCESSIBILITY: VoiceOver support
+                    .accessibilityValue("\(priority) out of 100")
             }
 
+            // DESIGN: Clear section naming for context
             Section("Context") {
                 TextField("Life Domain", text: $lifeDomain)
+                    .accessibilityLabel("Life domain") // ACCESSIBILITY: VoiceOver support
+                    .accessibilityHint("Optional: The area of life this value relates to")
+
                 TextField("Alignment Guidance", text: $alignmentGuidance, axis: .vertical)
                     .lineLimit(3...6)
+                    .accessibilityLabel("Alignment guidance") // ACCESSIBILITY: VoiceOver support
+                    .accessibilityHint("Optional: How to align actions with this value")
             }
 
             if let error = viewModel.errorMessage {

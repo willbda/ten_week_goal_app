@@ -63,20 +63,58 @@ public final class ActionCSVService {
 
     // MARK: - Import
 
-    /// Import actions from CSV file
-    /// Parses rows in IMPORT section (starts after "IMPORT" marker)
-    public func importActions(from csvPath: URL) async throws -> ImportResult {
-        // Parse CSV
+    /// Parse CSV and generate preview (does not import)
+    /// Returns preview rows for user confirmation
+    public func previewImport(from csvPath: URL) async throws -> CSVParseResult<ActionPreview> {
         let rows = try parseCSV(from: csvPath)
-
-        // Build lookup tables for resolution
         let lookup = try await buildLookupTables()
 
-        // Import each row
+        var previews: [ActionPreview] = []
+        var errors: [String] = []
+
+        for row in rows {
+            do {
+                let preview = try convertToPreview(row, lookup: lookup)
+                previews.append(preview)
+            } catch {
+                errors.append("Row \(row.lineNumber): \(error.localizedDescription)")
+            }
+        }
+
+        return CSVParseResult(previews: previews, errors: errors)
+    }
+
+    /// Import selected action previews
+    /// Only imports actions where isSelected is true
+    public func importSelected(_ previews: [ActionPreview]) async throws -> CSVImportResult {
+        let lookup = try await buildLookupTables()
+
         var successes = 0
         var failures: [(row: Int, error: String)] = []
 
-        for (index, row) in rows.enumerated() {
+        for preview in previews {
+            do {
+                let formData = try convertPreviewToFormData(preview, lookup: lookup)
+                _ = try await coordinator.create(from: formData)
+                successes += 1
+            } catch {
+                failures.append((preview.rowNumber, error.localizedDescription))
+            }
+        }
+
+        return CSVImportResult(successes: successes, failures: failures)
+    }
+
+    /// Import actions from CSV file (direct import, no preview)
+    /// Parses rows in IMPORT section (starts after "IMPORT" marker)
+    public func importActions(from csvPath: URL) async throws -> CSVImportResult {
+        let rows = try parseCSV(from: csvPath)
+        let lookup = try await buildLookupTables()
+
+        var successes = 0
+        var failures: [(row: Int, error: String)] = []
+
+        for row in rows {
             do {
                 let formData = try convertToFormData(row, lookup: lookup)
                 _ = try await coordinator.create(from: formData)
@@ -86,7 +124,7 @@ public final class ActionCSVService {
             }
         }
 
-        return ImportResult(successes: successes, failures: failures)
+        return CSVImportResult(successes: successes, failures: failures)
     }
 
     // MARK: - Template Generation
@@ -405,6 +443,108 @@ public final class ActionCSVService {
         )
     }
 
+    // MARK: - Preview Conversion
+
+    private func convertToPreview(_ row: CSVRow, lookup: LookupTables) throws -> ActionPreview {
+        // Title is required
+        guard let title = row.data["title"], !title.isEmpty else {
+            throw CSVError.missingRequiredField(row: row.lineNumber, field: "title")
+        }
+
+        let description = row.data["description"] ?? ""
+        let notes = row.data["notes"] ?? ""
+        let durationString = row.data["duration_minutes"] ?? ""
+        let duration = Double(durationString) ?? 0
+
+        // Parse date
+        let startTimeString = row.data["start_time"] ?? ""
+        let startTime: Date
+        if startTimeString.isEmpty {
+            startTime = Date()
+        } else {
+            guard let parsed = parseDate(startTimeString) else {
+                throw CSVError.invalidDate(row: row.lineNumber, value: startTimeString)
+            }
+            startTime = parsed
+        }
+
+        // Parse measurements
+        var measurements: [(unit: String, value: Double)] = []
+        var validationStatus: ValidationStatus = .valid
+
+        for i in 1...2 {
+            let unitKey = "measure_\(i)_unit"
+            let valueKey = "measure_\(i)_value"
+
+            guard let unit = row.data[unitKey], !unit.isEmpty,
+                  let valueString = row.data[valueKey], !valueString.isEmpty,
+                  let value = Double(valueString) else {
+                continue
+            }
+
+            // Check if measure exists
+            if lookup.measuresByUnit[unit] == nil {
+                let available = Array(lookup.measuresByUnit.keys.sorted().prefix(5)).joined(separator: ", ")
+                validationStatus = .error("Measure '\(unit)' not found. Available: \(available)")
+            } else {
+                measurements.append((unit: unit, value: value))
+            }
+        }
+
+        // Parse goal contributions
+        var goalTitles: [String] = []
+        if let goalTitle = row.data["goal_1_title"], !goalTitle.isEmpty {
+            if lookup.goalsByTitle[goalTitle] == nil {
+                let available = Array(lookup.goalsByTitle.keys.sorted().prefix(5)).joined(separator: ", ")
+                validationStatus = .error("Goal '\(goalTitle)' not found. Available: \(available)")
+            } else {
+                goalTitles.append(goalTitle)
+            }
+        }
+
+        return ActionPreview(
+            rowNumber: row.lineNumber,
+            title: title,
+            description: description,
+            notes: notes,
+            durationMinutes: duration,
+            startTime: startTime,
+            measurements: measurements,
+            goalTitles: goalTitles,
+            validationStatus: validationStatus
+        )
+    }
+
+    private func convertPreviewToFormData(_ preview: ActionPreview, lookup: LookupTables) throws -> ActionFormData {
+        // Convert measurements with lookup
+        var measurements: [MeasurementInput] = []
+        for (unit, value) in preview.measurements {
+            guard let measureId = lookup.measuresByUnit[unit] else {
+                throw CSVError.measureNotFound(row: preview.rowNumber, unit: unit, available: "")
+            }
+            measurements.append(MeasurementInput(measureId: measureId, value: value))
+        }
+
+        // Convert goal contributions
+        var goalContributions: Set<UUID> = []
+        for title in preview.goalTitles {
+            guard let goalId = lookup.goalsByTitle[title] else {
+                throw CSVError.goalNotFound(row: preview.rowNumber, title: title, available: "")
+            }
+            goalContributions.insert(goalId)
+        }
+
+        return ActionFormData(
+            title: preview.title,
+            detailedDescription: preview.description,
+            freeformNotes: preview.notes,
+            durationMinutes: preview.durationMinutes,
+            startTime: preview.startTime,
+            measurements: measurements,
+            goalContributions: goalContributions
+        )
+    }
+
     // MARK: - Helpers
 
     private func parseDate(_ string: String) -> Date? {
@@ -421,29 +561,6 @@ public final class ActionCSVService {
 }
 
 // MARK: - Supporting Types
-
-public struct ExportResult {
-    public let templatePath: URL
-    public let measuresPath: URL?
-    public let goalsPath: URL?
-}
-
-public struct ImportResult {
-    public let successes: Int
-    public let failures: [(row: Int, error: String)]
-
-    public var hasFailures: Bool {
-        !failures.isEmpty
-    }
-
-    public var summary: String {
-        if failures.isEmpty {
-            return "✓ Successfully imported \(successes) actions"
-        } else {
-            return "⚠️ Imported \(successes) actions, \(failures.count) failed"
-        }
-    }
-}
 
 struct CSVRow {
     let lineNumber: Int

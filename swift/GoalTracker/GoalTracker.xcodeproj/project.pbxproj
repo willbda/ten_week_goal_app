@@ -34,18 +34,18 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		388F12792EB6BEDE00A8CED4 /* HappyToHaveLivedApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HappyToHaveLivedApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		388F12792EB6BEDE00A8CED4 /* Happy to Have Lived.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Happy to Have Lived.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		388F12862EB6BEDF00A8CED4 /* GoalTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GoalTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		388F12902EB6BEDF00A8CED4 /* GoalTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GoalTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		382E2E652EBB064E00115E5B /* Exceptions for "GoalTrackerApp" folder in "HappyToHaveLivedApp" target */ = {
+		382E2E652EBB064E00115E5B /* Exceptions for "GoalTrackerApp" folder in "Happy to Have Lived" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 388F12782EB6BEDE00A8CED4 /* HappyToHaveLivedApp */;
+			target = 388F12782EB6BEDE00A8CED4 /* Happy to Have Lived */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -53,7 +53,7 @@
 		388F127B2EB6BEDE00A8CED4 /* GoalTrackerApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				382E2E652EBB064E00115E5B /* Exceptions for "GoalTrackerApp" folder in "HappyToHaveLivedApp" target */,
+				382E2E652EBB064E00115E5B /* Exceptions for "GoalTrackerApp" folder in "Happy to Have Lived" target */,
 			);
 			path = GoalTrackerApp;
 			sourceTree = "<group>";
@@ -116,7 +116,7 @@
 		388F127A2EB6BEDE00A8CED4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				388F12792EB6BEDE00A8CED4 /* HappyToHaveLivedApp.app */,
+				388F12792EB6BEDE00A8CED4 /* Happy to Have Lived.app */,
 				388F12862EB6BEDF00A8CED4 /* GoalTrackerTests.xctest */,
 				388F12902EB6BEDF00A8CED4 /* GoalTrackerUITests.xctest */,
 			);
@@ -133,9 +133,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		388F12782EB6BEDE00A8CED4 /* HappyToHaveLivedApp */ = {
+		388F12782EB6BEDE00A8CED4 /* Happy to Have Lived */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 388F129A2EB6BEDF00A8CED4 /* Build configuration list for PBXNativeTarget "HappyToHaveLivedApp" */;
+			buildConfigurationList = 388F129A2EB6BEDF00A8CED4 /* Build configuration list for PBXNativeTarget "Happy to Have Lived" */;
 			buildPhases = (
 				388F12752EB6BEDE00A8CED4 /* Sources */,
 				388F12762EB6BEDE00A8CED4 /* Frameworks */,
@@ -148,7 +148,7 @@
 			fileSystemSynchronizedGroups = (
 				388F127B2EB6BEDE00A8CED4 /* GoalTrackerApp */,
 			);
-			name = HappyToHaveLivedApp;
+			name = "Happy to Have Lived";
 			packageProductDependencies = (
 				388F12B12EB6C2DB00A8CED4 /* Models */,
 				388F12B32EB6C2DB00A8CED4 /* Services */,
@@ -159,7 +159,7 @@
 				38534FEA2EBECA3E0035A8F9 /* SQLiteData */,
 			);
 			productName = GoalTrackerII;
-			productReference = 388F12792EB6BEDE00A8CED4 /* HappyToHaveLivedApp.app */;
+			productReference = 388F12792EB6BEDE00A8CED4 /* Happy to Have Lived.app */;
 			productType = "com.apple.product-type.application";
 		};
 		388F12852EB6BEDF00A8CED4 /* GoalTrackerTests */ = {
@@ -249,7 +249,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				388F12782EB6BEDE00A8CED4 /* HappyToHaveLivedApp */,
+				388F12782EB6BEDE00A8CED4 /* Happy to Have Lived */,
 				388F12852EB6BEDF00A8CED4 /* GoalTrackerTests */,
 				388F128F2EB6BEDF00A8CED4 /* GoalTrackerUITests */,
 			);
@@ -307,12 +307,12 @@
 /* Begin PBXTargetDependency section */
 		388F12882EB6BEDF00A8CED4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 388F12782EB6BEDE00A8CED4 /* HappyToHaveLivedApp */;
+			target = 388F12782EB6BEDE00A8CED4 /* Happy to Have Lived */;
 			targetProxy = 388F12872EB6BEDF00A8CED4 /* PBXContainerItemProxy */;
 		};
 		388F12922EB6BEDF00A8CED4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 388F12782EB6BEDE00A8CED4 /* HappyToHaveLivedApp */;
+			target = 388F12782EB6BEDE00A8CED4 /* Happy to Have Lived */;
 			targetProxy = 388F12912EB6BEDF00A8CED4 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -357,7 +357,7 @@
 				DEVELOPMENT_TEAM = 2DT4MGA664;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -423,7 +423,7 @@
 				DEVELOPMENT_TEAM = 2DT4MGA664;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -710,7 +710,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		388F129A2EB6BEDF00A8CED4 /* Build configuration list for PBXNativeTarget "HappyToHaveLivedApp" */ = {
+		388F129A2EB6BEDF00A8CED4 /* Build configuration list for PBXNativeTarget "Happy to Have Lived" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				388F129B2EB6BEDF00A8CED4 /* Debug */,
