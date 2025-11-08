@@ -562,23 +562,7 @@ public final class ActionCSVService {
 
 // MARK: - Supporting Types
 
-struct CSVRow {
-    let lineNumber: Int
-    let data: [String: String]
-}
-
 struct LookupTables {
     let measuresByUnit: [String: UUID]
     let goalsByTitle: [String: UUID]
-}
-
-// MARK: - Errors
-
-public enum CSVError: Error {
-    case invalidFormat(String)
-    case columnMismatch(row: Int, expected: Int, got: Int)
-    case missingRequiredField(row: Int, field: String)
-    case invalidDate(row: Int, value: String)
-    case measureNotFound(row: Int, unit: String, available: String)
-    case goalNotFound(row: Int, title: String, available: String)
 }

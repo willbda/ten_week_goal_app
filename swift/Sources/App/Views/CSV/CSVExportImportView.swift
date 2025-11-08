@@ -1,10 +1,11 @@
 //
 // CSVExportImportView.swift
 // Written by Claude Code on 2025-11-06
+// Updated by Claude Code on 2025-11-07 - Added entity type picker for Actions/Goals
 //
 // PURPOSE:
-// Simple UI for CSV export/import operations.
-// Demonstrates ActionCSVService usage.
+// Unified UI for CSV export/import operations.
+// Supports Actions and Goals via entity type picker.
 //
 
 import SwiftUI
@@ -14,12 +15,27 @@ import Services
 
 struct CSVExportImportView: View {
     @Dependency(\.defaultDatabase) private var database
+
+    // MARK: - Entity Type Selection
+
+    @State private var selectedEntityType: EntityType = .actions
+
+    enum EntityType: String, CaseIterable, Identifiable {
+        case actions = "Actions"
+        case goals = "Goals"
+
+        var id: String { rawValue }
+    }
+
+    // MARK: - State
+
     @State private var exportResult: String = ""
     @State private var importResult: String = ""
     @State private var isExporting = false
     @State private var isImporting = false
     @State private var showFilePicker = false
-    @State private var parseResult: ParseResult?
+    @State private var actionParseResult: CSVParseResult<ActionPreview>?
+    @State private var goalParseResult: CSVParseResult<GoalPreview>?
     @State private var showPreview = false
 
     var body: some View {
@@ -27,6 +43,24 @@ struct CSVExportImportView: View {
         NavigationStack {
             // DESIGN: Form with .grouped style for iOS 18+ section styling and spacing
             Form {
+                // DESIGN: Entity type picker section
+                Section {
+                    Picker("Entity Type", selection: $selectedEntityType) {
+                        ForEach(EntityType.allCases) { type in
+                            Text(type.rawValue).tag(type)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityLabel("Select entity type to import or export")
+                } header: {
+                    Text("Import/Export Type")
+                } footer: {
+                    Text(selectedEntityType == .actions
+                        ? "Import or export actions with measurements and goal contributions"
+                        : "Import or export goals with metric targets and value alignments")
+                        .font(.caption)
+                }
+
                 // DESIGN: Title-case section headers (not ALL CAPS) per iOS 18 guidelines
                 Section("Export Options") {
                     // DESIGN: Using VStack in Form sections for proper layout
@@ -48,17 +82,17 @@ struct CSVExportImportView: View {
                         .disabled(isExporting)
                         .accessibilityLabel("Export blank CSV template") // ACCESSIBILITY: VoiceOver support
 
-                        Button(action: exportActions) {
+                        Button(action: exportAll) {
                             if isExporting {
                                 ProgressView()
                                     .controlSize(.small)
                             } else {
-                                Label("Export All Actions", systemImage: "square.and.arrow.down.fill")
+                                Label("Export All \(selectedEntityType.rawValue)", systemImage: "square.and.arrow.down.fill")
                             }
                         }
                         .buttonStyle(.borderedProminent) // DESIGN: Prominent button for primary action
                         .disabled(isExporting)
-                        .accessibilityLabel("Export all actions to CSV") // ACCESSIBILITY: VoiceOver support
+                        .accessibilityLabel("Export all \(selectedEntityType.rawValue.lowercased()) to CSV") // ACCESSIBILITY: VoiceOver support
 
                         if !exportResult.isEmpty {
                             Text(exportResult)
@@ -72,7 +106,7 @@ struct CSVExportImportView: View {
                 // DESIGN: Title-case section header
                 Section("Import Options") {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Import actions from CSV file")
+                        Text("Import \(selectedEntityType.rawValue.lowercased()) from CSV file")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -112,15 +146,27 @@ struct CSVExportImportView: View {
             .navigationTitle("CSV Import & Export") // DESIGN: Clear navigation hierarchy
         }
         .sheet(isPresented: $showPreview) {
-            if let parseResult = parseResult {
-                ImportPreviewView(
-                    parseResult: parseResult,
-                    onConfirm: confirmImport,
-                    onCancel: {
-                        showPreview = false
-                        self.parseResult = nil
+            Group {
+                switch selectedEntityType {
+                case .actions:
+                    if let result = actionParseResult {
+                        ImportPreviewView(
+                            parseResult: result,
+                            onConfirm: confirmActionImport,
+                            onCancel: cancelImport,
+                            entityName: "Action"
+                        )
                     }
-                )
+                case .goals:
+                    if let result = goalParseResult {
+                        ImportPreviewView(
+                            parseResult: result,
+                            onConfirm: confirmGoalImport,
+                            onCancel: cancelImport,
+                            entityName: "Goal"
+                        )
+                    }
+                }
             }
         }
     }
@@ -133,21 +179,27 @@ struct CSVExportImportView: View {
             defer { isExporting = false }
 
             do {
-                let coordinator = ActionCoordinator(database: database)
-                let service = ActionCSVService(database: database, coordinator: coordinator)
-
-                // Get Downloads directory
                 let downloadsDir = FileManager.default.urls(
                     for: .downloadsDirectory,
                     in: .userDomainMask
                 )[0]
 
-                let path = try await service.exportTemplate(to: downloadsDir)
+                let path: URL
+                switch selectedEntityType {
+                case .actions:
+                    let coordinator = ActionCoordinator(database: database)
+                    let service = ActionCSVService(database: database, coordinator: coordinator)
+                    path = try await service.exportTemplate(to: downloadsDir)
+
+                case .goals:
+                    let coordinator = GoalCoordinator(database: database)
+                    let service = GoalCSVService(database: database, coordinator: coordinator)
+                    path = try await service.exportTemplate(to: downloadsDir)
+                }
 
                 exportResult = """
                 ✓ Exported template to Downloads:
                 - \(path.lastPathComponent)
-                (Includes Units and Goals reference sections)
                 """
             } catch {
                 exportResult = "⚠️ Export failed: \(error.localizedDescription)"
@@ -155,26 +207,33 @@ struct CSVExportImportView: View {
         }
     }
 
-    private func exportActions() {
+    private func exportAll() {
         Task {
             isExporting = true
             defer { isExporting = false }
 
             do {
-                let coordinator = ActionCoordinator(database: database)
-                let service = ActionCSVService(database: database, coordinator: coordinator)
-
                 let downloadsDir = FileManager.default.urls(
                     for: .downloadsDirectory,
                     in: .userDomainMask
                 )[0]
 
-                let path = try await service.exportActions(to: downloadsDir)
+                let path: URL
+                switch selectedEntityType {
+                case .actions:
+                    let coordinator = ActionCoordinator(database: database)
+                    let service = ActionCSVService(database: database, coordinator: coordinator)
+                    path = try await service.exportActions(to: downloadsDir)
+
+                case .goals:
+                    let coordinator = GoalCoordinator(database: database)
+                    let service = GoalCSVService(database: database, coordinator: coordinator)
+                    path = try await service.exportGoals(to: downloadsDir)
+                }
 
                 exportResult = """
-                ✓ Exported all actions to Downloads:
+                ✓ Exported all \(selectedEntityType.rawValue.lowercased()) to Downloads:
                 - \(path.lastPathComponent)
-                (Includes Units and Goals reference sections)
                 """
             } catch {
                 exportResult = "⚠️ Export failed: \(error.localizedDescription)"
@@ -199,12 +258,21 @@ struct CSVExportImportView: View {
                 }
                 defer { fileURL.stopAccessingSecurityScopedResource() }
 
-                // Parse and show preview
-                let coordinator = ActionCoordinator(database: database)
-                let service = ActionCSVService(database: database, coordinator: coordinator)
+                // Parse and show preview based on selected entity type
+                switch selectedEntityType {
+                case .actions:
+                    let coordinator = ActionCoordinator(database: database)
+                    let service = ActionCSVService(database: database, coordinator: coordinator)
+                    let result = try await service.previewImport(from: fileURL)
+                    actionParseResult = result
 
-                let result = try await service.previewImport(from: fileURL)
-                parseResult = result
+                case .goals:
+                    let coordinator = GoalCoordinator(database: database)
+                    let service = GoalCSVService(database: database, coordinator: coordinator)
+                    let result = try await service.previewImport(from: fileURL)
+                    goalParseResult = result
+                }
+
                 showPreview = true
 
             } catch {
@@ -213,7 +281,7 @@ struct CSVExportImportView: View {
         }
     }
 
-    private func confirmImport(_ selectedPreviews: [ActionPreview]) {
+    private func confirmActionImport(_ selectedPreviews: [ActionPreview]) {
         Task {
             isImporting = true
             defer { isImporting = false }
@@ -223,25 +291,56 @@ struct CSVExportImportView: View {
                 let service = ActionCSVService(database: database, coordinator: coordinator)
 
                 let importResult = try await service.importSelected(selectedPreviews)
-
-                self.importResult = importResult.summary
-
-                if importResult.hasFailures {
-                    self.importResult += "\n\nErrors:\n"
-                    for (row, error) in importResult.failures.prefix(5) {
-                        self.importResult += "Row \(row): \(error)\n"
-                    }
-                    if importResult.failures.count > 5 {
-                        self.importResult += "... and \(importResult.failures.count - 5) more"
-                    }
-                }
+                displayImportResult(importResult)
 
                 // Close preview
                 showPreview = false
-                parseResult = nil
+                actionParseResult = nil
 
             } catch {
                 self.importResult = "⚠️ Import failed: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func confirmGoalImport(_ selectedPreviews: [GoalPreview]) {
+        Task {
+            isImporting = true
+            defer { isImporting = false }
+
+            do {
+                let coordinator = GoalCoordinator(database: database)
+                let service = GoalCSVService(database: database, coordinator: coordinator)
+
+                let importResult = try await service.importSelected(selectedPreviews)
+                displayImportResult(importResult)
+
+                // Close preview
+                showPreview = false
+                goalParseResult = nil
+
+            } catch {
+                self.importResult = "⚠️ Import failed: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func cancelImport() {
+        showPreview = false
+        actionParseResult = nil
+        goalParseResult = nil
+    }
+
+    private func displayImportResult(_ result: CSVImportResult) {
+        self.importResult = result.summary
+
+        if result.hasFailures {
+            self.importResult += "\n\nErrors:\n"
+            for (row, error) in result.failures.prefix(5) {
+                self.importResult += "Row \(row): \(error)\n"
+            }
+            if result.failures.count > 5 {
+                self.importResult += "... and \(result.failures.count - 5) more"
             }
         }
     }

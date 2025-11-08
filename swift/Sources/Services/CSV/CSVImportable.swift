@@ -13,6 +13,31 @@
 
 import Foundation
 
+// MARK: - Shared Supporting Types
+
+/// CSV row with parsed field data
+public struct CSVRow {
+    public let lineNumber: Int
+    public let data: [String: String]
+
+    public init(lineNumber: Int, data: [String: String]) {
+        self.lineNumber = lineNumber
+        self.data = data
+    }
+}
+
+// MARK: - CSV Errors
+
+/// Errors that can occur during CSV parsing and import
+public enum CSVError: Error {
+    case invalidFormat(String)
+    case columnMismatch(row: Int, expected: Int, got: Int)
+    case missingRequiredField(row: Int, field: String)
+    case invalidDate(row: Int, value: String)
+    case measureNotFound(row: Int, unit: String, available: String)
+    case goalNotFound(row: Int, title: String, available: String)
+}
+
 // MARK: - CSV Preview Protocol
 
 /// Preview model that can be displayed in ImportPreviewView
