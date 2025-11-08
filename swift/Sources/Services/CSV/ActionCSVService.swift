@@ -325,7 +325,7 @@ public final class ActionCSVService {
 
         // Parse header from Fields row
         let fieldsLine = importSection[1]
-        let fields = fieldsLine.split(separator: ",", omittingEmptySubsequences: false).map { String($0) }
+        let fields = parseCSVLine(fieldsLine)
 
         // Skip Fields, Optionality, Sample rows → data starts at index 3
         let dataLines = importSection.dropFirst(3)
@@ -334,7 +334,7 @@ public final class ActionCSVService {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { return nil }
 
-            let values = line.split(separator: ",", omittingEmptySubsequences: false).map { String($0) }
+            let values = parseCSVLine(line)
 
             guard values.count >= fields.count else {
                 throw CSVError.columnMismatch(row: importIndex + 4 + index, expected: fields.count, got: values.count)
@@ -353,6 +353,39 @@ public final class ActionCSVService {
 
             return CSVRow(lineNumber: importIndex + 4 + index, data: rowData)
         }
+    }
+
+    /// Parse a CSV line respecting quoted fields
+    /// Handles: `"field with, comma",other field`
+    private func parseCSVLine(_ line: String) -> [String] {
+        var fields: [String] = []
+        var currentField = ""
+        var insideQuotes = false
+        var previousChar: Character? = nil
+
+        for char in line {
+            if char == "\"" {
+                if insideQuotes && previousChar == "\"" {
+                    // Escaped quote ("")
+                    currentField.append(char)
+                    previousChar = nil
+                    continue
+                } else {
+                    insideQuotes.toggle()
+                }
+            } else if char == "," && !insideQuotes {
+                fields.append(currentField)
+                currentField = ""
+            } else {
+                currentField.append(char)
+            }
+            previousChar = char
+        }
+
+        // Add last field
+        fields.append(currentField)
+
+        return fields
     }
 
     // MARK: - Lookup Tables
