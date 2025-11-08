@@ -58,6 +58,7 @@ public struct GoalFormView: View {
     // Relationships
     @State private var metricTargets: [MetricTargetInput]
     @State private var valueAlignments: [ValueAlignmentInput]
+    @State private var selectedValueIds: Set<UUID> = []  // Track selection separately for proper UI updates
     @State private var selectedTermId: UUID?
 
     // Available data for pickers
@@ -107,6 +108,7 @@ public struct GoalFormView: View {
                 )
             }
             _valueAlignments = State(initialValue: alignments)
+            _selectedValueIds = State(initialValue: Set(alignments.compactMap { $0.valueId }))
 
             _selectedTermId = State(initialValue: goalDetails.termAssignment?.termId)
         } else {
@@ -190,26 +192,25 @@ public struct GoalFormView: View {
                     items: availableValues,
                     title: "Which values does this goal serve?",
                     itemLabel: { value in value.title ?? "Untitled Value" },
-                    selectedIds: Binding(
-                        get: { Set(valueAlignments.compactMap { $0.valueId }) },
-                        set: { newSelection in
-                            // Add new alignments
-                            for valueId in newSelection {
-                                if !valueAlignments.contains(where: { $0.valueId == valueId }) {
-                                    valueAlignments.append(ValueAlignmentInput(
-                                        valueId: valueId,
-                                        alignmentStrength: 5
-                                    ))
-                                }
-                            }
-                            // Remove deselected alignments
-                            valueAlignments.removeAll { alignment in
-                                guard let valueId = alignment.valueId else { return true }
-                                return !newSelection.contains(valueId)
-                            }
-                        }
-                    )
+                    selectedIds: $selectedValueIds
                 )
+                .onChange(of: selectedValueIds) { oldValue, newValue in
+                    // Sync selections with valueAlignments array
+                    // Add new alignments
+                    for valueId in newValue {
+                        if !valueAlignments.contains(where: { $0.valueId == valueId }) {
+                            valueAlignments.append(ValueAlignmentInput(
+                                valueId: valueId,
+                                alignmentStrength: 5
+                            ))
+                        }
+                    }
+                    // Remove deselected alignments
+                    valueAlignments.removeAll { alignment in
+                        guard let valueId = alignment.valueId else { return true }
+                        return !newValue.contains(valueId)
+                    }
+                }
 
                 // Alignment strength sliders
                 ForEach($valueAlignments) { $alignment in
