@@ -172,7 +172,7 @@ public final class GoalCSVService {
         csv += ",MEASURES,,,,,VALUES,,,\n"
         csv += ",unit,type,description,,,title,level,priority,description\n"
 
-        let (measures, values, goalsData) = try await database.read { db in
+        let (measures, values, goalsData, relevances, targets) = try await database.read { db in
             let measures = try Measure.all.order { $0.unit.asc() }.fetchAll(db)
             let values = try PersonalValue.all.order { $0.priority.desc() }.fetchAll(db)
 
@@ -181,7 +181,17 @@ public final class GoalCSVService {
                 .join(Expectation.all) { $0.expectationId.eq($1.id) }
                 .fetchAll(db)
 
-            return (measures, values, goalsWithExpectations)
+            // Fetch all goal-value relevances
+            let relevances = try GoalRelevance.all
+                .join(PersonalValue.all) { $0.valueId.eq($1.id) }
+                .fetchAll(db)
+
+            // Fetch all expectation measures
+            let targets = try ExpectationMeasure.all
+                .join(Measure.all) { $0.measureId.eq($1.id) }
+                .fetchAll(db)
+
+            return (measures, values, goalsWithExpectations, relevances, targets)
         }
 
         // Write reference rows
@@ -214,9 +224,36 @@ public final class GoalCSVService {
         csv += "Optionality,REQUIRED,optional,optional,optional,optional,optional,optional,optional,optional,optional,optional,optional\n"
         csv += "Sample,Run 120km,Spring training,,5,8,120,km,Health,Movement,2025-04-12,2025-06-21,10\n"
 
-        // TODO: Write actual goal data rows
+        // Group relevances by goal ID
+        let relevancesByGoal = Dictionary(grouping: relevances) { $0.0.goalId }
+        let targetsByExpectation = Dictionary(grouping: targets) { $0.0.expectationId }
+
+        // Write actual goal data rows
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withFullDate]
+
         for (index, (goal, expectation)) in goalsData.enumerated() {
-            csv += "\(index + 1),\(escapeCSV(expectation.title ?? "Untitled")),,,,,,,,,,,,\n"
+            let title = escapeCSV(expectation.title ?? "Untitled")
+            let description = escapeCSV(expectation.detailedDescription ?? "")
+            let notes = escapeCSV(expectation.freeformNotes ?? "")
+            let importance = expectation.expectationImportance
+            let urgency = expectation.expectationUrgency
+
+            // Get first target (if any)
+            let firstTarget = targetsByExpectation[expectation.id]?.first
+            let targetValue = firstTarget.map { String($0.0.targetValue) } ?? ""
+            let targetUnit = firstTarget?.1.unit ?? ""
+
+            // Get first two values (if any)
+            let goalValues = relevancesByGoal[goal.id] ?? []
+            let value1 = goalValues.first?.1.title ?? ""
+            let value2 = goalValues.dropFirst().first?.1.title ?? ""
+
+            let startDate = goal.startDate.map { dateFormatter.string(from: $0) } ?? ""
+            let targetDate = goal.targetDate.map { dateFormatter.string(from: $0) } ?? ""
+            let termLength = goal.expectedTermLength.map { String($0) } ?? ""
+
+            csv += "\(index + 1),\(title),\(description),\(notes),\(importance),\(urgency),\(targetValue),\(targetUnit),\(value1),\(value2),\(startDate),\(targetDate),\(termLength)\n"
         }
 
         try csv.write(to: path, atomically: true, encoding: .utf8)
@@ -226,7 +263,8 @@ public final class GoalCSVService {
 
     private func parseCSV(from path: URL) throws -> [CSVRow] {
         let content = try String(contentsOf: path, encoding: .utf8)
-        let lines = content.split(separator: "\n").map { String($0) }
+        // Handle both Unix (\n) and Windows (\r\n) line endings
+        let lines = content.components(separatedBy: .newlines).filter { !$0.isEmpty }
 
         // Find the IMPORT section
         guard let importIndex = lines.firstIndex(where: { $0.contains("IMPORT") }) else {

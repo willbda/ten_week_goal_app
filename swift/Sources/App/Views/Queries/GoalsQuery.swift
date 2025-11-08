@@ -48,25 +48,56 @@ public struct GoalsQuery: FetchKeyRequest {
         // Early return if no goals
         guard !goalsWithExpectations.isEmpty else { return [] }
 
-        // TODO Phase 2: Add bulk fetching of relationships
-        // For now, return basic goal data only (matches current capability)
-        // When adding relationships, follow this pattern:
-        //
-        // 1. Collect goal/expectation IDs
-        // 2. Bulk fetch ExpectationMeasures + Measures (WHERE expectationId IN ...)
-        // 3. Bulk fetch GoalRelevances + Values (WHERE goalId IN ...)
-        // 4. Bulk fetch TermGoalAssignments (WHERE goalId IN ...)
-        // 5. Group results in-memory
-        //
-        // Consider #sql macro for this (see ActionsQuery for example)
+        // 2. Collect IDs for bulk fetching
+        let goalIds = goalsWithExpectations.map { $0.0.id }
+        let expectationIds = goalsWithExpectations.map { $0.0.expectationId }
 
+        // 3. Bulk fetch ExpectationMeasures + Measures
+        let measuresWithTargets = try ExpectationMeasure
+            .where { expectationIds.contains($0.expectationId) }
+            .join(Measure.all) { $0.measureId.eq($1.id) }
+            .fetchAll(db)
+
+        let targetsByExpectation = Dictionary(grouping: measuresWithTargets) { $0.0.expectationId }
+
+        // 4. Bulk fetch GoalRelevances + PersonalValues
+        let relevancesWithValues = try GoalRelevance
+            .where { goalIds.contains($0.goalId) }
+            .join(PersonalValue.all) { $0.valueId.eq($1.id) }
+            .fetchAll(db)
+
+        let alignmentsByGoal = Dictionary(grouping: relevancesWithValues) { $0.0.goalId }
+
+        // 5. Bulk fetch TermGoalAssignments
+        let termAssignments = try TermGoalAssignment
+            .where { goalIds.contains($0.goalId) }
+            .fetchAll(db)
+
+        // Handle duplicate assignments - keep most recent (by createdAt)
+        let assignmentsByGoal = Dictionary(
+            termAssignments.map { ($0.goalId, $0) },
+            uniquingKeysWith: { existing, new in
+                // Keep the one with most recent createdAt
+                return new.createdAt > existing.createdAt ? new : existing
+            }
+        )
+
+        // 6. Combine all data
         return goalsWithExpectations.map { (goal, expectation) in
-            GoalWithDetails(
+            let targets = targetsByExpectation[expectation.id]?.map { (measure, metric) in
+                ExpectationMeasureWithMetric(expectationMeasure: measure, measure: metric)
+            } ?? []
+
+            let alignments = alignmentsByGoal[goal.id]?.map { (relevance, value) in
+                GoalRelevanceWithValue(goalRelevance: relevance, value: value)
+            } ?? []
+
+            return GoalWithDetails(
                 goal: goal,
                 expectation: expectation,
-                metricTargets: [],  // TODO: Fetch in Phase 2
-                valueAlignments: [],  // TODO: Fetch in Phase 2
-                termAssignment: nil  // TODO: Fetch in Phase 2
+                metricTargets: targets,
+                valueAlignments: alignments,
+                termAssignment: assignmentsByGoal[goal.id]
             )
         }
     }

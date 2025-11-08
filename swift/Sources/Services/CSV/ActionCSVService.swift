@@ -302,7 +302,8 @@ public final class ActionCSVService {
 
     private func parseCSV(from path: URL) throws -> [CSVRow] {
         let content = try String(contentsOf: path, encoding: .utf8)
-        let lines = content.split(separator: "\n").map { String($0) }
+        // Handle both Unix (\n) and Windows (\r\n) line endings
+        let lines = content.components(separatedBy: .newlines).filter { !$0.isEmpty }
 
         // Find the IMPORT section
         guard let importIndex = lines.firstIndex(where: { $0.contains("IMPORT") }) else {

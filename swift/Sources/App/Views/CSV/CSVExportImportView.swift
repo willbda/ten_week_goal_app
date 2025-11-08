@@ -23,6 +23,7 @@ struct CSVExportImportView: View {
     enum EntityType: String, CaseIterable, Identifiable {
         case actions = "Actions"
         case goals = "Goals"
+        case values = "Values"
 
         var id: String { rawValue }
     }
@@ -36,6 +37,7 @@ struct CSVExportImportView: View {
     @State private var showFilePicker = false
     @State private var actionParseResult: CSVParseResult<ActionPreview>?
     @State private var goalParseResult: CSVParseResult<GoalPreview>?
+    @State private var valueParseResult: CSVParseResult<ValuePreview>?
     @State private var showPreview = false
 
     var body: some View {
@@ -55,9 +57,7 @@ struct CSVExportImportView: View {
                 } header: {
                     Text("Import/Export Type")
                 } footer: {
-                    Text(selectedEntityType == .actions
-                        ? "Import or export actions with measurements and goal contributions"
-                        : "Import or export goals with metric targets and value alignments")
+                    Text(footerText)
                         .font(.caption)
                 }
 
@@ -166,8 +166,30 @@ struct CSVExportImportView: View {
                             entityName: "Goal"
                         )
                     }
+                case .values:
+                    if let result = valueParseResult {
+                        ImportPreviewView(
+                            parseResult: result,
+                            onConfirm: confirmValueImport,
+                            onCancel: cancelImport,
+                            entityName: "Value"
+                        )
+                    }
                 }
             }
+        }
+    }
+
+    // MARK: - Computed Properties
+
+    private var footerText: String {
+        switch selectedEntityType {
+        case .actions:
+            return "Import or export actions with measurements and goal contributions"
+        case .goals:
+            return "Import or export goals with metric targets and value alignments"
+        case .values:
+            return "Import or export personal values with levels and alignment guidance"
         }
     }
 
@@ -194,6 +216,11 @@ struct CSVExportImportView: View {
                 case .goals:
                     let coordinator = GoalCoordinator(database: database)
                     let service = GoalCSVService(database: database, coordinator: coordinator)
+                    path = try await service.exportTemplate(to: downloadsDir)
+
+                case .values:
+                    let coordinator = PersonalValueCoordinator(database: database)
+                    let service = ValueCSVService(database: database, coordinator: coordinator)
                     path = try await service.exportTemplate(to: downloadsDir)
                 }
 
@@ -229,6 +256,11 @@ struct CSVExportImportView: View {
                     let coordinator = GoalCoordinator(database: database)
                     let service = GoalCSVService(database: database, coordinator: coordinator)
                     path = try await service.exportGoals(to: downloadsDir)
+
+                case .values:
+                    let coordinator = PersonalValueCoordinator(database: database)
+                    let service = ValueCSVService(database: database, coordinator: coordinator)
+                    path = try await service.exportValues(to: downloadsDir)
                 }
 
                 exportResult = """
@@ -271,6 +303,12 @@ struct CSVExportImportView: View {
                     let service = GoalCSVService(database: database, coordinator: coordinator)
                     let result = try await service.previewImport(from: fileURL)
                     goalParseResult = result
+
+                case .values:
+                    let coordinator = PersonalValueCoordinator(database: database)
+                    let service = ValueCSVService(database: database, coordinator: coordinator)
+                    let result = try await service.previewImport(from: fileURL)
+                    valueParseResult = result
                 }
 
                 showPreview = true
@@ -325,10 +363,33 @@ struct CSVExportImportView: View {
         }
     }
 
+    private func confirmValueImport(_ selectedPreviews: [ValuePreview]) {
+        Task {
+            isImporting = true
+            defer { isImporting = false }
+
+            do {
+                let coordinator = PersonalValueCoordinator(database: database)
+                let service = ValueCSVService(database: database, coordinator: coordinator)
+
+                let importResult = try await service.importSelected(selectedPreviews)
+                displayImportResult(importResult)
+
+                // Close preview
+                showPreview = false
+                valueParseResult = nil
+
+            } catch {
+                self.importResult = "⚠️ Import failed: \(error.localizedDescription)"
+            }
+        }
+    }
+
     private func cancelImport() {
         showPreview = false
         actionParseResult = nil
         goalParseResult = nil
+        valueParseResult = nil
     }
 
     private func displayImportResult(_ result: CSVImportResult) {
