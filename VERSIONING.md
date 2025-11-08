@@ -1,8 +1,6 @@
 # Versioning Strategy
 
-**Current Version:** 0.5.0-rearchitecture (Swift implementation - foundation laid, major rearchitecture in progress)
-
-⚠️ **DOCUMENTATION FREEZE**: Most documentation is out of sync with reality. See `DOCUMENTATION_INCONSISTENCIES.md` for details. Documentation will be updated after rearchitecture completes (~0.6.0-0.7.0).
+**Current Version:** 0.6.0 (Coordinator pattern complete, validation layer next)
 
 ## Version History
 
@@ -11,7 +9,8 @@
 | 0.2.0 | - | Git history begins | Python implementation starts |
 | 0.2.5 | - | Flask deployment | Python Flask API deployed |
 | 0.3.0 | - | Swift journey begins | Initial Swift project setup |
-| **0.5.0** | **2025-10-25** | **Foundation complete, rearchitecture needed** | SQLiteData working, protocols defined, but needs structural rethink |
+| 0.5.0 | 2025-10-25 | Foundation complete, rearchitecture needed | SQLiteData working, protocols defined, but needs structural rethink |
+| **0.6.0** | **2025-11-08** | **Coordinator pattern complete** | Phases 1-3 done: 3NF schema, models migrated, all 4 coordinators with full CRUD |
 
 ## Current Implementation Focus
 
@@ -47,22 +46,23 @@ The two implementations have diverged significantly and **no longer share a data
 **Based on**: [swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md](swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md)
 
 ```
-0.5.0 - Current state (Phases 1-2 complete: Schema & Models) ✅
-0.6.0 - Phase 3: Repository/Service layer complete
-0.7.0 - Phase 4: Protocol redesign + Phase 5: ViewModels
-0.8.0 - Phase 6: Views updated (UI fully functional)
+0.5.0 - Phases 1-2 complete: Schema & Models ✅
+0.6.0 - Phase 3: Coordinator pattern complete ✅ (current)
+0.7.0 - Phase 4: Validation layer complete
+0.8.0 - Phases 5-6: ViewModels + Views (UI fully functional)
 0.9.0 - Phase 7: Testing & Migration complete
 1.0.0 - First stable release (Swift only)
 ```
 
 **Phase Timeline**:
-- Phase 3 (Repositories): 1 week
-- Phase 4 (Protocols): 3 days
+- ✅ Phase 1-2 (Schema & Models): 2 weeks (complete)
+- ✅ Phase 3 (Coordinators): 1 week (complete)
+- Phase 4 (Validation): 1 week
 - Phase 5 (ViewModels): 1 week
 - Phase 6 (Views): 1 week
 - Phase 7 (Testing/Migration): 1-2 weeks
 
-**Estimated Time to 1.0**: 5-7 weeks (assuming consistent development)
+**Estimated Time to 1.0**: 4-6 weeks from v0.6.0
 
 
 - First stable release
@@ -115,13 +115,13 @@ echo "✓ Version bumped to $NEW_VERSION"
 echo "Run 'git push && git push --tags' to publish"
 ```
 
-## Current Status Summary (Updated 2025-10-31)
+## Current Status Summary (Updated 2025-11-08)
 
-**Swift Implementation:** Phases 1-2 complete (Database & Models)
+**Swift Implementation:** Phases 1-3 complete (Coordinators ready)
 - ✅ Phase 1: 3NF schema designed and tested
 - ✅ Phase 2: Swift models migrated to SQLiteData
-- 🚧 Phase 3: Repository/Service layer (next)
-- ⏳ Phase 4: Protocol redesign
+- ✅ Phase 3: Coordinator pattern complete (ActionCoordinator, GoalCoordinator, PersonalValueCoordinator, TimePeriodCoordinator)
+- 🚧 Phase 4: Validation layer (next)
 - ⏳ Phase 5: ViewModels
 - ⏳ Phase 6: Views
 - ⏳ Phase 7: Testing & Migration
