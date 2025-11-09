@@ -57,23 +57,45 @@ public final class GoalCSVService {
         return exportPath
     }
 
-    // MARK: - Import
+    // MARK: - Import (Using CSVEngine + GoalMapper)
 
     /// Parse CSV and generate preview (does not import)
-    /// Returns preview rows for user confirmation
     public func previewImport(from csvPath: URL) async throws -> CSVParseResult<GoalPreview> {
-        let rows = try parseCSV(from: csvPath)
-        let lookup = try await buildLookupTables()
+        // Parse CSV with CSVEngine
+        let parsedData = try CSVEngine.parse(fileURL: csvPath)
+        let mapper = GoalMapper(database: database)
 
         var previews: [GoalPreview] = []
         var errors: [String] = []
 
-        for row in rows {
+        for rowIndex in 0..<parsedData.count {
+            let rowDict = parsedData.row(rowIndex)
+            let rowNumber = rowIndex + 1
+
             do {
-                let preview = try convertToPreview(row, lookup: lookup)
+                // Map to FormData first
+                let formData = try mapper.map(row: rowDict, rowNumber: rowNumber)
+
+                // Convert to preview (using GoalPreview's structure)
+                let preview = GoalPreview(
+                    rowNumber: rowNumber,
+                    title: formData.title,
+                    description: formData.detailedDescription,
+                    notes: formData.freeformNotes,
+                    expectationImportance: formData.expectationImportance,
+                    expectationUrgency: formData.expectationUrgency,
+                    startDate: formData.startDate,
+                    targetDate: formData.targetDate,
+                    actionPlan: formData.actionPlan,
+                    expectedTermLength: formData.expectedTermLength,
+                    targets: formData.metricTargets.map { ($0.measureId?.uuidString ?? "", $0.targetValue) },
+                    valueNames: formData.valueAlignments.map { $0.valueId?.uuidString ?? "" },
+                    termNumber: nil,
+                    validationStatus: .valid
+                )
                 previews.append(preview)
             } catch {
-                errors.append("Row \(row.lineNumber): \(error.localizedDescription)")
+                errors.append("Row \(rowNumber): \(error.localizedDescription)")
             }
         }
 
@@ -81,20 +103,73 @@ public final class GoalCSVService {
     }
 
     /// Import selected goal previews
-    /// Only imports goals where isSelected is true
     public func importSelected(_ previews: [GoalPreview]) async throws -> CSVImportResult {
-        let lookup = try await buildLookupTables()
-
+        let mapper = GoalMapper(database: database)
         var successes = 0
         var failures: [(row: Int, error: String)] = []
 
         for preview in previews {
             do {
-                let formData = try await convertPreviewToFormData(preview, lookup: lookup)
+                // Reconstruct metric targets from preview
+                var metricTargets: [MetricTargetInput] = []
+                for (measureIdString, targetValue) in preview.targets {
+                    if let measureId = UUID(uuidString: measureIdString) {
+                        metricTargets.append(MetricTargetInput(measureId: measureId, targetValue: targetValue))
+                    }
+                }
+
+                // Reconstruct value alignments from preview
+                var valueAlignments: [ValueAlignmentInput] = []
+                for valueIdString in preview.valueNames {
+                    if let valueId = UUID(uuidString: valueIdString) {
+                        valueAlignments.append(ValueAlignmentInput(valueId: valueId, alignmentStrength: 5))
+                    }
+                }
+
+                let formData = GoalFormData(
+                    title: preview.title,
+                    detailedDescription: preview.description,
+                    freeformNotes: preview.notes,
+                    expectationImportance: preview.expectationImportance,
+                    expectationUrgency: preview.expectationUrgency,
+                    startDate: preview.startDate,
+                    targetDate: preview.targetDate,
+                    actionPlan: preview.actionPlan,
+                    expectedTermLength: preview.expectedTermLength,
+                    metricTargets: metricTargets,
+                    valueAlignments: valueAlignments,
+                    termId: nil
+                )
+
                 _ = try await coordinator.create(from: formData)
                 successes += 1
             } catch {
                 failures.append((preview.rowNumber, error.localizedDescription))
+            }
+        }
+
+        return CSVImportResult(successes: successes, failures: failures)
+    }
+
+    /// Import goals from CSV file (direct import, no preview)
+    public func importGoals(from csvPath: URL) async throws -> CSVImportResult {
+        // Parse CSV with CSVEngine
+        let parsedData = try CSVEngine.parse(fileURL: csvPath)
+        let mapper = GoalMapper(database: database)
+
+        var successes = 0
+        var failures: [(row: Int, error: String)] = []
+
+        for rowIndex in 0..<parsedData.count {
+            let rowDict = parsedData.row(rowIndex)
+            let rowNumber = rowIndex + 1
+
+            do {
+                let formData = try mapper.map(row: rowDict, rowNumber: rowNumber)
+                _ = try await coordinator.create(from: formData)
+                successes += 1
+            } catch {
+                failures.append((rowNumber, error.localizedDescription))
             }
         }
 
@@ -259,292 +334,9 @@ public final class GoalCSVService {
         try csv.write(to: path, atomically: true, encoding: .utf8)
     }
 
-    // MARK: - CSV Parsing
+}
 
-    private func parseCSV(from path: URL) throws -> [CSVRow] {
-        let content = try String(contentsOf: path, encoding: .utf8)
-        // Handle both Unix (\n) and Windows (\r\n) line endings
-        let lines = content.components(separatedBy: .newlines).filter { !$0.isEmpty }
-
-        // Find the IMPORT section
-        guard let importIndex = lines.firstIndex(where: { $0.contains("IMPORT") }) else {
-            throw CSVError.invalidFormat("CSV must contain 'IMPORT' section marker")
-        }
-
-        let importSection = Array(lines.dropFirst(importIndex))
-
-        guard importSection.count >= 4 else {
-            throw CSVError.invalidFormat("IMPORT section must have Fields, Optionality, Sample, and data rows")
-        }
-
-        // Parse header from Fields row
-        let fieldsLine = importSection[1]
-        let fields = parseCSVLine(fieldsLine)
-
-        // Skip Fields, Optionality, Sample rows → data starts at index 3
-        let dataLines = importSection.dropFirst(3)
-
-        return try dataLines.enumerated().compactMap { (index, line) -> CSVRow? in
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            guard !trimmed.isEmpty else { return nil }
-
-            let values = parseCSVLine(line)
-
-            guard values.count >= fields.count else {
-                throw CSVError.columnMismatch(row: importIndex + 4 + index, expected: fields.count, got: values.count)
-            }
-
-            // Check if row number is just a number (empty data row)
-            let firstValue = values[0].trimmingCharacters(in: .whitespaces)
-            if Int(firstValue) != nil && values.dropFirst().allSatisfy({ $0.trimmingCharacters(in: .whitespaces).isEmpty }) {
-                return nil  // Skip empty numbered rows
-            }
-
-            var rowData: [String: String] = [:]
-            for (col, value) in zip(fields, values) {
-                rowData[col] = value.trimmingCharacters(in: .whitespaces)
-            }
-
-            return CSVRow(lineNumber: importIndex + 4 + index, data: rowData)
-        }
-    }
-
-    /// Parse a CSV line respecting quoted fields
-    /// Handles: `"field with, comma",other field`
-    private func parseCSVLine(_ line: String) -> [String] {
-        var fields: [String] = []
-        var currentField = ""
-        var insideQuotes = false
-        var previousChar: Character? = nil
-
-        for char in line {
-            if char == "\"" {
-                if insideQuotes && previousChar == "\"" {
-                    // Escaped quote ("")
-                    currentField.append(char)
-                    previousChar = nil
-                    continue
-                } else {
-                    insideQuotes.toggle()
-                }
-            } else if char == "," && !insideQuotes {
-                fields.append(currentField)
-                currentField = ""
-            } else {
-                currentField.append(char)
-            }
-            previousChar = char
-        }
-
-        // Add last field
-        fields.append(currentField)
-
-        return fields
-    }
-
-    // MARK: - Lookup Tables
-
-    private func buildLookupTables() async throws -> GoalLookupTables {
-        return try await database.read { db in
-            let measures = try Measure.all.fetchAll(db)
-            var measureMap: [String: UUID] = [:]
-            for measure in measures {
-                measureMap[measure.unit] = measure.id
-            }
-
-            let values = try PersonalValue.all.fetchAll(db)
-            var valueMap: [String: UUID] = [:]
-            for value in values {
-                if let title = value.title {
-                    valueMap[title.lowercased()] = value.id
-                }
-            }
-
-            return GoalLookupTables(measuresByUnit: measureMap, valuesByName: valueMap, allValues: values)
-        }
-    }
-
-    // MARK: - Row Conversion
-
-    private func convertToPreview(_ row: CSVRow, lookup: GoalLookupTables) throws -> GoalPreview {
-        guard let title = row.data["title"], !title.isEmpty else {
-            throw CSVError.missingRequiredField(row: row.lineNumber, field: "title")
-        }
-
-        let description = row.data["description"] ?? ""
-        let notes = row.data["notes"] ?? ""
-        let importance = Int(row.data["importance"] ?? "5") ?? 5
-        let urgency = Int(row.data["urgency"] ?? "5") ?? 5
-
-        // Parse metric target
-        var targets: [(unit: String, value: Double)] = []
-        var validationStatus: ValidationStatus = .valid
-
-        if let targetValueString = row.data["target_value"], !targetValueString.isEmpty,
-           let targetValue = Double(targetValueString),
-           let unit = row.data["target_unit"], !unit.isEmpty {
-
-            if lookup.measuresByUnit[unit] == nil {
-                // Warning: measure will be auto-created during import
-                validationStatus = .warning("Measure '\(unit)' will be created automatically")
-            }
-            targets.append((unit: unit, value: targetValue))
-        }
-
-        // Parse value names
-        var valueNames: [String] = []
-        for i in 1...2 {
-            if let valueName = row.data["value_\(i)_name"], !valueName.isEmpty {
-                valueNames.append(valueName)
-
-                // Check if value exists (fuzzy match in real implementation)
-                if lookup.valuesByName[valueName.lowercased()] == nil {
-                    // Don't error - fuzzy matching will handle this
-                    if validationStatus == .valid {
-                        validationStatus = .warning("Value '\(valueName)' needs fuzzy matching")
-                    }
-                }
-            }
-        }
-
-        // Parse dates
-        let startDate = row.data["start_date"].flatMap { parseDate($0) }
-        let targetDate = row.data["target_date"].flatMap { parseDate($0) }
-        let expectedTermLength = row.data["term_length"].flatMap { Int($0) }
-
-        return GoalPreview(
-            rowNumber: row.lineNumber,
-            title: title,
-            description: description,
-            notes: notes,
-            expectationImportance: importance,
-            expectationUrgency: urgency,
-            startDate: startDate,
-            targetDate: targetDate,
-            expectedTermLength: expectedTermLength,
-            targets: targets,
-            valueNames: valueNames,
-            validationStatus: validationStatus
-        )
-    }
-
-    private func convertPreviewToFormData(_ preview: GoalPreview, lookup: GoalLookupTables) async throws -> GoalFormData {
-        // Convert metric targets (auto-create missing measures)
-        var metricTargets: [MetricTargetInput] = []
-        for (unit, value) in preview.targets {
-            let measureId: UUID
-            if let existingId = lookup.measuresByUnit[unit] {
-                measureId = existingId
-            } else {
-                // Auto-create missing measure
-                measureId = try await createMeasure(unit: unit)
-            }
-            metricTargets.append(MetricTargetInput(measureId: measureId, targetValue: value, notes: nil))
-        }
-
-        // Convert value alignments with fuzzy matching
-        var valueAlignments: [ValueAlignmentInput] = []
-        for name in preview.valueNames {
-            let normalizedName = name.lowercased().trimmingCharacters(in: .whitespaces)
-
-            // Try exact match first
-            if let valueId = lookup.valuesByName[normalizedName] {
-                valueAlignments.append(ValueAlignmentInput(
-                    valueId: valueId,
-                    alignmentStrength: 5,  // Default strength
-                    relevanceNotes: nil
-                ))
-            } else {
-                // Fuzzy match (simple substring for now)
-                if let matched = lookup.allValues.first(where: {
-                    $0.title?.lowercased().contains(normalizedName) == true
-                }) {
-                    valueAlignments.append(ValueAlignmentInput(
-                        valueId: matched.id,
-                        alignmentStrength: 5,
-                        relevanceNotes: "Fuzzy matched: \(name) → \(matched.title ?? "")"
-                    ))
-                }
-                // If no match, skip (don't throw error)
-            }
-        }
-
-        return GoalFormData(
-            title: preview.title,
-            detailedDescription: preview.description,
-            freeformNotes: preview.notes,
-            expectationImportance: preview.expectationImportance,
-            expectationUrgency: preview.expectationUrgency,
-            startDate: preview.startDate,
-            targetDate: preview.targetDate,
-            actionPlan: preview.actionPlan,
-            expectedTermLength: preview.expectedTermLength,
-            metricTargets: metricTargets,
-            valueAlignments: valueAlignments,
-            termId: nil  // Not supported in CSV import yet
-        )
-    }
-
-    // MARK: - Helpers
-
-    /// Auto-create a measure if it doesn't exist
-    /// Attempts to infer measureType from common units
-    private func createMeasure(unit: String) async throws -> UUID {
-        let measureType = inferMeasureType(from: unit)
-        let measureId = UUID()
-
-        try await database.write { db in
-            try Measure.insert {
-                Measure.Draft(
-                    id: measureId,
-                    logTime: Date(),
-                    title: unit.capitalized,
-                    detailedDescription: "Auto-created from CSV import",
-                    freeformNotes: nil,
-                    unit: unit,
-                    measureType: measureType,
-                    canonicalUnit: unit,
-                    conversionFactor: nil
-                )
-            }.execute(db)
-        }
-
-        return measureId
-    }
-
-    /// Infer measure type from unit name
-    private func inferMeasureType(from unit: String) -> String {
-        let lowercased = unit.lowercased()
-
-        // Distance units
-        if ["km", "kilometers", "mi", "miles", "m", "meters", "ft", "feet"].contains(lowercased) {
-            return "distance"
-        }
-
-        // Time units
-        if ["hours", "minutes", "seconds", "min", "sec", "hr", "h"].contains(lowercased) {
-            return "time"
-        }
-
-        // Mass/weight units
-        if ["kg", "kilograms", "lbs", "pounds", "g", "grams"].contains(lowercased) {
-            return "mass"
-        }
-
-        // Energy units
-        if ["kcal", "calories", "cal", "kj", "kilojoules"].contains(lowercased) {
-            return "energy"
-        }
-
-        // Count units (default for unknown)
-        return "count"
-    }
-
-    private func parseDate(_ string: String) -> Date? {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withFullDate]  // Just date, no time
-        return formatter.date(from: string)
-    }
+    // MARK: - CSV Helper
 
     private func escapeCSV(_ value: String) -> String {
         if value.contains(",") || value.contains("\"") || value.contains("\n") {
@@ -552,12 +344,3 @@ public final class GoalCSVService {
         }
         return value
     }
-}
-
-// MARK: - Supporting Types
-
-struct GoalLookupTables {
-    let measuresByUnit: [String: UUID]
-    let valuesByName: [String: UUID]  // Lowercase names for matching
-    let allValues: [PersonalValue]  // For fuzzy matching
-}

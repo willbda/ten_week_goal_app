@@ -56,22 +56,40 @@ public final class ValueCSVService {
         return exportPath
     }
 
-    // MARK: - Import
+    // MARK: - Import (Using CSVEngine + ValueMapper)
 
     /// Parse CSV and generate preview (does not import)
-    /// Returns preview rows for user confirmation
     public func previewImport(from csvPath: URL) async throws -> CSVParseResult<ValuePreview> {
-        let rows = try parseCSV(from: csvPath)
+        // Parse CSV with CSVEngine
+        let parsedData = try CSVEngine.parse(fileURL: csvPath)
+        let mapper = ValueMapper()
 
         var previews: [ValuePreview] = []
         var errors: [String] = []
 
-        for row in rows {
+        for rowIndex in 0..<parsedData.count {
+            let rowDict = parsedData.row(rowIndex)
+            let rowNumber = rowIndex + 1
+
             do {
-                let preview = try convertToPreview(row)
+                // Map to FormData first
+                let formData = try mapper.map(row: rowDict, rowNumber: rowNumber)
+
+                // Convert to preview (using ValuePreview's structure)
+                let preview = ValuePreview(
+                    rowNumber: rowNumber,
+                    title: formData.title,
+                    detailedDescription: formData.detailedDescription,
+                    freeformNotes: formData.freeformNotes,
+                    priority: formData.priority,
+                    valueLevel: formData.valueLevel,
+                    lifeDomain: formData.lifeDomain,
+                    alignmentGuidance: formData.alignmentGuidance,
+                    validationStatus: .valid
+                )
                 previews.append(preview)
             } catch {
-                errors.append("Row \(row.lineNumber): \(error.localizedDescription)")
+                errors.append("Row \(rowNumber): \(error.localizedDescription)")
             }
         }
 
@@ -79,18 +97,52 @@ public final class ValueCSVService {
     }
 
     /// Import selected value previews
-    /// Only imports values where isSelected is true
     public func importSelected(_ previews: [ValuePreview]) async throws -> CSVImportResult {
         var successes = 0
         var failures: [(row: Int, error: String)] = []
 
         for preview in previews {
             do {
-                let formData = convertPreviewToFormData(preview)
+                // Re-map the preview data to FormData
+                let formData = ValueFormData(
+                    title: preview.title,
+                    detailedDescription: preview.detailedDescription,
+                    freeformNotes: preview.freeformNotes,
+                    valueLevel: preview.valueLevel,
+                    priority: preview.priority,
+                    lifeDomain: preview.lifeDomain,
+                    alignmentGuidance: preview.alignmentGuidance
+                )
+
                 _ = try await coordinator.create(from: formData)
                 successes += 1
             } catch {
                 failures.append((preview.rowNumber, error.localizedDescription))
+            }
+        }
+
+        return CSVImportResult(successes: successes, failures: failures)
+    }
+
+    /// Import values from CSV file (direct import, no preview)
+    public func importValues(from csvPath: URL) async throws -> CSVImportResult {
+        // Parse CSV with CSVEngine
+        let parsedData = try CSVEngine.parse(fileURL: csvPath)
+        let mapper = ValueMapper()
+
+        var successes = 0
+        var failures: [(row: Int, error: String)] = []
+
+        for rowIndex in 0..<parsedData.count {
+            let rowDict = parsedData.row(rowIndex)
+            let rowNumber = rowIndex + 1
+
+            do {
+                let formData = try mapper.map(row: rowDict, rowNumber: rowNumber)
+                _ = try await coordinator.create(from: formData)
+                successes += 1
+            } catch {
+                failures.append((rowNumber, error.localizedDescription))
             }
         }
 
@@ -173,157 +225,9 @@ public final class ValueCSVService {
         try csv.write(to: path, atomically: true, encoding: .utf8)
     }
 
-    // MARK: - CSV Parsing
+}
 
-    private func parseCSV(from path: URL) throws -> [CSVRow] {
-        let content = try String(contentsOf: path, encoding: .utf8)
-        // Handle both Unix (\n) and Windows (\r\n) line endings
-        let lines = content.components(separatedBy: .newlines).filter { !$0.isEmpty }
-
-        // Find the IMPORT section
-        guard let importIndex = lines.firstIndex(where: { $0.contains("IMPORT") }) else {
-            throw CSVError.invalidFormat("CSV must contain 'IMPORT' section marker")
-        }
-
-        let importSection = Array(lines.dropFirst(importIndex))
-
-        guard importSection.count >= 4 else {
-            throw CSVError.invalidFormat("IMPORT section must have Fields, Optionality, Sample, and data rows")
-        }
-
-        // Parse header from Fields row
-        let fieldsLine = importSection[1]
-        let fields = parseCSVLine(fieldsLine)
-
-        // Skip Fields, Optionality, Sample rows → data starts at index 3
-        let dataLines = importSection.dropFirst(3)
-
-        return try dataLines.enumerated().compactMap { (index, line) -> CSVRow? in
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            guard !trimmed.isEmpty else { return nil }
-
-            let values = parseCSVLine(line)
-
-            guard values.count >= fields.count else {
-                throw CSVError.columnMismatch(row: importIndex + 4 + index, expected: fields.count, got: values.count)
-            }
-
-            // Check if row number is just a number (empty data row)
-            let firstValue = values[0].trimmingCharacters(in: .whitespaces)
-            if Int(firstValue) != nil && values.dropFirst().allSatisfy({ $0.trimmingCharacters(in: .whitespaces).isEmpty }) {
-                return nil  // Skip empty numbered rows
-            }
-
-            var rowData: [String: String] = [:]
-            for (col, value) in zip(fields, values) {
-                rowData[col] = value.trimmingCharacters(in: .whitespaces)
-            }
-
-            return CSVRow(lineNumber: importIndex + 4 + index, data: rowData)
-        }
-    }
-
-    /// Parse a CSV line respecting quoted fields
-    /// Handles: `"field with, comma",other field`
-    private func parseCSVLine(_ line: String) -> [String] {
-        var fields: [String] = []
-        var currentField = ""
-        var insideQuotes = false
-        var previousChar: Character? = nil
-
-        for char in line {
-            if char == "\"" {
-                if insideQuotes && previousChar == "\"" {
-                    // Escaped quote ("")
-                    currentField.append(char)
-                    previousChar = nil
-                    continue
-                } else {
-                    insideQuotes.toggle()
-                }
-            } else if char == "," && !insideQuotes {
-                fields.append(currentField)
-                currentField = ""
-            } else {
-                currentField.append(char)
-            }
-            previousChar = char
-        }
-
-        // Add last field
-        fields.append(currentField)
-
-        return fields
-    }
-
-    // MARK: - Row Conversion
-
-    private func convertToPreview(_ row: CSVRow) throws -> ValuePreview {
-        // 1. Validate required fields
-        guard let title = row.data["title"], !title.isEmpty else {
-            throw CSVError.missingRequiredField(row: row.lineNumber, field: "title")
-        }
-
-        guard let levelString = row.data["level"], !levelString.isEmpty else {
-            throw CSVError.missingRequiredField(row: row.lineNumber, field: "level")
-        }
-
-        // 2. Parse valueLevel enum
-        guard let valueLevel = ValueLevel(rawValue: levelString.lowercased()) else {
-            throw CSVError.invalidFormat("Invalid level '\(levelString)'. Must be: general, major, highest_order, life_area")
-        }
-
-        // 3. Parse optional priority
-        let priority: Int?
-        if let priorityString = row.data["priority"], !priorityString.isEmpty {
-            if let p = Int(priorityString) {
-                priority = p
-            } else {
-                throw CSVError.invalidFormat("Invalid priority '\(priorityString)'. Must be a number between 1-100")
-            }
-        } else {
-            priority = nil  // Will use valueLevel.defaultPriority
-        }
-
-        // 4. Extract other fields (all optional)
-        let description = row.data["description"]?.isEmpty == false ? row.data["description"] : nil
-        let notes = row.data["notes"]?.isEmpty == false ? row.data["notes"] : nil
-        let lifeDomain = row.data["life_domain"]?.isEmpty == false ? row.data["life_domain"] : nil
-        let alignmentGuidance = row.data["alignment_guidance"]?.isEmpty == false ? row.data["alignment_guidance"] : nil
-
-        // 5. Validate constraints
-        var validationStatus: ValidationStatus = .valid
-
-        if let p = priority, !(1...100).contains(p) {
-            validationStatus = .error("Priority must be 1-100, got \(p)")
-        }
-
-        return ValuePreview(
-            rowNumber: row.lineNumber,
-            title: title,
-            detailedDescription: description,
-            freeformNotes: notes,
-            priority: priority,
-            valueLevel: valueLevel,
-            lifeDomain: lifeDomain,
-            alignmentGuidance: alignmentGuidance,
-            validationStatus: validationStatus
-        )
-    }
-
-    private func convertPreviewToFormData(_ preview: ValuePreview) -> ValueFormData {
-        return ValueFormData(
-            title: preview.valueTitle,
-            detailedDescription: preview.detailedDescription,
-            freeformNotes: preview.freeformNotes,
-            valueLevel: preview.valueLevel,
-            priority: preview.priority,
-            lifeDomain: preview.lifeDomain,
-            alignmentGuidance: preview.alignmentGuidance
-        )
-    }
-
-    // MARK: - Helpers
+    // MARK: - CSV Helper
 
     private func escapeCSV(_ value: String) -> String {
         if value.contains(",") || value.contains("\"") || value.contains("\n") {
@@ -331,15 +235,3 @@ public final class ValueCSVService {
         }
         return value
     }
-}
-
-// MARK: - CSVImportService Conformance
-
-extension ValueCSVService: CSVImportService {
-    public var entityName: String { "Value" }
-    public var entityNamePlural: String { "Values" }
-
-    public func exportAll(to directory: URL) async throws -> URL {
-        try await exportValues(to: directory)
-    }
-}

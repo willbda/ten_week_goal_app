@@ -182,8 +182,9 @@ public struct Goal: DomainBasic {
 
 - **Database Schema**: `swift/Sources/Database/Schemas/schema_current.sql`
 - **Package Definition**: `swift/Package.swift`
-- **Active Documentation**: `swift/docs/
+- **Active Documentation**: `swift/docs/20251108.md`
 - **Repository Plan**: `swift/docs/REPOSITORY_IMPLEMENTATION_PLAN.md`
+- **Visual Design System**: `swift/docs/LIQUID_GLASS_VISUAL_SYSTEM.md`
 
 ## Development Guidelines
 

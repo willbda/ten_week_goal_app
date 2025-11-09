@@ -42,6 +42,16 @@ The app uses a normalized database design with three conceptual layers:
 2. **Basic Layer**: Working entities that reference abstractions (Goal, Milestone, Obligation, Term)
 3. **Composit Layer**: Junction tables for relationships (MeasuredAction, GoalRelevance, ActionGoalContribution)
 
+### Visual Design System (iOS 26+ Liquid Glass)
+
+The app embraces Apple's Liquid Glass design language with a three-layer visual hierarchy:
+
+1. **Content Layer**: Rich, vibrant backgrounds and goal cards with standard materials
+2. **Glass Layer**: Navigation and controls floating above with Liquid Glass
+3. **Overlay Layer**: Content on glass using vibrancy and fills
+
+See [LIQUID_GLASS_VISUAL_SYSTEM.md](swift/docs/LIQUID_GLASS_VISUAL_SYSTEM.md) for complete design specifications.
+
 ### Technology Stack
 
 - **Language**: Swift 6.2 with strict concurrency
