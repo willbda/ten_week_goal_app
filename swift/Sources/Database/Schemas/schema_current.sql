@@ -43,7 +43,7 @@ CREATE TABLE measures (
 -- PersonalValues: Unified values and life areas
 CREATE TABLE personalValues (
     id TEXT PRIMARY KEY,
-    title TEXT,
+    title TEXT NOT NULL CHECK(LENGTH(TRIM(title)) > 0),
     detailedDescription TEXT,
     freeformNotes TEXT,
     logTime TEXT NOT NULL,

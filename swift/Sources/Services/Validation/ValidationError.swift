@@ -9,7 +9,7 @@
 // Foundation layer - no dependencies, used by all validators.
 //
 // UPSTREAM (calls this):
-// - ActionValidator, GoalValidator, TermValidator, ValueValidator
+// - ActionValidator, GoalValidator, TermValidator, PersonalValueValidator
 // - ActionCoordinator, GoalCoordinator, TermCoordinator, ValueCoordinator (catch these)
 // - ViewModels (display error.userMessage to user)
 //
