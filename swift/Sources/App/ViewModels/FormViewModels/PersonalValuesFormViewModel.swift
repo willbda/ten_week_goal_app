@@ -37,14 +37,16 @@ public final class PersonalValuesFormViewModel {
     @ObservationIgnored
     @Dependency(\.defaultDatabase) var database
 
-    // ARCHITECTURE DECISION: No lazy properties with @Observable
-    // CONTEXT: @Observable macro doesn't support lazy properties (compiler error)
-    // SOLUTION: Create coordinator on-demand via computed property
-    // TRADEOFF: Recreated each time, but coordinators are lightweight (just hold database ref)
-    // ALTERNATIVE: Could store as @ObservationIgnored var, but then not lazy
-    private var coordinator: PersonalValueCoordinator {
+    // ARCHITECTURE DECISION: Lazy stored property with @ObservationIgnored
+    // CONTEXT: Swift 6 strict concurrency - coordinators are now non-isolated
+    // PATTERN: Use lazy var with @ObservationIgnored for multi-method coordinator usage
+    // WHY LAZY: Coordinator used in multiple methods (save, update, delete)
+    // WHY @ObservationIgnored: Coordinators are stateless services, no observable state
+    // RESULT: Coordinator created once on first use, safe across all async methods
+    @ObservationIgnored
+    private lazy var coordinator: PersonalValueCoordinator = {
         PersonalValueCoordinator(database: database)
-    }
+    }()
 
     public init() {}
 

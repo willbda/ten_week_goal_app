@@ -52,9 +52,16 @@ public final class ActionFormViewModel {
     @ObservationIgnored
     @Dependency(\.defaultDatabase) var database
 
-    private var coordinator: ActionCoordinator {
+    // ARCHITECTURE DECISION: Lazy stored property with @ObservationIgnored
+    // CONTEXT: Swift 6 strict concurrency - coordinators are now non-isolated
+    // PATTERN: Use lazy var with @ObservationIgnored for multi-method coordinator usage
+    // WHY LAZY: Coordinator used in multiple methods (save, update, delete)
+    // WHY @ObservationIgnored: Coordinators are stateless services, no observable state
+    // RESULT: Coordinator created once on first use, safe across all async methods
+    @ObservationIgnored
+    private lazy var coordinator: ActionCoordinator = {
         ActionCoordinator(database: database)
-    }
+    }()
 
     // MARK: - Initialization
 
