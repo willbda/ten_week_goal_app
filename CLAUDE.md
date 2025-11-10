@@ -318,6 +318,187 @@ python doc_fetcher.py fetch "https://developer.apple.com/documentation/swiftui/o
 
 **Tip**: When researching unfamiliar APIs or checking if patterns have changed in recent iOS/macOS versions, always start with doc-fetcher rather than trying to fetch pages directly.
 
+## Reference Documentation Library
+
+A comprehensive collection of indexed documentation is available at `/Users/davidwilliams/Coding/REFERENCE/documents/`.
+
+### Directory Structure
+
+```
+REFERENCE/documents/
+├── SwiftLanguage/          [113 files: Swift 6.2 Programming Language book]
+├── appleDeveloper/         [34 files: SwiftUI, SwiftData, Foundation Models]
+├── hig_docs/               [17 files: Human Interface Guidelines]
+└── GRDB/                   [1 file: Historical SQLite reference]
+```
+
+### 1. Swift Language Guide (113 files)
+
+**Path**: `/Users/davidwilliams/Coding/REFERENCE/documents/SwiftLanguage/`
+**Source**: Official Swift Programming Language (v6.2) from docs.swift.org
+**Format**: Markdown + 84 PNG diagrams
+**Last Updated**: 2025-10-21
+
+#### Core Sections
+
+**Introduction** (`01-Introduction/`)
+- About Swift, Version Compatibility, A Swift Tour
+
+**Language Guide** (`02-LanguageGuide/`) - 29 chapters
+- Fundamentals: The Basics, Basic Operators, Strings and Characters, Collection Types, Control Flow
+- Functions & Closures: Functions, Closures
+- Type System: Classes and Structures, Enumerations, Properties, Methods, Subscripts, Inheritance
+- Advanced Types: Optional Chaining, Type Casting, Nested Types, Extensions, Protocols, Generics, Opaque Types
+- Memory & Safety: Initialization, Deinitialization, Automatic Reference Counting, Memory Safety, Access Control
+- Modern Features: **Concurrency** (Swift 6 patterns), **Macros** (@Observable, @Table, etc.), Error Handling
+- Operators: Advanced Operators
+
+**Language Reference** (`03-ReferenceManual/`) - 10 files
+- Technical specifications: Lexical Structure, Types, Expressions, Statements, Declarations, Attributes, Patterns, Generic Parameters and Arguments, Grammar Summary
+
+**Most Relevant to Project**:
+- `02-LanguageGuide/18-Concurrency.md` - Swift 6 async/await, actors, Sendable, @MainActor
+- `02-LanguageGuide/19-Macros.md` - Understanding @Observable, @Table, @Column macros
+- `02-LanguageGuide/24-Protocols.md` - Protocol-oriented programming patterns
+- `02-LanguageGuide/25-Generics.md` - Type-safe generic patterns
+- `02-LanguageGuide/27-AutomaticReferenceCounting.md` - Memory management, reference cycles
+
+### 2. Apple Developer Documentation (34 files)
+
+**Path**: `/Users/davidwilliams/Coding/REFERENCE/documents/appleDeveloper/`
+
+#### 2.1 SwiftUI (13 files) - `appleDeveloper/swiftui/`
+
+**Core Framework**:
+- `swiftui.md` - Framework overview
+- `app.md`, `app-organization.md` - App structure and lifecycle
+- `scenes.md`, `windows.md` - Scene management
+- `view.md` - View fundamentals
+- `appkit.md`, `uikit.md` - Legacy framework integration
+
+**Modern Design**:
+- `adopting-liquid-glass.md` - iOS 26+ visual design system
+- `landmarks-building-an-app-with-liquid-glass.md` - Liquid Glass tutorial
+
+**Tutorials**:
+- `building-a-document-based-app-with-swiftui.md`
+- `bot-anist.md`, `destination-video.md`
+
+**Project Relevance**: Core framework currently in use. See `swift/docs/LIQUID_GLASS_VISUAL_SYSTEM.md` for project-specific design implementation.
+
+#### 2.2 SwiftData (11 files) - `appleDeveloper/swiftdata/`
+
+**Core APIs**:
+- `swiftdata.md` - Framework overview
+- `model.md` - @Model macro and entity definition
+- `query.md` - @Query property wrapper
+- `index_.md` - Performance indexing
+- `attribute_originalnamehashmodifier.md` - Schema evolution
+- `relationship_deleteruleminimummodelcountmaximummodelcountoriginalnameinversehashmodifier.md` - Relationships
+- `unique_.md` - Uniqueness constraints
+
+**Tutorials**:
+- `adding-and-editing-persistent-data-in-your-app.md`
+- `adopting-inheritance-in-swiftdata.md`
+- `adopting-swiftdata-for-a-core-data-app.md`
+- `preserving-your-apps-model-data-across-launches.md`
+
+**Project Note**: This project uses **SQLiteData**, not SwiftData. These docs are useful for:
+- Comparison and understanding alternative approaches
+- Potential migration considerations
+- Understanding Apple's modern data persistence patterns
+
+#### 2.3 Foundation Models (10 files) - `appleDeveloper/foundationmodels/`
+
+**Core APIs** (iOS 26+ on-device LLM):
+- `foundation-models.md` - Framework overview
+- `systemlanguagemodel.md` - System model access
+- `languagemodelsession.md` - Session management
+- `prompt.md`, `instructions.md` - Prompt engineering
+- `tool.md` - Function calling / tool use
+- `transcript.md` - Conversation history
+
+**Advanced Features**:
+- `generating-swift-data-structures-with-guided-generation.md` - Structured output (guided generation)
+- `improving-the-safety-of-generative-model-output.md` - Safety controls
+- `support-languages-and-locales-with-foundation-models.md` - Localization
+
+**Project Status**: Planned integration for on-device assistance. See "Active Work Areas" in Current Development Status.
+
+### 3. Human Interface Guidelines (17 files)
+
+**Path**: `/Users/davidwilliams/Coding/REFERENCE/documents/hig_docs/`
+**Platforms**: iOS, macOS, visionOS design patterns
+
+**Design Foundations**:
+- `foundations.md` - Core design principles
+- `color.md`, `typography.md` - Visual language
+- `layout.md` - Spatial organization
+- `patterns.md` - Common interaction patterns
+- `modality.md` - Modal presentation
+
+**Components**:
+- `buttons.md` - Button styles and usage
+- `text-fields.md` - Text input patterns
+- `lists-and-tables.md` - Data presentation
+- `toolbars.md` - Toolbar design
+- `progress-indicators.md` - Loading states
+- `feedback.md` - User feedback patterns
+- `entering-data.md` - Form design
+
+**Framework-Specific**:
+- `swiftui.md` - SwiftUI component guidelines
+- `swiftdata.md` - Data persistence UX patterns
+- `designing-for-macos.md` - macOS-specific patterns
+- `technology-overviews.md` - Framework overviews
+
+**Project Relevance**: Primary reference for UI/UX implementation. Complements `swift/docs/LIQUID_GLASS_VISUAL_SYSTEM.md`.
+
+### 4. GRDB Reference (1 file)
+
+**Path**: `/Users/davidwilliams/Coding/REFERENCE/documents/GRDB/`
+
+- `README.md` - GRDB.swift SQLite toolkit documentation
+
+**Project Note**: Historical reference. The project previously considered GRDB but evolved toward SQLiteData. Useful for understanding:
+- Alternative SQLite approaches in Swift
+- Performance optimization patterns
+- Migration strategies
+
+### Quick Access Patterns
+
+```bash
+# Swift 6 Concurrency patterns
+/Users/davidwilliams/Coding/REFERENCE/documents/SwiftLanguage/02-LanguageGuide/18-Concurrency.md
+
+# Macro system (@Observable, @Table)
+/Users/davidwilliams/Coding/REFERENCE/documents/SwiftLanguage/02-LanguageGuide/19-Macros.md
+
+# SwiftUI modern patterns
+/Users/davidwilliams/Coding/REFERENCE/documents/appleDeveloper/swiftui/adopting-liquid-glass.md
+
+# Foundation Models API
+/Users/davidwilliams/Coding/REFERENCE/documents/appleDeveloper/foundationmodels/foundation-models.md
+
+# HIG design guidelines
+/Users/davidwilliams/Coding/REFERENCE/documents/hig_docs/foundations.md
+```
+
+### Research Workflow
+
+1. **For Swift language questions**: Start with `SwiftLanguage/02-LanguageGuide/` relevant chapter
+2. **For framework APIs**: Check `appleDeveloper/swiftui/` or `appleDeveloper/foundationmodels/`
+3. **For design decisions**: Reference `hig_docs/` for platform patterns
+4. **For complex research**: Use doc-fetcher skill to search indexed documentation
+5. **For live APIs**: Use doc-fetcher to fetch and index new developer.apple.com pages
+
+### File Format Summary
+
+- **Total files**: 145 reference documents
+- **Markdown files**: 96 (all documentation)
+- **Images**: 84 (Swift Language diagrams - bitwise ops, memory cycles, etc.)
+- **README files**: 2 (SwiftLanguage, GRDB)
+
 ## Modern Swift/SwiftUI Patterns (iOS 26+, Swift 6.2)
 
 ### Critical Pattern Updates
