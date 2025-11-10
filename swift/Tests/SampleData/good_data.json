@@ -1,0 +1,376 @@
+{
+  "_comment": "VALID FormData examples for validation testing. All should pass validation.",
+
+  "measures": [
+    {
+      "description": "Distance measure with conversion factor",
+      "data": {
+        "title": "Kilometers",
+        "detailedDescription": "Metric unit for measuring distance",
+        "unit": "km",
+        "measureType": "distance",
+        "canonicalUnit": "m",
+        "conversionFactor": 1000.0
+      }
+    },
+    {
+      "description": "Time measure (minimal)",
+      "data": {
+        "title": "Minutes",
+        "unit": "min",
+        "measureType": "time"
+      }
+    },
+    {
+      "description": "Energy expenditure measure",
+      "data": {
+        "title": "Kilocalories",
+        "detailedDescription": "Energy expenditure from physical activity",
+        "unit": "kcal",
+        "measureType": "energy",
+        "freeformNotes": "Based on heart rate and activity level"
+      }
+    },
+    {
+      "description": "Count measure for occurrences",
+      "data": {
+        "title": "Sessions",
+        "unit": "sessions",
+        "measureType": "count"
+      }
+    }
+  ],
+
+  "personalValues": [
+    {
+      "description": "Major value with all fields populated",
+      "data": {
+        "title": "Physical Health and Wellness",
+        "detailedDescription": "Maintaining physical health through regular exercise, balanced nutrition, and adequate rest to support longevity and quality of life.",
+        "freeformNotes": "Focus on sustainable habits rather than extreme changes.",
+        "valueLevel": "major",
+        "priority": 85,
+        "lifeDomain": "Health, Fitness",
+        "alignmentGuidance": "Prioritize activities that build strength, cardiovascular health, and flexibility. Avoid sedentary lifestyle choices."
+      }
+    },
+    {
+      "description": "Highest order value with minimal fields",
+      "data": {
+        "title": "Live Authentically",
+        "valueLevel": "highest_order"
+      }
+    },
+    {
+      "description": "Life area value with moderate priority",
+      "data": {
+        "title": "Professional Development",
+        "detailedDescription": "Building technical skills and advancing career through continuous learning.",
+        "valueLevel": "life_area",
+        "priority": 50,
+        "lifeDomain": "Career, Learning"
+      }
+    },
+    {
+      "description": "General value with low priority",
+      "data": {
+        "title": "Environmental Awareness",
+        "valueLevel": "general",
+        "priority": 20
+      }
+    }
+  ],
+
+  "actions": [
+    {
+      "description": "Action with measurements and goal contribution",
+      "data": {
+        "title": "Morning Workout Session",
+        "detailedDescription": "Completed strength training routine focusing on upper body exercises.",
+        "durationMinutes": 45.0,
+        "startTime": "2025-11-09T06:30:00Z",
+        "measurements": [
+          {
+            "measureId": "1da769f9-4385-45aa-b940-13ff6598418e",
+            "value": 320.5
+          },
+          {
+            "measureId": "0753e232-ef0d-4279-b442-1d1340bbb123",
+            "value": 45.0
+          }
+        ],
+        "goalContributions": ["18fec128-bf92-40df-9ac3-93dfb52df27a"]
+      }
+    },
+    {
+      "description": "Action with only title and duration (minimal)",
+      "data": {
+        "title": "Quick meditation session",
+        "durationMinutes": 10.0,
+        "startTime": "2025-11-09T07:00:00Z"
+      }
+    },
+    {
+      "description": "Action with no title but has description and measurements",
+      "data": {
+        "detailedDescription": "Completed coding work on validation layer for goal tracking application.",
+        "durationMinutes": 120.0,
+        "startTime": "2025-11-08T14:00:00Z",
+        "measurements": [
+          {
+            "measureId": "0753e232-ef0d-4279-b442-1d1340bbb123",
+            "value": 120.0
+          }
+        ]
+      }
+    },
+    {
+      "description": "Action with zero duration (valid edge case)",
+      "data": {
+        "title": "Brief check-in call",
+        "durationMinutes": 0.0,
+        "startTime": "2025-11-09T09:00:00Z"
+      }
+    },
+    {
+      "description": "Action with only goal contribution (no measurements)",
+      "data": {
+        "title": "Reviewed project documentation",
+        "durationMinutes": 30.0,
+        "startTime": "2025-11-09T10:00:00Z",
+        "goalContributions": ["198e669f-e946-409a-a794-ddc003440171"]
+      }
+    }
+  ],
+
+  "goals": [
+    {
+      "description": "Complete goal with all fields populated",
+      "data": {
+        "title": "Complete Database Migration",
+        "detailedDescription": "Migrate application database to use new three-layer architecture with improved validation and repository patterns.",
+        "freeformNotes": "This is a critical technical milestone for the application.",
+        "expectationImportance": 9,
+        "expectationUrgency": 7,
+        "startDate": "2025-11-01T00:00:00Z",
+        "targetDate": "2025-12-31T23:59:59Z",
+        "actionPlan": "1. Complete validation layer\n2. Implement repository pattern\n3. Update all views to use new patterns\n4. Write comprehensive tests",
+        "expectedTermLength": 1,
+        "metricTargets": [
+          {
+            "measureId": "dc4a73c7-2438-4237-a6a4-1381d6036507",
+            "targetValue": 80.0,
+            "notes": "Estimated 80 hours of development work"
+          }
+        ],
+        "valueAlignments": [
+          {
+            "valueId": "2dadf759-efa9-4cb9-a499-92a6eaa450f3",
+            "alignmentStrength": 9,
+            "relevanceNotes": "Directly supports technical skill development"
+          },
+          {
+            "valueId": "4b377d33-2238-438e-93f7-1c9a6dc399eb",
+            "alignmentStrength": 6,
+            "relevanceNotes": "Contributes to professional capabilities"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Minimal goal with only required fields",
+      "data": {
+        "title": "Daily Mindfulness Practice",
+        "expectationImportance": 5,
+        "expectationUrgency": 3,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "Goal with description but no title",
+      "data": {
+        "detailedDescription": "Establish a consistent weekly routine for physical fitness activities including cardio and strength training.",
+        "expectationImportance": 8,
+        "expectationUrgency": 6,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-02-09T00:00:00Z",
+        "metricTargets": [
+          {
+            "measureId": "ca51de99-ba51-4df2-942a-2fe92c29a109",
+            "targetValue": 3.0,
+            "notes": "Three workout sessions per week"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Goal with same start and end date (valid edge case)",
+      "data": {
+        "title": "One-day workshop completion",
+        "expectationImportance": 5,
+        "expectationUrgency": 8,
+        "startDate": "2025-12-15T09:00:00Z",
+        "targetDate": "2025-12-15T17:00:00Z"
+      }
+    }
+  ],
+
+  "milestones": [
+    {
+      "description": "Complete milestone with all fields",
+      "data": {
+        "title": "Launch Beta Version",
+        "detailedDescription": "Release working beta version to initial test users for feedback",
+        "freeformNotes": "Coordinate with testing group ahead of time",
+        "expectationImportance": 8,
+        "expectationUrgency": 9,
+        "targetDate": "2025-12-15T00:00:00Z"
+      }
+    },
+    {
+      "description": "Minimal milestone with only required fields",
+      "data": {
+        "title": "First prototype demo",
+        "expectationImportance": 6,
+        "expectationUrgency": 5,
+        "targetDate": "2025-11-20T00:00:00Z"
+      }
+    },
+    {
+      "description": "Milestone with description but no title",
+      "data": {
+        "detailedDescription": "Complete initial technical review and receive approval to proceed with next phase",
+        "expectationImportance": 7,
+        "expectationUrgency": 6,
+        "targetDate": "2025-12-01T00:00:00Z"
+      }
+    },
+    {
+      "description": "Milestone in distant future",
+      "data": {
+        "title": "Annual review checkpoint",
+        "expectationImportance": 4,
+        "expectationUrgency": 2,
+        "targetDate": "2026-06-30T00:00:00Z"
+      }
+    }
+  ],
+
+  "obligations": [
+    {
+      "description": "Complete obligation with all fields",
+      "data": {
+        "title": "Submit research proposal",
+        "detailedDescription": "Complete and submit grant application for continuing research funding",
+        "freeformNotes": "Requires three letters of recommendation",
+        "expectationImportance": 9,
+        "expectationUrgency": 10,
+        "deadline": "2025-12-01T17:00:00Z",
+        "requestedBy": "Funding Committee",
+        "consequence": "Missing deadline would forfeit opportunity for $75k annual funding"
+      }
+    },
+    {
+      "description": "Minimal obligation with only required fields",
+      "data": {
+        "title": "Annual tax filing",
+        "expectationImportance": 7,
+        "expectationUrgency": 8,
+        "deadline": "2026-04-15T23:59:59Z"
+      }
+    },
+    {
+      "description": "Obligation with description but no title",
+      "data": {
+        "detailedDescription": "Provide quarterly progress report to stakeholders detailing accomplishments and upcoming milestones",
+        "expectationImportance": 6,
+        "expectationUrgency": 7,
+        "deadline": "2025-12-31T17:00:00Z",
+        "requestedBy": "Program Director"
+      }
+    },
+    {
+      "description": "Obligation with consequence but no requester",
+      "data": {
+        "title": "Renew professional certification",
+        "detailedDescription": "Complete continuing education requirements and submit renewal application",
+        "expectationImportance": 8,
+        "expectationUrgency": 7,
+        "deadline": "2026-03-31T23:59:59Z",
+        "consequence": "Certification will lapse, affecting professional standing"
+      }
+    }
+  ],
+
+  "termGoalAssignments": [
+    {
+      "description": "First goal assignment to term with order",
+      "data": {
+        "termId": "a3814e96-efc4-8119-355e-f94a73f3cbb6",
+        "goalId": "18fec128-bf92-40df-9ac3-93dfb52df27a",
+        "assignmentOrder": 1
+      }
+    },
+    {
+      "description": "Second goal assignment to same term",
+      "data": {
+        "termId": "a3814e96-efc4-8119-355e-f94a73f3cbb6",
+        "goalId": "198e669f-e946-409a-a794-ddc003440171",
+        "assignmentOrder": 2
+      }
+    },
+    {
+      "description": "Goal assignment without explicit order",
+      "data": {
+        "termId": "f8419b03-efae-0f8a-bb75-7207f9e70e2f",
+        "goalId": "2ab33d89-7af9-469b-83c6-75c21e4a480f"
+      }
+    },
+    {
+      "description": "Multiple goals in different term",
+      "data": {
+        "termId": "d9158a11-30dc-2608-44c3-9f2eaac0232c",
+        "goalId": "18fec128-bf92-40df-9ac3-93dfb52df27a",
+        "assignmentOrder": 1
+      }
+    }
+  ],
+
+  "terms": [
+    {
+      "description": "Complete term with all fields",
+      "data": {
+        "title": "Fall Term 2025",
+        "detailedDescription": "Focus on technical skill development and health habits.",
+        "freeformNotes": "Weather will be cooler, good for outdoor activities.",
+        "startDate": "2025-09-01T00:00:00Z",
+        "endDate": "2025-11-30T23:59:59Z",
+        "specialization": {
+          "term": 4
+        }
+      }
+    },
+    {
+      "description": "Minimal term with only required fields",
+      "data": {
+        "startDate": "2025-12-01T00:00:00Z",
+        "endDate": "2026-02-28T23:59:59Z",
+        "specialization": {
+          "term": 5
+        }
+      }
+    },
+    {
+      "description": "Long-term planning period",
+      "data": {
+        "title": "2026 Annual Planning",
+        "startDate": "2026-01-01T00:00:00Z",
+        "endDate": "2026-12-31T23:59:59Z",
+        "specialization": {
+          "term": 1
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,427 @@
+{
+  "_comment": "INVALID FormData examples for validation testing. All should FAIL validation with specific errors. NOTE: Only includes entities with implemented validators (PersonalValue, Action, Goal, Term). Measures, Milestones, Obligations, and TermGoalAssignments do not have validators yet and are excluded.",
+
+  "personalValues": [
+    {
+      "description": "FAIL: Empty title (required field)",
+      "expectedError": "PersonalValue must have a title",
+      "data": {
+        "title": "",
+        "valueLevel": "major"
+      }
+    },
+    {
+      "description": "FAIL: Whitespace-only title",
+      "expectedError": "PersonalValue must have a title",
+      "data": {
+        "title": "   ",
+        "valueLevel": "major"
+      }
+    },
+    {
+      "description": "FAIL: Priority out of range (too high)",
+      "expectedError": "Priority must be between 1 and 100",
+      "data": {
+        "title": "Valid Title",
+        "valueLevel": "major",
+        "priority": 150
+      }
+    },
+    {
+      "description": "FAIL: Priority out of range (zero)",
+      "expectedError": "Priority must be between 1 and 100",
+      "data": {
+        "title": "Valid Title",
+        "valueLevel": "major",
+        "priority": 0
+      }
+    },
+    {
+      "description": "FAIL: Priority out of range (negative)",
+      "expectedError": "Priority must be between 1 and 100",
+      "data": {
+        "title": "Valid Title",
+        "valueLevel": "major",
+        "priority": -10
+      }
+    },
+    {
+      "description": "FAIL: Invalid valueLevel",
+      "expectedError": "Invalid value level",
+      "data": {
+        "title": "Valid Title",
+        "valueLevel": "invalid_level"
+      }
+    }
+  ],
+
+  "actions": [
+    {
+      "description": "FAIL: No content at all (empty title, no measurements, no goal contributions)",
+      "expectedError": "Action must have at least a title, description, measurements, or goal contributions",
+      "data": {
+        "title": "",
+        "durationMinutes": 30.0,
+        "startTime": "2025-11-09T06:30:00Z"
+      }
+    },
+    {
+      "description": "FAIL: Completely empty action with no identifying information",
+      "expectedError": "Action must have at least a title, description, measurements, or goal contributions",
+      "data": {
+        "durationMinutes": 0.0,
+        "startTime": "2025-11-09T06:30:00Z"
+      }
+    },
+    {
+      "description": "FAIL: Negative duration",
+      "expectedError": "Duration cannot be negative",
+      "data": {
+        "title": "Valid Action",
+        "durationMinutes": -15.0,
+        "startTime": "2025-11-09T06:30:00Z"
+      }
+    },
+    {
+      "description": "FAIL: Future start time",
+      "expectedError": "Action cannot be logged in the future",
+      "data": {
+        "title": "Valid Action",
+        "durationMinutes": 30.0,
+        "startTime": "2026-12-31T23:59:59Z"
+      }
+    },
+    {
+      "description": "FAIL: Measurement with zero value",
+      "expectedError": "Measurement value must be positive",
+      "data": {
+        "title": "Valid Action",
+        "durationMinutes": 30.0,
+        "startTime": "2025-11-09T06:30:00Z",
+        "measurements": [
+          {
+            "measureId": "1da769f9-4385-45aa-b940-13ff6598418e",
+            "value": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "description": "FAIL: Measurement with negative value",
+      "expectedError": "Measurement value must be positive",
+      "data": {
+        "title": "Valid Action",
+        "durationMinutes": 30.0,
+        "startTime": "2025-11-09T06:30:00Z",
+        "measurements": [
+          {
+            "measureId": "1da769f9-4385-45aa-b940-13ff6598418e",
+            "value": -100.0
+          }
+        ]
+      }
+    },
+    {
+      "description": "FAIL: Empty measureId in measurement",
+      "expectedError": "Measurement must have a valid measure ID",
+      "data": {
+        "title": "Valid Action",
+        "durationMinutes": 30.0,
+        "startTime": "2025-11-09T06:30:00Z",
+        "measurements": [
+          {
+            "measureId": "",
+            "value": 100.0
+          }
+        ]
+      }
+    },
+    {
+      "description": "FAIL: Duplicate measurements for same measure",
+      "expectedError": "Cannot have multiple measurements for the same measure",
+      "data": {
+        "title": "Valid Action",
+        "durationMinutes": 30.0,
+        "startTime": "2025-11-09T06:30:00Z",
+        "measurements": [
+          {
+            "measureId": "1da769f9-4385-45aa-b940-13ff6598418e",
+            "value": 100.0
+          },
+          {
+            "measureId": "1da769f9-4385-45aa-b940-13ff6598418e",
+            "value": 200.0
+          }
+        ]
+      }
+    }
+  ],
+
+  "goals": [
+    {
+      "description": "FAIL: No title AND no description",
+      "expectedError": "Goal must have at least a title or description",
+      "data": {
+        "title": "",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "FAIL: Whitespace-only title and no description",
+      "expectedError": "Goal must have at least a title or description",
+      "data": {
+        "title": "   ",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "FAIL: Importance out of range (too high)",
+      "expectedError": "Importance must be between 1 and 10",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 11,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "FAIL: Importance out of range (zero)",
+      "expectedError": "Importance must be between 1 and 10",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 0,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "FAIL: Urgency out of range (too high)",
+      "expectedError": "Urgency must be between 1 and 10",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": 15,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "FAIL: Urgency out of range (negative)",
+      "expectedError": "Urgency must be between 1 and 10",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": -3,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "FAIL: Invalid date range (start after end)",
+      "expectedError": "Start date must be before or equal to target date",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2026-11-09T00:00:00Z",
+        "targetDate": "2025-11-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "FAIL: Negative metric target value",
+      "expectedError": "Metric target value must be positive",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z",
+        "metricTargets": [
+          {
+            "measureId": "1da769f9-4385-45aa-b940-13ff6598418e",
+            "targetValue": -100.0
+          }
+        ]
+      }
+    },
+    {
+      "description": "FAIL: Zero metric target value",
+      "expectedError": "Metric target value must be positive",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z",
+        "metricTargets": [
+          {
+            "measureId": "1da769f9-4385-45aa-b940-13ff6598418e",
+            "targetValue": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "description": "FAIL: Duplicate metric targets for same measure",
+      "expectedError": "Cannot have multiple targets for the same measure",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z",
+        "metricTargets": [
+          {
+            "measureId": "1da769f9-4385-45aa-b940-13ff6598418e",
+            "targetValue": 100.0
+          },
+          {
+            "measureId": "1da769f9-4385-45aa-b940-13ff6598418e",
+            "targetValue": 200.0
+          }
+        ]
+      }
+    },
+    {
+      "description": "FAIL: Alignment strength out of range (too high)",
+      "expectedError": "Alignment strength must be between 1 and 10",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z",
+        "valueAlignments": [
+          {
+            "valueId": "2dadf759-efa9-4cb9-a499-92a6eaa450f3",
+            "alignmentStrength": 15
+          }
+        ]
+      }
+    },
+    {
+      "description": "FAIL: Alignment strength out of range (zero)",
+      "expectedError": "Alignment strength must be between 1 and 10",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z",
+        "valueAlignments": [
+          {
+            "valueId": "2dadf759-efa9-4cb9-a499-92a6eaa450f3",
+            "alignmentStrength": 0
+          }
+        ]
+      }
+    },
+    {
+      "description": "FAIL: Duplicate value alignments",
+      "expectedError": "Cannot have multiple alignments for the same value",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z",
+        "valueAlignments": [
+          {
+            "valueId": "2dadf759-efa9-4cb9-a499-92a6eaa450f3",
+            "alignmentStrength": 5
+          },
+          {
+            "valueId": "2dadf759-efa9-4cb9-a499-92a6eaa450f3",
+            "alignmentStrength": 8
+          }
+        ]
+      }
+    },
+    {
+      "description": "FAIL: Empty measureId in metric target",
+      "expectedError": "Metric target must have a valid measure ID",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z",
+        "metricTargets": [
+          {
+            "measureId": "",
+            "targetValue": 100.0
+          }
+        ]
+      }
+    },
+    {
+      "description": "FAIL: Empty valueId in alignment",
+      "expectedError": "Value alignment must have a valid value ID",
+      "data": {
+        "title": "Valid Goal",
+        "expectationImportance": 5,
+        "expectationUrgency": 5,
+        "startDate": "2025-11-09T00:00:00Z",
+        "targetDate": "2026-11-09T00:00:00Z",
+        "valueAlignments": [
+          {
+            "valueId": "",
+            "alignmentStrength": 5
+          }
+        ]
+      }
+    }
+  ],
+
+  "terms": [
+    {
+      "description": "FAIL: Invalid date range (start after end)",
+      "expectedError": "Start date must be before end date",
+      "data": {
+        "startDate": "2026-11-09T00:00:00Z",
+        "endDate": "2025-11-09T00:00:00Z",
+        "specialization": {
+          "term": 1
+        }
+      }
+    },
+    {
+      "description": "FAIL: Term number zero",
+      "expectedError": "Term number must be positive",
+      "data": {
+        "startDate": "2025-11-09T00:00:00Z",
+        "endDate": "2026-02-09T00:00:00Z",
+        "specialization": {
+          "term": 0
+        }
+      }
+    },
+    {
+      "description": "FAIL: Negative term number",
+      "expectedError": "Term number must be positive",
+      "data": {
+        "startDate": "2025-11-09T00:00:00Z",
+        "endDate": "2026-02-09T00:00:00Z",
+        "specialization": {
+          "term": -5
+        }
+      }
+    },
+    {
+      "description": "FAIL: Missing specialization (term number)",
+      "expectedError": "Term must have a term number in specialization",
+      "data": {
+        "startDate": "2025-11-09T00:00:00Z",
+        "endDate": "2026-02-09T00:00:00Z"
+      }
+    }
+  ]
+}
