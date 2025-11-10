@@ -24,8 +24,7 @@ import SQLiteData
 ///
 /// PATTERN: Two-model atomic transaction (TimePeriod + Specialization)
 /// Similar to: Goal (Expectation + Goal), but simpler (1:1 relationship)
-@MainActor
-public final class TimePeriodCoordinator: ObservableObject {
+public final class TimePeriodCoordinator {
     private let database: any DatabaseWriter
 
     public init(database: any DatabaseWriter) {

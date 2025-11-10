@@ -28,8 +28,7 @@ import SQLiteData
 /// PATTERN: Multi-model coordinator (most complex in app)
 /// Simpler than: None (this is the most complex)
 /// More complex than: ActionCoordinator (3 models), TimePeriodCoordinator (2 models)
-@MainActor
-public final class GoalCoordinator: ObservableObject {
+public final class GoalCoordinator {
     private let database: any DatabaseWriter
 
     public init(database: any DatabaseWriter) {

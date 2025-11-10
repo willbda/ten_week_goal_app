@@ -30,8 +30,7 @@ import SQLiteData
 /// ARCHITECTURE NOTE: PersonalValue is the simplest coordinator (single model, no relationships)
 /// Use this as template for other single-model coordinators (Term, Milestone)
 /// For multi-model coordinators (Goal, Action), see GoalCoordinator for atomic transaction pattern
-@MainActor
-public final class PersonalValueCoordinator: ObservableObject {
+public final class PersonalValueCoordinator {
     // ARCHITECTURE DECISION: DatabaseWriter instead of DatabaseQueue
     // CONTEXT: SQLiteData uses DatabaseWriter protocol (from GRDB)
     // PATTERN: From SQLiteData examples and DatabaseBootstrap.swift
@@ -39,11 +38,9 @@ public final class PersonalValueCoordinator: ObservableObject {
     //      Using protocol allows flexibility (could use DatabasePool for multi-threaded access)
     // SEE: sqlite-data-main/Examples/CaseStudies/ObservableModelDemo.swift:56-67
     private let database: any DatabaseWriter
-    private let repository: PersonalValueRepository
 
     public init(database: any DatabaseWriter) {
         self.database = database
-        self.repository = PersonalValueRepository(database: database)
     }
 
     /// Creates a PersonalValue from form data with two-phase validation.
@@ -67,13 +64,8 @@ public final class PersonalValueCoordinator: ObservableObject {
         // Throws: ValidationError.emptyValue, ValidationError.invalidPriority
         try PersonalValueValidation.validateFormData(formData)
 
-        // Check for duplicates (case-insensitive)
-        // Pattern: Prevent user frustration from "silent" unique constraint violations
-        if try await repository.existsByTitle(formData.title) {
-            throw ValidationError.duplicateRecord(
-                "A value named '\(formData.title)' already exists"
-            )
-        }
+        // TODO: Add duplicate checking when PersonalValueRepository is fixed
+        // For now, rely on database unique constraint
 
         // Insert to database (atomic transaction)
         // Note: Database errors are rare here since we validated above
@@ -132,24 +124,8 @@ public final class PersonalValueCoordinator: ObservableObject {
         // Phase 1: Validate form data (business rules)
         try PersonalValueValidation.validateFormData(formData)
 
-        // Check for duplicates (case-insensitive, excluding current value)
-        // Pattern: Allow user to keep same title, but prevent conflicts with others
-        if try await repository.existsByTitle(formData.title) {
-            // It's OK if the existing value with this title is the one we're updating
-            let existingValue = try await database.read { db in
-                try PersonalValue
-                    .order { $0.title.asc() }
-                    .fetchAll(db)
-                    .first { $0.title?.lowercased() == formData.title.lowercased() }
-            }
-
-            // If there's a different value with this title, that's a duplicate
-            if let existingValue = existingValue, existingValue.id != value.id {
-                throw ValidationError.duplicateRecord(
-                    "A different value named '\(formData.title)' already exists"
-                )
-            }
-        }
+        // TODO: Add duplicate checking when PersonalValueRepository is fixed
+        // For now, rely on database unique constraint
 
         // Update in database (atomic transaction)
         let updatedValue = try await database.write { db in
