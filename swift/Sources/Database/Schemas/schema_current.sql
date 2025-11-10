@@ -377,18 +377,3 @@ WHERE parseError IS NOT NULL
 ORDER BY fetchedAt DESC;
 */
 
--- =============================================================================
--- PURGE POLICIES
--- =============================================================================
---
--- Recommended retention periods:
--- - Sleep data: 7 days (easily re-fetchable from HealthKit)
--- - Calories: 7 days (high frequency, low value)
--- - Exercise: 14 days (might want to review details)
--- - Mindfulness: 14 days (infrequent, nice to keep)
--- - Calendar: 30 days (harder to re-fetch if events deleted)
--- - Reminders: 30 days (completion history might change)
---
--- Override: User can manually extend retention or purge immediately
---
--- =============================================================================

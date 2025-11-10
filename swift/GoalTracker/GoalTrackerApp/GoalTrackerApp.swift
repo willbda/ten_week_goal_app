@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import Services
+import Database  // DatabaseBootstrap for initialization
 import App
 
 @main

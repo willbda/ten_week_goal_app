@@ -27,6 +27,7 @@ let package = Package(
 
     products: [
         .library(name: "Models", targets: ["Models"]),
+        .library(name: "Database", targets: ["Database"]),
         .library(name: "Services", targets: ["Services"]),
         .library(name: "Logic", targets: ["Logic"]),
         .library(name: "App", targets: ["App"]),
@@ -59,20 +60,36 @@ let package = Package(
         ),
 
         // =========================================================================
+        // DATABASE
+        // =========================================================================
+        // Database layer: Schema, Bootstrap, SyncConfiguration
+        // Handles SQLite initialization, CloudKit sync registration
+
+        .target(
+            name: "Database",
+            dependencies: [
+                "Models",
+                .product(name: "SQLiteData", package: "sqlite-data"),
+            ],
+            path: "Sources/Database",
+            resources: [
+                .copy("Schemas/schema_current.sql")
+            ]
+        ),
+
+        // =========================================================================
         // SERVICES
         // =========================================================================
-        // Platform services: HealthKitManager, MetricRepository
+        // Platform services: Coordinators, Validators, Repositories
 
         .target(
             name: "Services",
             dependencies: [
                 "Models",
+                "Database",
                 .product(name: "SQLiteData", package: "sqlite-data"),
             ],
-            path: "Sources/Services",
-            resources: [
-                .copy("../Database/Schemas/schema_current.sql")
-            ]
+            path: "Sources/Services"
         ),
 
         // =========================================================================
@@ -98,6 +115,7 @@ let package = Package(
             name: "App",
             dependencies: [
                 "Models",
+                "Database",
                 "Services",
                 "Logic",
                 .product(name: "SQLiteData", package: "sqlite-data"),
@@ -113,10 +131,36 @@ let package = Package(
         .testTarget(
             name: "ValidationTests",
             dependencies: [
-                "Services",
                 "Models",
+                "Database",
+                "Services",
             ],
             path: "Tests/ValidationTests"
+        ),
+
+        // Model Tests - Schema validation and round-trip tests
+        .testTarget(
+            name: "ModelTests",
+            dependencies: [
+                "Models",
+                "Database",
+                "Services",
+            ],
+            path: "Tests/ModelTests",
+            resources: [
+                .copy("Resources/schema_validation_data.json")
+            ]
+        ),
+
+        // Coordinator Tests - Test multi-model atomic transactions
+        .testTarget(
+            name: "CoordinatorTests",
+            dependencies: [
+                "Models",
+                "Database",
+                "Services",
+            ],
+            path: "Tests/CoordinatorTests"
         ),
 
         // View Tests - Disabled until Tests/ViewTests directory created

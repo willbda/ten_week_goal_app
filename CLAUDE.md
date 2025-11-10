@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Do not build or compile without asking the user.
+Do not run swift build without explicitely asking the user. It is inefficient, wasteful, and often uninformative to build prematurely in the middle of multiple changes.
 
 ## Project Overview
 
