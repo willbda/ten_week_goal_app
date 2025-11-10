@@ -21,8 +21,9 @@
 
 import Foundation
 import Testing
-@testable import Services
+
 @testable import Models
+@testable import Services
 
 // MARK: - PersonalValue Validation Tests
 
@@ -291,7 +292,7 @@ struct ActionValidationTests {
 
     @Test("Accepts past start time")
     func acceptsPastStartTime() throws {
-        let pastDate = Date().addingTimeInterval(-3600) // 1 hour ago
+        let pastDate = Date().addingTimeInterval(-3600)  // 1 hour ago
         let formData = ActionFormData(
             title: "Past action",
             startTime: pastDate
@@ -314,7 +315,7 @@ struct ActionValidationTests {
 
     @Test("Rejects future start time")
     func rejectsFutureStartTime() throws {
-        let futureDate = Date().addingTimeInterval(3600) // 1 hour from now
+        let futureDate = Date().addingTimeInterval(3600)  // 1 hour from now
         let formData = ActionFormData(
             title: "Future action",
             startTime: futureDate
@@ -352,7 +353,7 @@ struct GoalValidationTests {
             expectationImportance: 8,
             expectationUrgency: 5,
             startDate: Date(),
-            targetDate: Date().addingTimeInterval(86400 * 70) // 70 days from now
+            targetDate: Date().addingTimeInterval(86400 * 70)  // 70 days from now
         )
 
         // Should NOT throw
@@ -492,7 +493,7 @@ struct GoalValidationTests {
     @Test("Accepts start date before target date")
     func acceptsValidDateRange() throws {
         let startDate = Date()
-        let targetDate = Date().addingTimeInterval(86400 * 70) // 70 days later
+        let targetDate = Date().addingTimeInterval(86400 * 70)  // 70 days later
 
         let formData = GoalFormData(
             title: "Test Goal",
@@ -525,7 +526,7 @@ struct GoalValidationTests {
     @Test("Rejects start date after target date")
     func rejectsInvalidDateRange() throws {
         let startDate = Date()
-        let targetDate = Date().addingTimeInterval(-86400) // 1 day earlier
+        let targetDate = Date().addingTimeInterval(-86400)  // 1 day earlier
 
         let formData = GoalFormData(
             title: "Test Goal",
@@ -559,7 +560,7 @@ struct GoalValidationTests {
             expectationUrgency: 5,
             metricTargets: [
                 MetricTargetInput(measureId: UUID(), targetValue: 5.0),
-                MetricTargetInput(measureId: UUID(), targetValue: 100.0)
+                MetricTargetInput(measureId: UUID(), targetValue: 100.0),
             ]
         )
 
@@ -681,7 +682,7 @@ struct TermValidationTests {
     @Test("Accepts term with valid date range")
     func acceptsTermWithValidDateRange() throws {
         let startDate = Date()
-        let endDate = Date().addingTimeInterval(86400 * 70) // 70 days later
+        let endDate = Date().addingTimeInterval(86400 * 70)  // 70 days later
 
         let formData = TimePeriodFormData(
             title: "Term 1",
@@ -725,7 +726,7 @@ struct TermValidationTests {
     @Test("Rejects term with start date after end date")
     func rejectsTermWithInvalidDateRange() throws {
         let startDate = Date()
-        let endDate = Date().addingTimeInterval(-86400) // 1 day earlier
+        let endDate = Date().addingTimeInterval(-86400)  // 1 day earlier
 
         let formData = TimePeriodFormData(
             title: "Term 1",
@@ -820,59 +821,6 @@ struct TermValidationTests {
     }
 }
 
-// MARK: - Test Summary
-
-// COVERAGE SUMMARY:
-//
-// PersonalValue Tests (7 tests):
-// ✅ Accepts value with title
-// ✅ Rejects value with empty title
-// ✅ Rejects value with whitespace-only title
-// ✅ Accepts valid priority values (parameterized: 1, 25, 50, 75, 100)
-// ✅ Rejects priority below 1
-// ✅ Rejects priority above 100
-// ✅ Accepts nil priority
-//
-// Action Tests (10 tests):
-// ✅ Accepts action with title
-// ✅ Accepts action with measurements only
-// ✅ Accepts action with goal links only
-// ✅ Rejects action with no content
-// ✅ Accepts zero duration
-// ✅ Accepts positive duration
-// ✅ Rejects negative duration
-// ✅ Accepts past start time
-// ✅ Accepts current start time
-// ✅ Rejects future start time
-//
-// Goal Tests (18 tests):
-// ✅ Accepts goal with title
-// ✅ Accepts goal with description only
-// ✅ Rejects goal without title or description
-// ✅ Accepts valid importance values (parameterized: 1, 3, 5, 8, 10)
-// ✅ Rejects importance below 1
-// ✅ Rejects importance above 10
-// ✅ Accepts valid urgency values (parameterized: 1, 3, 5, 8, 10)
-// ✅ Rejects urgency below 1
-// ✅ Rejects urgency above 10
-// ✅ Accepts start date before target date
-// ✅ Accepts equal start and target dates
-// ✅ Rejects start date after target date
-// ✅ Accepts positive metric target values
-// ✅ Rejects zero metric target value
-// ✅ Rejects negative metric target value
-// ✅ Accepts valid alignment strengths (parameterized: 1, 3, 5, 8, 10)
-// ✅ Rejects alignment strength below 1
-// ✅ Rejects alignment strength above 10
-//
-// Term Tests (7 tests):
-// ✅ Accepts term with valid date range
-// ✅ Rejects term with equal start and end dates
-// ✅ Rejects term with start date after end date
-// ✅ Accepts positive term numbers (parameterized: 1, 2, 5, 10, 100)
-// ✅ Rejects term number of zero
-// ✅ Rejects negative term number
-// ✅ Rejects non-term specialization
 //
 // TOTAL: 42 base tests + parameterized expansions
 //

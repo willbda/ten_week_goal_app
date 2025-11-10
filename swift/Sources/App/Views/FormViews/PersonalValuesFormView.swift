@@ -151,8 +151,8 @@ public struct PersonalValuesFormView: View {
     ///
     /// PATTERN: buildFormData() helper (establishes pattern for template)
     /// This reduces duplication and makes ViewModel calls cleaner.
-    private func buildFormData() -> ValueFormData {
-        return ValueFormData(
+    private func buildFormData() -> PersonalValueFormData {
+        return PersonalValueFormData(
             title: title,
             detailedDescription: description.isEmpty ? nil : description,
             freeformNotes: notes.isEmpty ? nil : notes,

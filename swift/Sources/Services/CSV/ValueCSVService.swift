@@ -104,7 +104,7 @@ public final class ValueCSVService {
         for preview in previews {
             do {
                 // Re-map the preview data to FormData
-                let formData = ValueFormData(
+                let formData = PersonalValueFormData(
                     title: preview.title,
                     detailedDescription: preview.detailedDescription,
                     freeformNotes: preview.freeformNotes,
@@ -173,7 +173,8 @@ public final class ValueCSVService {
         csv += ",IMPORT,,,,,,,\n"
         csv += "Fields,title,description,notes,priority,level,life_domain,alignment_guidance\n"
         csv += "Optionality,REQUIRED,optional,optional,optional,REQUIRED,optional,optional\n"
-        csv += "Sample,Physical Health,Regular exercise and nutrition,,5,major,Health,Exercise 3x/week\n"
+        csv +=
+            "Sample,Physical Health,Regular exercise and nutrition,,5,major,Health,Exercise 3x/week\n"
 
         // Numbered data rows (1-10)
         for i in 1...10 {
@@ -202,7 +203,8 @@ public final class ValueCSVService {
         csv += ",IMPORT,,,,,,,\n"
         csv += "Fields,title,description,notes,priority,level,life_domain,alignment_guidance\n"
         csv += "Optionality,REQUIRED,optional,optional,optional,REQUIRED,optional,optional\n"
-        csv += "Sample,Physical Health,Regular exercise and nutrition,,5,major,Health,Exercise 3x/week\n"
+        csv +=
+            "Sample,Physical Health,Regular exercise and nutrition,,5,major,Health,Exercise 3x/week\n"
 
         // Fetch all existing values
         let values = try await database.read { db in
@@ -219,7 +221,8 @@ public final class ValueCSVService {
             let lifeDomain = escapeCSV(value.lifeDomain ?? "")
             let alignmentGuidance = escapeCSV(value.alignmentGuidance ?? "")
 
-            csv += "\(index + 1),\(title),\(description),\(notes),\(priority),\(level),\(lifeDomain),\(alignmentGuidance)\n"
+            csv +=
+                "\(index + 1),\(title),\(description),\(notes),\(priority),\(level),\(lifeDomain),\(alignmentGuidance)\n"
         }
 
         try csv.write(to: path, atomically: true, encoding: .utf8)
@@ -227,11 +230,11 @@ public final class ValueCSVService {
 
 }
 
-    // MARK: - CSV Helper
+// MARK: - CSV Helper
 
-    private func escapeCSV(_ value: String) -> String {
-        if value.contains(",") || value.contains("\"") || value.contains("\n") {
-            return "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
-        }
-        return value
+private func escapeCSV(_ value: String) -> String {
+    if value.contains(",") || value.contains("\"") || value.contains("\n") {
+        return "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
     }
+    return value
+}

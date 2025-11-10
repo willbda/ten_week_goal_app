@@ -17,10 +17,10 @@ import SQLiteData
 /// - Creates TimePeriod + appropriate specialization (GoalTerm, Year, etc.) atomically
 /// - Views handle user-friendly naming ("Terms", "Years") via type-specific wrappers
 ///
-/// Validation Strategy:
-/// - NO validation in coordinator (trusts caller)
+/// Validation Strategy (Two-Phase):
+/// - Phase 1: Validate form data (business rules) BEFORE assembly
+/// - Phase 2: Validate complete entity (referential integrity) AFTER assembly (for terms)
 /// - Database enforces: NOT NULL, foreign keys, CHECK constraints, date ranges
-/// - Business rules enforced by TimePeriodValidator (Phase 2)
 ///
 /// PATTERN: Two-model atomic transaction (TimePeriod + Specialization)
 /// Similar to: Goal (Expectation + Goal), but simpler (1:1 relationship)
@@ -42,6 +42,11 @@ public final class TimePeriodCoordinator: ObservableObject {
     /// 2. Insert specialization (GoalTerm, Year, etc.) with FK to TimePeriod
     /// 3. Return TimePeriod (caller can access specialization via relationship)
     public func create(from formData: TimePeriodFormData) async throws -> TimePeriod {
+        // Phase 1: Validate form data if it's a term (business rules)
+        if case .term(_) = formData.specialization {
+            try TermValidation.validateFormData(formData)
+        }
+
         return try await database.write { db in
             // 1. Insert TimePeriod (using .insert for CREATE, not .upsert)
             let timePeriod = try TimePeriod.insert {
@@ -62,7 +67,7 @@ public final class TimePeriodCoordinator: ObservableObject {
             switch formData.specialization {
             case .term(let number):
                 // Insert GoalTerm with FK to TimePeriod
-                try GoalTerm.insert {
+                let goalTerm = try GoalTerm.insert {
                     GoalTerm.Draft(
                         id: UUID(),
                         timePeriodId: timePeriod.id,
@@ -72,7 +77,12 @@ public final class TimePeriodCoordinator: ObservableObject {
                         status: .planned  // Default status for new terms
                     )
                 }
-                .execute(db)
+                .returning { $0 }
+                .fetchOne(db)!
+
+                // Phase 2: Validate complete entity graph (for terms only)
+                // Note: Empty assignments array for new terms
+                try TermValidation.validateComplete(timePeriod, goalTerm, [])
 
             case .year(let yearNumber):
                 // Future: Insert Year model when created
@@ -107,6 +117,11 @@ public final class TimePeriodCoordinator: ObservableObject {
         goalTerm: GoalTerm,
         from formData: TimePeriodFormData
     ) async throws -> TimePeriod {
+        // Phase 1: Validate form data if it's a term
+        if case .term(_) = formData.specialization {
+            try TermValidation.validateFormData(formData)
+        }
+
         return try await database.write { db in
             // 1. Update TimePeriod (preserve id and logTime)
             let updatedTimePeriod = try TimePeriod.upsert {
@@ -126,7 +141,7 @@ public final class TimePeriodCoordinator: ObservableObject {
             // 2. Update specialization based on type
             switch formData.specialization {
             case .term(let number):
-                try GoalTerm.upsert {
+                let updatedGoalTerm = try GoalTerm.upsert {
                     GoalTerm.Draft(
                         id: goalTerm.id,  // Preserve ID
                         timePeriodId: updatedTimePeriod.id,
@@ -136,7 +151,13 @@ public final class TimePeriodCoordinator: ObservableObject {
                         status: formData.status ?? goalTerm.status
                     )
                 }
-                .execute(db)
+                .returning { $0 }
+                .fetchOne(db)!
+
+                // Phase 2: Validate complete entity graph (for terms)
+                // Note: Would need to fetch assignments if we want to validate them
+                // For now, assume no assignments change during term update
+                try TermValidation.validateComplete(updatedTimePeriod, updatedGoalTerm, [])
 
             case .year(let yearNumber):
                 // Future: Update Year model when created

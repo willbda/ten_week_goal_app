@@ -49,21 +49,21 @@ public final class PersonalValuesFormViewModel {
     public init() {}
 
     // ARCHITECTURE DECISION: Individual parameters vs FormData object?
-    // CURRENT: Individual parameters (mirrors ValueFormData fields)
-    // ALTERNATIVE: Accept `ValueFormData` directly
+    // CURRENT: Individual parameters (mirrors PersonalValueFormData fields)
+    // ALTERNATIVE: Accept `PersonalValueFormData` directly
     // WHY INDIVIDUAL PARAMS:
     //   - More ergonomic for SwiftUI forms (no wrapper object)
     //   - Clear what's required vs optional
     //   - Better autocomplete in Xcode
     // TRADEOFF: Duplicates field definitions (two places to update when adding fields)
-    // FUTURE: If fields exceed 7-8 parameters, consider switching to ValueFormData object
+    // FUTURE: If fields exceed 7-8 parameters, consider switching to PersonalValueFormData object
     /// Creates new PersonalValue from form data.
     /// - Parameter formData: Validated form data
     /// - Returns: Created PersonalValue
     /// - Throws: CoordinatorError or database errors
     ///
     /// PATTERN: FormData-based method (clean, template-ready)
-    public func save(from formData: ValueFormData) async throws -> PersonalValue {
+    public func save(from formData: PersonalValueFormData) async throws -> PersonalValue {
         isSaving = true
         defer { isSaving = false }
 
@@ -92,7 +92,7 @@ public final class PersonalValuesFormViewModel {
         lifeDomain: String? = nil,
         alignmentGuidance: String? = nil
     ) async throws -> PersonalValue {
-        let formData = ValueFormData(
+        let formData = PersonalValueFormData(
             title: title,
             detailedDescription: description,
             freeformNotes: notes,
@@ -115,7 +115,7 @@ public final class PersonalValuesFormViewModel {
     /// PATTERN: FormData-based method (establishes pattern for template)
     public func update(
         value: PersonalValue,
-        from formData: ValueFormData
+        from formData: PersonalValueFormData
     ) async throws -> PersonalValue {
         isSaving = true
         defer { isSaving = false }

@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Do not build or compile without asking the user.
+
 ## Project Overview
 
 **Ten Week Goal App** - A Swift-based iOS/macOS/visionOS application for goal tracking and personal development.

@@ -21,10 +21,11 @@ import SQLiteData
 
 /// Coordinates creation of PersonalValue entities with atomic persistence.
 ///
-/// Validation Strategy:
-/// - NO validation in coordinator (trusts caller)
-/// - Database enforces: NOT NULL, foreign keys, CHECK constraints
-/// - Business rules enforced by ValueValidator (Phase 2)
+/// Validation Strategy (Two-Phase):
+/// - Phase 1: Validate form data (business rules) BEFORE database write
+/// - Phase 2: Validate complete entity (referential integrity) AFTER database write
+/// - Repository: Check for duplicates before insert
+/// - Database: Enforces NOT NULL, foreign keys, CHECK constraints
 ///
 /// ARCHITECTURE NOTE: PersonalValue is the simplest coordinator (single model, no relationships)
 /// Use this as template for other single-model coordinators (Term, Milestone)
@@ -38,21 +39,46 @@ public final class PersonalValueCoordinator: ObservableObject {
     //      Using protocol allows flexibility (could use DatabasePool for multi-threaded access)
     // SEE: sqlite-data-main/Examples/CaseStudies/ObservableModelDemo.swift:56-67
     private let database: any DatabaseWriter
+    private let repository: PersonalValueRepository
 
     public init(database: any DatabaseWriter) {
         self.database = database
+        self.repository = PersonalValueRepository(database: database)
     }
 
-    /// Creates a PersonalValue from form data.
-    /// - Parameter formData: Validated form data (validation is caller's responsibility)
-    /// - Returns: Persisted PersonalValue with generated ID
-    /// - Throws: Database errors if constraints violated
+    /// Creates a PersonalValue from form data with two-phase validation.
     ///
-    /// IMPLEMENTATION NOTE: Uses `.insert` for CREATE operations
-    /// This ensures CloudKit properly tracks new records vs updates
-    /// For updates, use `.upsert` with existing ID (see update() method in Phase 4)
-    public func create(from formData: ValueFormData) async throws -> PersonalValue {
-        return try await database.write { db in
+    /// **Validation Flow**:
+    /// 1. Phase 1: Validate business rules (title/description, priority range)
+    /// 2. Check for duplicates (case-insensitive title matching)
+    /// 3. Insert to database (atomic transaction)
+    /// 4. Phase 2: Validate complete entity (priority set correctly)
+    ///
+    /// - Parameter formData: Form data from UI
+    /// - Returns: Persisted PersonalValue with generated ID
+    /// - Throws: ValidationError for business rule violations or duplicates
+    ///           DatabaseError if database constraints violated (should be rare)
+    ///
+    /// **Implementation Note**: Uses `.insert` for CREATE operations.
+    /// This ensures CloudKit properly tracks new records vs updates.
+    /// For updates, use `.upsert` with existing ID (see update() method).
+    public func create(from formData: PersonalValueFormData) async throws -> PersonalValue {
+        // Phase 1: Validate form data (business rules)
+        // Throws: ValidationError.emptyValue, ValidationError.invalidPriority
+        try PersonalValueValidation.validateFormData(formData)
+
+        // Check for duplicates (case-insensitive)
+        // Pattern: Prevent user frustration from "silent" unique constraint violations
+        if try await repository.existsByTitle(formData.title) {
+            throw ValidationError.duplicateRecord(
+                "A value named '\(formData.title)' already exists"
+            )
+        }
+
+        // Insert to database (atomic transaction)
+        // Note: Database errors are rare here since we validated above
+        // If they occur, let them propagate as-is (likely indicates data corruption)
+        let value = try await database.write { db in
             try PersonalValue.insert {
                 PersonalValue.Draft(
                     id: UUID(),
@@ -69,26 +95,64 @@ public final class PersonalValueCoordinator: ObservableObject {
             .returning { $0 }
             .fetchOne(db)!
         }
+
+        // Phase 2: Validate complete entity (defensive check)
+        // Throws: ValidationError.invalidPriority if model assembly failed
+        // This should never fail if Phase 1 passed and model init is correct
+        try PersonalValueValidation.validateComplete(value)
+
+        return value
     }
 
-    /// Updates existing PersonalValue from form data.
+    /// Updates existing PersonalValue from form data with two-phase validation.
+    ///
+    /// **Validation Flow**:
+    /// 1. Phase 1: Validate business rules (title/description, priority range)
+    /// 2. Check for duplicate titles (excluding current value)
+    /// 3. Update in database (atomic transaction)
+    /// 4. Phase 2: Validate complete entity (priority set correctly)
+    ///
     /// - Parameters:
     ///   - value: Existing PersonalValue to update
     ///   - formData: New form data (FormData pattern - not individual params!)
     /// - Returns: Updated PersonalValue
-    /// - Throws: Database errors if constraints violated
+    /// - Throws: ValidationError for business rule violations or duplicates
+    ///           DatabaseError if database constraints violated
     ///
-    /// IMPLEMENTATION:
+    /// **Implementation**:
     /// 1. Use .upsert (not .insert) with existing ID
     /// 2. Preserve id and logTime from existing value
     /// 3. Return updated value
     ///
-    /// PATTERN: FormData-based method (follows ActionCoordinator pattern)
+    /// **Pattern**: FormData-based method (follows ActionCoordinator pattern)
     public func update(
         value: PersonalValue,
-        from formData: ValueFormData
+        from formData: PersonalValueFormData
     ) async throws -> PersonalValue {
-        return try await database.write { db in
+        // Phase 1: Validate form data (business rules)
+        try PersonalValueValidation.validateFormData(formData)
+
+        // Check for duplicates (case-insensitive, excluding current value)
+        // Pattern: Allow user to keep same title, but prevent conflicts with others
+        if try await repository.existsByTitle(formData.title) {
+            // It's OK if the existing value with this title is the one we're updating
+            let existingValue = try await database.read { db in
+                try PersonalValue
+                    .order { $0.title.asc() }
+                    .fetchAll(db)
+                    .first { $0.title?.lowercased() == formData.title.lowercased() }
+            }
+
+            // If there's a different value with this title, that's a duplicate
+            if let existingValue = existingValue, existingValue.id != value.id {
+                throw ValidationError.duplicateRecord(
+                    "A different value named '\(formData.title)' already exists"
+                )
+            }
+        }
+
+        // Update in database (atomic transaction)
+        let updatedValue = try await database.write { db in
             try PersonalValue.upsert {
                 PersonalValue.Draft(
                     id: value.id,  // Preserve ID
@@ -105,6 +169,11 @@ public final class PersonalValueCoordinator: ObservableObject {
             .returning { $0 }
             .fetchOne(db)!  // Safe: successful upsert always returns value
         }
+
+        // Phase 2: Validate complete entity (defensive check)
+        try PersonalValueValidation.validateComplete(updatedValue)
+
+        return updatedValue
     }
 
     /// Deletes PersonalValue.

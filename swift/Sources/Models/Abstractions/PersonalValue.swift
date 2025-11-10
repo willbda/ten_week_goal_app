@@ -108,7 +108,7 @@ public struct PersonalValue: DomainAbstraction {
     // MARK: - Core Identity (Persistable)
 
     public var id: UUID
-    public var title: String?
+    public var title: String?  // Optional to match Documentable protocol
     public var detailedDescription: String?
     public var freeformNotes: String?
     public var logTime: Date
@@ -135,7 +135,7 @@ public struct PersonalValue: DomainAbstraction {
     /// Create a new value
     ///
     /// - Parameters:
-    ///   - title: Human-readable name
+    ///   - title: Human-readable name (required - matches DB NOT NULL constraint)
     ///   - detailedDescription: Fuller explanation
     ///   - freeformNotes: Additional notes
     ///   - priority: 1-100 (lower = higher priority)
@@ -145,7 +145,7 @@ public struct PersonalValue: DomainAbstraction {
     ///   - logTime: When created
     ///   - id: Unique identifier
     public init(
-        title: String? = nil,
+        title: String,
         detailedDescription: String? = nil,
         freeformNotes: String? = nil,
         priority: Int? = nil,

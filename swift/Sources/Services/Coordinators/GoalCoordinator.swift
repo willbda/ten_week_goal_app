@@ -19,11 +19,11 @@ import SQLiteData
 /// - Creates GoalRelevance[] records for each value alignment
 /// - Optionally creates TermGoalAssignment if term specified
 ///
-/// Validation Strategy:
-/// - NO business logic validation (trusts caller)
+/// Validation Strategy (Two-Phase):
+/// - Phase 1: Validate form data (business rules) BEFORE assembly
+/// - Phase 2: Validate complete entity (referential integrity) AFTER assembly
+/// - FK existence checked: Measures, Values, Terms must exist
 /// - Database enforces: NOT NULL, foreign keys, CHECK constraints
-/// - Relationship existence checked: Measures, Values, Terms must exist
-/// - SMART validation deferred to Phase 2 validators
 ///
 /// PATTERN: Multi-model coordinator (most complex in app)
 /// Simpler than: None (this is the most complex)
@@ -52,28 +52,32 @@ public final class GoalCoordinator: ObservableObject {
     /// 8. Insert TermGoalAssignment if termId provided
     /// 9. Return Goal (caller accesses relationships via GoalsQuery)
     public func create(from formData: GoalFormData) async throws -> Goal {
+        // Phase 1: Validate form data (business rules)
+        // Throws: ValidationError.invalidExpectation, ValidationError.invalidDateRange, etc.
+        try GoalValidation.validateFormData(formData)
+
         return try await database.write { db in
-            // 1. Validate measureIds exist (if any targets provided)
+            // Validate measureIds exist (if any targets provided)
             for target in formData.metricTargets where target.measureId != nil {
                 let measureExists = try Measure.find(target.measureId!).fetchOne(db) != nil
                 guard measureExists else {
-                    throw CoordinatorError.measureNotFound(target.measureId!)
+                    throw ValidationError.invalidMeasure("Measure \(target.measureId!) not found")
                 }
             }
 
-            // 2. Validate valueIds exist (if any alignments provided)
+            // Validate valueIds exist (if any alignments provided)
             for alignment in formData.valueAlignments where alignment.valueId != nil {
                 let valueExists = try PersonalValue.find(alignment.valueId!).fetchOne(db) != nil
                 guard valueExists else {
-                    throw CoordinatorError.valueNotFound(alignment.valueId!)
+                    throw ValidationError.foreignKeyViolation("PersonalValue \(alignment.valueId!) not found")
                 }
             }
 
-            // 3. Validate termId exists (if provided)
+            // Validate termId exists (if provided)
             if let termId = formData.termId {
                 let termExists = try GoalTerm.find(termId).fetchOne(db) != nil
                 guard termExists else {
-                    throw CoordinatorError.termNotFound(termId)
+                    throw ValidationError.foreignKeyViolation("Term \(termId) not found")
                 }
             }
 
@@ -151,6 +155,34 @@ public final class GoalCoordinator: ObservableObject {
                 .execute(db)
             }
 
+            // Phase 2: Validate complete entity graph (referential integrity)
+            // Build the arrays for validation
+            let measurements = formData.metricTargets.compactMap { target -> ExpectationMeasure? in
+                guard let measureId = target.measureId, target.isValid else { return nil }
+                return ExpectationMeasure(
+                    expectationId: expectation.id,
+                    measureId: measureId,
+                    targetValue: target.targetValue,
+                    createdAt: Date(),
+                    freeformNotes: target.notes,
+                    id: UUID()
+                )
+            }
+
+            let relevances = formData.valueAlignments.compactMap { alignment -> GoalRelevance? in
+                guard let valueId = alignment.valueId, alignment.isValid else { return nil }
+                return GoalRelevance(
+                    goalId: goal.id,
+                    valueId: valueId,
+                    alignmentStrength: alignment.alignmentStrength,
+                    relevanceNotes: alignment.relevanceNotes,
+                    createdAt: Date(),
+                    id: UUID()
+                )
+            }
+
+            try GoalValidation.validateComplete(expectation, goal, measurements, relevances)
+
             // 9. Return Goal (caller accesses full data via GoalsQuery)
             return goal
         }
@@ -187,12 +219,15 @@ public final class GoalCoordinator: ObservableObject {
         existingAssignment: TermGoalAssignment?,
         from formData: GoalFormData
     ) async throws -> Goal {
+        // Phase 1: Validate form data (business rules)
+        try GoalValidation.validateFormData(formData)
+
         return try await database.write { db in
             // Validate new measureIds exist (if any)
             for target in formData.metricTargets where target.measureId != nil {
                 let measureExists = try Measure.find(target.measureId!).fetchOne(db) != nil
                 guard measureExists else {
-                    throw CoordinatorError.measureNotFound(target.measureId!)
+                    throw ValidationError.invalidMeasure("Measure \(target.measureId!) not found")
                 }
             }
 
@@ -200,7 +235,7 @@ public final class GoalCoordinator: ObservableObject {
             for alignment in formData.valueAlignments where alignment.valueId != nil {
                 let valueExists = try PersonalValue.find(alignment.valueId!).fetchOne(db) != nil
                 guard valueExists else {
-                    throw CoordinatorError.valueNotFound(alignment.valueId!)
+                    throw ValidationError.foreignKeyViolation("PersonalValue \(alignment.valueId!) not found")
                 }
             }
 
@@ -208,7 +243,7 @@ public final class GoalCoordinator: ObservableObject {
             if let termId = formData.termId {
                 let termExists = try GoalTerm.find(termId).fetchOne(db) != nil
                 guard termExists else {
-                    throw CoordinatorError.termNotFound(termId)
+                    throw ValidationError.foreignKeyViolation("Term \(termId) not found")
                 }
             }
 
@@ -300,6 +335,33 @@ public final class GoalCoordinator: ObservableObject {
                 }
                 .execute(db)
             }
+
+            // Phase 2: Validate complete entity graph
+            let newMeasurements = formData.metricTargets.compactMap { target -> ExpectationMeasure? in
+                guard let measureId = target.measureId, target.isValid else { return nil }
+                return ExpectationMeasure(
+                    expectationId: updatedExpectation.id,
+                    measureId: measureId,
+                    targetValue: target.targetValue,
+                    createdAt: Date(),
+                    freeformNotes: target.notes,
+                    id: UUID()
+                )
+            }
+
+            let newRelevances = formData.valueAlignments.compactMap { alignment -> GoalRelevance? in
+                guard let valueId = alignment.valueId, alignment.isValid else { return nil }
+                return GoalRelevance(
+                    goalId: updatedGoal.id,
+                    valueId: valueId,
+                    alignmentStrength: alignment.alignmentStrength,
+                    relevanceNotes: alignment.relevanceNotes,
+                    createdAt: Date(),
+                    id: UUID()
+                )
+            }
+
+            try GoalValidation.validateComplete(updatedExpectation, updatedGoal, newMeasurements, newRelevances)
 
             return updatedGoal
         }

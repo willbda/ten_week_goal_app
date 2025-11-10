@@ -3,7 +3,7 @@
 // Written by Claude Code on 2025-11-08
 //
 // PURPOSE:
-// Maps CSV rows to ValueFormData for PersonalValueCoordinator.
+// Maps CSV rows to PersonalValueFormData for PersonalValueCoordinator.
 // Simplest mapper - no relationships, just field extraction.
 //
 
@@ -12,12 +12,12 @@ import Models
 
 // MARK: - Value Mapper
 
-/// Maps CSV rows to ValueFormData
+/// Maps CSV rows to PersonalValueFormData
 public struct ValueMapper: CSVMapper {
 
     public init() {}
 
-    public func map(row: [String: String], rowNumber: Int) throws -> ValueFormData {
+    public func map(row: [String: String], rowNumber: Int) throws -> PersonalValueFormData {
         // 1. Extract required fields
         guard let title = row["title"]?.nonEmpty else {
             throw MapError.missingRequired(row: rowNumber, field: "title")
@@ -59,7 +59,7 @@ public struct ValueMapper: CSVMapper {
             priority = valueLevel.defaultPriority
         }
 
-        return ValueFormData(
+        return PersonalValueFormData(
             title: title,
             detailedDescription: description,
             freeformNotes: notes,

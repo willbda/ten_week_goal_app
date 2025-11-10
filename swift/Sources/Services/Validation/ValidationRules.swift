@@ -43,6 +43,10 @@ public enum ActionValidation {
     /// Phase 1: Validate business rules on form data
     public static func validateFormData(_ formData: ActionFormData) throws {
         // Rule: Action must have SOME content (text OR measurements OR goal links)
+        //
+        // NOTE: Uses try? to convert ValidationUtilities check to boolean for OR logic.
+        // We can't throw immediately on missing text because actions can be valid with
+        // only measurements or goal links. The comprehensive error below explains all options.
         let hasTextContent = (try? ValidationUtilities.requireAnyFieldHasValue(
             [
                 (formData.title, "title"),

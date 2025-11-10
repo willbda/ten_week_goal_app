@@ -17,11 +17,11 @@ import SQLiteData
 /// - Creates Action + MeasuredAction[] + ActionGoalContribution[] atomically
 /// - Validates that referenced Measures and Goals exist before insert
 ///
-/// Validation Strategy:
-/// - NO validation in coordinator (trusts caller)
+/// Validation Strategy (Two-Phase):
+/// - Phase 1: Validate form data (business rules) BEFORE assembly
+/// - Phase 2: Validate complete entity (referential integrity) AFTER assembly
+/// - FK existence checked before insert (Measures, Goals)
 /// - Database enforces: NOT NULL, foreign keys, CHECK constraints
-/// - Relationship existence checked before insert (Measures, Goals)
-/// - Business rules enforced by ActionValidator (Phase 2)
 ///
 /// PATTERN: Three-model atomic transaction (Action + MeasuredAction[] + ActionGoalContribution[])
 /// More complex than: TimePeriod (1:1), simpler than: Goal (5+ models)
@@ -46,20 +46,24 @@ public final class ActionCoordinator: ObservableObject {
     /// 5. Insert ActionGoalContribution records for each goal
     /// 6. Return Action (caller can access relationships via queries)
     public func create(from formData: ActionFormData) async throws -> Action {
+        // Phase 1: Validate form data (business rules)
+        // Throws: ValidationError.emptyAction, ValidationError.invalidDateRange, etc.
+        try ActionValidation.validateFormData(formData)
+
         return try await database.write { db in
-            // 1. Validate measureIds exist (if any measurements provided)
+            // Validate measureIds exist (if any measurements provided)
             for measurement in formData.measurements where measurement.measureId != nil {
                 let measureExists = try Measure.find(measurement.measureId!).fetchOne(db) != nil
                 guard measureExists else {
-                    throw CoordinatorError.measureNotFound(measurement.measureId!)
+                    throw ValidationError.invalidMeasure("Measure \(measurement.measureId!) not found")
                 }
             }
 
-            // 2. Validate goalIds exist (if any contributions provided)
+            // Validate goalIds exist (if any contributions provided)
             for goalId in formData.goalContributions {
                 let goalExists = try Goal.find(goalId).fetchOne(db) != nil
                 guard goalExists else {
-                    throw CoordinatorError.goalNotFound(goalId)
+                    throw ValidationError.invalidGoal("Goal \(goalId) not found")
                 }
             }
 
@@ -107,6 +111,32 @@ public final class ActionCoordinator: ObservableObject {
                 .execute(db)
             }
 
+            // Phase 2: Validate complete entity graph (referential integrity)
+            // Build the arrays for validation
+            let measurements = formData.measurements.compactMap { measurement -> MeasuredAction? in
+                guard let measureId = measurement.measureId else { return nil }
+                return MeasuredAction(
+                    actionId: action.id,
+                    measureId: measureId,
+                    value: measurement.value,
+                    createdAt: Date(),
+                    id: UUID()
+                )
+            }
+
+            let contributions = formData.goalContributions.map { goalId in
+                ActionGoalContribution(
+                    actionId: action.id,
+                    goalId: goalId,
+                    contributionAmount: nil,
+                    measureId: nil,
+                    createdAt: Date(),
+                    id: UUID()
+                )
+            }
+
+            try ActionValidation.validateComplete(action, measurements, contributions)
+
             // 6. Return Action (caller accesses relationships via ActionsQuery)
             return action
         }
@@ -137,12 +167,15 @@ public final class ActionCoordinator: ObservableObject {
         contributions: [ActionGoalContribution],
         from formData: ActionFormData
     ) async throws -> Action {
+        // Phase 1: Validate form data (business rules)
+        try ActionValidation.validateFormData(formData)
+
         return try await database.write { db in
             // 1. Validate new measureIds exist (if any)
             for measurement in formData.measurements where measurement.measureId != nil {
                 let measureExists = try Measure.find(measurement.measureId!).fetchOne(db) != nil
                 guard measureExists else {
-                    throw CoordinatorError.measureNotFound(measurement.measureId!)
+                    throw ValidationError.invalidMeasure("Measure \(measurement.measureId!) not found")
                 }
             }
 
@@ -150,7 +183,7 @@ public final class ActionCoordinator: ObservableObject {
             for goalId in formData.goalContributions {
                 let goalExists = try Goal.find(goalId).fetchOne(db) != nil
                 guard goalExists else {
-                    throw CoordinatorError.goalNotFound(goalId)
+                    throw ValidationError.invalidGoal("Goal \(goalId) not found")
                 }
             }
 
@@ -207,6 +240,31 @@ public final class ActionCoordinator: ObservableObject {
                 }
                 .execute(db)
             }
+
+            // Phase 2: Validate complete entity graph
+            let newMeasurements = formData.measurements.compactMap { measurement -> MeasuredAction? in
+                guard let measureId = measurement.measureId else { return nil }
+                return MeasuredAction(
+                    actionId: updatedAction.id,
+                    measureId: measureId,
+                    value: measurement.value,
+                    createdAt: Date(),
+                    id: UUID()
+                )
+            }
+
+            let newContributions = formData.goalContributions.map { goalId in
+                ActionGoalContribution(
+                    actionId: updatedAction.id,
+                    goalId: goalId,
+                    contributionAmount: nil,
+                    measureId: nil,
+                    createdAt: Date(),
+                    id: UUID()
+                )
+            }
+
+            try ActionValidation.validateComplete(updatedAction, newMeasurements, newContributions)
 
             return updatedAction
         }
