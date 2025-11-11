@@ -26,7 +26,7 @@ import GRDB  // For FetchableRecord protocol
 // REMOVED @MainActor: Repository performs database queries which are I/O
 // operations that should run in background. Database reads should not block
 // the main thread. ViewModels will await results on main actor as needed.
-public final class GoalRepository {
+public final class GoalRepository: Sendable {
     private let database: any DatabaseWriter
 
     public init(database: any DatabaseWriter) {
@@ -429,10 +429,10 @@ private struct FetchGoalProgressRequest: FetchKeyRequest {
     typealias Value = [GoalProgressData]
 
     func fetch(_ db: Database) throws -> [GoalProgressData] {
-        // Use #sql macro with type interpolation for table/column safety
+        // **TEMPORARY**: Using raw SQL string until #sql macro supports complex result types
+        // **FUTURE**: Will migrate to #sql when SQLiteData adds support for custom DTOs
         // Raw SQL approach chosen for dashboard queries per user requirements
-        let rows = try #sql(
-            """
+        let sql = """
             SELECT
                 goals.id,
                 expectations.title as goalTitle,
@@ -456,14 +456,14 @@ private struct FetchGoalProgressRequest: FetchKeyRequest {
                         CAST(JULIANDAY(goals.targetDate) - JULIANDAY('now') AS INTEGER)
                     ELSE NULL
                 END as daysRemaining
-            FROM \(Goal.self)
-            INNER JOIN \(Expectation.self) ON goals.expectationId = expectations.id
-            INNER JOIN \(ExpectationMeasure.self) ON expectations.id = expectationMeasures.expectationId
-            INNER JOIN \(Measure.self) ON expectationMeasures.measureId = measures.id
+            FROM goals
+            INNER JOIN expectations ON goals.expectationId = expectations.id
+            INNER JOIN expectationMeasures ON expectations.id = expectationMeasures.expectationId
+            INNER JOIN measures ON expectationMeasures.measureId = measures.id
             -- LEFT JOIN to include goals without actions yet
-            LEFT JOIN \(ActionGoalContribution.self) ON goals.id = actionGoalContributions.goalId
-            LEFT JOIN \(Action.self) ON actionGoalContributions.actionId = actions.id
-            LEFT JOIN \(MeasuredAction.self)
+            LEFT JOIN actionGoalContributions ON goals.id = actionGoalContributions.goalId
+            LEFT JOIN actions ON actionGoalContributions.actionId = actions.id
+            LEFT JOIN measuredActions
                 ON actions.id = measuredActions.actionId
                 AND measuredActions.measureId = measures.id
             -- Group by goal AND measure (goals can have multiple measures)
@@ -472,9 +472,9 @@ private struct FetchGoalProgressRequest: FetchKeyRequest {
             ORDER BY
                 percentComplete ASC,
                 goals.targetDate ASC NULLS LAST
-            """,
-            as: GoalProgressRow.self
-        ).fetchAll(db)
+            """
+
+        let rows = try GoalProgressRow.fetchAll(db, sql: sql)
 
         // Convert SQL rows to domain objects
         return rows.map { row in
@@ -498,7 +498,7 @@ private struct FetchGoalProgressRequest: FetchKeyRequest {
 /// SQL result row for goal progress query
 ///
 /// Maps to SQL column names for automatic decoding
-private struct GoalProgressRow: FetchableRecord, Sendable {
+private struct GoalProgressRow: Decodable, FetchableRecord, Sendable {
     let id: UUID
     let goalTitle: String
     let targetDate: Date?

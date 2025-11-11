@@ -8,15 +8,21 @@
 
   /// Root view for the application
   ///
-  /// Provides tab-based navigation to Actions and Terms features.
-  /// Additional tabs (Goals, Values) will be added in future sprints.
+  /// Provides tab-based navigation with Dashboard as the landing page.
+  /// Updated 2025-11-10: Dashboard added as first tab for goal progress overview.
   public struct ContentView: View {
 
       public init() {}
 
       public var body: some View {
           TabView {
-              // Tab 1: Actions (Phase 1 Complete - Full CRUD)
+              // Tab 1: Dashboard (Goal Progress Overview)
+              GoalProgressDashboardViewTEMP()
+                  .tabItem {
+                      Label("Dashboard", systemImage: "chart.bar.fill")
+                  }
+
+              // Tab 2: Actions (Phase 1 Complete - Full CRUD)
               NavigationStack {
                   ActionsListView()
               }
@@ -24,7 +30,7 @@
                   Label("Actions", systemImage: "checkmark.circle")
               }
 
-              // Tab 2: Terms (Phase 1 - Complete)
+              // Tab 3: Terms (Phase 1 - Complete)
               NavigationStack {
                   TermsListView()
               }
@@ -32,7 +38,7 @@
                   Label("Terms", systemImage: "calendar")
               }
 
-              // Tab 3: Goals (Future Sprint 2)
+              // Tab 4: Goals (Phase 2)
               NavigationStack {
                   GoalsListView()
               }.tabItem{
@@ -40,7 +46,7 @@
 
               }
 
-              // Tab 4: Values (Phase 3 - Complete)
+              // Tab 5: Values (Phase 3 - Complete)
               NavigationStack {
                   PersonalValuesListView()
               }
@@ -48,7 +54,7 @@
                   Label("Values", systemImage: "heart.fill")
               }
 
-              // Tab 5: Import (your addition - working)
+              // Tab 6: Import (CSV Import/Export)
               NavigationStack {
                   CSVExportImportView()
               }
@@ -56,7 +62,7 @@
                   Label("Import", systemImage: "arrow.2.circlepath.circle")
               }
 
-              // Tab 6: Health (iOS only - HealthKit workouts)
+              // Tab 7: Health (iOS only - HealthKit workouts)
               #if os(iOS)
               NavigationStack {
                   WorkoutsTestView()

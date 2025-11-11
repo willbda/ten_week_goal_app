@@ -673,11 +673,9 @@ struct SchemaValidationTests {
         // Source: DatabaseBootstrap.DatabaseMode.localTesting.path
         let sourceURL = DatabaseBootstrap.DatabaseMode.localTesting.path
 
-        // Destination: Next to test files in SampleData directory for easy inspection
-        let destURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()  // Remove SchemaValidationTests.swift
-            .deletingLastPathComponent()  // Remove ModelTests/
-            .appendingPathComponent("SampleData/test_output_last_run.db")
+        // Destination: Desktop (user-accessible, not sandboxed)
+        let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
+        let destURL = desktopURL.appendingPathComponent("schema_validation_test_last_run.db")
 
         // Remove old copy if exists
         try? FileManager.default.removeItem(at: destURL)
@@ -685,9 +683,9 @@ struct SchemaValidationTests {
         // Copy database
         try FileManager.default.copyItem(at: sourceURL, to: destURL)
 
-        print("✓ Database preserved at: Happy to Have Lived Tests/SampleData/test_output_last_run.db")
+        print("✓ Database preserved at: ~/Desktop/schema_validation_test_last_run.db")
         print("   Full path: \(destURL.path)")
-        print("   Inspect with: sqlite3 \"\(destURL.path)\"")
+        print("   Inspect with: sqlite3 ~/Desktop/schema_validation_test_last_run.db")
         print("\n   Example queries:")
         print("     SELECT COUNT(*) FROM actions;")
         print("     SELECT title, unit FROM measures;")
