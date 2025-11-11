@@ -35,15 +35,11 @@ public struct ActionRowView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Title + timestamp
-            HStack {
-                Text(actionDetails.action.title ?? "Untitled Action")
-                    .font(.headline)
-                Spacer()
-                Text(actionDetails.action.logTime, style: .relative)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            // Title only (relative timestamp removed for clarity)
+            // Previously displayed: logTime with .relative style ("2 hours ago")
+            // Removed as it was found to be distracting rather than helpful
+            Text(actionDetails.action.title ?? "Untitled Action")
+                .font(.headline)
 
             // Measurements (if any)
             if !actionDetails.measurements.isEmpty {
@@ -58,8 +54,11 @@ public struct ActionRowView: View {
                 }
             }
 
-            // Duration (if tracked)
-            if let duration = actionDetails.action.durationMinutes, duration > 0 {
+            // Duration (if tracked AND no time measurement exists)
+            // Hide duration if there's already a time-based measurement to avoid redundancy
+            if let duration = actionDetails.action.durationMinutes,
+               duration > 0,
+               !hasTimeMeasurement {
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.caption)
@@ -96,6 +95,18 @@ public struct ActionRowView: View {
     }
 
     // MARK: - Helpers
+
+    /// Checks if any measurement is time-based
+    ///
+    /// Used to avoid redundant display when both durationMinutes and time measurements exist.
+    /// Time-based units: minutes, min, hours, hrs, seconds, secs
+    private var hasTimeMeasurement: Bool {
+        let timeUnits = ["minutes", "min", "hours", "hrs", "hour", "seconds", "secs", "second"]
+        return actionDetails.measurements.contains { measurement in
+            let unit = measurement.measure.unit.lowercased()
+            return timeUnits.contains(unit) || measurement.measure.measureType == "time"
+        }
+    }
 
     /// Formats measurements as comma-separated list
     /// Example: "5.2 km, 28 min, 3 occasions"
