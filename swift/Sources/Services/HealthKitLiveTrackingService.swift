@@ -100,7 +100,10 @@ public final class HealthKitLiveTrackingService {
                 print("❌ Step update failed: \(error)")
                 return
             }
-            self?.processStepSamples(samples, onUpdate: onUpdate)
+            // HealthKit callbacks are not on main actor - hop to main actor for processing
+            Task { @MainActor in
+                self?.processStepSamples(samples, onUpdate: onUpdate)
+            }
         }
 
         healthStore.execute(query)
@@ -147,7 +150,10 @@ public final class HealthKitLiveTrackingService {
                 print("❌ Distance update failed: \(error)")
                 return
             }
-            self?.processDistanceSamples(samples, onUpdate: onUpdate)
+            // HealthKit callbacks are not on main actor - hop to main actor for processing
+            Task { @MainActor in
+                self?.processDistanceSamples(samples, onUpdate: onUpdate)
+            }
         }
 
         healthStore.execute(query)
@@ -194,7 +200,10 @@ public final class HealthKitLiveTrackingService {
                 print("❌ Active energy update failed: \(error)")
                 return
             }
-            self?.processEnergySamples(samples, onUpdate: onUpdate)
+            // HealthKit callbacks are not on main actor - hop to main actor for processing
+            Task { @MainActor in
+                self?.processEnergySamples(samples, onUpdate: onUpdate)
+            }
         }
 
         healthStore.execute(query)
