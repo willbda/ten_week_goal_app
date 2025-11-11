@@ -80,7 +80,7 @@
       </BuildActionEntries>
    </BuildAction>
    <TestAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Release"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
@@ -105,6 +105,17 @@
                BlueprintIdentifier = "388F128F2EB6BEDF00A8CED4"
                BuildableName = "GoalTrackerUITests.xctest"
                BlueprintName = "GoalTrackerUITests"
+               ReferencedContainer = "container:GoalTracker.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "38235EB92EC2BC77008C063C"
+               BuildableName = "Happy to Have Lived Tests.xctest"
+               BlueprintName = "Happy to Have Lived Tests"
                ReferencedContainer = "container:GoalTracker.xcodeproj">
             </BuildableReference>
          </TestableReference>

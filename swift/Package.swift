@@ -126,52 +126,8 @@ let package = Package(
         // =========================================================================
         // TESTS
         // =========================================================================
-
-        // Validation Tests - Test validators before wiring to coordinators
-        .testTarget(
-            name: "ValidationTests",
-            dependencies: [
-                "Models",
-                "Database",
-                "Services",
-            ],
-            path: "Tests/ValidationTests"
-        ),
-
-        // Model Tests - Schema validation and round-trip tests
-        .testTarget(
-            name: "ModelTests",
-            dependencies: [
-                "Models",
-                "Database",
-                "Services",
-            ],
-            path: "Tests/ModelTests",
-            resources: [
-                .copy("Resources/schema_validation_data.json")
-            ]
-        ),
-
-        // Coordinator Tests - Test multi-model atomic transactions
-        .testTarget(
-            name: "CoordinatorTests",
-            dependencies: [
-                "Models",
-                "Database",
-                "Services",
-            ],
-            path: "Tests/CoordinatorTests"
-        ),
-
-        // View Tests - Disabled until Tests/ViewTests directory created
-        // .testTarget(
-        //     name: "ViewTests",
-        //     dependencies: [
-        //         "App",
-        //         "Models",
-        //     ],
-        //     path: "Tests/ViewTests"
-        // )
+        // Tests moved to Xcode test target: GoalTracker/Happy to Have Lived Tests/
+        // This is an app project, not a distributable package
     ],
 
     // MARK: - Swift Language Settings
