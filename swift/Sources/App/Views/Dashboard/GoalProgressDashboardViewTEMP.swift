@@ -413,6 +413,7 @@ struct ProgressRingViewTEMP: View {
 
 // MARK: - Previews
 
+#if DEBUG
 #Preview("Dashboard with Data") {
     GoalProgressDashboardViewTEMP(viewModel: .preview)
         .environment(\.locale, .init(identifier: "en_US"))
@@ -425,6 +426,7 @@ struct ProgressRingViewTEMP: View {
 #Preview("Dashboard Loading") {
     GoalProgressDashboardViewTEMP(viewModel: .previewLoading)
 }
+#endif
 
 // MARK: - Implementation Notes
 
