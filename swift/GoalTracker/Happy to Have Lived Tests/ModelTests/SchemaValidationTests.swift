@@ -670,22 +670,16 @@ struct SchemaValidationTests {
             throw TestError.databaseNotInitialized
         }
 
-        // Source: DatabaseBootstrap.DatabaseMode.localTesting.path
-        let sourceURL = DatabaseBootstrap.DatabaseMode.localTesting.path
+        // Database is already at DatabaseBootstrap.DatabaseMode.localTesting.path
+        // Just print the location for inspection (sandboxed app can't copy outside container)
+        let dbURL = DatabaseBootstrap.DatabaseMode.localTesting.path
 
-        // Destination: Desktop (user-accessible, not sandboxed)
-        let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
-        let destURL = desktopURL.appendingPathComponent("schema_validation_test_last_run.db")
-
-        // Remove old copy if exists
-        try? FileManager.default.removeItem(at: destURL)
-
-        // Copy database
-        try FileManager.default.copyItem(at: sourceURL, to: destURL)
-
-        print("✓ Database preserved at: ~/Desktop/schema_validation_test_last_run.db")
-        print("   Full path: \(destURL.path)")
-        print("   Inspect with: sqlite3 ~/Desktop/schema_validation_test_last_run.db")
+        print("✓ Database preserved at:")
+        print("   \(dbURL.path)")
+        print("\n   Inspect with:")
+        print("     sqlite3 \"\(dbURL.path)\"")
+        print("\n   Or copy to Desktop with:")
+        print("     cp \"\(dbURL.path)\" ~/Desktop/test_db.db")
         print("\n   Example queries:")
         print("     SELECT COUNT(*) FROM actions;")
         print("     SELECT title, unit FROM measures;")
