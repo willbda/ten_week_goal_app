@@ -19,6 +19,12 @@ import Observation
 /// try await manager.requestAuthorization()
 /// let workouts = try await manager.fetchWorkouts(for: Date())
 /// ```
+///
+/// ARCHITECTURE NOTE: Marked @MainActor because:
+/// - Has @Observable state displayed in UI (authorizationStatus, error, isAvailable)
+/// - Properties like authorizationStatus are read directly by SwiftUI views
+/// - Must serialize access to UI state for thread safety
+/// - HealthKit query callbacks update observable properties synchronously
 @Observable
 @MainActor
 public final class HealthKitManager {

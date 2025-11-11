@@ -25,7 +25,7 @@ import SQLiteData
 ///
 /// PATTERN: Three-model atomic transaction (Action + MeasuredAction[] + ActionGoalContribution[])
 /// More complex than: TimePeriod (1:1), simpler than: Goal (5+ models)
-public final class ActionCoordinator {
+public final class ActionCoordinator: Sendable {
     private let database: any DatabaseWriter
 
     public init(database: any DatabaseWriter) {

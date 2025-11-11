@@ -276,11 +276,83 @@ goals.append(goal)
 1. Create model in appropriate layer (`Abstractions/`, `Basics/`, or `Composits/`)
 2. Add @Table and @Column attributes for SQLiteData
 3. Create FormData structure in `Services/Coordinators/FormData/`
-4. Implement Coordinator in `Services/Coordinators/`
+4. Implement Coordinator in `Services/Coordinators/` (**MUST be `Sendable`, NO `@MainActor`**)
 5. Implement Validator in `Services/Validation/`
 6. Create Repository in `Services/Repositories/` (when pattern is complete)
 7. Add database migration if schema changes
 8. Write tests for coordinator and validator
+
+### Creating a New Coordinator (Swift 6 Pattern)
+
+**Template** (based on PersonalValueCoordinator):
+```swift
+/// SWIFT 6 CONCURRENCY PATTERN:
+/// - NO @MainActor: Database I/O runs in background
+/// - Sendable: Safe to pass from @MainActor ViewModels
+/// - Immutable state: Only private let properties
+public final class MyEntityCoordinator: Sendable {
+    private let database: any DatabaseWriter  // Must be immutable (let, not var)
+
+    public init(database: any DatabaseWriter) {
+        self.database = database
+    }
+
+    public func create(from formData: MyEntityFormData) async throws -> MyEntity {
+        try await database.write { db in
+            // Database operations here
+        }
+    }
+}
+```
+
+**Key Requirements**:
+- ✅ Mark `Sendable` (required for actor boundaries)
+- ❌ NO `@MainActor` (database I/O should be background)
+- ❌ NO `ObservableObject` (legacy pattern)
+- ✅ Only `private let` properties (immutable state)
+- ✅ All public methods must be `async throws`
+
+### Creating a New ViewModel (Swift 6 Pattern)
+
+**Template** (based on ActionFormViewModel):
+```swift
+@Observable
+@MainActor
+public final class MyEntityFormViewModel {
+    // UI state properties (auto-tracked by @Observable)
+    var isSaving: Bool = false
+    var errorMessage: String?
+
+    // Dependencies (mark with @ObservationIgnored)
+    @ObservationIgnored
+    @Dependency(\.defaultDatabase) var database
+
+    // Coordinator (lazy var with @ObservationIgnored)
+    @ObservationIgnored
+    private lazy var coordinator: MyEntityCoordinator = {
+        MyEntityCoordinator(database: database)
+    }()
+
+    public init() {}
+
+    public func save(from formData: MyEntityFormData) async throws -> MyEntity {
+        isSaving = true  // ← Main actor
+        defer { isSaving = false }
+
+        // This automatically switches to background, then back to main
+        let entity = try await coordinator.create(from: formData)
+        errorMessage = nil
+        return entity
+    }
+}
+```
+
+**Key Requirements**:
+- ✅ Mark `@Observable` (modern pattern, NOT ObservableObject)
+- ✅ Mark `@MainActor` (UI state management)
+- ✅ Use `@State` in views (NOT `@StateObject`)
+- ✅ Mark dependencies with `@ObservationIgnored`
+- ✅ Use lazy coordinator with `@ObservationIgnored`
 
 
 ## Documentation Research with doc-fetcher
@@ -534,29 +606,81 @@ class OldViewModel: ObservableObject {
 @StateObject private var viewModel = OldViewModel()
 ```
 
-**Current Issues**: Coordinators still use `ObservableObject` pattern and should be migrated to `@Observable`.
+#### 2. Concurrency (Swift 6 Strict Concurrency) - ✅ Migrated 2025-11-10
 
-#### 2. Concurrency (Swift 6 Strict Concurrency)
+**IMPORTANT**: All coordinators, ViewModels, and services have been migrated to modern Swift 6 concurrency patterns.
+See `swift/docs/CONCURRENCY_MIGRATION_20251110.md` for complete migration history.
 
-**Modern Pattern**:
+**Modern Patterns** (Current as of v0.6.0):
+
+**ViewModels - @Observable + @MainActor**:
 ```swift
-// Use @MainActor for UI-bound types
+// ✅ CORRECT: ViewModels manage UI state
 @Observable
 @MainActor
-public final class ViewModel {
-    // All properties are MainActor-isolated
-}
+public final class ActionFormViewModel {
+    var isSaving: Bool = false  // UI state tracked by @Observable
+    var errorMessage: String?
 
-// Use Sendable for cross-boundary types
-public struct ActionWithDetails: Identifiable, Hashable, Sendable {
-    // Safe to pass between isolation domains
+    @ObservationIgnored
+    @Dependency(\.defaultDatabase) var database
+
+    // Lazy coordinator pattern (Swift 6 strict concurrency)
+    @ObservationIgnored
+    private lazy var coordinator: ActionCoordinator = {
+        ActionCoordinator(database: database)
+    }()
+
+    func save() async throws {
+        isSaving = true  // ← Main actor (UI update)
+        let result = try await coordinator.create(...)  // ← Background (I/O)
+        isSaving = false  // ← Main actor (UI update)
+    }
 }
 ```
 
-**Key Rules**:
-- Mark ViewModels with `@MainActor` to ensure UI updates on main thread
-- Make data types `Sendable` when passed between actors
-- Avoid capturing non-Sendable types in concurrent contexts
+**Coordinators - Sendable, NO @MainActor**:
+```swift
+// ✅ CORRECT: Coordinators are stateless I/O services
+public final class ActionCoordinator: Sendable {
+    private let database: any DatabaseWriter  // Immutable
+
+    // All methods run in background (not on main actor)
+    public func create(from formData: ActionFormData) async throws -> Action {
+        try await database.write { db in
+            // Heavy database I/O - runs off main thread
+        }
+    }
+}
+```
+
+**Data Types - Sendable for Actor Boundaries**:
+```swift
+// ✅ CORRECT: Types passed between actors must be Sendable
+public struct ActionWithDetails: Identifiable, Hashable, Sendable {
+    public let action: Action
+    public let measurements: [MeasuredActionWithMeasure]
+    public let contributions: [ActionGoalContributionWithGoal]
+}
+```
+
+**Key Rules** (Swift 6 Strict Concurrency):
+1. **@MainActor on ViewModels**: Ensures UI updates on main thread
+2. **NO @MainActor on Coordinators**: Database I/O runs in background
+3. **Sendable on Coordinators**: Safe to pass from @MainActor to nonisolated contexts
+4. **Lazy Coordinator Storage**: Use `lazy var` with `@ObservationIgnored` in ViewModels
+5. **Automatic Context Switching**: Swift handles main → background → main automatically
+
+**Why This Matters**:
+- Database operations no longer block the UI thread
+- Automatic context switching between main actor and background
+- Type-safe actor isolation with compile-time checking
+- Professional-grade concurrency without manual thread management
+
+**Research References**:
+- Swift Language Guide: `/Users/davidwilliams/Coding/REFERENCE/documents/SwiftLanguage/02-LanguageGuide/18-Concurrency.md`
+- Concurrency Migration: `swift/docs/CONCURRENCY_MIGRATION_20251110.md`
+- @Observable macro docs: Use doc-fetcher to fetch latest Apple documentation
 
 #### 3. Database Queries (SQLiteData FetchKeyRequest and @Fetch)
 

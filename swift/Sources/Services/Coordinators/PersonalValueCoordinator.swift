@@ -30,7 +30,23 @@ import SQLiteData
 /// ARCHITECTURE NOTE: PersonalValue is the simplest coordinator (single model, no relationships)
 /// Use this as template for other single-model coordinators (Term, Milestone)
 /// For multi-model coordinators (Goal, Action), see GoalCoordinator for atomic transaction pattern
-public final class PersonalValueCoordinator {
+///
+/// SWIFT 6 CONCURRENCY PATTERN (Migrated 2025-11-10):
+/// - NO @MainActor: Coordinators perform database I/O (should run in background)
+/// - Sendable conformance: Safe to pass from @MainActor ViewModels to background threads
+/// - Immutable state: Only `private let` properties (thread-safe)
+/// - ViewModels use lazy var: `@ObservationIgnored private lazy var coordinator = PersonalValueCoordinator(...)`
+/// - Auto context switching: Swift handles main → background → main automatically
+///
+/// WHY Sendable is Safe:
+/// - Final class (no inheritance complications)
+/// - Only immutable properties (private let database)
+/// - No mutable state to protect
+/// - Database (SQLiteData/GRDB) handles thread safety internally
+///
+/// Reference: Swift Language Guide on Concurrency (Sendable Types, lines 1449-1593)
+/// Reference: /Users/davidwilliams/Coding/REFERENCE/documents/SwiftLanguage/02-LanguageGuide/18-Concurrency.md
+public final class PersonalValueCoordinator: Sendable {
     // ARCHITECTURE DECISION: DatabaseWriter instead of DatabaseQueue
     // CONTEXT: SQLiteData uses DatabaseWriter protocol (from GRDB)
     // PATTERN: From SQLiteData examples and DatabaseBootstrap.swift

@@ -33,7 +33,9 @@ import Foundation
 import Models
 import SQLiteData
 
-@MainActor
+// REMOVED @MainActor: CSV parsing and file I/O are background operations
+// that shouldn't block the main thread. File reading/writing is I/O-bound
+// work that benefits from running off the main actor.
 public final class ActionCSVService {
     private let database: any DatabaseWriter
     private let coordinator: ActionCoordinator

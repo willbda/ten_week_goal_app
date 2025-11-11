@@ -38,6 +38,12 @@ import Foundation
 /// for continuous monitoring of HealthKit data changes." This is the recommended
 /// approach for real-time tracking, not HKObserverQuery (which is for background
 /// notifications requiring completion handlers).
+///
+/// ARCHITECTURE NOTE: Marked @MainActor because:
+/// - Provides live tracking callbacks that update ViewModel properties (onUpdate closures)
+/// - All onUpdate closures are marked @Sendable and called on @MainActor for UI safety
+/// - Internal HealthKit queries run on background, but callbacks must update UI
+/// - Query lifecycle management (activeQueries dict) requires main actor isolation
 @MainActor
 public final class HealthKitLiveTrackingService {
     private let healthStore = HKHealthStore()

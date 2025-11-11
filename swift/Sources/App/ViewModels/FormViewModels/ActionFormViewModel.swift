@@ -52,12 +52,26 @@ public final class ActionFormViewModel {
     @ObservationIgnored
     @Dependency(\.defaultDatabase) var database
 
+    // SWIFT 6 CONCURRENCY PATTERN (Migrated 2025-11-10):
+    // - ViewModels are @MainActor (manage UI state)
+    // - Coordinators are Sendable, NOT @MainActor (database I/O runs in background)
+    // - Use lazy var with @ObservationIgnored for coordinator storage
+    //
     // ARCHITECTURE DECISION: Lazy stored property with @ObservationIgnored
     // CONTEXT: Swift 6 strict concurrency - coordinators are now non-isolated
     // PATTERN: Use lazy var with @ObservationIgnored for multi-method coordinator usage
     // WHY LAZY: Coordinator used in multiple methods (save, update, delete)
     // WHY @ObservationIgnored: Coordinators are stateless services, no observable state
     // RESULT: Coordinator created once on first use, safe across all async methods
+    //
+    // CONTEXT SWITCHING (automatic by Swift):
+    // 1. ViewModel method starts on main actor (UI thread)
+    // 2. await coordinator.create(...) switches TO background thread for I/O
+    // 3. When coordinator returns, Swift switches BACK to main actor
+    // 4. UI updates happen on main actor automatically
+    //
+    // Reference: Swift Language Guide on Concurrency (Main Actor, lines 987-1163)
+    // Reference: swift/docs/CONCURRENCY_MIGRATION_20251110.md
     @ObservationIgnored
     private lazy var coordinator: ActionCoordinator = {
         ActionCoordinator(database: database)

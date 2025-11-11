@@ -18,6 +18,12 @@ import Dependencies
 /// - Duration → hours or minutes measurement
 /// - Distance → km measurement
 /// - Calories → kcal measurement
+///
+/// ARCHITECTURE NOTE: Marked @MainActor because:
+/// - Uses @Dependency injection which requires main actor isolation
+/// - Performs database writes via ActionCoordinator (which may have @MainActor)
+/// - Typically called from UI context (import button actions)
+/// - Database operations are async but dependency resolution needs main actor
 @MainActor
 public final class HealthKitImportService {
     @Dependency(\.defaultDatabase) var database

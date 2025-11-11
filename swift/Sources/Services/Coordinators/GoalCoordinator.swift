@@ -28,7 +28,7 @@ import SQLiteData
 /// PATTERN: Multi-model coordinator (most complex in app)
 /// Simpler than: None (this is the most complex)
 /// More complex than: ActionCoordinator (3 models), TimePeriodCoordinator (2 models)
-public final class GoalCoordinator {
+public final class GoalCoordinator: Sendable {
     private let database: any DatabaseWriter
 
     public init(database: any DatabaseWriter) {
