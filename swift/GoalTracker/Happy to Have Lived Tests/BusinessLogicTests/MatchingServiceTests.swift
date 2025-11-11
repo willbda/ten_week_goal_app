@@ -8,8 +8,9 @@
 
 import Foundation
 import Testing
-@testable import Services
+
 @testable import Models
+@testable import Services
 
 @Suite("MatchingService Tests")
 struct MatchingServiceTests {
@@ -26,7 +27,7 @@ struct MatchingServiceTests {
         let goal = Goal(
             expectationId: UUID(),
             startDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),  // 7 days ago
-            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())   // 7 days from now
+            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())  // 7 days from now
         )
 
         let match = MatchingService.matchesOnPeriod(action: action, goal: goal)
@@ -44,7 +45,7 @@ struct MatchingServiceTests {
         let goal = Goal(
             expectationId: UUID(),
             startDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()),  // 7 days ago
-            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())   // 7 days from now
+            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())  // 7 days from now
         )
 
         let match = MatchingService.matchesOnPeriod(action: action, goal: goal)
@@ -74,7 +75,7 @@ struct MatchingServiceTests {
 
     @Test("Metric matching - perfect overlap (1 metric)")
     func testMetricMatchPerfectOverlap() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
 
         let actionMeasures = [(kmMeasure, 5.0)]
         let goalTargets = [(kmMeasure, 120.0)]
@@ -93,9 +94,9 @@ struct MatchingServiceTests {
 
     @Test("Metric matching - partial overlap (2 of 2 goal metrics)")
     func testMetricMatchPartialOverlap() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
-        let sessionsMeasure = Measure(id: UUID(), unit: "sessions", metricType: "count")
-        let minutesMeasure = Measure(id: UUID(), unit: "minutes", metricType: "time")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
+        let sessionsMeasure = Measure(unit: "sessions", measureType: "count")
+        let minutesMeasure = Measure(unit: "minutes", measureType: "time")
 
         // Action has km + minutes
         let actionMeasures = [(kmMeasure, 5.0), (minutesMeasure, 30.0)]
@@ -116,8 +117,8 @@ struct MatchingServiceTests {
 
     @Test("Metric matching - no overlap")
     func testMetricMatchNoOverlap() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
-        let pagesMeasure = Measure(id: UUID(), unit: "pages", metricType: "count")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
+        let pagesMeasure = Measure(unit: "pages", measureType: "count")
 
         let actionMeasures = [(pagesMeasure, 25.0)]
         let goalTargets = [(kmMeasure, 120.0)]
@@ -135,7 +136,7 @@ struct MatchingServiceTests {
 
     @Test("Metric matching - empty action measurements")
     func testMetricMatchEmptyActionMeasurements() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
 
         let actionMeasures: [(Measure, Double)] = []
         let goalTargets = [(kmMeasure, 120.0)]
@@ -151,8 +152,8 @@ struct MatchingServiceTests {
 
     @Test("Metric matching - multiple shared metrics sum contribution")
     func testMetricMatchMultipleSharedMetrics() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
-        let sessionsMeasure = Measure(id: UUID(), unit: "sessions", metricType: "count")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
+        let sessionsMeasure = Measure(unit: "sessions", measureType: "count")
 
         // Action has both km and sessions
         let actionMeasures = [(kmMeasure, 5.0), (sessionsMeasure, 1.0)]
@@ -240,7 +241,7 @@ struct MatchingServiceTests {
 
     @Test("Combined matching - full match (period + metrics + keywords)")
     func testCombinedMatchSuccess() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
 
         let action = Action(
             title: "Morning run",
@@ -270,7 +271,7 @@ struct MatchingServiceTests {
 
     @Test("Combined matching - fails on period mismatch")
     func testCombinedMatchFailsPeriod() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
 
         let action = Action(
             title: "Old run",
@@ -298,8 +299,8 @@ struct MatchingServiceTests {
 
     @Test("Combined matching - fails on metric mismatch")
     func testCombinedMatchFailsMetrics() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
-        let pagesMeasure = Measure(id: UUID(), unit: "pages", metricType: "count")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
+        let pagesMeasure = Measure(unit: "pages", measureType: "count")
 
         let action = Action(
             title: "Reading",
@@ -327,7 +328,7 @@ struct MatchingServiceTests {
 
     @Test("Combined matching - keywords are optional (nil is ok)")
     func testCombinedMatchNoKeywords() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
 
         let action = Action(
             title: "Exercise",
@@ -355,7 +356,7 @@ struct MatchingServiceTests {
 
     @Test("Combined matching - keyword mismatch reduces confidence but doesn't fail match")
     func testCombinedMatchKeywordMismatchReducesConfidence() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
 
         let action = Action(
             title: "Yoga class",  // Doesn't contain "run"
@@ -383,7 +384,7 @@ struct MatchingServiceTests {
 
     @Test("Combined matching - contribution amount is accessible")
     func testCombinedMatchContributionAmount() {
-        let kmMeasure = Measure(id: UUID(), unit: "km", metricType: "distance")
+        let kmMeasure = Measure(unit: "km", measureType: "distance")
 
         let action = Action(
             title: "Run",

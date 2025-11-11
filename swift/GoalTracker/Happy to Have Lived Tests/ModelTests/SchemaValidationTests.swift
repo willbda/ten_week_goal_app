@@ -57,47 +57,23 @@ struct SchemaValidationTests {
     func testDatabaseBootstrap() async throws {
         print("\n=== PART A: Database Bootstrap ===")
 
-        // Create database using DatabaseBootstrap with .localTesting mode
-        // This creates a temporary database and loads schema_current.sql
-        let dbPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("GoalTracker/schema_validation_test.db")
+        // Use DatabaseBootstrap.createDatabase with .localTesting mode
+        // This automatically:
+        // - Creates temp database at correct location (via DatabaseMode.localTesting.path)
+        // - Enables WAL mode
+        // - Loads schema_current.sql from Database module bundle
+        // - Uses exact same code path as production app
+        print("Creating database using DatabaseBootstrap.createDatabase(mode: .localTesting)")
 
-        // Ensure clean start
+        // Clean slate: remove existing test database
+        let dbPath = DatabaseBootstrap.DatabaseMode.localTesting.path
         try? FileManager.default.removeItem(at: dbPath)
 
-        // Create directory
-        try FileManager.default.createDirectory(
-            at: dbPath.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
+        // Create database using production bootstrap code
+        let db = try DatabaseBootstrap.createDatabase(mode: .localTesting)
 
-        print("Creating database at: \(dbPath.path)")
-
-        // Create database
-        let db = try DatabaseQueue(path: dbPath.path)
-
-        // Set WAL mode
-        try await db.barrierWriteWithoutTransaction { db in
-            try db.execute(sql: "PRAGMA journal_mode = WAL")
-        }
-
-        // Load schema from disk (it's in the Database module, not ModelTests)
-        let schemaPath = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()  // Remove SchemaValidationTests.swift
-            .deletingLastPathComponent()  // Remove ModelTests/
-            .deletingLastPathComponent()  // Remove Tests/
-            .appendingPathComponent("Sources/Database/Schemas/schema_current.sql")
-
-        guard FileManager.default.fileExists(atPath: schemaPath.path) else {
-            throw TestError.schemaFileNotFound
-        }
-
-        let schemaSql = try String(contentsOf: schemaPath, encoding: .utf8)
-        try await db.write { db in
-            try db.execute(sql: schemaSql)
-        }
-
-        print("✓ Schema loaded from schema_current.sql")
+        print("✓ Database created with WAL mode enabled")
+        print("✓ Schema loaded from schema_current.sql (via DatabaseBootstrap)")
 
         // Verify core tables exist
         let hasActions = try await db.read { db in try db.tableExists("actions") }
@@ -115,7 +91,7 @@ struct SchemaValidationTests {
         // Store for other tests
         SchemaValidationTests.database = db
 
-        print("✓ Database created at: \(dbPath.path)")
+        print("✓ Database location: \(dbPath.path)")
     }
 
     // MARK: - Part B: Load Sample Data
@@ -235,24 +211,21 @@ struct SchemaValidationTests {
         // =====================================================================
         print("\nLayer 3: Creating terms and actions...")
 
-        // Create Terms (GoalTerm entities)
+        // Fetch created GoalTerms (already created by TimePeriodCoordinator)
         var termIds: [UUID] = []
-        for (index, termData) in data.terms.enumerated() {
-            let termId = UUID()
-            let timePeriodId = timePeriodIds[index]  // Capture before async
-            try await db.write { db in
-                _ = try GoalTerm.insert {
-                    GoalTerm.Draft(
-                        id: termId,
-                        timePeriodId: timePeriodId,
-                        termNumber: termData.termNumber,
-                        theme: termData.title,
-                        reflection: nil,
-                        status: .planned
-                    )
-                }.execute(db)
+        for timePeriodId in timePeriodIds {
+            let termId = try await db.read { db in
+                try GoalTerm
+                    .where { $0.timePeriodId.eq(timePeriodId) }
+                    .fetchOne(db)!
+                    .id
             }
             termIds.append(termId)
+        }
+
+        // Create TermGoalAssignments for terms that have goals
+        for (index, termData) in data.terms.enumerated() {
+            let termId = termIds[index]  // Capture before async
 
             // Create TermGoalAssignments if term has goals
             if let goalIndices = termData.goalIndices {
@@ -697,21 +670,14 @@ struct SchemaValidationTests {
             throw TestError.databaseNotInitialized
         }
 
-        let sourceURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("GoalTracker/schema_validation_test.db")
+        // Source: DatabaseBootstrap.DatabaseMode.localTesting.path
+        let sourceURL = DatabaseBootstrap.DatabaseMode.localTesting.path
 
-        // Get project root by going up from #filePath
+        // Destination: Next to test files in SampleData directory for easy inspection
         let destURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()  // Remove SchemaValidationTests.swift
             .deletingLastPathComponent()  // Remove ModelTests/
-            .deletingLastPathComponent()  // Remove Tests/
-            .appendingPathComponent("Tests/Database/last_run.db")
-
-        // Create Database directory if needed
-        try FileManager.default.createDirectory(
-            at: destURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
+            .appendingPathComponent("SampleData/test_output_last_run.db")
 
         // Remove old copy if exists
         try? FileManager.default.removeItem(at: destURL)
@@ -719,9 +685,9 @@ struct SchemaValidationTests {
         // Copy database
         try FileManager.default.copyItem(at: sourceURL, to: destURL)
 
-        print("✓ Database preserved at: Tests/Database/last_run.db")
+        print("✓ Database preserved at: Happy to Have Lived Tests/SampleData/test_output_last_run.db")
         print("   Full path: \(destURL.path)")
-        print("   Inspect with: sqlite3 \(destURL.path)")
+        print("   Inspect with: sqlite3 \"\(destURL.path)\"")
         print("\n   Example queries:")
         print("     SELECT COUNT(*) FROM actions;")
         print("     SELECT title, unit FROM measures;")

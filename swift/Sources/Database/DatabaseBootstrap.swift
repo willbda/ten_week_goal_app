@@ -67,7 +67,7 @@ public enum DatabaseBootstrap {
         }
     }
 
-    private static func createDatabase(mode: DatabaseMode = .fromEnvironment) throws
+    public static func createDatabase(mode: DatabaseMode = .fromEnvironment) throws
         -> DatabaseQueue
     {
         let dbPath = mode.path

@@ -265,7 +265,11 @@ public enum SampleDataLoader {
 
     /// Load schema_validation_data.json from bundle
     public static func load() throws -> SampleDataSet {
-        guard let url = Bundle.module.url(
+        // For Xcode test target, use Bundle(for:) to find test bundle
+        // Note: Bundle.module only works for SPM, not Xcode test targets
+        let bundle = Bundle(for: BundleToken.self)
+
+        guard let url = bundle.url(
             forResource: "schema_validation_data",
             withExtension: "json"
         ) else {
@@ -276,6 +280,9 @@ public enum SampleDataLoader {
         let decoder = JSONDecoder()
         return try decoder.decode(SampleDataSet.self, from: data)
     }
+
+    /// Token class for Bundle.init(for:) - must be in same module as test bundle
+    private class BundleToken {}
 
     enum SampleDataError: Error {
         case fileNotFound

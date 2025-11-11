@@ -1,13 +1,13 @@
 {
-  "originHash" : "db0ac79358c5a100fd679bcd084044a5aca270c39ca43c8ef4e40b267ae23f4d",
+  "originHash" : "bd37a94585a541aaeef5ebdf644658f0aa0d7c1d162ce81ee966b6fb260524b0",
   "pins" : [
     {
       "identity" : "combine-schedulers",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/combine-schedulers",
       "state" : {
-        "revision" : "5928286acce13def418ec36d05a001a9641086f2",
-        "version" : "1.0.3"
+        "revision" : "fd16d76fd8b9a976d88bfb6cacc05ca8d19c91b6",
+        "version" : "1.1.0"
       }
     },
     {
