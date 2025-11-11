@@ -23,50 +23,6 @@ import Foundation
 import Models
 import SQLiteData
 
-// MARK: - Wrapper Types
-
-/// Combines Action with its related Measure details
-public struct ActionMeasurement: Identifiable, Hashable, Sendable {
-    public let measuredAction: MeasuredAction
-    public let measure: Measure
-    public var id: UUID { measuredAction.id }
-
-    public init(measuredAction: MeasuredAction, measure: Measure) {
-        self.measuredAction = measuredAction
-        self.measure = measure
-    }
-}
-
-/// Combines Action with its related Goal details
-public struct ActionContribution: Identifiable, Hashable, Sendable {
-    public let contribution: ActionGoalContribution
-    public let goal: Goal
-    public var id: UUID { contribution.id }
-
-    public init(contribution: ActionGoalContribution, goal: Goal) {
-        self.contribution = contribution
-        self.goal = goal
-    }
-}
-
-/// Combines Action with all measurements and goal contributions
-public struct ActionWithDetails: Identifiable, Hashable, Sendable {
-    public let action: Action
-    public let measurements: [ActionMeasurement]
-    public let contributions: [ActionContribution]
-    public var id: UUID { action.id }
-
-    public init(
-        action: Action,
-        measurements: [ActionMeasurement] = [],
-        contributions: [ActionContribution] = []
-    ) {
-        self.action = action
-        self.measurements = measurements
-        self.contributions = contributions
-    }
-}
-
 // MARK: - Repository Implementation
 
 // REMOVED @MainActor: Repository performs database queries which are I/O

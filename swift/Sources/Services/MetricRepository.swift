@@ -45,7 +45,7 @@
 
 //     /// Fetch metrics by type
 //     public func getMeasures(ofType type: String) async throws -> [Measure] {
-//         return try await Measure.filter(\.metricType == type)
+//         return try await Measure.filter(\.measureType == type)
 //     }
 
 //     /// Find or create a metric
@@ -58,7 +58,7 @@
 //         // Create new metric
 //         let metric = Measure(
 //             unit: unit,
-//             metricType: type,
+//             measureType: type,
 //             title: unit.capitalized
 //         )
 //         try await metric.insert()
