@@ -468,6 +468,9 @@ private struct FetchGoalProgressRequest: FetchKeyRequest {
                 AND measuredActions.measureId = measures.id
             -- Group by goal AND measure (goals can have multiple measures)
             GROUP BY goals.id, expectationMeasures.id
+            -- Filter: Only show incomplete goals (< 100% complete)
+            -- Note: Overdue goals (past targetDate but incomplete) are intentionally included
+            HAVING percentComplete < 100
             -- Order by urgency: behind goals first, then by deadline
             ORDER BY
                 percentComplete ASC,

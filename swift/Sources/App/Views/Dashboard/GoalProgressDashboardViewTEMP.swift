@@ -35,7 +35,18 @@ public struct GoalProgressDashboardViewTEMP: View {
 
     /// ViewModel manages all dashboard state
     /// **PERMANENT PATTERN**: @State with @Observable (not @StateObject)
-    @State private var viewModel = GoalProgressViewModel()
+    @State var viewModel = GoalProgressViewModel()
+
+    // MARK: - Initialization
+
+    /// Default initializer creates its own viewModel
+    public init() {}
+
+    /// Preview initializer accepts custom viewModel
+    /// Used by SwiftUI previews to inject mock data
+    init(viewModel: GoalProgressViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
 
     // MARK: - Body
 
@@ -403,30 +414,16 @@ struct ProgressRingViewTEMP: View {
 // MARK: - Previews
 
 #Preview("Dashboard with Data") {
-    GoalProgressDashboardViewTEMP()
+    GoalProgressDashboardViewTEMP(viewModel: .preview)
         .environment(\.locale, .init(identifier: "en_US"))
 }
 
 #Preview("Dashboard Empty") {
-    struct PreviewWrapper: View {
-        @State private var viewModel = GoalProgressViewModel.previewEmpty
-
-        var body: some View {
-            GoalProgressDashboardViewTEMP()
-        }
-    }
-    return PreviewWrapper()
+    GoalProgressDashboardViewTEMP(viewModel: .previewEmpty)
 }
 
 #Preview("Dashboard Loading") {
-    struct PreviewWrapper: View {
-        @State private var viewModel = GoalProgressViewModel.previewLoading
-
-        var body: some View {
-            GoalProgressDashboardViewTEMP()
-        }
-    }
-    return PreviewWrapper()
+    GoalProgressDashboardViewTEMP(viewModel: .previewLoading)
 }
 
 // MARK: - Implementation Notes
