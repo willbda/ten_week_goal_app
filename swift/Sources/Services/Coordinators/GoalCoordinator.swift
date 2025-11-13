@@ -10,6 +10,7 @@
 import Foundation
 import Models
 import SQLiteData
+import Dependencies
 
 /// Coordinates creation of Goal entities with atomic persistence.
 ///
@@ -35,6 +36,20 @@ public final class GoalCoordinator: Sendable {
         self.database = database
     }
 
+    // MARK: - Semantic Services (Lazy access for Sendable conformance)
+
+    /// Semantic service for duplicate detection (lazy to maintain Sendable)
+    private var semanticService: SemanticService {
+        @Dependency(\.semanticService) var service
+        return service
+    }
+
+    /// Embedding cache for duplicate detection (lazy to maintain Sendable)
+    private var embeddingCache: EmbeddingCache {
+        @Dependency(\.embeddingCache) var cache
+        return cache
+    }
+
     /// Creates Goal with full relationship graph from form data.
     /// - Parameter formData: Validated form data with targets and alignments
     /// - Returns: Persisted Goal with generated ID
@@ -54,6 +69,11 @@ public final class GoalCoordinator: Sendable {
         // Phase 1: Validate form data (business rules)
         // Throws: ValidationError.invalidExpectation, ValidationError.invalidDateRange, etc.
         try GoalValidation.validateFormData(formData)
+
+        // Phase 1.5: Check for semantic duplicates (if title provided and semantic service available)
+        if !formData.title.isEmpty && semanticService.isAvailable {
+            try await checkForDuplicates(title: formData.title)
+        }
 
         return try await database.write { db in
             // Validate measureIds exist (if any targets provided)
@@ -413,5 +433,49 @@ public final class GoalCoordinator: Sendable {
             // 5. Delete Expectation last
             try Expectation.delete(expectation).execute(db)
         }
+    }
+
+    // MARK: - Duplicate Detection (v0.7.5)
+
+    /// Check for semantic duplicates before creating goal
+    /// - Parameter title: Goal title to check
+    /// - Throws: ValidationError.duplicateGoal if blocking duplicate found
+    private func checkForDuplicates(title: String) async throws {
+        // Fetch existing goals with expectations for comparison
+        let existingGoals = try await database.read { db in
+            try Goal.all
+                .join(Expectation.all) { $0.expectationId.eq($1.id) }
+                .fetchAll(db)
+                .map { (goal, expectation) in
+                    GoalWithExpectation(goal: goal, expectation: expectation)
+                }
+        }
+
+        // No existing goals - no duplicates possible
+        guard !existingGoals.isEmpty else {
+            return
+        }
+
+        // Create detector and check for blocking duplicates
+        let detector = SemanticGoalDetector(
+            embeddingCache: embeddingCache,
+            semanticService: semanticService,
+            config: .goals  // Uses default 0.75 threshold with blocking on high severity
+        )
+
+        // Check for blocking duplicate (high or exact similarity)
+        if let blockingDuplicate = try await detector.checkForBlockingDuplicate(
+            title: title,
+            in: existingGoals
+        ) {
+            // Throw user-friendly validation error
+            throw ValidationError.duplicateGoal(
+                title: title,
+                similarTo: blockingDuplicate.title,
+                similarity: blockingDuplicate.similarity
+            )
+        }
+
+        // No blocking duplicates - proceed with creation
     }
 }

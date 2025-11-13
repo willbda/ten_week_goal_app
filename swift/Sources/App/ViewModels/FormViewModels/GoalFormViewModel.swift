@@ -25,6 +25,11 @@ public final class GoalFormViewModel {
     public var isSaving: Bool = false
     public var errorMessage: String?
 
+    // Duplicate detection state (v0.7.5)
+    public var showDuplicateWarning: Bool = false
+    public var duplicateSimilarGoal: String?
+    public var duplicateSimilarityPercent: Int?
+
     @ObservationIgnored
     @Dependency(\.defaultDatabase) var database
 
@@ -83,10 +88,31 @@ public final class GoalFormViewModel {
 
         do {
             let goal = try await coordinator.create(from: formData)
+            // Success - clear any previous errors/warnings
             errorMessage = nil
+            showDuplicateWarning = false
+            duplicateSimilarGoal = nil
+            duplicateSimilarityPercent = nil
             return goal
+        } catch let validationError as ValidationError {
+            // Handle specific validation errors
+            switch validationError {
+            case .duplicateGoal(let title, let similarTo, let similarity):
+                // Show duplicate-specific UI
+                errorMessage = validationError.userMessage
+                showDuplicateWarning = true
+                duplicateSimilarGoal = similarTo
+                duplicateSimilarityPercent = Int(similarity * 100)
+            default:
+                // Other validation errors
+                errorMessage = validationError.userMessage
+                showDuplicateWarning = false
+            }
+            throw validationError
         } catch {
+            // Generic errors
             errorMessage = error.localizedDescription
+            showDuplicateWarning = false
             throw error
         }
     }
