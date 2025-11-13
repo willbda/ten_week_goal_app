@@ -69,3 +69,5 @@ swift/GoalTracker/build/
 swift/.swiftpm/
 swift/GoalTracker/GoalTracker.xcodeproj/project.xcworkspace/xcuserdata/davidwilliams.xcuserdatad/UserInterfaceState.xcuserstate
 
+*.db-shm
+*.db-wal
