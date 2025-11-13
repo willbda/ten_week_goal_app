@@ -88,6 +88,17 @@ struct SchemaValidationTests {
 
         print("✓ Verified: Core tables exist (actions, goals, measures, personalValues)")
 
+        // Verify semantic tables exist (v0.7.5)
+        let hasSemanticEmbeddings = try await db.read { db in try db.tableExists("semanticEmbeddings") }
+        let hasLLMConversations = try await db.read { db in try db.tableExists("llmConversations") }
+        let hasLLMMessages = try await db.read { db in try db.tableExists("llmMessages") }
+
+        #expect(hasSemanticEmbeddings, "semanticEmbeddings table should exist")
+        #expect(hasLLMConversations, "llmConversations table should exist")
+        #expect(hasLLMMessages, "llmMessages table should exist")
+
+        print("✓ Verified: Semantic tables exist (semanticEmbeddings, llmConversations, llmMessages)")
+
         // Store for other tests
         SchemaValidationTests.database = db
 

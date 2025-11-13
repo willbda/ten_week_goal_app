@@ -62,6 +62,9 @@ public enum ValidationError: LocalizedError {
     /// References between entities are inconsistent (e.g., measurement.actionId != action.id)
     case inconsistentReference(String)
 
+    /// Goal appears to be a duplicate of an existing goal (semantic similarity)
+    case duplicateGoal(title: String, similarTo: String, similarity: Double)
+
     // MARK: - Database Constraint Violations (Layer C)
 
     /// Measure (unit type) doesn't exist or was deleted
@@ -100,6 +103,9 @@ public enum ValidationError: LocalizedError {
             return "Priority must be between 1-10. \(details)"
         case .inconsistentReference(let details):
             return "Internal consistency error. \(details)"
+        case .duplicateGoal(let title, let similarTo, let similarity):
+            let percent = Int(similarity * 100)
+            return "'\(title)' is \(percent)% similar to existing goal '\(similarTo)'. Consider editing the existing goal instead of creating a duplicate."
 
         // Database constraints
         case .invalidMeasure(let details):

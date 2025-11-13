@@ -95,6 +95,9 @@ public enum DatabaseBootstrap {
         // Initialize schema if tables don't exist yet
         try initializeSchema(db)
 
+        // Ensure semantic tables exist (migration for existing databases)
+        try ensureSemanticTables(db)
+
         return db
     }
 
@@ -128,6 +131,37 @@ public enum DatabaseBootstrap {
         }
 
         print("   Schema: initialized from schema_current.sql")
+    }
+
+    private static func ensureSemanticTables(_ db: DatabaseQueue) throws {
+        let hasSemanticTables = try db.read { db in
+            try db.tableExists("semanticEmbeddings")
+        }
+
+        guard !hasSemanticTables else {
+            print("   Semantic tables: already exist")
+            return
+        }
+
+        // Load semantic schema SQL from bundle
+        guard
+            let semanticSchemaURL = Bundle.module.url(
+                forResource: "semantic_llm_schema",
+                withExtension: "sql"
+            )
+        else {
+            // Semantic schema not found - skip migration (tables were added to schema_current.sql)
+            print("   Semantic tables: skipping separate migration (included in schema_current.sql)")
+            return
+        }
+
+        let semanticSql = try String(contentsOf: semanticSchemaURL, encoding: .utf8)
+
+        try db.write { db in
+            try db.execute(sql: semanticSql)
+        }
+
+        print("   Semantic tables: migrated from semantic_llm_schema.sql")
     }
 
     enum DatabaseError: Error {
