@@ -48,22 +48,22 @@ public struct Action: DomainAbstraction { ... }  // Sendable ✅
 
 **Purpose**: Isolate types/functions to main thread (UI safety)
 
-**Pattern**: All ViewModels and Coordinators are @MainActor
+**Pattern**: All ViewModels are @MainActor, Coordinators are Sendable (NO @MainActor)
 ```swift
 // From TimePeriodFormViewModel.swift:28-30
 @Observable
 @MainActor
 public final class TimePeriodFormViewModel { ... }
 
-// From ActionCoordinator.swift:28-29
-@MainActor
-public final class ActionCoordinator: ObservableObject { ... }
+// From ActionCoordinator.swift:28
+public final class ActionCoordinator: Sendable { ... }
 ```
 
-**Why @MainActor for Coordinators?**:
-- Called directly from ViewModels (no actor hop)
-- `database.write {}` closures run on serial queue anyway
-- Simplifies coordinator → ViewModel error propagation
+**Why NO @MainActor for Coordinators?** (Updated 2025-11-10):
+- Database I/O should run in background (not on main thread)
+- Coordinators are `Sendable` to safely cross actor boundaries
+- Swift automatically switches context: main → background → main
+- All coordinators have only `private let` immutable properties (thread-safe)
 
 **Key files**: All `App/ViewModels/FormViewModels/*.swift`, all `Services/Coordinators/*.swift`
 
@@ -411,7 +411,7 @@ func processData(span: Span<UInt8>) {
 
 ## Common Patterns Quick Reference
 
-### Creating @Observable ViewModels
+### Creating @Observable ViewModels (Updated 2025-11-10)
 
 ```swift
 @Observable
@@ -423,9 +423,11 @@ public final class MyFormViewModel {
     @ObservationIgnored
     @Dependency(\.defaultDatabase) var database
 
-    private var coordinator: MyCoordinator {
+    // Use lazy var with @ObservationIgnored for coordinator storage
+    @ObservationIgnored
+    private lazy var coordinator: MyCoordinator = {
         MyCoordinator(database: database)
-    }
+    }()
 
     public func save(...) async throws -> Entity {
         isSaving = true
@@ -445,16 +447,21 @@ public final class MyFormViewModel {
 }
 ```
 
+**Key Pattern Changes**:
+- ✅ Coordinator stored as `lazy var` (not computed property)
+- ✅ Coordinator marked `@ObservationIgnored` (avoids @Observable conflicts)
+- ✅ Automatic context switching: main → background (coordinator) → main
+
 **Reference**: [TimePeriodFormViewModel.swift](../Sources/App/ViewModels/FormViewModels/TimePeriodFormViewModel.swift)
 
 ---
 
-### Creating @MainActor Coordinators
+### Creating Sendable Coordinators (Updated 2025-11-10)
 
 ```swift
-@MainActor
-public final class MyCoordinator: ObservableObject {
-    private let database: any DatabaseWriter
+/// Database I/O service - runs in background
+public final class MyCoordinator: Sendable {
+    private let database: any DatabaseWriter  // MUST be `let` (immutable)
 
     public init(database: any DatabaseWriter) {
         self.database = database
@@ -486,6 +493,12 @@ public final class MyCoordinator: ObservableObject {
     }
 }
 ```
+
+**Key Requirements**:
+- ✅ `Sendable` conformance (safe to pass from @MainActor ViewModels)
+- ❌ NO `@MainActor` (database I/O runs in background)
+- ✅ Only `private let` properties (immutable, thread-safe)
+- ✅ All methods `async throws`
 
 **Reference**: [TimePeriodCoordinator.swift](../Sources/Services/Coordinators/TimePeriodCoordinator.swift)
 

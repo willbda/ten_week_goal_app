@@ -986,35 +986,6 @@ CREATE INDEX idx_term_goal_assignments_goal_id ON termGoalAssignments(goalId);
 
 ---
 
-## Duplication Semantics Summary
-
-### Simple Cases (Exact Matching)
-
-| Entity | Natural Key | Duplication Signal | Complexity |
-|--------|-------------|-------------------|------------|
-| **PersonalValue** | `title` | Same title (case-insensitive) | ✅ Simple |
-| **Measure** | `unit` | Same unit (case-insensitive) | ✅ Simple |
-| **GoalTerm** | `termNumber` | Same term number | ✅ Simple |
-| **TimePeriod** | `startDate` + `endDate` | Exact date range match | ⚠️ Medium |
-
-### Complex Cases (Multi-Attribute)
-
-| Entity | Natural Key Components | Why Complex |
-|--------|----------------------|-------------|
-| **Goal** | `Expectation.title` + `TermGoalAssignment.termId` + `ExpectationMeasure` targets | Requires 4-table JOIN to detect |
-| **Action** | `title` + `logTime` (temporal proximity) + `MeasuredAction` values | High volume + temporal fuzzy matching |
-| **Milestone** | `Expectation.title` + `targetDate` | Requires 2-table JOIN |
-| **Obligation** | `Expectation.title` + `deadline` + `requestedBy` | Requires 2-table JOIN |
-
-### Recommended Duplication Detection Strategy
-
-1. **PersonalValue, Measure, GoalTerm**: Simple `existsByTitle()` / `existsByTermNumber()` repository checks
-2. **Goal**: Multi-attribute similarity scoring (title + term + metrics)
-3. **Action**: Temporal + semantic similarity scoring (title + logTime proximity + measurements)
-4. **Milestone/Obligation**: Medium complexity (title + date checks)
-
----
-
 ## Next Steps
 
 With this structural reference, we can now:

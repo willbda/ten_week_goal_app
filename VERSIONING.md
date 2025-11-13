@@ -1,6 +1,7 @@
 # Versioning Strategy
 
-**Current Version:** 0.6.0 (Coordinator pattern complete, validation layer next)
+**Current Version:** 0.6.0 (Coordinator pattern complete, validation + repository layer in progress)
+**Next Release:** 0.7.5 (Semantic foundation + basic LLM integration - pre-launch)
 
 ## Version History
 
@@ -10,7 +11,8 @@
 | 0.2.5 | - | Flask deployment | Python Flask API deployed |
 | 0.3.0 | - | Swift journey begins | Initial Swift project setup |
 | 0.5.0 | 2025-10-25 | Foundation complete, rearchitecture needed | SQLiteData working, protocols defined, but needs structural rethink |
-| **0.6.0** | **2025-11-08** | **Coordinator pattern complete** | Phases 1-3 done: 3NF schema, models migrated, all 4 coordinators with full CRUD |
+| 0.6.0 | 2025-11-08 | Coordinator pattern complete | Phases 1-3 done: 3NF schema, models migrated, all 4 coordinators with full CRUD |
+| **0.7.5** | **TBD** | **Semantic foundation + basic LLM** | Unified semantic layer for deduplication/search/LLM, conversational goal setting |
 
 ## Current Implementation Focus
 
@@ -41,28 +43,60 @@ The two implementations have diverged significantly and **no longer share a data
 - Platform integrations (AppIntents, EventKit)
 - Test suite (broken after database migration)
 
-## Path to 1.0 (Revised - 7-Phase Rearchitecture)
+## Path to 1.0 (Revised - 7-Phase Rearchitecture + Semantic Layer)
 
 **Based on**: [swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md](swift/docs/REARCHITECTURE_COMPLETE_GUIDE.md)
 
 ```
 0.5.0 - Phases 1-2 complete: Schema & Models ✅
 0.6.0 - Phase 3: Coordinator pattern complete ✅ (current)
-0.7.0 - Phase 4: Validation layer complete
+0.7.0 - Phase 4: Validation + Repository layer complete
+0.7.5 - SEMANTIC FOUNDATION + BASIC LLM (pre-launch enhancement) 🆕
 0.8.0 - Phases 5-6: ViewModels + Views (UI fully functional)
-0.9.0 - Phase 7: Testing & Migration complete
+0.9.0 - Phase 7: Testing & Migration complete + Advanced semantic features
 1.0.0 - First stable release (Swift only)
 ```
 
 **Phase Timeline**:
 - ✅ Phase 1-2 (Schema & Models): 2 weeks (complete)
 - ✅ Phase 3 (Coordinators): 1 week (complete)
-- Phase 4 (Validation): 1 week
+- 🚧 Phase 4 (Validation + Repositories): 3-4 weeks (in progress, see REPOSITORY_IMPLEMENTATION_PLAN.md)
+- **🆕 v0.7.5 (Semantic Foundation)**: 24-28 hours (parallel to Phase 4)
 - Phase 5 (ViewModels): 1 week
 - Phase 6 (Views): 1 week
 - Phase 7 (Testing/Migration): 1-2 weeks
 
-**Estimated Time to 1.0**: 4-6 weeks from v0.6.0
+**Estimated Time to 1.0**: 7-9 weeks from v0.6.0
+
+### v0.7.5 Semantic Foundation Details
+
+**Goal:** Build unified semantic infrastructure that serves deduplication, search, and LLM integration
+
+**Deliverables:**
+1. **SemanticService** - NLEmbedding wrapper for sentence embeddings + cosine similarity
+2. **EmbeddingCache** - Database storage for semantic embeddings (semanticEmbeddings table)
+3. **Enhanced DuplicationDetector** - Hybrid LSH + semantic similarity (catches paraphrases)
+4. **Basic LLM Integration** - 3 tools (GetGoals, GetValues, CreateGoal) + conversational UI
+5. **Database Schema** - semantic_llm_schema.sql (embeddings + conversation persistence)
+
+**Architecture Decision:** Single semantic layer serves all use cases
+- ✅ Deduplication: Hybrid scoring (60% semantic, 40% syntactic/LSH)
+- ✅ Search: Semantic similarity queries (future - Phase 2)
+- ✅ LLM Tools: RAG via RetrieveMemoryTool (future - Phase 2)
+
+**Integration Points:**
+- Uses existing Coordinators (GoalCoordinator, etc.) for validated writes
+- Uses existing FetchKeyRequest patterns for database queries
+- No new write paths, minimal risk to existing functionality
+
+**Why v0.7.5 (not v0.8.0)?**
+- Pre-launch enhancement, not part of core rearchitecture phases
+- Can develop in parallel with Phase 4 (Validation + Repositories)
+- Sets foundation for post-launch semantic features (v0.9+)
+
+**Future Semantic Phases:**
+- v0.8-0.9: Semantic search, RAG memory retrieval, conversation persistence
+- v1.0+: Values alignment coach, reflection prompts, advanced LLM features
 
 
 - First stable release
@@ -115,14 +149,23 @@ echo "✓ Version bumped to $NEW_VERSION"
 echo "Run 'git push && git push --tags' to publish"
 ```
 
-## Current Status Summary (Updated 2025-11-08)
+## Current Status Summary (Updated 2025-11-12)
 
-**Swift Implementation:** Phases 1-3 complete (Coordinators ready)
+**Swift Implementation:** Phases 1-3 complete, Phase 4 in progress
 - ✅ Phase 1: 3NF schema designed and tested
 - ✅ Phase 2: Swift models migrated to SQLiteData
 - ✅ Phase 3: Coordinator pattern complete (ActionCoordinator, GoalCoordinator, PersonalValueCoordinator, TimePeriodCoordinator)
-- 🚧 Phase 4: Validation layer (next)
-- ⏳ Phase 5: ViewModels
+- 🚧 Phase 4: Validation + Repository layer (in progress)
+  - ✅ Validation rules framework (ValidationRules.swift, ValidationUtilities.swift, ValidationError.swift)
+  - ✅ GoalRepository implementation complete (fetchAll, existsByTitle, mapDatabaseError, dashboard queries)
+  - ✅ GoalCoordinator validation integration (two-phase: validateFormData → validateComplete)
+  - ❌ GoalCoordinator duplicate prevention (existsByTitle check not yet called)
+  - ❌ GoalFormViewModel refactor (still using direct database access, not repository)
+  - ❌ Integration tests (duplicate prevention, validation errors)
+  - ⏳ ActionRepository (Priority 2, ~5 days)
+  - ⏳ PersonalValueRepository (Priority 3, ~2 days)
+  - ⏳ TimePeriodRepository (Priority 4, ~3 days)
+- ⏳ Phase 5: ViewModels refactor (use repositories for reads)
 - ⏳ Phase 6: Views
 - ⏳ Phase 7: Testing & Migration
 - ❌ Design language: Not defined (deferred post-rearchitecture)
