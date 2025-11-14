@@ -6,13 +6,15 @@
 // ARCHITECTURE:
 // - Expectation: Base table with shared fields
 // - Goal/Milestone/Obligation: Subtype tables with FK to expectations
-// - Uses table inheritance pattern (like SQL scheduled_tasks � lois/proposals)
+// - Uses table inheritance pattern (like SQL scheduled_tasks lois/proposals)
 //
 // 3NF COMPLIANCE:
 // - Base fields in expectations table only
 // - Type-specific fields in subtype tables
 // - No redundant data between base and subtypes
 // - Foreign key relationships maintain integrity
+
+//This structure and the associated tables is a wager that that (a) polymorphism will be useful and desired by users, (b) that the abstraction will be useful for querying and displaying (e.g. will users want to see all expectations together? YES - what should I do today, what is on my plate, etc.... NO - what are my goals, what is due at work this week, etc. are always seperate.... the cost of this is high for a human reading the db or writing queries, however the cost should be low for sql queries themselves... it is also an exercise in data modeling and 3nf compliance... Forgive me... AND, maybe it makes it easy to further extend in the future with new expectation types without changing existing tables too much... we will see...)
 
 import Foundation
 import SQLiteData
@@ -140,8 +142,10 @@ public struct Expectation: DomainAbstraction {
         self.expectationType = expectationType
 
         // Use defaults if not provided, or use Expectation's type-specific defaults
-        self.expectationImportance = expectationImportance ?? Expectation.defaultImportance(for: expectationType)
-        self.expectationUrgency = expectationUrgency ?? Expectation.defaultUrgency(for: expectationType)
+        self.expectationImportance =
+            expectationImportance ?? Expectation.defaultImportance(for: expectationType)
+        self.expectationUrgency =
+            expectationUrgency ?? Expectation.defaultUrgency(for: expectationType)
     }
 }
 

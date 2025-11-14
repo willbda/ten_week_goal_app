@@ -53,8 +53,9 @@ public protocol Timestamped {
 /// **Examples**: Expectation, TimePeriod, Action, Measure, PersonalValue
 ///
 /// **Fields**: id, title, detailedDescription, freeformNotes, logTime
-public protocol DomainAbstraction: Identifiable, Documentable, Timestamped, Equatable, Hashable, Sendable
-    where ID == UUID {}
+public protocol DomainAbstraction: Identifiable, Documentable, Timestamped, Equatable, Hashable,
+    Sendable
+where ID == UUID {}
 
 /// Concrete working entities that reference abstracts
 ///
@@ -65,7 +66,7 @@ public protocol DomainAbstraction: Identifiable, Documentable, Timestamped, Equa
 ///
 /// **Fields**: id + type-specific fields (startDate, deadline, etc.)
 public protocol DomainBasic: Identifiable, Equatable, Hashable, Sendable
-    where ID == UUID {}
+where ID == UUID {}
 
 /// Junction tables connecting entities
 ///
@@ -76,7 +77,7 @@ public protocol DomainBasic: Identifiable, Equatable, Hashable, Sendable
 ///
 /// **Fields**: id + FK references + relationship data
 public protocol DomainComposit: Identifiable, Equatable, Hashable, Sendable
-    where ID == UUID {}
+where ID == UUID {}
 
 /// Default equality for Identifiable entities: two entities are equal if they have the same UUID
 extension Identifiable where Self: Equatable, ID == UUID {
@@ -96,10 +97,10 @@ extension Identifiable where Self: Equatable, ID == UUID {
  - Timestamped (logTime): Abstract entities only
 
  This allows:
- ✅ Precise contracts (Basic entities don't pretend to have title/description)
- ✅ Semantic clarity via typealiases (Abstract, Basic, Composit)
- ✅ Compile-time type checking
- ✅ No field duplication between layers
+ Precise contracts (Basic entities don't pretend to have title/description)
+ Semantic clarity via typealiases (Abstract, Basic, Composit)
+ Compile-time type checking
+ No field duplication between layers
 
  LAYER EXAMPLES:
 

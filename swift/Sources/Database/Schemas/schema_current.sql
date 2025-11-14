@@ -11,7 +11,7 @@ CREATE TABLE actions (
     detailedDescription TEXT,
     freeformNotes TEXT,
     logTime TEXT NOT NULL,
-    durationMinutes REAL,
+    durationMinutes REAL, -- There's some design/use tension here. Duration is available as a measure, where it is meant to relate to a goal target. Here it is meant to capture the time spent on the recorded action itself. These two concepts may often overlap, and the current design doesn't make it clear for the user that there is a distinction or why. Perhaps in future iterations we can clarify this in the UI or adjust the schema to better reflect user intent.
     startTime TEXT
 );
 
