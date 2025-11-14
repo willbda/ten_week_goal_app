@@ -1,7 +1,8 @@
 # Versioning Strategy
 
-**Current Version:** 0.6.0 (Coordinator pattern complete, validation + repository layer in progress)
-**Next Release:** 0.7.5 (Semantic foundation + basic LLM integration - pre-launch)
+**Current Version:** 0.6.5 (Repository + ViewModel pattern complete - 2025-11-13)
+**Next Release:** 0.7.0 (Testing, refinement, CSV enhancements)
+**Future Release:** 0.7.5 (Semantic foundation + basic LLM integration - pre-launch)
 
 ## Version History
 
@@ -12,6 +13,8 @@
 | 0.3.0 | - | Swift journey begins | Initial Swift project setup |
 | 0.5.0 | 2025-10-25 | Foundation complete, rearchitecture needed | SQLiteData working, protocols defined, but needs structural rethink |
 | 0.6.0 | 2025-11-08 | Coordinator pattern complete | Phases 1-3 done: 3NF schema, models migrated, all 4 coordinators with full CRUD |
+| **0.6.5** | **2025-11-13** | **Repository + ViewModel complete** | All 4 entities migrated to @Observable pattern, repositories with Sendable, query wrappers eliminated |
+| **0.7.0** | **TBD** | **Testing + refinement** | Manual/automated testing, CSV enhancements, bug fixes |
 | **0.7.5** | **TBD** | **Semantic foundation + basic LLM** | Unified semantic layer for deduplication/search/LLM, conversational goal setting |
 
 ## Current Implementation Focus
@@ -149,26 +152,30 @@ echo "✓ Version bumped to $NEW_VERSION"
 echo "Run 'git push && git push --tags' to publish"
 ```
 
-## Current Status Summary (Updated 2025-11-12)
+## Current Status Summary (Updated 2025-11-13)
 
-**Swift Implementation:** Phases 1-3 complete, Phase 4 in progress
+**Swift Implementation:** Phases 1-5 complete (v0.6.5)
 - ✅ Phase 1: 3NF schema designed and tested
 - ✅ Phase 2: Swift models migrated to SQLiteData
 - ✅ Phase 3: Coordinator pattern complete (ActionCoordinator, GoalCoordinator, PersonalValueCoordinator, TimePeriodCoordinator)
-- 🚧 Phase 4: Validation + Repository layer (in progress)
+- ✅ Phase 4: Validation + Repository layer (complete 2025-11-13)
   - ✅ Validation rules framework (ValidationRules.swift, ValidationUtilities.swift, ValidationError.swift)
-  - ✅ GoalRepository implementation complete (fetchAll, existsByTitle, mapDatabaseError, dashboard queries)
+  - ✅ All 4 repositories complete (Goal, Action, PersonalValue, TimePeriod)
+  - ✅ Repository patterns established:
+    - JSON Aggregation: Goals, Actions (1:many relationships, 2-3x faster)
+    - #sql Macro: PersonalValues (simple entities)
+    - Query Builder: Terms (simple 1:1 JOINs)
+  - ✅ All repositories have Sendable conformance (Swift 6 compliant)
   - ✅ GoalCoordinator validation integration (two-phase: validateFormData → validateComplete)
-  - ❌ GoalCoordinator duplicate prevention (existsByTitle check not yet called)
-  - ❌ GoalFormViewModel refactor (still using direct database access, not repository)
-  - ❌ Integration tests (duplicate prevention, validation errors)
-  - ⏳ ActionRepository (Priority 2, ~5 days)
-  - ⏳ PersonalValueRepository (Priority 3, ~2 days)
-  - ⏳ TimePeriodRepository (Priority 4, ~3 days)
-- ⏳ Phase 5: ViewModels refactor (use repositories for reads)
-- ⏳ Phase 6: Views
+- ✅ Phase 5: ViewModels refactor (complete 2025-11-13)
+  - ✅ All 4 list ViewModels created (Goals, Actions, PersonalValues, Terms)
+  - ✅ @Observable pattern throughout (no ObservableObject)
+  - ✅ All views use @State (not @StateObject)
+  - ✅ All query wrappers eliminated (Queries/ directory empty)
+  - Reference: `swift/docs/JSON_AGGREGATION_MIGRATION_PLAN.md`
+- ⏳ Phase 6: Views refinement & testing
 - ⏳ Phase 7: Testing & Migration
-- ❌ Design language: Not defined (deferred post-rearchitecture)
+- ❌ Design language: Liquid Glass foundation in place, refinement ongoing
 - ❌ Accessibility: Not started (target: before 1.0)
 
 **Python Implementation:** Archived

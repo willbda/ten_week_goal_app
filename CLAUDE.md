@@ -57,10 +57,15 @@ The codebase uses a normalized, layered architecture:
 - Two-phase validation: `validateFormData()` then `validateComplete()`
 - Throw user-friendly `ValidationError` messages
 
-**Repositories** (`Sources/Services/Repositories/`) - *In Progress*
+**Repositories** (`Sources/Services/Repositories/`) - ✅ **Complete (2025-11-13)**
 - Abstract database queries from view layer
-- Provide duplicate detection, pagination, filtering
+- All repositories have Sendable conformance
+- Pattern varies by complexity:
+  - **JSON Aggregation**: Goals, Actions (1:many relationships)
+  - **#sql Macro**: PersonalValues (simple entities)
+  - **Query Builder**: Terms (simple 1:1 JOINs)
 - Map database errors to ValidationErrors
+- Reference: `swift/docs/JSON_AGGREGATION_MIGRATION_PLAN.md`
 
 ### Database Schema
 
@@ -74,20 +79,27 @@ The database uses 3NF normalization with three conceptual layers:
 ### Phase Progress (v0.6.0)
 - ✅ Phase 1-2: Model compilation
 - ✅ Phase 3: Coordinator pattern implementation
-- 🚧 Phase 4: Validation layer integration (current)
-- ⏳ Phase 5-6: Audit and Refactor ViewModels and Views
-- ⏳ Phase 7: Testing
+- ✅ Phase 4: Validation layer integration
+- ✅ Phase 5: Repository + ViewModel pattern (completed 2025-11-13)
+- ⏳ Phase 6: Testing and refinement
+- ⏳ Phase 7: HealthKit + Dashboard features
+
+### Recent Completions (2025-11-13)
+- ✅ **Repository Pattern Complete** - All 4 entities have working repositories
+- ✅ **ViewModel Migration Complete** - All list views migrated to @Observable pattern
+- ✅ **Query Wrappers Eliminated** - `Sources/App/Views/Queries/` directory empty
+- ✅ **Sendable Conformance** - All repositories Swift 6 compliant
+- ✅ **JSON Aggregation** - Goals and Actions use single-query pattern (2-3x faster)
 
 ### Active Work Areas
-1. **Repository Pattern** - Implementing query abstraction layer
+1. **Testing** - Manual and automated testing of ViewModels
 2. **CSV Import/Export** - Enhanced parsing with quoted field support
 3. **HealthKit Integration** - Live tracking service implementation
-4. **Validation Integration** - Connecting validators to repositories
-5. **Apple Foundation Model** - Planning for on-device llm usage
+4. **Dashboard/Analytics** - Views not started yet
+5. **Apple Foundation Model** - Planning for on-device LLM usage
 
 ### Known Issues
 - HealthKit data not flowing to staging table
-- Repository layer skeletal (not fully implemented)
 - Dashboard/analytics views not started
 
 ## Code Patterns and Conventions
@@ -123,50 +135,115 @@ let entity = try await coordinator.create(from: formData)
 try validator.validateComplete(entity)
 ```
 
-### Query Pattern (SQLiteData)
+### List ViewModel Pattern (Current Standard - 2025-11-13)
 
-Use SQLiteData's type-safe query patterns:
+**ALL list views now use the Repository + @Observable ViewModel pattern.**
 
 ```swift
-// CURRENT PATTERN: FetchKeyRequest with structured query builders
-// Used throughout the codebase for complex joins
-public struct ActionsWithMeasuresAndGoals: FetchKeyRequest {
-    public typealias Value = [ActionWithDetails]
+// PATTERN: List ViewModel with Repository
+@Observable
+@MainActor
+public final class GoalsListViewModel {
+    // Observable state (internal - no visibility modifier needed)
+    // Properties accessed only by corresponding view
+    var goals: [GoalWithDetails] = []
+    var isLoading: Bool = false
+    var errorMessage: String?
 
-    public func fetch(_ db: Database) throws -> [ActionWithDetails] {
-        // Fetch with structured query builders (type-safe, preferred)
-        let actions = try Action
-            .order { $0.logTime.desc() }
-            .fetchAll(db)
+    var hasError: Bool { errorMessage != nil }
 
-        let measurements = try MeasuredAction
-            .where { actionIds.contains($0.actionId) }
-            .join(Measure.all) { $0.measureId.eq($1.id) }
-            .fetchAll(db)
+    // Dependencies (not observable)
+    @ObservationIgnored
+    @Dependency(\.defaultDatabase) private var database
 
-        // Assemble and return composite result
-        return actions.map { action in
-            ActionWithDetails(action: action, measurements: measurements[action.id])
+    @ObservationIgnored
+    private lazy var repository: GoalRepository = {
+        GoalRepository(database: database)
+    }()
+
+    public init() {}
+
+    // Standard methods (public - called by views)
+    public func loadGoals() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            goals = try await repository.fetchAll()
+        } catch let error as ValidationError {
+            // User-friendly validation messages (e.g., "Goal title is required")
+            errorMessage = error.userMessage
+        } catch {
+            // Generic fallback for unexpected errors
+            errorMessage = "Failed to load goals: \(error.localizedDescription)"
         }
+
+        isLoading = false
+    }
+
+    public func deleteGoal(_ goal: GoalWithDetails) async {
+        // Uses coordinator for delete, then reloads
+        // Same ValidationError handling pattern
     }
 }
 
-// Use @Fetch in views for automatic database observation
-@Fetch(wrappedValue: [], ActionsWithMeasuresAndGoals())
-private var actions: [ActionWithDetails]
+// In View:
+@State private var viewModel = GoalsListViewModel()
 
-// FUTURE PATTERN: #sql macro for complex aggregations (not yet implemented)
-// Reserved for when validation layers are complete and we need raw SQL performance
-// Example of what #sql would look like (from comments in codebase):
-/*
-let rows = try #sql("""
-    SELECT actions.*, measures.*, goals.*
-    FROM actions
-    LEFT JOIN measuredActions ON actions.id = measuredActions.actionId
-    LEFT JOIN measures ON measuredActions.measureId = measures.id
-    ORDER BY actions.logTime DESC
-    """, as: ActionRow.self).fetchAll(db)
-*/
+.task {
+    await viewModel.loadGoals()
+}
+.refreshable {
+    await viewModel.loadGoals()
+}
+```
+
+**Why This Pattern:**
+- ✅ No @Fetch wrappers needed
+- ✅ Explicit async/await
+- ✅ Better separation of concerns
+- ✅ Easier testing
+- ✅ Loading and error states built-in
+- ✅ @Observable provides automatic UI updates
+
+**Reference**: All 4 list views (Goals, Actions, PersonalValues, Terms) follow this pattern.
+
+### Repository Query Patterns
+
+Repositories use different patterns based on complexity:
+
+```swift
+// PATTERN 1: JSON Aggregation (for 1:many relationships)
+// Used by: GoalRepository, ActionRepository
+let sql = """
+SELECT g.*,
+    COALESCE(
+        (SELECT json_group_array(json_object(...))
+         FROM measures WHERE goalId = g.id),
+        '[]'
+    ) as measuresJson
+FROM goals g
+"""
+
+// PATTERN 2: #sql Macro (for simple queries)
+// Used by: PersonalValueRepository
+return try await database.read { db in
+    try #sql(
+        """
+        SELECT \(PersonalValue.columns)
+        FROM \(PersonalValue.self)
+        ORDER BY \(PersonalValue.priority) DESC
+        """,
+        as: PersonalValue.self
+    ).fetchAll(db)
+}
+
+// PATTERN 3: Query Builder (for simple JOINs)
+// Used by: TimePeriodRepository
+let results = try GoalTerm.all
+    .order { $0.termNumber.desc() }
+    .join(TimePeriod.all) { $0.timePeriodId.eq($1.id) }
+    .fetchAll(db)
 
 // Models use @Table and @Column macros from SQLiteData
 @Table("goals")
@@ -184,9 +261,9 @@ public struct Goal: DomainBasic {
 
 - **Database Schema**: `swift/Sources/Database/Schemas/schema_current.sql`
 - **Package Definition**: `swift/Package.swift`
-- **Active Documentation**: `swift/docs/20251108.md`
-- **Repository Plan**: `swift/docs/REPOSITORY_IMPLEMENTATION_PLAN.md`
+- **Migration Plan**: `swift/docs/JSON_AGGREGATION_MIGRATION_PLAN.md` ✅ Complete
 - **Visual Design System**: `swift/docs/LIQUID_GLASS_VISUAL_SYSTEM.md`
+- **Concurrency Migration**: `swift/docs/CONCURRENCY_MIGRATION_20251110.md`
 
 ## Development Guidelines
 
@@ -314,7 +391,7 @@ public final class MyEntityCoordinator: Sendable {
 
 ### Creating a New ViewModel (Swift 6 Pattern)
 
-**Template** (based on ActionFormViewModel):
+**Form ViewModel Template** (based on ActionFormViewModel):
 ```swift
 @Observable
 @MainActor
@@ -347,12 +424,78 @@ public final class MyEntityFormViewModel {
 }
 ```
 
+**List ViewModel Template** (based on GoalsListViewModel):
+```swift
+@Observable
+@MainActor
+public final class MyEntitiesListViewModel {
+    // Observable state (internal, not public - no visibility modifier needed)
+    var items: [MyEntity] = []
+    var isLoading: Bool = false
+    var errorMessage: String?
+
+    var hasError: Bool { errorMessage != nil }
+
+    // Dependencies (not observable)
+    @ObservationIgnored
+    @Dependency(\.defaultDatabase) private var database
+
+    @ObservationIgnored
+    private lazy var repository: MyEntityRepository = {
+        MyEntityRepository(database: database)
+    }()
+
+    public init() {}
+
+    public func loadItems() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            items = try await repository.fetchAll()
+        } catch let error as ValidationError {
+            // User-friendly validation messages
+            errorMessage = error.userMessage
+            print("❌ MyEntitiesListViewModel ValidationError: \(error.userMessage)")
+        } catch {
+            // Generic error fallback
+            errorMessage = "Failed to load items: \(error.localizedDescription)"
+            print("❌ MyEntitiesListViewModel: \(error)")
+        }
+
+        isLoading = false
+    }
+
+    public func deleteItem(_ item: MyEntity) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let coordinator = MyEntityCoordinator(database: database)
+            try await coordinator.delete(item: item)
+            await loadItems()
+        } catch let error as ValidationError {
+            // User-friendly validation messages
+            errorMessage = error.userMessage
+            print("❌ MyEntitiesListViewModel ValidationError: \(error.userMessage)")
+        } catch {
+            // Generic error fallback
+            errorMessage = "Failed to delete item: \(error.localizedDescription)"
+            print("❌ MyEntitiesListViewModel: \(error)")
+        }
+
+        isLoading = false
+    }
+}
+```
+
 **Key Requirements**:
 - ✅ Mark `@Observable` (modern pattern, NOT ObservableObject)
 - ✅ Mark `@MainActor` (UI state management)
 - ✅ Use `@State` in views (NOT `@StateObject`)
 - ✅ Mark dependencies with `@ObservationIgnored`
-- ✅ Use lazy coordinator with `@ObservationIgnored`
+- ✅ Use lazy repository/coordinator with `@ObservationIgnored`
+- ✅ Internal properties (not public)
 
 
 ## Documentation Research with doc-fetcher
@@ -682,62 +825,66 @@ public struct ActionWithDetails: Identifiable, Hashable, Sendable {
 - Concurrency Migration: `swift/docs/CONCURRENCY_MIGRATION_20251110.md`
 - @Observable macro docs: Use doc-fetcher to fetch latest Apple documentation
 
-#### 3. Database Queries (SQLiteData FetchKeyRequest and @Fetch)
+#### 3. Database Queries - Repository + ViewModel Pattern (Current Standard)
 
-**Current SQLiteData Patterns in Use**:
+**CURRENT PATTERN** (as of 2025-11-13):
+All list views use Repository + @Observable ViewModel pattern. **No @Fetch wrappers.**
+
 ```swift
-// PATTERN 1: FetchKeyRequest with structured query builders (current approach)
-public struct ActionsWithMeasuresAndGoals: FetchKeyRequest {
-    public typealias Value = [ActionWithDetails]
-
-    public func fetch(_ db: Database) throws -> [ActionWithDetails] {
-        // Type-safe query builders (compile-time checked)
-        let actions = try Action
-            .order { $0.logTime.desc() }
-            .fetchAll(db)
-
-        // Bulk fetch with joins
-        let measurements = try MeasuredAction
-            .where { actionIds.contains($0.actionId) }
-            .join(Measure.all) { $0.measureId.eq($1.id) }
-            .fetchAll(db)
-
-        return assembleResults(actions, measurements)
+// In Repository: JSON Aggregation, #sql, or Query Builder
+public final class GoalRepository: Sendable {
+    public func fetchAll() async throws -> [GoalWithDetails] {
+        try await database.read { db in
+            // JSON aggregation SQL here
+            let rows = try GoalQueryRow.fetchAll(db, sql: sql)
+            return try rows.map { row in
+                try assembleGoalWithDetails(from: row)
+            }
+        }
     }
 }
 
-// PATTERN 2: @Fetch property wrapper for automatic updates
-@Fetch(wrappedValue: [], ActionsWithMeasuresAndGoals())
-private var actions: [ActionWithDetails]
+// In ViewModel: Lazy repository access
+@Observable
+@MainActor
+public final class GoalsListViewModel {
+    var goals: [GoalWithDetails] = []
 
-// PATTERN 3: Simple fetches with @FetchAll
-@FetchAll(Goal.order(by: \.targetDate))
-private var goals: [Goal]
+    @ObservationIgnored
+    private lazy var repository: GoalRepository = {
+        GoalRepository(database: database)
+    }()
+
+    public func loadGoals() async {
+        goals = try await repository.fetchAll()
+    }
+}
+
+// In View: @State with .task
+@State private var viewModel = GoalsListViewModel()
+
+.task {
+    await viewModel.loadGoals()
+}
 ```
 
-**Future Pattern (When Validation Complete)**:
-```swift
-// #sql macro for complex aggregations (not yet in use)
-// Will provide better performance for complex queries
-let result = try #sql("""
-    SELECT COUNT(*) as count, AVG(value) as average
-    FROM measuredActions
-    WHERE measureId = \(bind: measureId)
-    GROUP BY actionId
-    """, as: AggregateResult.self).fetchOne(db)
-```
+**Why This Pattern:**
+- ✅ Explicit data flow (clear where data comes from)
+- ✅ Loading/error states built-in
+- ✅ Testable (mock repository)
+- ✅ @Observable provides automatic updates
+- ✅ No wrapper abstraction layer
 
 **Anti-Patterns to Avoid**:
 ```swift
-// DON'T manually fetch without observation
-.onAppear {
-    actions = try await fetchActions()  // Won't auto-update
-}
+// ❌ DON'T use @Fetch wrappers (eliminated in migration)
+@Fetch(wrappedValue: [], ActionsQuery())
+private var actions: [ActionWithDetails]
 
-// DON'T use raw SQL strings without type safety
+// ❌ DON'T use raw SQL strings without type safety
 let results = try database.execute("SELECT * FROM actions")  // Unsafe
 
-// DON'T use SwiftData's @Query (we use SQLiteData, not SwiftData)
+// ❌ DON'T use SwiftData's @Query (we use SQLiteData, not SwiftData)
 @Query(sort: \Item.title) var items  // Wrong library!
 ```
 

@@ -109,7 +109,12 @@ public final class PersonalValuesListViewModel {
 
         do {
             values = try await repository.fetchAll()
+        } catch let error as ValidationError {
+            // User-friendly validation messages
+            errorMessage = error.userMessage
+            print("❌ PersonalValuesListViewModel ValidationError: \(error.userMessage)")
         } catch {
+            // Generic error fallback
             errorMessage = "Failed to load values: \(error.localizedDescription)"
             print("❌ PersonalValuesListViewModel: \(error)")
         }
@@ -134,7 +139,12 @@ public final class PersonalValuesListViewModel {
 
             // Reload list after successful delete
             await loadValues()
+        } catch let error as ValidationError {
+            // User-friendly validation messages
+            errorMessage = error.userMessage
+            print("❌ PersonalValuesListViewModel ValidationError: \(error.userMessage)")
         } catch {
+            // Generic error fallback
             errorMessage = "Failed to delete value: \(error.localizedDescription)"
             print("❌ PersonalValuesListViewModel: \(error)")
         }

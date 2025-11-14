@@ -69,8 +69,10 @@ swift/
 │   ├── Services/         # Business logic and data access
 │   │   ├── Coordinators/ # Multi-model atomic writes
 │   │   ├── Validation/   # Business rule enforcement
-│   │   └── Repositories/ # Query abstraction (in progress)
+│   │   └── Repositories/ # Query abstraction (✅ complete)
 │   ├── App/              # SwiftUI views and view models
+│   │   ├── ViewModels/   # @Observable ViewModels (✅ complete)
+│   │   └── Views/        # SwiftUI views
 │   └── Logic/            # LLM integration (future)
 ├── Tests/                # Comprehensive test suite
 └── Package.swift         # Swift Package Manager configuration
@@ -112,13 +114,14 @@ The app uses a SQLite database with a 3NF normalized schema. Database location:
 ### Current Phase (v0.6.0)
 ✅ Three-layer domain model
 ✅ Coordinator pattern for atomic writes
+✅ Repository + ViewModel pattern (completed 2025-11-13)
+✅ Validation layer integration
 ✅ CloudKit sync
 ✅ Basic HealthKit integration
 
 ### Next Phase (v0.7.0)
-🚧 Validation layer integration
-🚧 Repository pattern completion
-🚧 CSV import/export
+🚧 CSV import/export enhancements
+🚧 Testing and refinement
 ⏳ Dashboard and analytics
 ⏳ Enhanced HealthKit live tracking
 

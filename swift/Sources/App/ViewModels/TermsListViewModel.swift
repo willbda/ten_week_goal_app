@@ -110,7 +110,12 @@ public final class TermsListViewModel {
 
         do {
             termsWithPeriods = try await repository.fetchAll()
+        } catch let error as ValidationError {
+            // User-friendly validation messages
+            errorMessage = error.userMessage
+            print("❌ TermsListViewModel ValidationError: \(error.userMessage)")
         } catch {
+            // Generic error fallback
             errorMessage = "Failed to load terms: \(error.localizedDescription)"
             print("❌ TermsListViewModel: \(error)")
         }
@@ -137,7 +142,12 @@ public final class TermsListViewModel {
 
             // Reload list after successful delete
             await loadTerms()
+        } catch let error as ValidationError {
+            // User-friendly validation messages
+            errorMessage = error.userMessage
+            print("❌ TermsListViewModel ValidationError: \(error.userMessage)")
         } catch {
+            // Generic error fallback
             errorMessage = "Failed to delete term: \(error.localizedDescription)"
             print("❌ TermsListViewModel: \(error)")
         }

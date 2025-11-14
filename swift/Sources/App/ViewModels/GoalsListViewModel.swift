@@ -99,7 +99,12 @@ public final class GoalsListViewModel {
 
         do {
             goals = try await repository.fetchAll()
+        } catch let error as ValidationError {
+            // User-friendly validation messages
+            errorMessage = error.userMessage
+            print("❌ GoalsListViewModel ValidationError: \(error.userMessage)")
         } catch {
+            // Generic error fallback
             errorMessage = "Failed to load goals: \(error.localizedDescription)"
             print("❌ GoalsListViewModel: \(error)")
         }
@@ -131,7 +136,12 @@ public final class GoalsListViewModel {
 
             // Reload list after successful delete
             await loadGoals()
+        } catch let error as ValidationError {
+            // User-friendly validation messages
+            errorMessage = error.userMessage
+            print("❌ GoalsListViewModel ValidationError: \(error.userMessage)")
         } catch {
+            // Generic error fallback
             errorMessage = "Failed to delete goal: \(error.localizedDescription)"
             print("❌ GoalsListViewModel: \(error)")
         }

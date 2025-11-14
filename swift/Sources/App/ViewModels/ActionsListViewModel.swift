@@ -112,7 +112,12 @@ public final class ActionsListViewModel {
 
         do {
             actions = try await actionRepository.fetchAll()
+        } catch let error as ValidationError {
+            // User-friendly validation messages
+            errorMessage = error.userMessage
+            print("❌ ActionsListViewModel ValidationError: \(error.userMessage)")
         } catch {
+            // Generic error fallback
             errorMessage = "Failed to load actions: \(error.localizedDescription)"
             print("❌ ActionsListViewModel: \(error)")
         }
@@ -159,7 +164,12 @@ public final class ActionsListViewModel {
 
             // Reload list after successful delete
             await loadActions()
+        } catch let error as ValidationError {
+            // User-friendly validation messages
+            errorMessage = error.userMessage
+            print("❌ ActionsListViewModel ValidationError: \(error.userMessage)")
         } catch {
+            // Generic error fallback
             errorMessage = "Failed to delete action: \(error.localizedDescription)"
             print("❌ ActionsListViewModel: \(error)")
         }
