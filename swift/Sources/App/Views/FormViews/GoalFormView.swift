@@ -294,10 +294,10 @@ public struct GoalFormView: View {
             async let values = database.read { db in
                 try PersonalValue.order { $0.priority.desc() }.fetchAll(db)
             }
-            async let terms = database.read { db in
-                let query = TermsWithPeriods()
-                return try query.fetch(db)
-            }
+
+            // Use repository for terms (consistent with list views)
+            let repository = TimePeriodRepository(database: database)
+            async let terms = repository.fetchAll()
 
             // Await all results together (structured concurrency ensures cleanup)
             (availableMeasures, availableValues, availableTerms) = try await (measures, values, terms)

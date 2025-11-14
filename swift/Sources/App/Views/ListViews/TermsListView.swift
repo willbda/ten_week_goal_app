@@ -1,35 +1,29 @@
 //
 // TermsListView.swift
 // Written by Claude Code on 2025-11-02
+// Refactored on 2025-11-13 to use ViewModel pattern
 //
 // PURPOSE: List view showing Terms with their TimePeriod details
-// ARCHITECTURE: JOIN query for efficient single-query fetch
+// DATA SOURCE: TermsListViewModel (replaces @Fetch pattern)
+// INTERACTIONS: Tap to edit, swipe to delete, empty state
+//
+// MIGRATION NOTE (2025-11-13):
+// Previously used @Fetch(TermsWithPeriods()) with manual refresh trigger hack.
+// Now uses TermsListViewModel directly for:
+// - Better separation of concerns
+// - Explicit async/await patterns
+// - Easier testing and error handling
+// - Consistent pattern with GoalsListView, ActionsListView, PersonalValuesListView
+// - Eliminates refresh trigger hack (automatic reactivity via @Observable)
 //
 
 import Models
-import SQLiteData
 import SwiftUI
 
-/// List view for Terms (10-week planning periods).
-///
-/// ARCHITECTURE DECISION: JOIN Query for Performance
-/// - Uses custom TermsWithPeriods query that JOINs GoalTerm + TimePeriod
-/// - Single query instead of N+1 fetches (performant)
-/// - Observable via @Fetch - auto-updates on database changes
-/// - User sees "Terms" in navigation title, not "Time Periods"
-///
-/// PATTERN: Based on SQLiteData Reminders app JOIN pattern
-/// - @Fetch with custom FetchRequest (not @FetchAll)
-/// - Navigation + sheet for create
-/// - No ViewModel needed (simple list)
-/// - TermRowView receives both models directly
 public struct TermsListView: View {
-    @State private var showingForm = false
-    @State private var viewModel = TimePeriodFormViewModel()
+    @State private var viewModel = TermsListViewModel()
 
-    // Query GoalTerms with TimePeriods via JOIN (single query)
-    @Fetch(wrappedValue: [], TermsWithPeriods())
-    private var termsWithPeriods: [TermWithPeriod]
+    @State private var showingForm = false
 
     /// Term being edited (nil = create mode)
     @State private var termToEdit: (timePeriod: TimePeriod, goalTerm: GoalTerm)?
@@ -40,18 +34,12 @@ public struct TermsListView: View {
     /// Term to delete (for confirmation)
     @State private var termToDelete: TermWithPeriod?
 
-    /// Trigger for manual refresh (increment to force @Fetch to re-query)
-    @State private var refreshTrigger = 0
-
-    /// Calculate next term number from existing terms
-    private var nextTermNumber: Int {
-        let maxTermNumber = termsWithPeriods.map { $0.term.termNumber }.max() ?? 0
-        return maxTermNumber + 1
-    }
-
     public var body: some View {
         Group {
-            if termsWithPeriods.isEmpty {
+            if viewModel.isLoading {
+                // Loading state
+                ProgressView("Loading terms...")
+            } else if viewModel.termsWithPeriods.isEmpty {
                 // Empty state
                 ContentUnavailableView {
                     Label("No Terms Yet", systemImage: "calendar")
@@ -66,7 +54,7 @@ public struct TermsListView: View {
                 }
             } else {
                 List(selection: $selectedTerm) {
-                    ForEach(termsWithPeriods) { item in
+                    ForEach(viewModel.termsWithPeriods) { item in
                         TermRowView(term: item.term, timePeriod: item.timePeriod)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -132,25 +120,30 @@ public struct TermsListView: View {
                 .keyboardShortcut("n", modifiers: .command)
             }
         }
+        .task {
+            // Load terms when view appears
+            await viewModel.loadTerms()
+        }
+        .refreshable {
+            // Pull-to-refresh uses same load method
+            await viewModel.loadTerms()
+        }
         .sheet(isPresented: $showingForm) {
+            // Reload when sheet dismisses (automatic via @Observable)
+            Task {
+                await viewModel.loadTerms()
+            }
+        } content: {
             NavigationStack {
                 TermFormView(
                     termToEdit: termToEdit,
-                    suggestedTermNumber: termToEdit == nil ? nextTermNumber : nil
+                    suggestedTermNumber: termToEdit == nil ? viewModel.nextTermNumber : nil
                 )
             }
             // Force sheet to recreate when termToEdit changes
             // Fixes bug: clicking same term twice showed "New Term" instead of edit
             .id(termToEdit?.goalTerm.id)
         }
-        .onChange(of: showingForm) { _, isShowing in
-            // When sheet dismisses, force list to refresh
-            // Fixes bug: list not updating after save
-            if !isShowing {
-                refreshTrigger += 1
-            }
-        }
-        .id(refreshTrigger)  // Force view recreation when refreshTrigger changes
         .alert(
             "Delete Term",
             isPresented: .constant(termToDelete != nil),
@@ -161,7 +154,7 @@ public struct TermsListView: View {
             }
             Button("Delete", role: .destructive) {
                 Task {
-                    try? await viewModel.delete(
+                    await viewModel.deleteTerm(
                         timePeriod: item.timePeriod,
                         goalTerm: item.term
                     )
@@ -170,6 +163,13 @@ public struct TermsListView: View {
             }
         } message: { item in
             Text("Are you sure you want to delete Term \(item.term.termNumber)?")
+        }
+        .alert("Error", isPresented: .constant(viewModel.hasError)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "Unknown error")
         }
     }
 }
