@@ -1,25 +1,31 @@
 //
 // GoalsListView.swift
 // Written by Claude Code on 2025-11-03
+// Refactored on 2025-11-13 to use ViewModel pattern
 //
 // PURPOSE: List of goals with progress and alignment display
-// DATA SOURCE: @Fetch(GoalsQuery())
+// DATA SOURCE: GoalsListViewModel (replaces @Fetch pattern)
 // INTERACTIONS: Tap to edit, swipe to delete, empty state
 //
 
 import Models
-import SQLiteData
 import SwiftUI
 
 /// List view for goals
 ///
-/// PATTERN: Like TermsListView, ActionsListView
-/// DATA: @Fetch with GoalsQuery (reactive updates)
-/// DISPLAY: GoalRowView for each goal
-/// INTERACTIONS: Tap to edit, swipe to delete
+/// **PATTERN**: ViewModel-based (migrated from @Fetch)
+/// **DATA**: GoalsListViewModel → GoalRepository → Database
+/// **DISPLAY**: GoalRowView for each goal
+/// **INTERACTIONS**: Tap to edit, swipe to delete, pull to refresh
+///
+/// **MIGRATION NOTE** (2025-11-13):
+/// Previously used @Fetch(GoalsQuery()) which wrapped repository calls.
+/// Now uses GoalsListViewModel directly for:
+/// - Better separation of concerns
+/// - Explicit async/await patterns
+/// - Easier testing and error handling
 public struct GoalsListView: View {
-    @Fetch(wrappedValue: [], GoalsQuery())
-    private var goals: [GoalWithDetails]
+    @State private var viewModel = GoalsListViewModel()
 
     @State private var showingAddGoal = false
     @State private var goalToEdit: GoalWithDetails?
@@ -30,7 +36,10 @@ public struct GoalsListView: View {
 
     public var body: some View {
         Group {
-            if goals.isEmpty {
+            if viewModel.isLoading {
+                // Loading state
+                ProgressView("Loading goals...")
+            } else if viewModel.goals.isEmpty {
                 // Empty state
                 ContentUnavailableView {
                     Label("No Goals Yet", systemImage: "target")
@@ -45,7 +54,7 @@ public struct GoalsListView: View {
             } else {
                 // Goal list
                 List {
-                    ForEach(goals) { goalDetails in
+                    ForEach(viewModel.goals) { goalDetails in
                         GoalRowView(goalDetails: goalDetails)
                             .onTapGesture {
                                 goalToEdit = goalDetails
@@ -80,6 +89,14 @@ public struct GoalsListView: View {
                 }
             }
         }
+        .task {
+            // Load goals when view appears
+            await viewModel.loadGoals()
+        }
+        .refreshable {
+            // Pull-to-refresh uses same load method
+            await viewModel.loadGoals()
+        }
         .sheet(isPresented: $showingAddGoal) {
             NavigationStack {
                 GoalFormView()
@@ -93,17 +110,19 @@ public struct GoalsListView: View {
         .alert("Delete Goal?", isPresented: $showingDeleteAlert, presenting: goalToDelete) { goalDetails in
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
-                deleteGoal(goalDetails)
+                Task {
+                    await viewModel.deleteGoal(goalDetails)
+                }
             }
         } message: { goalDetails in
             Text("Are you sure you want to delete \"\(goalDetails.expectation.title ?? "this goal")\"?")
         }
-    }
-
-    private func deleteGoal(_ goalDetails: GoalWithDetails) {
-        Task {
-            let viewModel = GoalFormViewModel()
-            try? await viewModel.delete(goalDetails: goalDetails)
+        .alert("Error", isPresented: .constant(viewModel.hasError)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "Unknown error")
         }
     }
 }

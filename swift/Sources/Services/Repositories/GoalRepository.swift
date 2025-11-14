@@ -181,11 +181,13 @@ public final class GoalRepository: Sendable {
 ///
 /// Returned from JSON aggregation query. Contains flattened goal+expectation fields
 /// plus JSON strings for related entities.
-private struct GoalQueryRow: Decodable, FetchableRecord, Sendable {
+///
+/// PUBLIC: Exported for GoalsQuery.swift compatibility (temporary during migration)
+public struct GoalQueryRow: Decodable, FetchableRecord, Sendable {
     // Goal fields (prefixed to avoid column name collisions)
     let goalId: String
-    let goalStartDate: String?
-    let goalTargetDate: String?
+    let goalStartDate: Date?
+    let goalTargetDate: Date?
     let goalActionPlan: String?
     let goalExpectedTermLength: Int?
 
@@ -194,7 +196,7 @@ private struct GoalQueryRow: Decodable, FetchableRecord, Sendable {
     let expectationTitle: String?
     let expectationDetailedDescription: String?
     let expectationFreeformNotes: String?
-    let expectationLogTime: String
+    let expectationLogTime: Date
     let expectationImportance: Int
     let expectationUrgency: Int
 
@@ -208,12 +210,17 @@ private struct GoalQueryRow: Decodable, FetchableRecord, Sendable {
 private struct MeasureJsonRow: Decodable, Sendable {
     let expectationMeasureId: String
     let targetValue: Double
+    let expectationMeasureFreeformNotes: String?
     let measureId: String
     let measureTitle: String?
     let measureUnit: String
     let measureType: String
     let measureDetailedDescription: String?
-    let expectationMeasureCreatedAt: String
+    let measureFreeformNotes: String?
+    let measureLogTime: Date
+    let measureCanonicalUnit: String?
+    let measureConversionFactor: Double?
+    let expectationMeasureCreatedAt: Date
 }
 
 /// Nested JSON structure for values
@@ -223,9 +230,14 @@ private struct ValueJsonRow: Decodable, Sendable {
     let relevanceNotes: String?
     let valueId: String
     let valueTitle: String
+    let valueDetailedDescription: String?
+    let valueFreeformNotes: String?
     let valuePriority: Int
     let valueLevel: String
-    let relevanceCreatedAt: String
+    let valueLifeDomain: String?
+    let valueAlignmentGuidance: String?
+    let valueLogTime: Date
+    let relevanceCreatedAt: Date
 }
 
 /// Nested JSON structure for term assignment (single object, not array)
@@ -233,30 +245,29 @@ private struct TermAssignmentJsonRow: Decodable, Sendable {
     let assignmentId: String
     let termId: String
     let assignmentOrder: Int?
-    let createdAt: String
+    let createdAt: Date
 }
 
 // MARK: - Helper Functions
-
-/// Parse ISO8601 date string from SQLite
-private func parseDate(_ dateString: String?) -> Date? {
-    guard let dateString else { return nil }
-    let formatter = ISO8601DateFormatter()
-    return formatter.date(from: dateString)
-}
-
-/// Parse ISO8601 timestamp from SQLite (required)
-private func parseTimestamp(_ timestampString: String) -> Date? {
-    let formatter = ISO8601DateFormatter()
-    return formatter.date(from: timestampString)
-}
 
 /// Assemble GoalWithDetails from SQL row with JSON parsing
 ///
 /// Parses JSON arrays for measures, values, and term assignment.
 /// Throws ValidationError with context if JSON parsing fails.
-private func assembleGoalWithDetails(from row: GoalQueryRow) throws -> GoalWithDetails {
+///
+/// PUBLIC: Exported for GoalsQuery.swift compatibility (temporary during migration)
+public func assembleGoalWithDetails(from row: GoalQueryRow) throws -> GoalWithDetails {
     let decoder = JSONDecoder()
+
+    // Configure decoder to parse SQLite's date format from JSON strings
+    // Format: "2025-11-08 06:23:40.205"
+    decoder.dateDecodingStrategy = .formatted({
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        return formatter
+    }())
 
     // Parse measures JSON array
     let measuresData: Data
@@ -311,18 +322,14 @@ private func assembleGoalWithDetails(from row: GoalQueryRow) throws -> GoalWithD
 
     let goal = Goal(
         expectationId: expectationUUID,
-        startDate: parseDate(row.goalStartDate),
-        targetDate: parseDate(row.goalTargetDate),
+        startDate: row.goalStartDate,
+        targetDate: row.goalTargetDate,
         actionPlan: row.goalActionPlan,
         expectedTermLength: row.goalExpectedTermLength,
         id: goalUUID
     )
 
     // Build Expectation domain model
-    guard let expectationLogTime = parseTimestamp(row.expectationLogTime) else {
-        throw ValidationError.databaseConstraint("Invalid expectation logTime for goal \(row.goalId)")
-    }
-
     let expectation = Expectation(
         title: row.expectationTitle,
         detailedDescription: row.expectationDetailedDescription,
@@ -330,15 +337,14 @@ private func assembleGoalWithDetails(from row: GoalQueryRow) throws -> GoalWithD
         expectationType: .goal,
         expectationImportance: row.expectationImportance,
         expectationUrgency: row.expectationUrgency,
-        logTime: expectationLogTime,
+        logTime: row.expectationLogTime,
         id: expectationUUID
     )
 
     // Build measure wrappers
     let metricTargets = try measuresJson.map { m in
         guard let emUUID = UUID(uuidString: m.expectationMeasureId),
-              let measureUUID = UUID(uuidString: m.measureId),
-              let emCreatedAt = parseTimestamp(m.expectationMeasureCreatedAt) else {
+              let measureUUID = UUID(uuidString: m.measureId) else {
             throw ValidationError.databaseConstraint("Invalid UUID in measure JSON for goal \(row.goalId)")
         }
 
@@ -347,8 +353,8 @@ private func assembleGoalWithDetails(from row: GoalQueryRow) throws -> GoalWithD
                 expectationId: expectationUUID,
                 measureId: measureUUID,
                 targetValue: m.targetValue,
-                createdAt: emCreatedAt,
-                freeformNotes: nil,
+                createdAt: m.expectationMeasureCreatedAt,
+                freeformNotes: m.expectationMeasureFreeformNotes,
                 id: emUUID
             ),
             measure: Measure(
@@ -356,10 +362,10 @@ private func assembleGoalWithDetails(from row: GoalQueryRow) throws -> GoalWithD
                 measureType: m.measureType,
                 title: m.measureTitle,
                 detailedDescription: m.measureDetailedDescription,
-                freeformNotes: nil,
-                canonicalUnit: nil,
-                conversionFactor: nil,
-                logTime: Date(), // Not provided in JSON - would need to add if required
+                freeformNotes: m.measureFreeformNotes,
+                canonicalUnit: m.measureCanonicalUnit,
+                conversionFactor: m.measureConversionFactor,
+                logTime: m.measureLogTime,
                 id: measureUUID
             )
         )
@@ -368,8 +374,7 @@ private func assembleGoalWithDetails(from row: GoalQueryRow) throws -> GoalWithD
     // Build value wrappers
     let valueAlignments = try valuesJson.map { v in
         guard let relevanceUUID = UUID(uuidString: v.relevanceId),
-              let valueUUID = UUID(uuidString: v.valueId),
-              let relevanceCreatedAt = parseTimestamp(v.relevanceCreatedAt) else {
+              let valueUUID = UUID(uuidString: v.valueId) else {
             throw ValidationError.databaseConstraint("Invalid UUID in value JSON for goal \(row.goalId)")
         }
 
@@ -379,18 +384,18 @@ private func assembleGoalWithDetails(from row: GoalQueryRow) throws -> GoalWithD
                 valueId: valueUUID,
                 alignmentStrength: v.alignmentStrength,
                 relevanceNotes: v.relevanceNotes,
-                createdAt: relevanceCreatedAt,
+                createdAt: v.relevanceCreatedAt,
                 id: relevanceUUID
             ),
             value: PersonalValue(
                 title: v.valueTitle,
-                detailedDescription: nil, // Not provided in JSON
-                freeformNotes: nil,
+                detailedDescription: v.valueDetailedDescription,
+                freeformNotes: v.valueFreeformNotes,
                 priority: v.valuePriority,
                 valueLevel: ValueLevel(rawValue: v.valueLevel) ?? .general,
-                lifeDomain: nil,
-                alignmentGuidance: nil,
-                logTime: Date(), // Not provided in JSON
+                lifeDomain: v.valueLifeDomain,
+                alignmentGuidance: v.valueAlignmentGuidance,
+                logTime: v.valueLogTime,
                 id: valueUUID
             )
         )
@@ -399,8 +404,7 @@ private func assembleGoalWithDetails(from row: GoalQueryRow) throws -> GoalWithD
     // Build term assignment
     let termAssignment = try termJson.map { t in
         guard let assignmentUUID = UUID(uuidString: t.assignmentId),
-              let termUUID = UUID(uuidString: t.termId),
-              let createdAt = parseTimestamp(t.createdAt) else {
+              let termUUID = UUID(uuidString: t.termId) else {
             throw ValidationError.databaseConstraint("Invalid UUID in term assignment JSON for goal \(row.goalId)")
         }
 
@@ -409,7 +413,7 @@ private func assembleGoalWithDetails(from row: GoalQueryRow) throws -> GoalWithD
             termId: termUUID,
             goalId: goalUUID,
             assignmentOrder: t.assignmentOrder,
-            createdAt: createdAt
+            createdAt: t.createdAt
         )
     }
 
@@ -456,11 +460,16 @@ private struct FetchAllGoalsRequest: FetchKeyRequest {
                         json_object(
                             'expectationMeasureId', em.id,
                             'targetValue', em.targetValue,
+                            'expectationMeasureFreeformNotes', em.freeformNotes,
                             'measureId', m.id,
                             'measureTitle', m.title,
                             'measureUnit', m.unit,
                             'measureType', m.measureType,
                             'measureDetailedDescription', m.detailedDescription,
+                            'measureFreeformNotes', m.freeformNotes,
+                            'measureLogTime', m.logTime,
+                            'measureCanonicalUnit', m.canonicalUnit,
+                            'measureConversionFactor', m.conversionFactor,
                             'expectationMeasureCreatedAt', em.createdAt
                         )
                     )
@@ -481,8 +490,13 @@ private struct FetchAllGoalsRequest: FetchKeyRequest {
                             'relevanceNotes', gr.relevanceNotes,
                             'valueId', v.id,
                             'valueTitle', v.title,
+                            'valueDetailedDescription', v.detailedDescription,
+                            'valueFreeformNotes', v.freeformNotes,
                             'valuePriority', v.priority,
                             'valueLevel', v.valueLevel,
+                            'valueLifeDomain', v.lifeDomain,
+                            'valueAlignmentGuidance', v.alignmentGuidance,
+                            'valueLogTime', v.logTime,
                             'relevanceCreatedAt', gr.createdAt
                         )
                     )
@@ -552,11 +566,16 @@ private struct FetchActiveGoalsRequest: FetchKeyRequest {
                         json_object(
                             'expectationMeasureId', em.id,
                             'targetValue', em.targetValue,
+                            'expectationMeasureFreeformNotes', em.freeformNotes,
                             'measureId', m.id,
                             'measureTitle', m.title,
                             'measureUnit', m.unit,
                             'measureType', m.measureType,
                             'measureDetailedDescription', m.detailedDescription,
+                            'measureFreeformNotes', m.freeformNotes,
+                            'measureLogTime', m.logTime,
+                            'measureCanonicalUnit', m.canonicalUnit,
+                            'measureConversionFactor', m.conversionFactor,
                             'expectationMeasureCreatedAt', em.createdAt
                         )
                     )
@@ -618,11 +637,16 @@ private struct FetchGoalsByTermRequest: FetchKeyRequest {
                         json_object(
                             'expectationMeasureId', em.id,
                             'targetValue', em.targetValue,
+                            'expectationMeasureFreeformNotes', em.freeformNotes,
                             'measureId', m.id,
                             'measureTitle', m.title,
                             'measureUnit', m.unit,
                             'measureType', m.measureType,
                             'measureDetailedDescription', m.detailedDescription,
+                            'measureFreeformNotes', m.freeformNotes,
+                            'measureLogTime', m.logTime,
+                            'measureCanonicalUnit', m.canonicalUnit,
+                            'measureConversionFactor', m.conversionFactor,
                             'expectationMeasureCreatedAt', em.createdAt
                         )
                     )
@@ -643,8 +667,13 @@ private struct FetchGoalsByTermRequest: FetchKeyRequest {
                             'relevanceNotes', gr.relevanceNotes,
                             'valueId', v.id,
                             'valueTitle', v.title,
+                            'valueDetailedDescription', v.detailedDescription,
+                            'valueFreeformNotes', v.freeformNotes,
                             'valuePriority', v.priority,
                             'valueLevel', v.valueLevel,
+                            'valueLifeDomain', v.lifeDomain,
+                            'valueAlignmentGuidance', v.alignmentGuidance,
+                            'valueLogTime', v.logTime,
                             'relevanceCreatedAt', gr.createdAt
                         )
                     )
