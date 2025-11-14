@@ -1,48 +1,40 @@
 //
 // ActionsListView.swift
 // Written by Claude Code on 2025-11-02
+// Refactored on 2025-11-13 to use ViewModel pattern
 //
 // PURPOSE: List view for Actions with measurements and goal contributions
-// PATTERN: @Fetch with ActionsWithMeasuresAndGoals, tap/swipe interactions
+// DATA SOURCE: ActionsListViewModel (replaces @Fetch pattern)
+// INTERACTIONS: Tap to edit, swipe to delete, pull to refresh
 //
 
 import SwiftUI
 import Models
 import Services
-import SQLiteData
 
 /// Main list view for Actions
 ///
-/// **Pattern**: @Fetch with custom FetchKeyRequest (like TermsListView)
-/// **Features**:
-/// - Quick Add section (duplicate recent actions, log for active goals)
-/// - Displays actions with measurements and goal badges
-/// - Tap row to edit
-/// - Swipe right to delete
-/// - Swipe left to edit
-/// - Empty state with CTA
+/// **PATTERN**: ViewModel-based (migrated from @Fetch)
+/// **DATA**: ActionsListViewModel → ActionRepository + GoalRepository → Database
+/// **DISPLAY**: ActionRowView for each action + QuickAddSection
+/// **INTERACTIONS**: Tap to edit, swipe to delete, pull to refresh
 ///
-/// **Usage**:
-/// ```swift
-/// NavigationStack {
-///     ActionsListView()
-/// }
-/// ```
+/// **MIGRATION NOTE** (2025-11-13):
+/// Previously used @Fetch(ActionsWithMeasuresAndGoals()) which wrapped repository calls.
+/// Now uses ActionsListViewModel directly for:
+/// - Better separation of concerns
+/// - Explicit async/await patterns
+/// - Easier testing and error handling
 public struct ActionsListView: View {
     // MARK: - State
 
-    @Fetch(wrappedValue: [], ActionsWithMeasuresAndGoals())
-    private var actions: [ActionWithDetails]
-
-    @Fetch(wrappedValue: [], ActiveGoals())
-    private var activeGoals: [GoalWithDetails]
+    @State private var viewModel = ActionsListViewModel()
 
     @State private var showingAddAction = false
-    @State private var actionToEdit: ActionWithDetails?
-    @State private var actionToDelete: ActionWithDetails?
-    @State private var selectedAction: ActionWithDetails?
+    @State private var actionToEdit: Models.ActionWithDetails?
+    @State private var actionToDelete: Models.ActionWithDetails?
+    @State private var selectedAction: Models.ActionWithDetails?
     @State private var formData: ActionFormData?  // For Quick Add pre-filling
-    @State private var refreshID = UUID()  // Force refresh after edits/deletes
 
     // MARK: - Body
 
@@ -50,13 +42,15 @@ public struct ActionsListView: View {
 
     public var body: some View {
         Group {
-            if actions.isEmpty {
+            if viewModel.isLoading {
+                // Loading state
+                ProgressView("Loading actions...")
+            } else if viewModel.actions.isEmpty {
                 emptyState
             } else {
                 actionsList
             }
         }
-        .id(refreshID)  // Force re-render when refreshID changes
         .navigationTitle("Actions")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -67,6 +61,16 @@ public struct ActionsListView: View {
                 }
                 .keyboardShortcut("n", modifiers: .command)
             }
+        }
+        .task {
+            // Load actions and active goals when view appears
+            await viewModel.loadActions()
+            await viewModel.loadActiveGoals()
+        }
+        .refreshable {
+            // Pull-to-refresh uses same load methods
+            await viewModel.loadActions()
+            await viewModel.loadActiveGoals()
         }
         .sheet(isPresented: $showingAddAction) {
             NavigationStack {
@@ -80,10 +84,13 @@ public struct ActionsListView: View {
             }
         }
         .onChange(of: showingAddAction) { _, isShowing in
-            // Clear formData when sheet is dismissed
+            // Clear formData and refresh when sheet is dismissed
             if !isShowing {
                 formData = nil
-                refreshID = UUID()  // Refresh list after creating action
+                Task {
+                    await viewModel.loadActions()
+                    await viewModel.loadActiveGoals()
+                }
             }
         }
         .sheet(item: $actionToEdit) { actionDetails in
@@ -94,7 +101,10 @@ public struct ActionsListView: View {
         .onChange(of: actionToEdit) { oldValue, newValue in
             // Refresh list when edit sheet is dismissed
             if newValue == nil && oldValue != nil {
-                refreshID = UUID()
+                Task {
+                    await viewModel.loadActions()
+                    await viewModel.loadActiveGoals()
+                }
             }
         }
         .alert(
@@ -110,6 +120,13 @@ public struct ActionsListView: View {
             }
         } message: { actionDetails in
             Text("Are you sure you want to delete '\(actionDetails.action.title ?? "this action")'?")
+        }
+        .alert("Error", isPresented: .constant(viewModel.hasError)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "Unknown error")
         }
     }
 
@@ -134,8 +151,8 @@ public struct ActionsListView: View {
         List(selection: $selectedAction) {
             // Quick Add Section
             QuickAddSection(
-                recentActions: Array(actions.prefix(5)),
-                activeGoals: Array(activeGoals.prefix(5)),
+                recentActions: Array(viewModel.actions.prefix(5)),
+                activeGoals: Array(viewModel.activeGoals.prefix(5)),
                 onDuplicateAction: { preFilledData in
                     formData = preFilledData
                     showingAddAction = true
@@ -148,7 +165,7 @@ public struct ActionsListView: View {
             )
 
             // Actions List
-            ForEach(actions) { actionDetails in
+            ForEach(viewModel.actions) { actionDetails in
                 ActionRowView(actionDetails: actionDetails)
                     .onTapGesture {
                         edit(actionDetails)
@@ -198,24 +215,14 @@ public struct ActionsListView: View {
 
     // MARK: - Actions
 
-    private func edit(_ actionDetails: ActionWithDetails) {
+    private func edit(_ actionDetails: Models.ActionWithDetails) {
         actionToEdit = actionDetails
     }
 
-    private func delete(_ actionDetails: ActionWithDetails) {
+    private func delete(_ actionDetails: Models.ActionWithDetails) {
         Task {
-            // Create temporary ViewModel for delete operation
-            let viewModel = ActionFormViewModel()
-            do {
-                try await viewModel.delete(actionDetails: actionDetails)
-                actionToDelete = nil
-                refreshID = UUID()  // Refresh list after delete
-            } catch {
-                // Error handled by ViewModel.errorMessage
-                // Could show alert here if needed
-                print("Delete error: \(error)")
-                actionToDelete = nil
-            }
+            await viewModel.deleteAction(actionDetails)
+            actionToDelete = nil
         }
     }
 
@@ -225,7 +232,7 @@ public struct ActionsListView: View {
     ///
     /// Pre-fills form with goal's first metric target (if any)
     /// and pre-selects the goal for contribution tracking
-    private func buildFormDataForGoal(_ goalDetail: GoalWithDetails) -> ActionFormData {
+    private func buildFormDataForGoal(_ goalDetail: Models.GoalWithDetails) -> ActionFormData {
         // Pre-fill with goal's first metric (if any)
         let measurements: [MeasurementInput] = goalDetail.metricTargets.prefix(1).map { target in
             MeasurementInput(

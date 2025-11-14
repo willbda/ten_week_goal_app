@@ -26,7 +26,13 @@ import SQLiteData
 // REMOVED @MainActor: Repository performs database queries which are I/O
 // operations that should run in background. Database reads should not block
 // the main thread. ViewModels will await results on main actor as needed.
-public final class PersonalValueRepository {
+//
+// SENDABLE: Conforms to Sendable for Swift 6 strict concurrency.
+// Safe because:
+// - Only immutable property (private let database)
+// - All methods are async (thread-safe by nature)
+// - Can be safely passed from @MainActor ViewModels to background tasks
+public final class PersonalValueRepository: Sendable {
     private let database: any DatabaseWriter
 
     public init(database: any DatabaseWriter) {

@@ -1,28 +1,26 @@
 import Models
-import SQLiteData
 import SwiftUI
 
-// ARCHITECTURE DECISION: Why @FetchAll instead of ViewModel?
-// CONTEXT: Evaluated different patterns for fetching data in list views
-// OPTIONS CONSIDERED:
-//   A. ViewModel with @Published values array (Repository pattern)
-//   B. @FetchAll directly in View (SwiftUI + SQLiteData pattern)
-//   C. @Query from SwiftData (if we were using SwiftData instead of SQLiteData)
-// WHY @FetchAll:
-//   - Reactive updates: Values automatically refresh when database changes
-//   - Minimal boilerplate: No ViewModel needed for simple lists
-//   - Type-safe: Query defined at compile-time (PersonalValue.all)
-//   - Memory efficient: SQLiteData handles pagination under the hood
-// WHEN TO USE VIEWMODEL INSTEAD:
-//   - Complex filtering/sorting logic
-//   - Multi-source data aggregation
-//   - Business logic coordination
-// SEE: ActionListView for example of list WITH ViewModel (complex filtering)
+//
+// PersonalValuesListView.swift
+// Written by Claude Code on 2025-11-03
+// Refactored on 2025-11-13 to use ViewModel pattern
+//
+// PURPOSE: List of personal values with priority and level display
+// DATA SOURCE: PersonalValuesListViewModel (replaces @FetchAll pattern)
+// INTERACTIONS: Tap to edit, swipe to delete, empty state
+//
+// MIGRATION NOTE (2025-11-13):
+// Previously used @FetchAll(PersonalValue.all) with manual Dictionary grouping.
+// Now uses PersonalValuesListViewModel directly for:
+// - Better separation of concerns
+// - Explicit async/await patterns
+// - Easier testing and error handling
+// - Consistent pattern with GoalsListView and ActionsListView
+//
 
 public struct PersonalValuesListView: View {
-    // Fetching all PersonalValues from the database
-    @FetchAll(wrappedValue: [], PersonalValue.all)
-    private var values
+    @State private var viewModel = PersonalValuesListViewModel()
 
     @State private var showingAddValue = false
     @State private var valueToEdit: PersonalValue?
@@ -31,14 +29,12 @@ public struct PersonalValuesListView: View {
 
     public init() {}
 
-    // Computed property to avoid layout recursion
-    private var groupedValues: [ValueLevel: [PersonalValue]] {
-        Dictionary(grouping: values, by: \PersonalValue.valueLevel)
-    }
-
     public var body: some View {
         Group {
-            if values.isEmpty {
+            if viewModel.isLoading {
+                // Loading state
+                ProgressView("Loading values...")
+            } else if viewModel.values.isEmpty {
                 // Empty state
                 ContentUnavailableView {
                     Label("No Values Yet", systemImage: "heart")
@@ -52,12 +48,11 @@ public struct PersonalValuesListView: View {
                 }
             } else {
                 List {
-                    // PERFORMANCE FIX (2025-11-03):
-                    // Previous: Filtered values 4 times on EVERY render (O(n × 4))
-                    // Current: Dictionary grouping once, lookup per level (O(n) + O(1) lookups)
+                    // PERFORMANCE: Dictionary grouping computed in ViewModel (O(n))
+                    // Lookup per level is O(1)
                     // Database: Already sorted by valueLevel + priority via ORDER BY
                     ForEach(ValueLevel.allCases, id: \.self) { level in
-                        if let levelValues = groupedValues[level], !levelValues.isEmpty {
+                        if let levelValues = viewModel.groupedValues[level], !levelValues.isEmpty {
                             Section(level.displayName) {
                                 ForEach(levelValues) { value in
                                     PersonalValuesRowView(value: value)
@@ -113,6 +108,14 @@ public struct PersonalValuesListView: View {
                 .keyboardShortcut("n", modifiers: .command)
             }
         }
+        .task {
+            // Load values when view appears
+            await viewModel.loadValues()
+        }
+        .refreshable {
+            // Pull-to-refresh uses same load method
+            await viewModel.loadValues()
+        }
         .sheet(isPresented: $showingAddValue) {
             NavigationStack {
                 PersonalValuesFormView()
@@ -137,6 +140,13 @@ public struct PersonalValuesListView: View {
         } message: { value in
             Text("Are you sure you want to delete '\(value.title ?? "this value")'?")
         }
+        .alert("Error", isPresented: .constant(viewModel.hasError)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "Unknown error")
+        }
     }
 
     // MARK: - Actions
@@ -147,17 +157,8 @@ public struct PersonalValuesListView: View {
 
     private func delete(_ value: PersonalValue) {
         Task {
-            // Create temporary ViewModel for delete operation
-            let viewModel = PersonalValuesFormViewModel()
-            do {
-                try await viewModel.delete(value: value)
-                valueToDelete = nil
-            } catch {
-                // Error handled by ViewModel.errorMessage
-                // Could show alert here if needed
-                print("Delete error: \(error)")
-                valueToDelete = nil
-            }
+            await viewModel.deleteValue(value)
+            valueToDelete = nil
         }
     }
 }
