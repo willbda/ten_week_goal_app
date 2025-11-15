@@ -2,10 +2,10 @@
 //  Dependencies+Semantic.swift
 //  Ten Week Goal App
 //
-//  Written by Claude Code on 2025-11-12
+//  Written by Claude Code on 2025-11-14
 //
 //  PURPOSE: Dependency injection registration for semantic services
-//  Registers SemanticService and EmbeddingCache into the app's dependency system
+//  Registers SemanticService with modern async API and integrated caching
 //
 
 import Dependencies
@@ -21,107 +21,135 @@ extension DependencyValues {
     }
 }
 
+@available(iOS 26.0, macOS 26.0, *)
 private enum SemanticServiceKey: DependencyKey {
-    /// Live implementation - uses real NLEmbedding
-    static let liveValue = SemanticService(language: .english)
-
-    /// Test implementation - same as live (NLEmbedding works in tests)
-    static let testValue = SemanticService(language: .english)
-
-    /// Preview implementation - same as live for SwiftUI previews
-    static let previewValue = SemanticService(language: .english)
-}
-
-// MARK: - Embedding Cache Dependency
-
-extension DependencyValues {
-    /// Embedding cache for persistent embedding storage
-    public var embeddingCache: EmbeddingCache {
-        get { self[EmbeddingCacheKey.self] }
-        set { self[EmbeddingCacheKey.self] = newValue }
-    }
-}
-
-private enum EmbeddingCacheKey: DependencyKey {
-    /// Live implementation - uses real database and semantic service
-    static let liveValue: EmbeddingCache = {
+    /// Live implementation - uses real NLEmbedding with database caching
+    static let liveValue: SemanticService = {
         @Dependency(\.defaultDatabase) var database
-        @Dependency(\.semanticService) var semanticService
-        return EmbeddingCache(database: database, semanticService: semanticService)
+        return SemanticService(database: database, configuration: .default)
     }()
 
-    /// Test implementation - uses test database and semantic service
-    static let testValue: EmbeddingCache = {
+    /// Test implementation - uses test database with semantic features disabled
+    static let testValue: SemanticService = {
         @Dependency(\.defaultDatabase) var database
-        @Dependency(\.semanticService) var semanticService
-        return EmbeddingCache(database: database, semanticService: semanticService)
+        return SemanticService(database: database, configuration: .testing)
     }()
 
-    /// Preview implementation - uses preview database and semantic service
-    static let previewValue: EmbeddingCache = {
+    /// Preview implementation - uses preview database with default configuration
+    static let previewValue: SemanticService = {
         @Dependency(\.defaultDatabase) var database
-        @Dependency(\.semanticService) var semanticService
-        return EmbeddingCache(database: database, semanticService: semanticService)
+        return SemanticService(database: database, configuration: .default)
     }()
 }
+
+// MARK: - Notes on Caching
+//
+// Embedding caching is now integrated directly into SemanticService via EmbeddingCacheRepository.
+// No separate embeddingCache dependency needed - SemanticService handles caching internally.
 
 // MARK: - Usage Examples
 
 /*
 
- Example 1: Using in a Coordinator
+ Example 1: Using in a Coordinator (Duplicate Detection)
 
  public final class GoalCoordinator: Sendable {
      private let database: any DatabaseWriter
 
-     // Inject semantic services
-     @Dependency(\.semanticService) private var semanticService
-     @Dependency(\.embeddingCache) private var embeddingCache
+     // Inject semantic service (optional for graceful degradation)
+     @Dependency(\.semanticService) private var semanticService: SemanticService?
 
      public func create(from formData: GoalFormData) async throws -> Goal {
-         // Check for duplicates using semantic similarity
-         let detector = SemanticGoalDetector(
-             embeddingCache: embeddingCache,
-             semanticService: semanticService
-         )
+         // Check for semantic duplicates (falls back to exact matching if nil)
+         guard let semantic = semanticService else {
+             // Semantic service not available, use exact title matching
+             return try await createWithExactMatching(formData)
+         }
 
-         let duplicates = try await detector.findDuplicates(
-             for: formData.title,
-             in: existingGoals,
-             threshold: 0.75
-         )
+         // Generate embedding for new goal title
+         guard let newEmbedding = try await semantic.generateEmbedding(for: formData.title) else {
+             // NLEmbedding unavailable, fall back to exact matching
+             return try await createWithExactMatching(formData)
+         }
 
-         // Handle duplicates...
+         // Check against existing goals
+         let existingGoals = try await fetchExistingGoals()
+         for existing in existingGoals {
+             guard let existingEmbedding = try await semantic.generateEmbedding(for: existing.title) else {
+                 continue  // Skip if embedding generation fails
+             }
+
+             let similarity = semantic.similarity(newEmbedding, existingEmbedding)
+             if similarity >= 0.75 {
+                 throw ValidationError(userMessage: "Goal '\(formData.title)' is very similar to existing goal '\(existing.title)' (similarity: \(Int(similarity * 100))%)")
+             }
+         }
+
+         // No duplicates found, create goal
+         return try await createGoal(formData)
      }
  }
 
- Example 2: Using in a ViewModel
+ Example 2: Using in a ViewModel (Search)
 
  @Observable
  @MainActor
- final class GoalFormViewModel {
+ final class GoalSearchViewModel {
      @ObservationIgnored
-     @Dependency(\.embeddingCache) var embeddingCache
+     @Dependency(\.semanticService) var semanticService: SemanticService?
 
-     @ObservationIgnored
-     @Dependency(\.semanticService) var semanticService
+     func searchSimilar(to query: String) async -> [Goal] {
+         guard let semantic = semanticService,
+               let queryEmbedding = try? await semantic.generateEmbedding(for: query) else {
+             return []  // Fall back to empty results if semantic unavailable
+         }
 
-     func checkForDuplicates(_ title: String) async -> [DuplicateMatch] {
-         // Use semantic services to check for duplicates
+         let allGoals = try? await fetchAllGoals()
+         var results: [(goal: Goal, similarity: Double)] = []
+
+         for goal in allGoals ?? [] {
+             guard let goalEmbedding = try? await semantic.generateEmbedding(for: goal.title) else {
+                 continue
+             }
+
+             let score = semantic.similarity(queryEmbedding, goalEmbedding)
+             if score >= 0.60 {  // Minimum threshold for relevance
+                 results.append((goal, score))
+             }
+         }
+
+         // Sort by similarity (highest first)
+         return results
+             .sorted { $0.similarity > $1.similarity }
+             .map { $0.goal }
      }
  }
 
- Example 3: Testing with Dependency Overrides
+ Example 3: Direct Similarity Check (Convenience Method)
 
- func testGoalCreation() async throws {
-     // Override dependencies for testing
+ @Dependency(\.semanticService) var semanticService: SemanticService?
+
+ func areGoalsSimilar(_ title1: String, _ title2: String) async -> Bool {
+     guard let semantic = semanticService else {
+         return false
+     }
+
+     // Convenience method handles embedding generation + comparison
+     return (try? await semantic.areSimilar(title1, title2, threshold: 0.75)) ?? false
+ }
+
+ Example 4: Testing with Dependency Overrides
+
+ func testGoalDuplication() async throws {
+     // Create test database with semantic support
+     let testDB = try DatabaseQueue()
+
      await withDependencies {
-         $0.semanticService = MockSemanticService()
-         $0.embeddingCache = MockEmbeddingCache()
+         $0.defaultDatabase = testDB
+         $0.semanticService = SemanticService(database: testDB, configuration: .testing)
      } operation: {
          let coordinator = GoalCoordinator(database: testDB)
-         let goal = try await coordinator.create(from: formData)
-         // Assertions...
+         // Test duplicate detection...
      }
  }
 

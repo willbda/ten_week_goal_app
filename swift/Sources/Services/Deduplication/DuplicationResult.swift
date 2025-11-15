@@ -164,17 +164,8 @@ public enum DuplicationEntityType: String, Sendable, CaseIterable, Hashable {
         }
     }
 
-    /// Convert to CachedEntityType for embedding cache operations
-    public var toCachedType: CachedEntityType {
-        switch self {
-        case .goal: return .goal
-        case .action: return .action
-        case .value: return .value
-        case .measure: return .measure
-        case .term: return .term
-        case .conversation: return .conversation
-        }
-    }
+    // Note: CachedEntityType conversion removed - no longer needed with SemanticService
+    // SemanticService.generateEmbedding() only needs text, not entity type
 }
 
 // MARK: - Similarity Thresholds

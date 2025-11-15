@@ -14,24 +14,22 @@
 
 import Foundation
 import Models
+// Note: SemanticService is in same module (Services), no import needed
 
 /// Detector for goal title duplicates using semantic similarity
 public final class SemanticGoalDetector: Sendable {
 
     // MARK: - Dependencies
 
-    private let embeddingCache: EmbeddingCache
     private let semanticService: SemanticService
     private let config: DeduplicationConfig
 
     // MARK: - Initialization
 
     public init(
-        embeddingCache: EmbeddingCache,
         semanticService: SemanticService,
         config: DeduplicationConfig = .goals
     ) {
-        self.embeddingCache = embeddingCache
         self.semanticService = semanticService
         self.config = config
     }
@@ -63,23 +61,19 @@ public final class SemanticGoalDetector: Sendable {
         }
 
         // Generate embedding for new title
-        guard let queryEmbedding = try await embeddingCache.getOrGenerateEmbedding(
-            for: title,
-            entityType: .goal,  // CachedEntityType.goal
-            entityId: UUID()  // Temporary ID for query (not persisted)
-        ) else {
+        guard let queryEmbedding = try await semanticService.generateEmbedding(for: title) else {
             // NLEmbedding unavailable - graceful degradation
             throw DeduplicationError.semanticServiceUnavailable
         }
 
         // Generate embeddings for existing goal titles
-        let candidateData: [(text: String, entityType: CachedEntityType, entityId: UUID)] = existingGoals.map { goal in
-            (goal.expectation.title ?? "Untitled", .goal, goal.goal.id)
+        // Note: Embeddings are cached automatically by SemanticService
+        var candidateEmbeddings: [EmbeddingVector?] = []
+        for goal in existingGoals {
+            let goalTitle = goal.expectation.title ?? "Untitled"
+            let embedding = try await semanticService.generateEmbedding(for: goalTitle)
+            candidateEmbeddings.append(embedding)
         }
-
-        let candidateEmbeddings = try await embeddingCache.getOrGenerateEmbeddings(
-            for: candidateData
-        )
 
         // Calculate similarities
         var matches: [DuplicateMatch] = []
@@ -89,10 +83,7 @@ public final class SemanticGoalDetector: Sendable {
                 continue  // Skip if embedding generation failed
             }
 
-            let similarity = semanticService.similarity(
-                between: queryEmbedding,
-                and: candidateEmbedding
-            )
+            let similarity = semanticService.similarity(queryEmbedding, candidateEmbedding)
 
             // Only include if above threshold
             if similarity >= minimumThreshold {

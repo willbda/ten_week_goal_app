@@ -101,6 +101,9 @@ let package = Package(
             name: "Logic",
             dependencies: [
                 "Models",
+                "Database",
+                "Services",
+                .product(name: "SQLiteData", package: "sqlite-data"),
             ],
             path: "Sources/Logic"
         ),

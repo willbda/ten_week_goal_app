@@ -44,11 +44,7 @@ public final class GoalCoordinator: Sendable {
         return service
     }
 
-    /// Embedding cache for duplicate detection (lazy to maintain Sendable)
-    private var embeddingCache: EmbeddingCache {
-        @Dependency(\.embeddingCache) var cache
-        return cache
-    }
+    // Note: EmbeddingCache dependency removed - caching now integrated in SemanticService
 
     /// Creates Goal with full relationship graph from form data.
     /// - Parameter formData: Validated form data with targets and alignments
@@ -458,7 +454,6 @@ public final class GoalCoordinator: Sendable {
 
         // Create detector and check for blocking duplicates
         let detector = SemanticGoalDetector(
-            embeddingCache: embeddingCache,
             semanticService: semanticService,
             config: .goals  // Uses default 0.75 threshold with blocking on high severity
         )
