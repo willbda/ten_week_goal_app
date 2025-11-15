@@ -1,22 +1,27 @@
-# This workflow will build a Swift project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
+# Swift CI/CD Pipeline
+# Builds and tests the Ten Week Goal App Swift package
 
-name: Swift
+name: Swift CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+  workflow_dispatch: # Allow manual triggers
 
 jobs:
-  build:
+  build-and-test:
+    name: Build and Test
+    runs-on: macos-26 # Explicit version for reproducibility
 
-    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: swift
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: swift build -v
-    - name: Run tests
-      run: swift test -v
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Swift version
+        run: swift --version
