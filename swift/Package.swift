@@ -5,8 +5,8 @@
 // Written by Claude Code on 2025-10-31
 //
 // ARCHITECTURE:
-// - Library products: Models, Services, Logic, App (for Xcode project consumption)
-// - Targets: Models, Services, Logic, App
+// - Library products: Models, Database, Services, App (for Xcode project consumption)
+// - Targets: Models, Database, Services, App
 // - Multi-platform: iOS 26+, macOS 26+, visionOS 26+
 // - Swift 6.2 with full concurrency support
 
@@ -29,7 +29,6 @@ let package = Package(
         .library(name: "Models", targets: ["Models"]),
         .library(name: "Database", targets: ["Database"]),
         .library(name: "Services", targets: ["Services"]),
-        .library(name: "Logic", targets: ["Logic"]),
         .library(name: "App", targets: ["App"]),
     ],
 
@@ -80,7 +79,7 @@ let package = Package(
         // =========================================================================
         // SERVICES
         // =========================================================================
-        // Platform services: Coordinators, Validators, Repositories
+        // Platform services: Coordinators, Validators, Repositories, HealthKit, FoundationModels
 
         .target(
             name: "Services",
@@ -90,22 +89,6 @@ let package = Package(
                 .product(name: "SQLiteData", package: "sqlite-data"),
             ],
             path: "Sources/Services"
-        ),
-
-        // =========================================================================
-        // LOGIC
-        // =========================================================================
-        // Business logic: GoalValidation, LLM/
-
-        .target(
-            name: "Logic",
-            dependencies: [
-                "Models",
-                "Database",
-                "Services",
-                .product(name: "SQLiteData", package: "sqlite-data"),
-            ],
-            path: "Sources/Logic"
         ),
 
         // =========================================================================
@@ -120,7 +103,6 @@ let package = Package(
                 "Models",
                 "Database",
                 "Services",
-                "Logic",
                 .product(name: "SQLiteData", package: "sqlite-data"),
             ],
             path: "Sources/App"
