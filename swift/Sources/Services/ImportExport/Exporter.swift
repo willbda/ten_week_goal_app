@@ -3,8 +3,12 @@
 // Written by Claude Code on 2025-11-15
 //
 // PURPOSE:
-// Simple data export wrapper around repository fetch methods.
-// Calls existing repository APIs and writes raw results to text files.
+// Data export service - handles repository dispatch and format encoding.
+//
+// PATTERN:
+// - Repositories provide data via fetchForExport()
+// - DataExporter handles both JSON and CSV formatting
+// - Returns Data (not files) - caller handles file I/O
 //
 
 import Foundation
@@ -27,47 +31,130 @@ public enum DomainModel: Sendable {
     }
 }
 
+public enum ExportFormat: Sendable {
+    case json
+    case csv
+
+    public var fileExtension: String {
+        switch self {
+        case .json: return "json"
+        case .csv: return "csv"
+        }
+    }
+}
+
 public final class DataExporter {
     private let database: any DatabaseWriter
+    private let csvFormatter = CSVFormatter()
 
     public init(database: any DatabaseWriter) {
         self.database = database
     }
 
-    public func export(_ model: DomainModel, to directory: URL) async throws -> URL {
-        let filename: String
-        let data: String
-
+    /// Export entity data in specified format
+    /// - Parameters:
+    ///   - model: Which entity type to export
+    ///   - format: JSON or CSV format
+    ///   - startDate: Optional start of date range filter
+    ///   - endDate: Optional end of date range filter
+    /// - Returns: Formatted data ready to write
+    public func export(
+        _ model: DomainModel,
+        format: ExportFormat,
+        from startDate: Date? = nil,
+        to endDate: Date? = nil
+    ) async throws -> Data {
         switch model {
         case .actions:
             let repository = ActionRepository(database: database)
-            let rows = try await repository.fetchAllRaw()
-            filename = "actions_export.txt"
-            data = "\(rows)"
+            let exports = try await repository.fetchForExport(from: startDate, to: endDate)
+            return try formatData(exports, format: format, csvFormatter: csvFormatter.formatActions)
 
         case .goals:
             let repository = GoalRepository(database: database)
-            let goals = try await repository.fetchAll()
-            filename = "goals_export.txt"
-            data = "\(goals)"
+            let exports = try await repository.fetchForExport(from: startDate, to: endDate)
+            return try formatData(exports, format: format, csvFormatter: csvFormatter.formatGoals)
 
         case .values:
             let repository = PersonalValueRepository(database: database)
-            let values = try await repository.fetchAll()
-            filename = "values_export.txt"
-            data = "\(values)"
+            let exports = try await repository.fetchForExport(from: startDate, to: endDate)
+            return try formatData(exports, format: format, csvFormatter: csvFormatter.formatValues)
 
         case .terms:
             let repository = TimePeriodRepository(database: database)
-            let terms = try await repository.fetchAll()
-            filename = "terms_export.txt"
-            data = "\(terms)"
+            let exports = try await repository.fetchForExport(from: startDate, to: endDate)
+            return try formatData(exports, format: format, csvFormatter: csvFormatter.formatTerms)
         }
+    }
 
+    /// Export entity data to file
+    /// - Parameters:
+    ///   - model: Which entity type to export
+    ///   - directory: Output directory
+    ///   - format: JSON or CSV format
+    ///   - startDate: Optional start of date range filter
+    ///   - endDate: Optional end of date range filter
+    /// - Returns: URL of created file
+    public func exportToFile(
+        _ model: DomainModel,
+        to directory: URL,
+        format: ExportFormat,
+        from startDate: Date? = nil,
+        to endDate: Date? = nil
+    ) async throws -> URL {
+        let data = try await export(model, format: format, from: startDate, to: endDate)
+
+        let filename = "\(model.displayName.lowercased())_export.\(format.fileExtension)"
         let outputURL = directory.appendingPathComponent(filename)
-        try data.write(to: outputURL, atomically: true, encoding: .utf8)
 
-        print("✓ Exported to: \(outputURL.path)")
+        try data.write(to: outputURL)
+
+        print("✓ Exported \(model.displayName) to: \(outputURL.path)")
         return outputURL
+    }
+
+    /// Export all entity types to separate files
+    /// - Parameters:
+    ///   - directory: Output directory
+    ///   - format: JSON or CSV format
+    ///   - startDate: Optional start of date range filter
+    ///   - endDate: Optional end of date range filter
+    /// - Returns: URLs of all created files
+    public func exportAll(
+        to directory: URL,
+        format: ExportFormat,
+        from startDate: Date? = nil,
+        to endDate: Date? = nil
+    ) async throws -> [URL] {
+        let actionsURL = try await exportToFile(.actions, to: directory, format: format, from: startDate, to: endDate)
+        let goalsURL = try await exportToFile(.goals, to: directory, format: format, from: startDate, to: endDate)
+        let valuesURL = try await exportToFile(.values, to: directory, format: format, from: startDate, to: endDate)
+        let termsURL = try await exportToFile(.terms, to: directory, format: format, from: startDate, to: endDate)
+
+        return [actionsURL, goalsURL, valuesURL, termsURL]
+    }
+
+    // MARK: - Private Helpers
+
+    /// Format data based on export format
+    private func formatData<T: Encodable>(
+        _ data: T,
+        format: ExportFormat,
+        csvFormatter: (T) throws -> Data
+    ) throws -> Data {
+        switch format {
+        case .json:
+            return try encodeJSON(data)
+        case .csv:
+            return try csvFormatter(data)
+        }
+    }
+
+    /// Encode data to JSON
+    private func encodeJSON<T: Encodable>(_ data: T) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(data)
     }
 }

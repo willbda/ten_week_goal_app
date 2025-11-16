@@ -22,6 +22,63 @@ import Foundation
 import Models
 import SQLiteData
 
+// MARK: - Export Types
+
+/// Denormalized, flat export format for Terms with TimePeriod data inlined
+///
+/// EXPORT PATTERN:
+/// This struct is optimized for CSV/JSON export by flattening the Term + TimePeriod
+/// relationship into a single record. All fields are optional to handle incomplete data.
+///
+/// USAGE:
+/// ```swift
+/// let exports = try await repository.fetchForExport(from: startDate, to: endDate)
+/// let csvData = exports.map { $0.toCSVRow() }.joined(separator: "\n")
+/// ```
+public struct TermExport: Codable, Sendable {
+    // MARK: - Term Identity
+    public let id: UUID
+    public let termNumber: Int
+
+    // MARK: - Term Planning Data
+    public let theme: String?
+    public let reflection: String?
+    public let status: String?  // TermStatus.rawValue
+
+    // MARK: - TimePeriod Data (Inlined)
+    public let timePeriodId: UUID
+    public let timePeriodTitle: String?
+    public let startDate: Date
+    public let endDate: Date
+
+    // MARK: - Associated Goals (Optional)
+    public let assignedGoalIds: [UUID]?
+
+    public init(
+        id: UUID,
+        termNumber: Int,
+        theme: String?,
+        reflection: String?,
+        status: String?,
+        timePeriodId: UUID,
+        timePeriodTitle: String?,
+        startDate: Date,
+        endDate: Date,
+        assignedGoalIds: [UUID]?
+    ) {
+        self.id = id
+        self.termNumber = termNumber
+        self.theme = theme
+        self.reflection = reflection
+        self.status = status
+        self.timePeriodId = timePeriodId
+        self.timePeriodTitle = timePeriodTitle
+        self.startDate = startDate
+        self.endDate = endDate
+        self.assignedGoalIds = assignedGoalIds
+    }
+}
+
 // REMOVED @MainActor: Repository performs database queries which are I/O
 // operations that should run in background. Database reads should not block
 // the main thread. ViewModels will await results on main actor as needed.
@@ -71,6 +128,44 @@ public final class TimePeriodRepository: Sendable {
         do {
             return try await database.read { db in
                 try FetchTermsByDateRangeRequest(range: range).fetch(db)
+            }
+        } catch {
+            throw mapDatabaseError(error)
+        }
+    }
+
+    /// Fetch terms in denormalized export format
+    ///
+    /// Returns flat records with TimePeriod data inlined and optional goal assignments.
+    /// Suitable for CSV/JSON export.
+    ///
+    /// - Parameters:
+    ///   - startDate: Optional filter - include only terms whose periods end on or after this date
+    ///   - endDate: Optional filter - include only terms whose periods start on or before this date
+    /// - Returns: Array of denormalized term records
+    ///
+    /// **Date Filtering Logic**:
+    /// - `from: Date` → Include terms where `timePeriod.endDate >= from`
+    /// - `to: Date` → Include terms where `timePeriod.startDate <= to`
+    /// - Both filters → Overlap logic (period intersects [from, to])
+    /// - No filters → All terms
+    ///
+    /// **Example**:
+    /// ```swift
+    /// // Export last 6 months of terms
+    /// let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: Date())!
+    /// let exports = try await repository.fetchForExport(from: sixMonthsAgo)
+    /// ```
+    public func fetchForExport(
+        from startDate: Date? = nil,
+        to endDate: Date? = nil
+    ) async throws -> [TermExport] {
+        do {
+            return try await database.read { db in
+                try FetchTermsForExportRequest(
+                    startDate: startDate,
+                    endDate: endDate
+                ).fetch(db)
             }
         } catch {
             throw mapDatabaseError(error)
@@ -217,6 +312,78 @@ private struct ExistsByIdRequest: FetchKeyRequest {
 
     func fetch(_ db: Database) throws -> Bool {
         try GoalTerm.find(id).fetchOne(db) != nil
+    }
+}
+
+/// Fetch terms for export with denormalized TimePeriod data and goal assignments
+///
+/// EXPORT PATTERN:
+/// 1. JOIN terms + time periods (get date boundaries)
+/// 2. Bulk fetch goal assignments (avoid N+1)
+/// 3. Apply date filters if provided
+/// 4. Assemble denormalized TermExport records
+private struct FetchTermsForExportRequest: FetchKeyRequest {
+    typealias Value = [TermExport]
+
+    let startDate: Date?
+    let endDate: Date?
+
+    func fetch(_ db: Database) throws -> [TermExport] {
+        // Step 1: Fetch all terms + time periods (simple JOIN)
+        let termPeriods = try GoalTerm.all
+            .order { $0.termNumber.desc() }
+            .join(TimePeriod.all) { $0.timePeriodId.eq($1.id) }
+            .fetchAll(db)
+
+        // Step 2: Apply date filtering if provided
+        let filteredTermPeriods = termPeriods.filter { (term, timePeriod) in
+            // Date overlap logic (like FetchTermsByDateRangeRequest)
+            if let start = startDate, let end = endDate {
+                // Both filters: period must overlap [start, end]
+                return timePeriod.startDate <= end && timePeriod.endDate >= start
+            } else if let start = startDate {
+                // Only start filter: period.endDate >= start
+                return timePeriod.endDate >= start
+            } else if let end = endDate {
+                // Only end filter: period.startDate <= end
+                return timePeriod.startDate <= end
+            } else {
+                // No filters: include all
+                return true
+            }
+        }
+
+        // Step 3: Bulk fetch goal assignments (avoid N+1 problem)
+        let termIds = filteredTermPeriods.map { $0.0.id }
+        let allAssignments = try TermGoalAssignment.all
+            .where { termIds.contains($0.termId) }
+            .fetchAll(db)
+
+        // Group by termId for O(1) lookup
+        let assignmentsByTerm = Dictionary(
+            grouping: allAssignments,
+            by: { $0.termId }
+        )
+
+        // Step 4: Assemble denormalized export records
+        return filteredTermPeriods.map { (term, timePeriod) in
+            let goalIds = assignmentsByTerm[term.id]?
+                .map { $0.goalId }
+                .sorted { $0.uuidString < $1.uuidString }  // Deterministic order for testing
+
+            return TermExport(
+                id: term.id,
+                termNumber: term.termNumber,
+                theme: term.theme,
+                reflection: term.reflection,
+                status: term.status?.rawValue,
+                timePeriodId: timePeriod.id,
+                timePeriodTitle: timePeriod.title,
+                startDate: timePeriod.startDate,
+                endDate: timePeriod.endDate,
+                assignedGoalIds: goalIds
+            )
+        }
     }
 }
 

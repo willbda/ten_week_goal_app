@@ -22,6 +22,42 @@
 import Foundation
 import Models
 import SQLiteData
+import GRDB  // For StatementArguments, DatabaseValueConvertible, FetchableRecord
+
+// MARK: - Export Types
+
+/// Denormalized personal value record for CSV/JSON export
+///
+/// EXPORT PATTERN:
+/// - Flat structure (no nested objects) for CSV compatibility
+/// - All PersonalValue fields included
+/// - Computed statistics from database (alignedGoalCount)
+/// - Date filtering on logTime field
+///
+/// USAGE:
+/// ```swift
+/// let exports = try await repository.fetchForExport(
+///     from: Date().addingTimeInterval(-30 * 86400),  // Last 30 days
+///     to: Date()
+/// )
+/// ```
+public struct PersonalValueExport: Codable, Sendable {
+    // Core identity
+    public let id: String  // UUID as string for CSV
+    public let title: String
+    public let detailedDescription: String?
+    public let freeformNotes: String?
+    public let logTime: String  // ISO8601 formatted
+
+    // Value-specific fields
+    public let priority: Int
+    public let valueLevel: String  // ValueLevel.rawValue
+    public let lifeDomain: String?
+    public let alignmentGuidance: String?
+
+    // Computed statistics
+    public let alignedGoalCount: Int  // Number of goals aligned with this value
+}
 
 // REMOVED @MainActor: Repository performs database queries which are I/O
 // operations that should run in background. Database reads should not block
@@ -110,6 +146,121 @@ public final class PersonalValueRepository: Sendable {
                     """,
                     as: PersonalValue.self
                 ).fetchAll(db)
+            }
+        } catch {
+            throw mapDatabaseError(error)
+        }
+    }
+
+    // MARK: - Export Operations
+
+    /// Fetch denormalized export-ready data with optional date filtering
+    ///
+    /// Returns flat PersonalValueExport records optimized for CSV/JSON serialization.
+    /// Includes aligned goal count computed from goalRelevances table.
+    ///
+    /// - Parameters:
+    ///   - startDate: Optional filter for values created on or after this date
+    ///   - endDate: Optional filter for values created on or before this date
+    /// - Returns: Array of export-ready PersonalValueExport records
+    ///
+    /// QUERY STRATEGY:
+    /// - Uses LEFT JOIN to include values with zero aligned goals
+    /// - COUNT(goalRelevances.id) computes aligned goal count
+    /// - Date filtering on logTime field (when value was created)
+    /// - Results ordered by priority (highest first) for readability
+    ///
+    /// EXAMPLE:
+    /// ```swift
+    /// // Export all values
+    /// let all = try await repository.fetchForExport()
+    ///
+    /// // Export values created in last 30 days
+    /// let recent = try await repository.fetchForExport(
+    ///     from: Date().addingTimeInterval(-30 * 86400)
+    /// )
+    /// ```
+    public func fetchForExport(
+        from startDate: Date? = nil,
+        to endDate: Date? = nil
+    ) async throws -> [PersonalValueExport] {
+        do {
+            return try await database.read { db in
+                // Query for PersonalValue with aligned goal count
+                struct ExportRow: Decodable, FetchableRecord {
+                    let id: UUID
+                    let title: String?
+                    let detailedDescription: String?
+                    let freeformNotes: String?
+                    let logTime: Date
+                    let priority: Int?
+                    let valueLevel: ValueLevel
+                    let lifeDomain: String?
+                    let alignmentGuidance: String?
+                    let alignedGoalCount: Int
+                }
+
+                // Build SQL with optional date filters
+                var sql = """
+                    SELECT
+                        pv.id,
+                        pv.title,
+                        pv.detailedDescription,
+                        pv.freeformNotes,
+                        pv.logTime,
+                        pv.priority,
+                        pv.valueLevel,
+                        pv.lifeDomain,
+                        pv.alignmentGuidance,
+                        COUNT(gr.id) as alignedGoalCount
+                    FROM personalValues pv
+                    LEFT JOIN goalRelevances gr ON pv.id = gr.valueId
+                    """
+
+                var arguments: [any DatabaseValueConvertible] = []
+
+                // Add date filters if provided
+                var whereClauses: [String] = []
+                if let startDate = startDate {
+                    whereClauses.append("pv.logTime >= ?")
+                    arguments.append(startDate)
+                }
+                if let endDate = endDate {
+                    whereClauses.append("pv.logTime <= ?")
+                    arguments.append(endDate)
+                }
+
+                if !whereClauses.isEmpty {
+                    sql += " WHERE " + whereClauses.joined(separator: " AND ")
+                }
+
+                sql += """
+
+                    GROUP BY pv.id
+                    ORDER BY pv.priority ASC
+                    """
+
+                // Execute query with bound parameters
+                let rows = try ExportRow.fetchAll(db, sql: sql, arguments: StatementArguments(arguments))
+
+                // Transform to export format
+                let iso8601 = ISO8601DateFormatter()
+                iso8601.formatOptions = [.withInternetDateTime]
+
+                return rows.map { row in
+                    PersonalValueExport(
+                        id: row.id.uuidString,
+                        title: row.title ?? "",
+                        detailedDescription: row.detailedDescription,
+                        freeformNotes: row.freeformNotes,
+                        logTime: iso8601.string(from: row.logTime),
+                        priority: row.priority ?? row.valueLevel.defaultPriority,
+                        valueLevel: row.valueLevel.rawValue,
+                        lifeDomain: row.lifeDomain,
+                        alignmentGuidance: row.alignmentGuidance,
+                        alignedGoalCount: row.alignedGoalCount
+                    )
+                }
             }
         } catch {
             throw mapDatabaseError(error)

@@ -1,0 +1,314 @@
+//
+// BaseRepository.swift
+// Written by Claude Code on 2025-11-15
+//
+// PURPOSE:
+// Base class providing common repository functionality.
+// Subclasses inherit error mapping, database read wrapper, and common patterns.
+//
+// DESIGN:
+// - Open class allows subclassing
+// - Generic over Entity and ExportType
+// - Provides default error mapping (overridable)
+// - Wraps database reads with error handling
+//
+
+import Foundation
+import Models
+import SQLiteData
+import GRDB
+
+/// Base repository implementation providing common functionality
+///
+/// PATTERN: Template Method pattern - provides structure with overridable operations.
+/// Subclasses must implement abstract methods but inherit shared infrastructure.
+///
+/// USAGE:
+/// ```swift
+/// final class PersonalValueRepository: BaseRepository<PersonalValue, PersonalValueExport> {
+///     override func fetchAll() async throws -> [PersonalValue] {
+///         try await read { db in
+///             // Query implementation
+///         }
+///     }
+/// }
+/// ```
+open class BaseRepository<Entity, ExportType>: Repository
+    where ExportType: Codable & Sendable
+{
+    // MARK: - Properties
+
+    /// Database writer instance (injected dependency)
+    public let database: any DatabaseWriter
+
+    // MARK: - Initialization
+
+    /// Initialize with database writer
+    /// - Parameter database: The database writer to use for all operations
+    public init(database: any DatabaseWriter) {
+        self.database = database
+    }
+
+    // MARK: - Abstract Methods (Must Override)
+
+    /// Fetch all entities from the database
+    ///
+    /// Subclasses MUST override this method with entity-specific query logic.
+    /// Use the `read` wrapper for automatic error mapping:
+    /// ```swift
+    /// override func fetchAll() async throws -> [Entity] {
+    ///     try await read { db in
+    ///         // Your query here
+    ///     }
+    /// }
+    /// ```
+    open func fetchAll() async throws -> [Entity] {
+        fatalError("\(type(of: self)).fetchAll() must be overridden")
+    }
+
+    /// Check if an entity exists by ID
+    ///
+    /// Subclasses MUST override this method with entity-specific existence check.
+    open func exists(_ id: UUID) async throws -> Bool {
+        fatalError("\(type(of: self)).exists(_:) must be overridden")
+    }
+
+    /// Fetch entities in denormalized export format
+    ///
+    /// Subclasses MUST override this method with export-specific logic.
+    open func fetchForExport(from startDate: Date?, to endDate: Date?) async throws -> [ExportType] {
+        fatalError("\(type(of: self)).fetchForExport(from:to:) must be overridden")
+    }
+
+    // MARK: - Provided Functionality
+
+    /// Execute a database read operation with automatic error mapping
+    ///
+    /// This wrapper provides consistent error handling across all repositories.
+    /// Subclasses should use this for all read operations:
+    /// ```swift
+    /// try await read { db in
+    ///     try MyEntity.fetchAll(db)
+    /// }
+    /// ```
+    ///
+    /// - Parameter operation: The database operation to execute
+    /// - Returns: The result of the operation
+    /// - Throws: ValidationError with user-friendly message
+    public func read<T>(_ operation: @escaping (Database) throws -> T) async throws -> T {
+        do {
+            return try await database.read(operation)
+        } catch {
+            throw mapDatabaseError(error)
+        }
+    }
+
+    /// Execute a database write operation with automatic error mapping
+    ///
+    /// Similar to `read` but for write operations. Primarily used by coordinators,
+    /// but available if repositories need write access.
+    ///
+    /// - Parameter operation: The database operation to execute
+    /// - Returns: The result of the operation
+    /// - Throws: ValidationError with user-friendly message
+    public func write<T>(_ operation: @escaping (Database) throws -> T) async throws -> T {
+        do {
+            return try await database.write(operation)
+        } catch {
+            throw mapDatabaseError(error)
+        }
+    }
+
+    // MARK: - Error Mapping
+
+    /// Map database errors to user-friendly validation errors
+    ///
+    /// Default implementation handles common SQLite constraint violations.
+    /// Subclasses can override to provide entity-specific error messages:
+    /// ```swift
+    /// override func mapDatabaseError(_ error: Error) -> ValidationError {
+    ///     // Check for specific errors first
+    ///     if let dbError = error as? DatabaseError,
+    ///        dbError.resultCode == .SQLITE_CONSTRAINT_UNIQUE {
+    ///         return .duplicateRecord("A value with this title already exists")
+    ///     }
+    ///     // Fall back to base implementation
+    ///     return super.mapDatabaseError(error)
+    /// }
+    /// ```
+    ///
+    /// - Parameter error: The database error to map
+    /// - Returns: A ValidationError with appropriate user message
+    open func mapDatabaseError(_ error: Error) -> ValidationError {
+        guard let dbError = error as? DatabaseError else {
+            return .databaseConstraint(error.localizedDescription)
+        }
+
+        switch dbError.resultCode {
+        case .SQLITE_CONSTRAINT_FOREIGNKEY:
+            // Try to extract table name from error message for better context
+            if let message = dbError.message {
+                if message.contains("measureId") {
+                    return .invalidMeasure("Measure not found")
+                }
+                if message.contains("goalId") {
+                    return .invalidGoal("Goal not found")
+                }
+                if message.contains("valueId") {
+                    return .invalidValue("Personal value not found")
+                }
+                if message.contains("termId") {
+                    return .invalidTerm("Term not found")
+                }
+                if message.contains("actionId") {
+                    return .invalidAction("Action not found")
+                }
+                if message.contains("expectationId") {
+                    return .invalidExpectation("Expectation not found")
+                }
+            }
+            return .foreignKeyViolation("Referenced entity not found")
+
+        case .SQLITE_CONSTRAINT_UNIQUE:
+            return .duplicateRecord("This entry already exists")
+
+        case .SQLITE_CONSTRAINT_NOTNULL:
+            // Try to extract field name from error message
+            if let message = dbError.message {
+                // SQLite typically includes the column name in the message
+                // Format: "NOT NULL constraint failed: table.column"
+                if let columnMatch = message.range(of: #"failed: \w+\.(\w+)"#, options: .regularExpression) {
+                    let columnName = String(message[columnMatch])
+                        .replacingOccurrences(of: "failed: ", with: "")
+                        .components(separatedBy: ".").last ?? "field"
+
+                    // Convert snake_case to readable format
+                    let readableName = columnName
+                        .replacingOccurrences(of: "_", with: " ")
+                        .capitalized
+
+                    return .missingRequiredField("\(readableName) is required")
+                }
+            }
+            return .missingRequiredField("Required field is missing")
+
+        case .SQLITE_CONSTRAINT_CHECK:
+            // Check constraints typically have custom messages
+            if let message = dbError.message {
+                // Look for common check constraint patterns
+                if message.contains("startDate") && message.contains("endDate") {
+                    return .invalidDateRange("Start date must be before end date")
+                }
+                if message.contains("priority") {
+                    return .invalidPriority("Priority must be between 1 and 10")
+                }
+                if message.contains("importance") || message.contains("urgency") {
+                    return .invalidImportance("Importance/urgency must be between 1 and 5")
+                }
+            }
+            return .databaseConstraint(dbError.message ?? "Data validation failed")
+
+        case .SQLITE_CONSTRAINT:
+            // Generic constraint violation
+            return .databaseConstraint(dbError.message ?? "Database constraint violated")
+
+        case .SQLITE_BUSY, .SQLITE_LOCKED:
+            return .databaseLocked("Database is temporarily unavailable. Please try again.")
+
+        case .SQLITE_CORRUPT:
+            return .databaseCorrupt("Database integrity error. Please contact support.")
+
+        case .SQLITE_FULL:
+            return .storageFull("Storage is full. Please free up space and try again.")
+
+        default:
+            // For any other error, return a generic database error
+            return .databaseConstraint(dbError.localizedDescription)
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    /// Parse an optional ISO8601 date string
+    ///
+    /// Shared helper for repositories that need to parse dates from database strings.
+    ///
+    /// - Parameter dateString: The ISO8601 date string to parse
+    /// - Returns: Parsed Date or nil if invalid/nil
+    public func parseDate(_ dateString: String?) -> Date? {
+        guard let dateString = dateString else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        // Try with fractional seconds first
+        if let date = formatter.date(from: dateString) {
+            return date
+        }
+
+        // Fall back to without fractional seconds
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: dateString)
+    }
+
+    /// Format a date as ISO8601 string
+    ///
+    /// Shared helper for repositories that need to format dates for database storage.
+    ///
+    /// - Parameter date: The date to format
+    /// - Returns: ISO8601 formatted string
+    public func formatDate(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.string(from: date)
+    }
+
+    /// Build a date filter WHERE clause
+    ///
+    /// Helper method for repositories that support date filtering.
+    /// Generates SQL WHERE clause based on optional start/end dates.
+    ///
+    /// - Parameters:
+    ///   - startDate: Optional start date (inclusive)
+    ///   - endDate: Optional end date (inclusive)
+    ///   - dateColumn: The date column to filter on (default: "logTime")
+    /// - Returns: Tuple of (WHERE clause SQL, arguments array)
+    ///
+    /// Example:
+    /// ```swift
+    /// let (whereClause, args) = buildDateFilter(from: startDate, to: endDate)
+    /// let sql = "SELECT * FROM myTable \(whereClause)"
+    /// let results = try Row.fetchAll(db, sql: sql, arguments: args)
+    /// ```
+    public func buildDateFilter(
+        from startDate: Date?,
+        to endDate: Date?,
+        dateColumn: String = "logTime"
+    ) -> (whereClause: String, arguments: [any DatabaseValueConvertible]) {
+        var whereClauses: [String] = []
+        var arguments: [any DatabaseValueConvertible] = []
+
+        if let start = startDate {
+            whereClauses.append("\(dateColumn) >= ?")
+            arguments.append(start)
+        }
+
+        if let end = endDate {
+            whereClauses.append("\(dateColumn) <= ?")
+            arguments.append(end)
+        }
+
+        if whereClauses.isEmpty {
+            return ("", [])
+        } else {
+            return ("WHERE " + whereClauses.joined(separator: " AND "), arguments)
+        }
+    }
+}
+
+// MARK: - Sendable Conformance
+
+// BaseRepository is Sendable because:
+// - It only has immutable stored property (database)
+// - All methods are async (thread-safe by nature)
+// - Can be safely passed between actor boundaries
+extension BaseRepository: @unchecked Sendable {}

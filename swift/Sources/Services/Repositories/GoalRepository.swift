@@ -24,6 +24,45 @@ import Models
 import SQLiteData
 import GRDB  // For FetchableRecord protocol (minimal usage)
 
+// MARK: - Export Data Types
+
+/// Flat, denormalized export structure for CSV/JSON serialization
+///
+/// EXPORT PATTERN: Single-level structure optimized for external formats
+/// - All expectation fields inlined (no nested objects)
+/// - Arrays flattened to simple value types
+/// - Sendable + Codable for safe async/await and serialization
+public struct GoalExport: Identifiable, Codable, Sendable {
+    // Identity
+    public let id: UUID
+
+    // Goal-specific fields
+    public let startDate: Date?
+    public let targetDate: Date?
+    public let actionPlan: String?
+    public let expectedTermLength: Int?
+
+    // Expectation fields (inlined)
+    public let title: String?
+    public let detailedDescription: String?
+    public let freeformNotes: String?
+    public let expectationImportance: Int
+    public let expectationUrgency: Int
+    public let logTime: Date
+
+    // Related entities (flattened)
+    public let measureTargets: [MeasureTargetExport]
+    public let alignedValueIds: [UUID]
+}
+
+/// Simple measure target for export (flat structure, no nesting)
+public struct MeasureTargetExport: Codable, Sendable {
+    public let measureId: UUID
+    public let measureTitle: String?
+    public let unit: String
+    public let targetValue: Double
+}
+
 // REMOVED @MainActor: Repository performs database queries which are I/O
 // operations that should run in background. Database reads should not block
 // the main thread. ViewModels will await results on main actor as needed.
@@ -79,19 +118,53 @@ public final class GoalRepository: Sendable {
     public func fetchByValue(_ valueId: UUID) async throws -> [Goal] {
         do {
             return try await database.read { db in
-                // Get goal IDs aligned with this value
-                let goalIds = try GoalRelevance.all
-                    .where { $0.valueId.eq(valueId) }
-                    .fetchAll(db)
-                    .map(\.goalId)
+                // Use raw SQL since GoalRelevance doesn't have query builder extensions
+                let sql = """
+                    SELECT * FROM goals
+                    WHERE id IN (
+                        SELECT goalId FROM goalRelevances WHERE valueId = ?
+                    )
+                    ORDER BY COALESCE(targetDate, startDate) ASC NULLS LAST
+                """
 
-                guard !goalIds.isEmpty else { return [] }
+                // Use Row to fetch raw data, then convert to Goal
+                let rows = try Row.fetchAll(db, sql: sql, arguments: [valueId])
+                return try rows.map { row in
+                    // Custom init expects expectationId first (generates its own id)
+                    var goal = Goal(
+                        expectationId: row["expectationId"],
+                        startDate: row["startDate"],
+                        targetDate: row["targetDate"],
+                        actionPlan: row["actionPlan"],
+                        expectedTermLength: row["expectedTermLength"]
+                    )
+                    // Override the generated id with the actual id from database
+                    goal.id = row["id"]
+                    return goal
+                }
+            }
+        } catch {
+            throw mapDatabaseError(error)
+        }
+    }
 
-                // Fetch goals by IDs
-                return try Goal.all
-                    .where { goalIds.contains($0.id) }
-                    .order { $0.targetDate ?? Date.distantFuture }
-                    .fetchAll(db)
+    // MARK: - Export Operations
+
+    /// Fetch goals in denormalized export format for CSV/JSON serialization
+    ///
+    /// EXPORT PATTERN: Reuses JSON aggregation infrastructure but transforms to flat structure.
+    /// - Date filtering on targetDate (falls back to startDate if targetDate is null)
+    /// - Flattened structure optimized for external formats
+    /// - Arrays of simple value types (no nested objects)
+    ///
+    /// - Parameters:
+    ///   - startDate: Optional start of date range (inclusive)
+    ///   - endDate: Optional end of date range (inclusive)
+    /// - Returns: Array of denormalized GoalExport structs
+    public func fetchForExport(from startDate: Date? = nil, to endDate: Date? = nil) async throws -> [GoalExport] {
+        do {
+            return try await database.read { db in
+                try FetchGoalsForExportRequest(startDate: startDate, endDate: endDate).fetch(db)
             }
         } catch {
             throw mapDatabaseError(error)
@@ -739,8 +812,198 @@ private struct ExistsByIdRequest: FetchKeyRequest {
     let id: UUID
 
     func fetch(_ db: Database) throws -> Bool {
-        try Goal.find(id).fetchOne(db) != nil
+        let sql = "SELECT 1 FROM goals WHERE id = ? LIMIT 1"
+        return try Row.fetchOne(db, sql: sql, arguments: [id]) != nil
     }
+}
+
+/// Fetch goals in export format with optional date filtering
+///
+/// EXPORT PATTERN: Reuses JSON aggregation SQL but transforms to flat export structure
+/// - Date filtering on COALESCE(targetDate, startDate) to include goals with either date set
+/// - Parses JSON arrays and flattens to simple types
+/// - Returns denormalized data ready for CSV/JSON export
+private struct FetchGoalsForExportRequest: FetchKeyRequest {
+    typealias Value = [GoalExport]
+    let startDate: Date?
+    let endDate: Date?
+
+    func fetch(_ db: Database) throws -> [GoalExport] {
+        // Build WHERE clause for date filtering
+        var whereClause = ""
+        var arguments: [any DatabaseValueConvertible] = []
+
+        if let start = startDate, let end = endDate {
+            whereClause = "WHERE COALESCE(g.targetDate, g.startDate) BETWEEN ? AND ?"
+            arguments = [start, end]
+        } else if let start = startDate {
+            whereClause = "WHERE COALESCE(g.targetDate, g.startDate) >= ?"
+            arguments = [start]
+        } else if let end = endDate {
+            whereClause = "WHERE COALESCE(g.targetDate, g.startDate) <= ?"
+            arguments = [end]
+        }
+
+        let sql = """
+        SELECT
+            -- Goal fields (prefixed to avoid column name collisions)
+            g.id as goalId,
+            g.startDate as goalStartDate,
+            g.targetDate as goalTargetDate,
+            g.actionPlan as goalActionPlan,
+            g.expectedTermLength as goalExpectedTermLength,
+
+            -- Expectation fields
+            e.id as expectationId,
+            e.title as expectationTitle,
+            e.detailedDescription as expectationDetailedDescription,
+            e.freeformNotes as expectationFreeformNotes,
+            e.logTime as expectationLogTime,
+            e.expectationImportance,
+            e.expectationUrgency,
+
+            -- Measures as JSON array (for parsing)
+            COALESCE(
+                (
+                    SELECT json_group_array(
+                        json_object(
+                            'measureId', m.id,
+                            'measureTitle', m.title,
+                            'measureUnit', m.unit,
+                            'targetValue', em.targetValue
+                        )
+                    )
+                    FROM expectationMeasures em
+                    JOIN measures m ON em.measureId = m.id
+                    WHERE em.expectationId = e.id
+                ),
+                '[]'
+            ) as measuresJson,
+
+            -- Aligned values as JSON array of IDs (for parsing)
+            COALESCE(
+                (
+                    SELECT json_group_array(gr.valueId)
+                    FROM goalRelevances gr
+                    WHERE gr.goalId = g.id
+                ),
+                '[]'
+            ) as valuesJson
+
+        FROM goals g
+        JOIN expectations e ON g.expectationId = e.id
+        \(whereClause)
+        ORDER BY COALESCE(g.targetDate, g.startDate) ASC NULLS LAST
+        """
+
+        // Execute query with optional date arguments
+        let rows = try GoalExportRow.fetchAll(db, sql: sql, arguments: StatementArguments(arguments))
+
+        // Parse rows to export format
+        return try rows.map { row in
+            try assembleGoalExport(from: row)
+        }
+    }
+}
+
+/// SQL result row for export query
+private struct GoalExportRow: Decodable, FetchableRecord, Sendable {
+    let goalId: String
+    let goalStartDate: Date?
+    let goalTargetDate: Date?
+    let goalActionPlan: String?
+    let goalExpectedTermLength: Int?
+    let expectationId: String
+    let expectationTitle: String?
+    let expectationDetailedDescription: String?
+    let expectationFreeformNotes: String?
+    let expectationLogTime: Date
+    let expectationImportance: Int
+    let expectationUrgency: Int
+    let measuresJson: String
+    let valuesJson: String
+}
+
+/// JSON structure for simple measure target export
+private struct MeasureExportJsonRow: Decodable, Sendable {
+    let measureId: String
+    let measureTitle: String?
+    let measureUnit: String
+    let targetValue: Double
+}
+
+/// Assemble GoalExport from SQL row with JSON parsing
+///
+/// Parses JSON arrays and flattens to simple export structure.
+/// Throws ValidationError if JSON parsing fails.
+private func assembleGoalExport(from row: GoalExportRow) throws -> GoalExport {
+    let decoder = JSONDecoder()
+
+    // Parse measures JSON
+    guard let measuresData = row.measuresJson.data(using: .utf8) else {
+        throw ValidationError.databaseConstraint("Invalid UTF-8 in measures JSON for goal \(row.goalId)")
+    }
+
+    let measuresJson: [MeasureExportJsonRow]
+    do {
+        measuresJson = try decoder.decode([MeasureExportJsonRow].self, from: measuresData)
+    } catch {
+        throw ValidationError.databaseConstraint("Failed to parse measures JSON for export: \(error)")
+    }
+
+    // Parse values JSON (array of UUID strings)
+    guard let valuesData = row.valuesJson.data(using: .utf8) else {
+        throw ValidationError.databaseConstraint("Invalid UTF-8 in values JSON for goal \(row.goalId)")
+    }
+
+    let valueIdStrings: [String]
+    do {
+        valueIdStrings = try decoder.decode([String].self, from: valuesData)
+    } catch {
+        throw ValidationError.databaseConstraint("Failed to parse values JSON for export: \(error)")
+    }
+
+    // Convert UUID strings to UUIDs
+    guard let goalUUID = UUID(uuidString: row.goalId) else {
+        throw ValidationError.databaseConstraint("Invalid goal UUID: \(row.goalId)")
+    }
+
+    let alignedValueIds = try valueIdStrings.map { idString in
+        guard let uuid = UUID(uuidString: idString) else {
+            throw ValidationError.databaseConstraint("Invalid value UUID: \(idString)")
+        }
+        return uuid
+    }
+
+    // Transform measures to export format
+    let measureTargets = try measuresJson.map { m in
+        guard let measureUUID = UUID(uuidString: m.measureId) else {
+            throw ValidationError.databaseConstraint("Invalid measure UUID: \(m.measureId)")
+        }
+
+        return MeasureTargetExport(
+            measureId: measureUUID,
+            measureTitle: m.measureTitle,
+            unit: m.measureUnit,
+            targetValue: m.targetValue
+        )
+    }
+
+    return GoalExport(
+        id: goalUUID,
+        startDate: row.goalStartDate,
+        targetDate: row.goalTargetDate,
+        actionPlan: row.goalActionPlan,
+        expectedTermLength: row.goalExpectedTermLength,
+        title: row.expectationTitle,
+        detailedDescription: row.expectationDetailedDescription,
+        freeformNotes: row.expectationFreeformNotes,
+        expectationImportance: row.expectationImportance,
+        expectationUrgency: row.expectationUrgency,
+        logTime: row.expectationLogTime,
+        measureTargets: measureTargets,
+        alignedValueIds: alignedValueIds
+    )
 }
 
 // MARK: - Dashboard Data Types

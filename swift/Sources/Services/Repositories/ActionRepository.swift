@@ -25,6 +25,12 @@ import Models
 import SQLiteData
 import GRDB  // For FetchableRecord protocol
 
+// MARK: - Canonical Data Type
+//
+// ActionData is now defined in Models/CanonicalTypes/ActionData.swift
+// This repository returns ActionData for both display and export needs.
+// Export types (ActionExport, MeasurementExport) are deprecated - use ActionData instead.
+
 // MARK: - Repository Implementation
 
 public final class ActionRepository: Sendable {
@@ -126,6 +132,81 @@ public final class ActionRepository: Sendable {
                 let rows = try ActionQueryRow.fetchAll(db, sql: sql, arguments: [limit])
                 return try rows.map { row in
                     try assembleActionWithDetails(from: row)
+                }
+            }
+        } catch {
+            throw mapDatabaseError(error)
+        }
+    }
+
+    /// Fetch actions for export (denormalized, flat structure)
+    ///
+    /// **Pattern**: CSV/JSON export pattern - flat structs, no nested entities
+    /// **Performance**: Reuses baseQuerySQL with optional date filtering
+    ///
+    /// **Export Structure**:
+    /// - ActionExport: Flat action with measurements array and goal ID array
+    /// - MeasurementExport: Simple {measureId, title, unit, value}
+    /// - contributingGoalIds: Just UUIDs (join with goals export separately)
+    ///
+    /// **Date Filtering**:
+    /// - from: Include actions with logTime >= from
+    /// - to: Include actions with logTime <= to
+    /// - If both nil, returns all actions
+    ///
+    /// **Usage**:
+    /// ```swift
+    /// // Export all actions
+    /// let allActions = try await repository.fetchForExport()
+    ///
+    /// // Export actions from date range
+    /// let actions = try await repository.fetchForExport(
+    ///     from: Calendar.current.date(byAdding: .month, value: -3, to: Date()),
+    ///     to: Date()
+    /// )
+    /// ```
+    public func fetchForExport(from startDate: Date? = nil, to endDate: Date? = nil) async throws -> [ActionExport] {
+        do {
+            return try await database.read { db in
+                // Build SQL with optional date filter
+                let sql: String
+                let arguments: StatementArguments
+
+                if let startDate = startDate, let endDate = endDate {
+                    sql = """
+                    \(baseQuerySQL)
+                    WHERE a.logTime BETWEEN ? AND ?
+                    ORDER BY a.logTime DESC
+                    """
+                    arguments = [startDate, endDate]
+                } else if let startDate = startDate {
+                    sql = """
+                    \(baseQuerySQL)
+                    WHERE a.logTime >= ?
+                    ORDER BY a.logTime DESC
+                    """
+                    arguments = [startDate]
+                } else if let endDate = endDate {
+                    sql = """
+                    \(baseQuerySQL)
+                    WHERE a.logTime <= ?
+                    ORDER BY a.logTime DESC
+                    """
+                    arguments = [endDate]
+                } else {
+                    sql = """
+                    \(baseQuerySQL)
+                    ORDER BY a.logTime DESC
+                    """
+                    arguments = []
+                }
+
+                // Fetch rows with JSON aggregation
+                let rows = try ActionQueryRow.fetchAll(db, sql: sql, arguments: arguments)
+
+                // Transform to export format
+                return try rows.map { row in
+                    try assembleActionExport(from: row)
                 }
             }
         } catch {
@@ -466,6 +547,65 @@ public func assembleActionWithDetails(from row: ActionQueryRow) throws -> Action
         action: action,
         measurements: measurements,
         contributions: contributions
+    )
+}
+
+/// Assemble ActionExport from JSON query row (for CSV/JSON export)
+///
+/// **Pattern**: Similar to assembleActionWithDetails() but produces flat export structs
+/// **Purpose**: Transform database JSON into denormalized export format
+///
+/// **Process**:
+/// 1. Parse JSON strings to structured arrays (same as assembleActionWithDetails)
+/// 2. Extract simple MeasurementExport structs (no nested Measure entities)
+/// 3. Extract goal IDs only (no full Goal entities)
+/// 4. Return flat ActionExport with arrays of primitives
+public func assembleActionExport(from row: ActionQueryRow) throws -> ActionExport {
+    let decoder = JSONDecoder()
+
+    // Parse action fields
+    guard let actionUUID = UUID(uuidString: row.actionId) else {
+        throw ValidationError.databaseConstraint("Invalid action ID: \(row.actionId)")
+    }
+
+    // Parse measurements JSON
+    let measurementsData = row.measurementsJson.data(using: .utf8)!
+    let measurementsJson = try decoder.decode([MeasurementJsonRow].self, from: measurementsData)
+
+    let measurements: [MeasurementExport] = try measurementsJson.map { m in
+        guard let measureUUID = UUID(uuidString: m.measureId) else {
+            throw ValidationError.databaseConstraint("Invalid measure ID in measurement for action \(row.actionId)")
+        }
+
+        return MeasurementExport(
+            measureId: measureUUID,
+            measureTitle: m.measureTitle,
+            unit: m.measureUnit,
+            value: m.value
+        )
+    }
+
+    // Parse contributions JSON (extract just goal IDs)
+    let contributionsData = row.contributionsJson.data(using: .utf8)!
+    let contributionsJson = try decoder.decode([ContributionJsonRow].self, from: contributionsData)
+
+    let contributingGoalIds: [UUID] = try contributionsJson.compactMap { c in
+        guard let goalUUID = UUID(uuidString: c.goalId) else {
+            throw ValidationError.databaseConstraint("Invalid goal ID in contribution for action \(row.actionId)")
+        }
+        return goalUUID
+    }
+
+    return ActionExport(
+        id: actionUUID,
+        title: row.actionTitle,
+        detailedDescription: row.actionDetailedDescription,
+        freeformNotes: row.actionFreeformNotes,
+        logTime: parseDate(row.actionLogTime) ?? Date(),
+        durationMinutes: row.actionDurationMinutes,
+        startTime: parseDate(row.actionStartTime),
+        measurements: measurements,
+        contributingGoalIds: contributingGoalIds
     )
 }
 
