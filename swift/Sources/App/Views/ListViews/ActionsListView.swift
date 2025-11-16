@@ -31,9 +31,9 @@ public struct ActionsListView: View {
     @State private var viewModel = ActionsListViewModel()
 
     @State private var showingAddAction = false
-    @State private var actionToEdit: Models.ActionWithDetails?
-    @State private var actionToDelete: Models.ActionWithDetails?
-    @State private var selectedAction: Models.ActionWithDetails?
+    @State private var actionToEdit: Models.ActionData?
+    @State private var actionToDelete: Models.ActionData?
+    @State private var selectedAction: Models.ActionData?
     @State private var formData: ActionFormData?  // For Quick Add pre-filling
 
     // MARK: - Body
@@ -93,9 +93,10 @@ public struct ActionsListView: View {
                 }
             }
         }
-        .sheet(item: $actionToEdit) { actionDetails in
+        .sheet(item: $actionToEdit) { actionData in
             NavigationStack {
-                ActionFormView(actionToEdit: actionDetails)
+                // Transform ActionData to ActionWithDetails for form view
+                ActionFormView(actionToEdit: actionData.asDetails)
             }
         }
         .onChange(of: actionToEdit) { oldValue, newValue in
@@ -111,15 +112,15 @@ public struct ActionsListView: View {
             "Delete Action",
             isPresented: .constant(actionToDelete != nil),
             presenting: actionToDelete
-        ) { actionDetails in
+        ) { actionData in
             Button("Cancel", role: .cancel) {
                 actionToDelete = nil
             }
             Button("Delete", role: .destructive) {
-                delete(actionDetails)
+                delete(actionData)
             }
-        } message: { actionDetails in
-            Text("Are you sure you want to delete '\(actionDetails.action.title ?? "this action")'?")
+        } message: { actionData in
+            Text("Are you sure you want to delete '\(actionData.title ?? "this action")'?")
         }
         .alert("Error", isPresented: .constant(viewModel.hasError)) {
             Button("OK") {
@@ -151,7 +152,7 @@ public struct ActionsListView: View {
         List(selection: $selectedAction) {
             // Quick Add Section
             QuickAddSection(
-                recentActions: Array(viewModel.actions.prefix(5)),
+                recentActions: Array(viewModel.actions.prefix(5).map { $0.asDetails }),
                 activeGoals: Array(viewModel.activeGoals.prefix(5)),
                 onDuplicateAction: { preFilledData in
                     formData = preFilledData
@@ -165,21 +166,22 @@ public struct ActionsListView: View {
             )
 
             // Actions List
-            ForEach(viewModel.actions) { actionDetails in
-                ActionRowView(actionDetails: actionDetails)
+            ForEach(viewModel.actions) { actionData in
+                // Transform ActionData to ActionWithDetails for row view
+                ActionRowView(actionDetails: actionData.asDetails)
                     .onTapGesture {
-                        edit(actionDetails)
+                        edit(actionData)
                     }
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
-                            actionToDelete = actionDetails
+                            actionToDelete = actionData
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
                     }
                     .swipeActions(edge: .leading) {
                         Button {
-                            edit(actionDetails)
+                            edit(actionData)
                         } label: {
                             Label("Edit", systemImage: "pencil")
                         }
@@ -188,7 +190,7 @@ public struct ActionsListView: View {
                     // Context menu for mouse/trackpad users
                     .contextMenu {
                         Button {
-                            edit(actionDetails)
+                            edit(actionData)
                         } label: {
                             Label("Edit", systemImage: "pencil")
                         }
@@ -196,12 +198,12 @@ public struct ActionsListView: View {
                         Divider()
 
                         Button(role: .destructive) {
-                            actionToDelete = actionDetails
+                            actionToDelete = actionData
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
                     }
-                    .tag(actionDetails)
+                    .tag(actionData)
             }
         }
         #if os(macOS)
@@ -215,13 +217,13 @@ public struct ActionsListView: View {
 
     // MARK: - Actions
 
-    private func edit(_ actionDetails: Models.ActionWithDetails) {
-        actionToEdit = actionDetails
+    private func edit(_ actionData: Models.ActionData) {
+        actionToEdit = actionData
     }
 
-    private func delete(_ actionDetails: Models.ActionWithDetails) {
+    private func delete(_ actionData: Models.ActionData) {
         Task {
-            await viewModel.deleteAction(actionDetails)
+            await viewModel.deleteAction(actionData)
             actionToDelete = nil
         }
     }

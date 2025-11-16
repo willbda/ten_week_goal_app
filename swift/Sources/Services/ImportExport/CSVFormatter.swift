@@ -32,7 +32,7 @@ public struct CSVFormatter {
     /// Encode actions to CSV format
     ///
     /// **Format**: One row per action, measurements as JSON column
-    public func formatActions(_ actions: [ActionExport]) throws -> Data {
+    public func formatActions(_ actions: [ActionData]) throws -> Data {
         var csv =
             "ID,Title,Description,Notes,LogTime,Duration(min),StartTime,Measurements,ContributingGoals\n"
 

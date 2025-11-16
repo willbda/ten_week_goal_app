@@ -56,8 +56,8 @@ public final class ActionsListViewModel {
 
     // MARK: - Observable State (internal visibility)
 
-    /// Actions data for display
-    var actions: [Models.ActionWithDetails] = []
+    /// Actions data for display (canonical type)
+    var actions: [Models.ActionData] = []
 
     /// Active goals for Quick Add section (goals with no target date or future target date)
     var activeGoals: [Models.GoalWithDetails] = []
@@ -144,22 +144,24 @@ public final class ActionsListViewModel {
 
     /// Delete an action and reload the list
     ///
-    /// - Parameter actionDetails: The action to delete (includes full relationship graph)
+    /// - Parameter actionData: The action to delete (canonical data type)
     ///
     /// **Implementation**: Uses ActionCoordinator for atomic multi-table delete
     /// **Side Effects**: Reloads actions list after successful deletion
-    public func deleteAction(_ actionDetails: Models.ActionWithDetails) async {
+    public func deleteAction(_ actionData: Models.ActionData) async {
         isLoading = true
         errorMessage = nil
 
         do {
-            // Use coordinator for atomic delete with cascading relationships
-            // ActionWithDetails already contains all the data we need
+            // Transform ActionData to entities for coordinator
+            // Coordinator expects separate entity parameters for atomic delete
+            let details = actionData.asDetails
+
             let coordinator = ActionCoordinator(database: database)
             try await coordinator.delete(
-                action: actionDetails.action,
-                measurements: actionDetails.measurements.map(\.measuredAction),
-                contributions: actionDetails.contributions.map(\.contribution)
+                action: details.action,
+                measurements: details.measurements.map(\.measuredAction),
+                contributions: details.contributions.map(\.contribution)
             )
 
             // Reload list after successful delete

@@ -133,7 +133,7 @@ struct CSVExportImportView: View {
 
                 // Export to temp location
                 let exporter = DataExporter(database: database)
-                let outputURL = try await exporter.export(entityType, to: tempDir)
+                let outputURL = try await exporter.exportToFile(entityType, to: tempDir, format: .csv)
 
                 // Store URL and show file exporter
                 exportedFileURL = outputURL

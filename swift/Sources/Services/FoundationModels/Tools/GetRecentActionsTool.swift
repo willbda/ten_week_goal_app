@@ -77,8 +77,7 @@ public struct GetRecentActionsTool: Tool {
 
         // Filter by date range
         actions = actions.filter { action in
-            let logTime = action.action.logTime  // Already a Date
-            return logTime >= startDate && logTime <= endDate
+            action.logTime >= startDate && action.logTime <= endDate
         }
 
         // Filter by goal if specified
@@ -86,7 +85,7 @@ public struct GetRecentActionsTool: Tool {
            let goalUUID = UUID(uuidString: goalIdString) {
             actions = actions.filter { action in
                 action.contributions.contains { contribution in
-                    contribution.contribution.goalId == goalUUID
+                    contribution.goalId == goalUUID
                 }
             }
         }
@@ -98,32 +97,30 @@ public struct GetRecentActionsTool: Tool {
 
         // Sort by date (most recent first) and apply limit
         actions = actions
-            .sorted { action1, action2 in
-                action1.action.logTime > action2.action.logTime  // Already Date type
-            }
+            .sorted { $0.logTime > $1.logTime }
             .prefix(arguments.limit)
             .map { $0 }
 
         // Map to response format
         let summaries = actions.map { action in
             ActionSummary(
-                id: action.action.id.uuidString,
-                title: action.action.title ?? "Untitled Action",
-                description: action.action.detailedDescription,
-                logTime: action.action.logTime.ISO8601Format(),
-                durationMinutes: action.action.durationMinutes,
+                id: action.id.uuidString,
+                title: action.title ?? "Untitled Action",
+                description: action.detailedDescription,
+                logTime: action.logTime.ISO8601Format(),
+                durationMinutes: action.durationMinutes,
                 measurements: action.measurements.map { measurement in
                     LLMActionMeasurement(
-                        measureName: measurement.measure.title ?? "Unknown",
-                        value: measurement.measuredAction.value,
-                        unit: measurement.measure.unit
+                        measureName: measurement.measureTitle ?? "Unknown",
+                        value: measurement.value,
+                        unit: measurement.measureUnit
                     )
                 },
                 goalContributions: action.contributions.map { contribution in
                     GoalContribution(
-                        goalId: contribution.goal.id.uuidString,
-                        goalTitle: "Goal \(contribution.goal.id.uuidString.prefix(8))",  // UUID fallback (expectation not available in ActionContribution)
-                        contributionAmount: contribution.contribution.contributionAmount
+                        goalId: contribution.goalId.uuidString,
+                        goalTitle: contribution.goalTitle ?? "Goal \(contribution.goalId.uuidString.prefix(8))",
+                        contributionAmount: contribution.contributionAmount
                     )
                 }
             )

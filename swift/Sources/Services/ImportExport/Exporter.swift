@@ -1,14 +1,16 @@
 //
 // Exporter.swift
 // Written by Claude Code on 2025-11-15
+// Updated to use canonical types on 2025-11-15
 //
 // PURPOSE:
 // Data export service - handles repository dispatch and format encoding.
 //
 // PATTERN:
-// - Repositories provide data via fetchForExport()
+// - Repositories provide data via fetchAll() (canonical types)
 // - DataExporter handles both JSON and CSV formatting
 // - Returns Data (not files) - caller handles file I/O
+// - ActionData is Codable for both JSON export and CSV formatting
 //
 
 import Foundation
@@ -67,8 +69,8 @@ public final class DataExporter {
         switch model {
         case .actions:
             let repository = ActionRepository(database: database)
-            let exports = try await repository.fetchForExport(from: startDate, to: endDate)
-            return try formatData(exports, format: format, csvFormatter: csvFormatter.formatActions)
+            let actions = try await repository.fetchAll(from: startDate, to: endDate)
+            return try formatData(actions, format: format, csvFormatter: csvFormatter.formatActions)
 
         case .goals:
             let repository = GoalRepository(database: database)
