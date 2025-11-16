@@ -1,4 +1,4 @@
-# Versioning Strategy
+# Versioning Strategy - Happy to Have Lived
 
 **Current Version:** 0.6.5 (Repository + ViewModel pattern complete - 2025-11-13)
 **Next Release:** 0.7.0 (Testing, refinement, CSV enhancements)
@@ -14,7 +14,7 @@
 | 0.5.0 | 2025-10-25 | Foundation complete, rearchitecture needed | SQLiteData working, protocols defined, but needs structural rethink |
 | 0.6.0 | 2025-11-08 | Coordinator pattern complete | Phases 1-3 done: 3NF schema, models migrated, all 4 coordinators with full CRUD |
 | **0.6.5** | **2025-11-13** | **Repository + ViewModel complete** | All 4 entities migrated to @Observable pattern, repositories with Sendable, query wrappers eliminated |
-| **0.7.0** | **TBD** | **Testing + refinement** | Manual/automated testing, CSV enhancements, bug fixes |
+| **0.7.0** | **TBD** | **Testing + refinement** | Manual/automated testing, CSV enhancements, performance optimizations, bug fixes |
 | **0.7.5** | **TBD** | **Semantic foundation + basic LLM** | Unified semantic layer for deduplication/search/LLM, conversational goal setting |
 
 ## Current Implementation Focus
@@ -63,13 +63,14 @@ The two implementations have diverged significantly and **no longer share a data
 **Phase Timeline**:
 - ✅ Phase 1-2 (Schema & Models): 2 weeks (complete)
 - ✅ Phase 3 (Coordinators): 1 week (complete)
-- 🚧 Phase 4 (Validation + Repositories): 3-4 weeks (in progress, see REPOSITORY_IMPLEMENTATION_PLAN.md)
-- **🆕 v0.7.5 (Semantic Foundation)**: 24-28 hours (parallel to Phase 4)
-- Phase 5 (ViewModels): 1 week
+- ✅ Phase 4 (Validation + Repositories): 3-4 weeks (complete 2025-11-13)
+- ✅ Phase 5 (ViewModels): 1 week (complete 2025-11-13)
+- ⏳ **v0.7.0 (Testing + Performance)**: 1-2 weeks (see Performance Optimizations below)
+- **🆕 v0.7.5 (Semantic Foundation)**: 24-28 hours (parallel to testing)
 - Phase 6 (Views): 1 week
 - Phase 7 (Testing/Migration): 1-2 weeks
 
-**Estimated Time to 1.0**: 7-9 weeks from v0.6.0
+**Estimated Time to 1.0**: 4-6 weeks from v0.6.5
 
 ### v0.7.5 Semantic Foundation Details
 
@@ -101,6 +102,64 @@ The two implementations have diverged significantly and **no longer share a data
 - v0.8-0.9: Semantic search, RAG memory retrieval, conversation persistence
 - v1.0+: Values alignment coach, reflection prompts, advanced LLM features
 
+### v0.7.0 Performance Optimizations
+
+**Goal:** Fix inefficient looping patterns identified in import/CSV paths
+
+**Identified Issues (2025-11-15 Performance Audit):**
+
+1. **HealthKit Import Batch Processing** (HIGH priority)
+   - **Issue**: Sequential database writes in `importWorkouts()` loop
+   - **Impact**: 5-10x slower for batch imports (100 workouts = 100 transactions)
+   - **Fix**: Wrap all imports in single `database.write { }` transaction
+   - **File**: `HealthKitImportService.swift:126-135`
+   - **Estimated time**: 1-2 hours
+
+2. **HealthKit Measure Lookup** (HIGH priority)
+   - **Issue**: `findOrCreateMeasure()` fetches ALL measures for single lookup
+   - **Impact**: O(n) table scan × 3 per workout (15,000 unnecessary reads for 100 workouts)
+   - **Fix**: Replace `fetchAll()` with indexed WHERE query
+   - **Schema change**: Add `CREATE INDEX idx_measures_unit_type ON measures(unit, measureType)`
+   - **File**: `HealthKitImportService.swift:148`
+   - **Estimated time**: 1 hour
+
+3. **CSV Import Value Lookup** (MEDIUM priority)
+   - **Issue**: `lookupValueByTitle()` linear search in Swift instead of SQL query
+   - **Impact**: O(n×m) - 20,000 comparisons for 100 goals with 100 values
+   - **Fix**: Use SQL `LOWER()` for case-insensitive indexed lookup
+   - **Schema change**: Add `CREATE INDEX idx_personal_values_title_lower ON personalValues(LOWER(title))`
+   - **File**: `GoalMapper.swift:277-290`
+   - **Estimated time**: 1 hour
+
+**Database Schema Changes:**
+```sql
+-- Add to schema_current.sql PERFORMANCE INDEXES section
+CREATE INDEX idx_measures_unit_type ON measures(unit, measureType);
+CREATE INDEX idx_personal_values_title_lower ON personalValues(LOWER(title));
+```
+
+**Testing Strategy:**
+- [ ] Test HealthKit import with 100+ workouts (measure time before/after)
+- [ ] Test CSV import with 50+ goals (measure time before/after)
+- [ ] Verify index usage with SQLite EXPLAIN QUERY PLAN
+- [ ] Ensure no regression in core data flow (repositories already optimized)
+
+**Deliverables:**
+1. ✅ Optimized HealthKit batch import (single transaction)
+2. ✅ Indexed measure lookups (no table scans)
+3. ✅ Indexed value title lookups (SQL vs Swift)
+4. ✅ Updated schema with performance indexes
+5. ✅ Performance benchmarks documented
+
+**Total Effort:** 3-4 hours
+
+**Why v0.7.0 (not v0.6.6)?**
+- Core architecture (repositories, ViewModels) already optimized in v0.6.5
+- Import/CSV paths are auxiliary features, not critical path
+- Schema changes (new indexes) justify minor version bump
+- Fits naturally with "testing + refinement" phase
+
+**Note:** Core data flow (repositories with JSON aggregation) already excellent - these fixes target import workflows only.
 
 - First stable release
 - **Criteria for 1.0:**

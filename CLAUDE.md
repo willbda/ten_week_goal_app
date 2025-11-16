@@ -6,7 +6,7 @@ Do not run swift build without explicitely asking the user. It is inefficient, w
 
 ## Project Overview
 
-**Ten Week Goal App** - A Swift-based iOS/macOS/visionOS application for goal tracking and personal development.
+**Happy to Have Lived (HtHL)** - A Swift-based iOS/macOS/visionOS application for goal tracking and personal development.
 
 - **Primary Language**: Swift 6.2
 - **Platforms**: iOS 26+, macOS 26+, visionOS 26+

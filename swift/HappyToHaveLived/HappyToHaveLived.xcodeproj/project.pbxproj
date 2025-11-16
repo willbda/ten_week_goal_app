@@ -9,17 +9,14 @@
 /* Begin PBXBuildFile section */
 		38D394B12EC2E0E0009A93BB /* App in Frameworks */ = {isa = PBXBuildFile; productRef = 38D394B02EC2E0E0009A93BB /* App */; };
 		38D394B32EC2E0E0009A93BB /* Database in Frameworks */ = {isa = PBXBuildFile; productRef = 38D394B22EC2E0E0009A93BB /* Database */; };
-		38D394B52EC2E0E0009A93BB /* Logic in Frameworks */ = {isa = PBXBuildFile; productRef = 38D394B42EC2E0E0009A93BB /* Logic */; };
 		38D394B72EC2E0E0009A93BB /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = 38D394B62EC2E0E0009A93BB /* Models */; };
 		38D394B92EC2E0E0009A93BB /* Services in Frameworks */ = {isa = PBXBuildFile; productRef = 38D394B82EC2E0E0009A93BB /* Services */; };
 		38D394BF2EC2E2ED009A93BB /* App in Frameworks */ = {isa = PBXBuildFile; productRef = 38D394BE2EC2E2ED009A93BB /* App */; };
 		38D394C12EC2E2ED009A93BB /* Database in Frameworks */ = {isa = PBXBuildFile; productRef = 38D394C02EC2E2ED009A93BB /* Database */; };
-		38D394C32EC2E2ED009A93BB /* Logic in Frameworks */ = {isa = PBXBuildFile; productRef = 38D394C22EC2E2ED009A93BB /* Logic */; };
 		38D394C52EC2E2ED009A93BB /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = 38D394C42EC2E2ED009A93BB /* Models */; };
 		38D394C72EC2E2ED009A93BB /* Services in Frameworks */ = {isa = PBXBuildFile; productRef = 38D394C62EC2E2ED009A93BB /* Services */; };
 		38FD9AA62EC2E3A700ED2E91 /* App in Frameworks */ = {isa = PBXBuildFile; productRef = 38FD9AA52EC2E3A700ED2E91 /* App */; };
 		38FD9AA82EC2E3A700ED2E91 /* Database in Frameworks */ = {isa = PBXBuildFile; productRef = 38FD9AA72EC2E3A700ED2E91 /* Database */; };
-		38FD9AAA2EC2E3A700ED2E91 /* Logic in Frameworks */ = {isa = PBXBuildFile; productRef = 38FD9AA92EC2E3A700ED2E91 /* Logic */; };
 		38FD9AAC2EC2E3A700ED2E91 /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = 38FD9AAB2EC2E3A700ED2E91 /* Models */; };
 		38FD9AAE2EC2E3A700ED2E91 /* Services in Frameworks */ = {isa = PBXBuildFile; productRef = 38FD9AAD2EC2E3A700ED2E91 /* Services */; };
 /* End PBXBuildFile section */
@@ -328,12 +325,9 @@
 				38D394BF2EC2E2ED009A93BB /* App in Frameworks */,
 				38FD9AA62EC2E3A700ED2E91 /* App in Frameworks */,
 				38D394B92EC2E0E0009A93BB /* Services in Frameworks */,
-				38FD9AAA2EC2E3A700ED2E91 /* Logic in Frameworks */,
 				38D394C12EC2E2ED009A93BB /* Database in Frameworks */,
 				38FD9AA82EC2E3A700ED2E91 /* Database in Frameworks */,
 				38D394C52EC2E2ED009A93BB /* Models in Frameworks */,
-				38D394C32EC2E2ED009A93BB /* Logic in Frameworks */,
-				38D394B52EC2E0E0009A93BB /* Logic in Frameworks */,
 				38D394B12EC2E0E0009A93BB /* App in Frameworks */,
 				38D394B72EC2E0E0009A93BB /* Models in Frameworks */,
 				38FD9AAC2EC2E3A700ED2E91 /* Models in Frameworks */,
@@ -1191,17 +1185,14 @@
 			packageProductDependencies = (
 				38D394B02EC2E0E0009A93BB /* App */,
 				38D394B22EC2E0E0009A93BB /* Database */,
-				38D394B42EC2E0E0009A93BB /* Logic */,
 				38D394B62EC2E0E0009A93BB /* Models */,
 				38D394B82EC2E0E0009A93BB /* Services */,
 				38D394BE2EC2E2ED009A93BB /* App */,
 				38D394C02EC2E2ED009A93BB /* Database */,
-				38D394C22EC2E2ED009A93BB /* Logic */,
 				38D394C42EC2E2ED009A93BB /* Models */,
 				38D394C62EC2E2ED009A93BB /* Services */,
 				38FD9AA52EC2E3A700ED2E91 /* App */,
 				38FD9AA72EC2E3A700ED2E91 /* Database */,
-				38FD9AA92EC2E3A700ED2E91 /* Logic */,
 				38FD9AAB2EC2E3A700ED2E91 /* Models */,
 				38FD9AAD2EC2E3A700ED2E91 /* Services */,
 			);
@@ -1228,7 +1219,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 388F12742EB6BEDE00A8CED4 /* Build configuration list for PBXProject "GoalTracker" */;
+			buildConfigurationList = 388F12742EB6BEDE00A8CED4 /* Build configuration list for PBXProject "HappyToHaveLived" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -1632,7 +1623,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		388F12742EB6BEDE00A8CED4 /* Build configuration list for PBXProject "GoalTracker" */ = {
+		388F12742EB6BEDE00A8CED4 /* Build configuration list for PBXProject "HappyToHaveLived" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				388F12982EB6BEDF00A8CED4 /* Debug */,
@@ -1668,10 +1659,6 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Database;
 		};
-		38D394B42EC2E0E0009A93BB /* Logic */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Logic;
-		};
 		38D394B62EC2E0E0009A93BB /* Models */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Models;
@@ -1688,10 +1675,6 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Database;
 		};
-		38D394C22EC2E2ED009A93BB /* Logic */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Logic;
-		};
 		38D394C42EC2E2ED009A93BB /* Models */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Models;
@@ -1707,10 +1690,6 @@
 		38FD9AA72EC2E3A700ED2E91 /* Database */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Database;
-		};
-		38FD9AA92EC2E3A700ED2E91 /* Logic */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Logic;
 		};
 		38FD9AAB2EC2E3A700ED2E91 /* Models */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -31,6 +31,7 @@ public struct GoalsListView: View {
     @State private var goalToEdit: GoalWithDetails?
     @State private var goalToDelete: GoalWithDetails?
     @State private var showingDeleteAlert = false
+    @State private var showingGoalCoach = false
 
     public init() {}
 
@@ -88,6 +89,17 @@ public struct GoalsListView: View {
                     Label("Add Goal", systemImage: "plus")
                 }
             }
+
+            // AI Goal Coach button
+            if #available(iOS 26.0, macOS 26.0, *) {
+                ToolbarItem(placement: .secondaryAction) {
+                    Button {
+                        showingGoalCoach = true
+                    } label: {
+                        Label("AI Coach", systemImage: "brain")
+                    }
+                }
+            }
         }
         .task {
             // Load goals when view appears
@@ -123,6 +135,13 @@ public struct GoalsListView: View {
             }
         } message: {
             Text(viewModel.errorMessage ?? "Unknown error")
+        }
+        .sheet(isPresented: $showingGoalCoach) {
+            if #available(iOS 26.0, macOS 26.0, *) {
+                NavigationStack {
+                    GoalCoachView()
+                }
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 // swift-tools-version: 6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
-// Package manifest for Ten Week Goal App
+// Package manifest for Happy to Have Lived
 // Written by Claude Code on 2025-10-31
 //
 // ARCHITECTURE:
@@ -13,14 +13,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "GoalTrackerApp",
+    name: "HappyToHaveLived",
 
     // MARK: - Platforms
 
     platforms: [
-        .macOS(.v26),       // macOS Tahoe 26+
-        .iOS(.v26),         // iOS 26+
-        .visionOS(.v26),    // visionOS 26+
+        .macOS(.v26),  // macOS Tahoe 26+
+        .iOS(.v26),  // iOS 26+
+        .visionOS(.v26),  // visionOS 26+
     ],
 
     // MARK: - Products
@@ -39,7 +39,7 @@ let package = Package(
         .package(
             url: "https://github.com/pointfreeco/sqlite-data.git",
             from: "1.2.0"
-        ),
+        )
     ],
 
     // MARK: - Targets
@@ -53,7 +53,7 @@ let package = Package(
         .target(
             name: "Models",
             dependencies: [
-                .product(name: "SQLiteData", package: "sqlite-data"),
+                .product(name: "SQLiteData", package: "sqlite-data")
             ],
             path: "Sources/Models"
         ),

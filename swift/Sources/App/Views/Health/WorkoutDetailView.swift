@@ -9,7 +9,7 @@
 #if os(iOS)
 import SwiftUI
 import HealthKit
-import Models
+import Services  // HealthWorkout moved to Services/HealthKit/Models/
 
 /// Detailed view of a single workout showing all available data
 public struct WorkoutDetailView: View {
@@ -178,7 +178,7 @@ private struct LabeledRow: View {
 // MARK: - macOS Stub
 
 import SwiftUI
-import Models
+import Services  // HealthWorkout moved to Services/HealthKit/Models/
 
 public struct WorkoutDetailView: View {
     let workout: HealthWorkout

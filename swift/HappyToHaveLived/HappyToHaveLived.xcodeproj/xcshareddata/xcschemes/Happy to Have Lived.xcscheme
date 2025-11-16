@@ -18,7 +18,7 @@
                BlueprintIdentifier = "388F12782EB6BEDE00A8CED4"
                BuildableName = "Happy to Have Lived.app"
                BlueprintName = "Happy to Have Lived"
-               ReferencedContainer = "container:GoalTracker.xcodeproj">
+               ReferencedContainer = "container:HappyToHaveLived.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -94,7 +94,7 @@
                BlueprintIdentifier = "388F12852EB6BEDF00A8CED4"
                BuildableName = "GoalTrackerTests.xctest"
                BlueprintName = "GoalTrackerTests"
-               ReferencedContainer = "container:GoalTracker.xcodeproj">
+               ReferencedContainer = "container:HappyToHaveLived.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -105,7 +105,7 @@
                BlueprintIdentifier = "388F128F2EB6BEDF00A8CED4"
                BuildableName = "GoalTrackerUITests.xctest"
                BlueprintName = "GoalTrackerUITests"
-               ReferencedContainer = "container:GoalTracker.xcodeproj">
+               ReferencedContainer = "container:HappyToHaveLived.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -116,7 +116,7 @@
                BlueprintIdentifier = "38235EB92EC2BC77008C063C"
                BuildableName = "Happy to Have Lived Tests.xctest"
                BlueprintName = "Happy to Have Lived Tests"
-               ReferencedContainer = "container:GoalTracker.xcodeproj">
+               ReferencedContainer = "container:HappyToHaveLived.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -138,7 +138,7 @@
             BlueprintIdentifier = "388F12782EB6BEDE00A8CED4"
             BuildableName = "Happy to Have Lived.app"
             BlueprintName = "Happy to Have Lived"
-            ReferencedContainer = "container:GoalTracker.xcodeproj">
+            ReferencedContainer = "container:HappyToHaveLived.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <EnvironmentVariables>
@@ -162,7 +162,7 @@
             BlueprintIdentifier = "388F12782EB6BEDE00A8CED4"
             BuildableName = "Happy to Have Lived.app"
             BlueprintName = "Happy to Have Lived"
-            ReferencedContainer = "container:GoalTracker.xcodeproj">
+            ReferencedContainer = "container:HappyToHaveLived.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

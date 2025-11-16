@@ -1,10 +1,10 @@
-# Ten Week Goal App
+# Happy to Have Lived (HtHL)
 
-A native iOS/macOS/visionOS application for structured goal planning and progress tracking using ten-week cycles.
+A native iOS/macOS/visionOS application for structured goal planning and progress tracking.
 
 ## Overview
 
-The Ten Week Goal App helps you set, track, and achieve personal goals through structured time periods. Built with Swift 6.2 and SwiftUI, it provides a modern, native experience across all Apple platforms.
+Happy to Have Lived helps you set, track, and achieve personal goals through structured time periods. Built with Swift 6.2 and SwiftUI, it provides a modern, native experience across all Apple platforms.
 
 ### Key Features
 
@@ -112,6 +112,7 @@ The app uses a SQLite database with a 3NF normalized schema. Database location:
 ## Features in Development
 
 ### Current Phase (v0.6.0)
+
 ✅ Three-layer domain model
 ✅ Coordinator pattern for atomic writes
 ✅ Repository + ViewModel pattern (completed 2025-11-13)
@@ -120,12 +121,14 @@ The app uses a SQLite database with a 3NF normalized schema. Database location:
 ✅ Basic HealthKit integration
 
 ### Next Phase (v0.7.0)
+
 🚧 CSV import/export enhancements
 🚧 Testing and refinement
 ⏳ Dashboard and analytics
 ⏳ Enhanced HealthKit live tracking
 
 ### Future Phases
+
 ⏳ LLM-powered insights
 ⏳ Widgets and complications
 ⏳ Shortcuts and App Intents

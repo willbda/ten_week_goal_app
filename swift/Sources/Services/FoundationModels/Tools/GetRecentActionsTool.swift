@@ -113,7 +113,7 @@ public struct GetRecentActionsTool: Tool {
                 logTime: action.action.logTime.ISO8601Format(),
                 durationMinutes: action.action.durationMinutes,
                 measurements: action.measurements.map { measurement in
-                    ActionMeasurement(
+                    LLMActionMeasurement(
                         measureName: measurement.measure.title ?? "Unknown",
                         value: measurement.measuredAction.value,
                         unit: measurement.measure.unit
@@ -169,14 +169,14 @@ public struct ActionSummary: Codable {
     public let description: String?
     public let logTime: String
     public let durationMinutes: Double?
-    public let measurements: [ActionMeasurement]
+    public let measurements: [LLMActionMeasurement]
     public let goalContributions: [GoalContribution]
 }
 
-/// Measurement recorded for an action
+/// Measurement recorded for an action (for LLM tool output)
 @available(iOS 26.0, macOS 26.0, *)
 @Generable
-public struct ActionMeasurement: Codable {
+public struct LLMActionMeasurement: Codable {
     public let measureName: String
     public let value: Double
     public let unit: String

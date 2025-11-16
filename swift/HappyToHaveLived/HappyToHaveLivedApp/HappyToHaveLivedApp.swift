@@ -1,6 +1,6 @@
 //
-//  GoalTrackerApp.swift
-//  GoalTrackerApp
+//  HappyToHaveLivedApp.swift
+//  Happy to Have Lived
 //
 //  Created by David Williams on 11/1/25.
 //
@@ -10,7 +10,7 @@ import Database  // DatabaseBootstrap for initialization
 import App
 
 @main
-struct  GoalTrackerApp: App {
+struct HappyToHaveLivedApp: App {
 
     init() {
         // Initialize database and CloudKit sync
