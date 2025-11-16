@@ -49,10 +49,10 @@ public struct CreateGoalTool: Tool {
         let urgency: Int
 
         @Guide(description: "Array of metric targets with measureId and targetValue")
-        let metricTargets: [MetricTargetInput]?
+        let metricTargets: [LLMMetricTargetInput]?
 
         @Guide(description: "Array of value alignments with valueId and strength")
-        let valueAlignments: [ValueAlignmentInput]?
+        let valueAlignments: [LLMValueAlignmentInput]?
 
         @Guide(description: "Term ID to assign this goal to")
         let termId: String?
@@ -68,8 +68,8 @@ public struct CreateGoalTool: Tool {
             targetDate: String? = nil,
             importance: Int = 5,
             urgency: Int = 5,
-            metricTargets: [MetricTargetInput]? = nil,
-            valueAlignments: [ValueAlignmentInput]? = nil,
+            metricTargets: [LLMMetricTargetInput]? = nil,
+            valueAlignments: [LLMValueAlignmentInput]? = nil,
             termId: String? = nil,
             checkDuplicates: Bool = true
         ) {
@@ -234,7 +234,7 @@ public struct CreateGoalTool: Tool {
     }
 
     /// Convert metric target inputs from LLM (String IDs) to form data (UUID)
-    private func convertMetricTargets(_ inputs: [MetricTargetInput]) -> [Services.MetricTargetInput] {
+    private func convertMetricTargets(_ inputs: [LLMMetricTargetInput]) -> [Services.MetricTargetInput] {
         inputs.compactMap { input in
             guard let measureId = UUID(uuidString: input.measureId) else { return nil }
             return Services.MetricTargetInput(
@@ -246,7 +246,7 @@ public struct CreateGoalTool: Tool {
     }
 
     /// Convert value alignment inputs from LLM (String IDs) to form data (UUID)
-    private func convertValueAlignments(_ inputs: [ValueAlignmentInput]) -> [Services.ValueAlignmentInput] {
+    private func convertValueAlignments(_ inputs: [LLMValueAlignmentInput]) -> [Services.ValueAlignmentInput] {
         inputs.compactMap { input in
             guard let valueId = UUID(uuidString: input.valueId) else { return nil }
             return Services.ValueAlignmentInput(
@@ -260,19 +260,19 @@ public struct CreateGoalTool: Tool {
 
 // MARK: - Input Types
 
-/// Input for metric targets
+/// Input for metric targets (LLM-generated, uses String IDs)
 @available(iOS 26.0, macOS 26.0, *)
 @Generable
-public struct MetricTargetInput: Codable {
+public struct LLMMetricTargetInput: Codable {
     public let measureId: String
     public let targetValue: Double
     public let notes: String?
 }
 
-/// Input for value alignments
+/// Input for value alignments (LLM-generated, uses String IDs)
 @available(iOS 26.0, macOS 26.0, *)
 @Generable
-public struct ValueAlignmentInput: Codable {
+public struct LLMValueAlignmentInput: Codable {
     public let valueId: String
     public let alignmentStrength: Int?
     public let notes: String?

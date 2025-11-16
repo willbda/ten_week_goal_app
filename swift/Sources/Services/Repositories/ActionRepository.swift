@@ -53,6 +53,17 @@ public final class ActionRepository: Sendable {
         }
     }
 
+    /// Fetch raw query rows (for export - no assembly)
+    public func fetchAllRaw() async throws -> [ActionQueryRow] {
+        do {
+            return try await database.read { db in
+                try ActionQueryRow.fetchAll(db, sql: fetchAllSQL)
+            }
+        } catch {
+            throw mapDatabaseError(error)
+        }
+    }
+
     /// Fetch actions within a date range
     ///
     /// **Performance**: Single query with JSON aggregation + date filter
@@ -310,7 +321,7 @@ extension ActionRepository {
 ///
 /// **Pattern**: Mirrors GoalQueryRow (GoalRepository.swift:186-246)
 /// Decodes SQL result with json_group_array() columns
-public struct ActionQueryRow: Decodable, FetchableRecord, Sendable {
+public struct ActionQueryRow: Codable, FetchableRecord, Sendable {
     // Action fields
     let actionId: String
     let actionTitle: String?
@@ -410,7 +421,7 @@ public func assembleActionWithDetails(from row: ActionQueryRow) throws -> Action
             id: measureUUID
         )
 
-        return ActionMeasurement(measuredAction: measuredAction, measure: measure)
+        return Models.ActionMeasurement(measuredAction: measuredAction, measure: measure)
     }
 
     // Parse contributions JSON
@@ -448,7 +459,7 @@ public func assembleActionWithDetails(from row: ActionQueryRow) throws -> Action
             id: goalUUID
         )
 
-        return ActionContribution(contribution: contribution, goal: goal)
+        return Models.ActionContribution(contribution: contribution, goal: goal)
     }
 
     return ActionWithDetails(
